@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import type { DomesticQuoteItem, DomesticQuoteLineItem } from '../types/domestic';
+import type { Customer } from '../types/customer';
+import type { Supplier } from '../types/supplier';
+import type { User } from '../types/index';
 
 export const DomesticQuotes: React.FC = () => {
+  const { userProfile } = useAuth();
   const [quotes, setQuotes] = useState<DomesticQuoteItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // DB Collections for Customer, Supplier & Users (Team)
+  const [dbCustomers, setDbCustomers] = useState<Customer[]>([]);
+  const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
+  const [dbUsers, setDbUsers] = useState<User[]>([]);
 
   // Filters
   const [companyFilter, setCompanyFilter] = useState<'All' | 'YSACC' | 'YS'>('All');
@@ -62,15 +72,21 @@ export const DomesticQuotes: React.FC = () => {
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load Quotes from Firestore
-  const fetchQuotes = async () => {
+  // Load Quotes and DB Masters from Firestore
+  const fetchQuotesAndMasters = async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'domestic_quotes'));
+      const [quoteSnap, custSnap, suppSnap, userSnap] = await Promise.all([
+        getDocs(collection(db, 'companies', 'YSACC', 'domestic_quotes')),
+        getDocs(collection(db, 'companies', 'YSACC', 'customers')),
+        getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
+        getDocs(collection(db, 'users'))
+      ]);
+
+      // Quotes
       const list: DomesticQuoteItem[] = [];
-      snap.forEach(d => {
+      quoteSnap.forEach(d => {
         const data = d.data();
-        // Fallback for single item quotes created earlier
         let lineItems: DomesticQuoteLineItem[] = data.items || [];
         if (!lineItems.length && data.productName) {
           const qty = data.quantity || 1;
@@ -95,16 +111,69 @@ export const DomesticQuotes: React.FC = () => {
       });
       list.sort((a, b) => (b.quoteDate || '').localeCompare(a.quoteDate || '') || b.id.localeCompare(a.id));
       setQuotes(list);
+
+      // Customers DB
+      const custs: Customer[] = [];
+      custSnap.forEach(d => custs.push({ id: d.id, ...d.data() } as Customer));
+      setDbCustomers(custs);
+
+      // Suppliers DB
+      const supps: Supplier[] = [];
+      suppSnap.forEach(d => supps.push({ id: d.id, ...d.data() } as Supplier));
+      setDbSuppliers(supps);
+
+      // Users DB (Company Employees)
+      const users: User[] = [];
+      userSnap.forEach(d => users.push({ id: d.id, ...d.data() } as User));
+      setDbUsers(users);
+
     } catch (e) {
-      console.error("Failed to load domestic quotes:", e);
+      console.error("Failed to load domestic quotes & DB masters:", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchQuotes();
+    fetchQuotesAndMasters();
   }, []);
+
+  // Handle DB Customer Selection
+  const handleSelectCustomerFromDb = (nameVal: string) => {
+    setCustomerName(nameVal);
+    const found = dbCustomers.find(c => (c.name || c.nameKo || c.customerCode) === nameVal || c.id === nameVal);
+    if (found) {
+      const displayName = found.nameKo || found.name || nameVal;
+      setCustomerName(displayName);
+      setReceiverAttention(found.contactPerson || found.representative || '');
+      setReceiverTel(found.contactPhone || found.phone || '');
+      setReceiverFax(found.fax || '');
+    }
+  };
+
+  // Handle DB Supplier Selection
+  const handleSelectSupplierFromDb = (nameVal: string) => {
+    setSupplierName(nameVal);
+    const found = dbSuppliers.find(s => s.name === nameVal || s.supplierCode === nameVal || s.id === nameVal);
+    if (found) {
+      setSupplierName(found.name || nameVal);
+    }
+  };
+
+  // Handle Sales Manager Selection from Users DB
+  const handleSelectManagerFromDb = (nameVal: string) => {
+    setManagerName(nameVal);
+    const found = dbUsers.find(u => u.name === nameVal || u.id === nameVal);
+    if (found) {
+      setManagerName(found.name);
+      if (found.position || found.role) {
+        setManagerTitle(found.position || found.role);
+      }
+      if (found.phone || found.mobile || found.email) {
+        setManagerContact(found.phone || found.mobile || found.email || '');
+      }
+    }
+  };
 
   // Calculate Line Item values
   const updateLineItem = (index: number, field: keyof DomesticQuoteLineItem, value: any) => {
@@ -118,12 +187,10 @@ export const DomesticQuotes: React.FC = () => {
       let marginRate = Number(item.targetMarginRate) || 0;
 
       if (field === 'buyingUnitPrice' || field === 'targetMarginRate') {
-        // Recalculate salesUnitPrice from marginRate
         if (buyingPrice > 0 && marginRate > 0) {
           salesPrice = Math.round(buyingPrice * (1 + marginRate / 100));
         }
       } else if (field === 'salesUnitPrice') {
-        // Recalculate marginRate from salesUnitPrice
         if (salesPrice > 0 && buyingPrice > 0) {
           marginRate = Math.round(((salesPrice - buyingPrice) / salesPrice) * 1000) / 10;
         }
@@ -185,17 +252,14 @@ export const DomesticQuotes: React.FC = () => {
   const handleOpenModal = (item?: DomesticQuoteItem, isRevise: boolean = false) => {
     if (item) {
       if (isRevise) {
-        // Create new Revision
         setEditingItem(null);
         setParentQuoteId(item.id);
         const nextRev = (item.revision || 0) + 1;
         setRevision(nextRev);
-        // Base Quote No e.g. 2026-YSACC-KPI-01 -> 2026-YSACC-KPI-01-R1
         const cleanNo = (item.quoteNo || '').replace(/-R\d+$/, '');
         setQuoteNo(`${cleanNo}-R${nextRev}`);
         setQuoteDate(new Date().toISOString().split('T')[0]);
       } else {
-        // Edit existing item
         setEditingItem(item);
         setParentQuoteId(item.parentQuoteId);
         setRevision(item.revision || 0);
@@ -235,7 +299,6 @@ export const DomesticQuotes: React.FC = () => {
       setValidUntil(item.validUntil || '');
       setMemo(item.memo || '');
     } else {
-      // Create Brand New
       setEditingItem(null);
       setParentQuoteId(undefined);
       setRevision(0);
@@ -268,9 +331,18 @@ export const DomesticQuotes: React.FC = () => {
       setSpecialNotes('');
       setVatType('부가가치세(VAT): 별도');
       setPaymentTerms('결제조건 : 선금 30%, 잔금 70%');
-      setManagerTitle('이사');
-      setManagerName('이한중');
-      setManagerContact('010-6277-7418');
+      
+      // Auto fill manager info from logged in user if available
+      if (userProfile) {
+        setManagerName(userProfile.name || '이한중');
+        setManagerTitle(userProfile.position || userProfile.role || '이사');
+        setManagerContact(userProfile.phone || userProfile.mobile || userProfile.email || '010-6277-7418');
+      } else {
+        setManagerTitle('이사');
+        setManagerName('이한중');
+        setManagerContact('010-6277-7418');
+      }
+
       setStatus('REVIEW');
       setValidUntil('');
       setMemo('');
@@ -331,7 +403,7 @@ export const DomesticQuotes: React.FC = () => {
       }
 
       setIsModalOpen(false);
-      fetchQuotes();
+      fetchQuotesAndMasters();
     } catch (err) {
       console.error("Failed to save domestic quote:", err);
       alert("저장 중 오류가 발생했습니다.");
@@ -366,14 +438,13 @@ export const DomesticQuotes: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      // Update quote status to APPROVED
       await updateDoc(doc(db, 'companies', 'YSACC', 'domestic_quotes', item.id), {
         status: 'APPROVED',
         updatedAt: new Date().toISOString()
       });
 
       alert("국내 주문으로 성공적으로 확정 등록되었습니다!");
-      fetchQuotes();
+      fetchQuotesAndMasters();
     } catch (e) {
       console.error("Failed to convert quote to order:", e);
       alert("주문 전환 중 오류가 발생했습니다.");
@@ -385,7 +456,7 @@ export const DomesticQuotes: React.FC = () => {
     if (!window.confirm("이 국내 견적 내역을 삭제하시겠습니까?")) return;
     try {
       await deleteDoc(doc(db, 'companies', 'YSACC', 'domestic_quotes', id));
-      fetchQuotes();
+      fetchQuotesAndMasters();
     } catch (e) {
       console.error("Failed to delete quote:", e);
       alert("삭제 중 오류가 발생했습니다.");
@@ -430,6 +501,31 @@ export const DomesticQuotes: React.FC = () => {
   return (
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      {/* Global Datalists for DB Autocomplete */}
+      <datalist id="customer-db-list">
+        {dbCustomers.map(c => (
+          <option key={c.id} value={c.nameKo || c.name}>
+            {c.nameKo || c.name} {c.representative ? `(대표: ${c.representative})` : ''}
+          </option>
+        ))}
+      </datalist>
+
+      <datalist id="supplier-db-list">
+        {dbSuppliers.map(s => (
+          <option key={s.id} value={s.name}>
+            {s.name} {s.representative ? `(대표: ${s.representative})` : ''}
+          </option>
+        ))}
+      </datalist>
+
+      <datalist id="user-db-list">
+        {dbUsers.map(u => (
+          <option key={u.id} value={u.name}>
+            {u.name} {u.position || u.role ? `(${u.position || u.role})` : ''}
+          </option>
+        ))}
+      </datalist>
+
       {/* Print Specific CSS */}
       <style>{`
         @media print {
@@ -690,9 +786,12 @@ export const DomesticQuotes: React.FC = () => {
             {/* Modal Scrollable Form */}
             <form onSubmit={handleSubmit} style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Section 1: Basic Header Info */}
+              {/* Section 1: Basic Header Info & Customer/Supplier DB Connection */}
               <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 DB 연동)</span>
+                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>⚡ 고객사/공급사 선택 시 연락처/참조 자동입력</span>
+                </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -736,15 +835,29 @@ export const DomesticQuotes: React.FC = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                        수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        onChange={e => e.target.value && handleSelectCustomerFromDb(e.target.value)}
+                        style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                      >
+                        <option value="">🏢 DB에서 선택...</option>
+                        {dbCustomers.map(c => (
+                          <option key={c.id} value={c.nameKo || c.name}>
+                            {c.nameKo || c.name} {c.representative ? `(${c.representative})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <input
                       type="text"
                       required
-                      placeholder="예: 강남KPI, 현대모비스"
+                      list="customer-db-list"
+                      placeholder="고객사명 선택 또는 입력..."
                       value={customerName}
-                      onChange={e => setCustomerName(e.target.value)}
+                      onChange={e => handleSelectCustomerFromDb(e.target.value)}
                       style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
@@ -773,14 +886,28 @@ export const DomesticQuotes: React.FC = () => {
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      국내 매입처 (공급사)
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                        국내 매입처 (공급사)
+                      </label>
+                      <select
+                        onChange={e => e.target.value && handleSelectSupplierFromDb(e.target.value)}
+                        style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                      >
+                        <option value="">🏭 DB에서 선택...</option>
+                        {dbSuppliers.map(s => (
+                          <option key={s.id} value={s.name}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <input
                       type="text"
-                      placeholder="예: 삼오인서트, 한국소재"
+                      list="supplier-db-list"
+                      placeholder="공급사명 선택 또는 입력..."
                       value={supplierName}
-                      onChange={e => setSupplierName(e.target.value)}
+                      onChange={e => handleSelectSupplierFromDb(e.target.value)}
                       style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
@@ -788,7 +915,7 @@ export const DomesticQuotes: React.FC = () => {
 
               </div>
 
-              {/* Section 2: Line Items (다중 품목 & 원가/마진 산정) */}
+              {/* Section 2: Line Items */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
@@ -925,9 +1052,9 @@ export const DomesticQuotes: React.FC = () => {
                 </div>
               </div>
 
-              {/* Section 3: Terms & Footer details */}
+              {/* Section 3: Terms & Footer details & Sales Manager DB Link */}
               <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 담당자</span>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 판매 담당자 (직원 DB 연동)</span>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -967,14 +1094,34 @@ export const DomesticQuotes: React.FC = () => {
                       style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', gap: '6px' }}>
+
+                  {/* Manager fields connected to Users DB */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자 직책</label>
-                      <input type="text" value={managerTitle} onChange={e => setManagerTitle(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자 성명</label>
+                        <select
+                          onChange={e => e.target.value && handleSelectManagerFromDb(e.target.value)}
+                          style={{ fontSize: '10px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="">👤 DB선택...</option>
+                          {dbUsers.map(u => (
+                            <option key={u.id} value={u.name}>{u.name} ({u.position || u.role})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <input
+                        type="text"
+                        list="user-db-list"
+                        placeholder="이한중"
+                        value={managerName}
+                        onChange={e => handleSelectManagerFromDb(e.target.value)}
+                        style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 700 }}
+                      />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자 성명</label>
-                      <input type="text" value={managerName} onChange={e => setManagerName(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>직책</label>
+                      <input type="text" value={managerTitle} onChange={e => setManagerTitle(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연락처</label>
@@ -1088,7 +1235,6 @@ export const DomesticQuotes: React.FC = () => {
                     </div>
                     <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span><strong>대 표 :</strong> 김 주 한</span>
-                      {/* Stamp Seal Image Placeholder / Text */}
                       <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
                         (인)
                       </div>

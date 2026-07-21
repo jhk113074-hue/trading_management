@@ -2,10 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { DomesticTradeItem } from '../types/domestic';
+import type { Customer } from '../types/customer';
+import type { Supplier } from '../types/supplier';
 
 export const DomesticTrade: React.FC = () => {
   const [trades, setTrades] = useState<DomesticTradeItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // DB Masters for Customer & Supplier
+  const [dbCustomers, setDbCustomers] = useState<Customer[]>([]);
+  const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
 
   // Filters
   const [companyFilter, setCompanyFilter] = useState<'All' | 'YSACC' | 'YS'>('All');
@@ -31,27 +37,40 @@ export const DomesticTrade: React.FC = () => {
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load Domestic Trades from Firestore
-  const fetchTrades = async () => {
+  // Load Domestic Trades & DB Masters from Firestore
+  const fetchTradesAndMasters = async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'domestic_trades'));
+      const [tradesSnap, custSnap, suppSnap] = await Promise.all([
+        getDocs(collection(db, 'companies', 'YSACC', 'domestic_trades')),
+        getDocs(collection(db, 'companies', 'YSACC', 'customers')),
+        getDocs(collection(db, 'companies', 'YSACC', 'suppliers'))
+      ]);
+
       const list: DomesticTradeItem[] = [];
-      snap.forEach(d => {
+      tradesSnap.forEach(d => {
         list.push({ id: d.id, ...d.data() } as DomesticTradeItem);
       });
-      // Sort desc by tradeDate
       list.sort((a, b) => (b.tradeDate || '').localeCompare(a.tradeDate || '') || b.id.localeCompare(a.id));
       setTrades(list);
+
+      const custs: Customer[] = [];
+      custSnap.forEach(d => custs.push({ id: d.id, ...d.data() } as Customer));
+      setDbCustomers(custs);
+
+      const supps: Supplier[] = [];
+      suppSnap.forEach(d => supps.push({ id: d.id, ...d.data() } as Supplier));
+      setDbSuppliers(supps);
+
     } catch (e) {
-      console.error("Failed to load domestic trades:", e);
+      console.error("Failed to load domestic trades & DB masters:", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTrades();
+    fetchTradesAndMasters();
   }, []);
 
   // Filtered List
@@ -104,7 +123,6 @@ export const DomesticTrade: React.FC = () => {
     } else {
       setEditingItem(null);
       setTradeDate(new Date().toISOString().split('T')[0]);
-      // Auto-generate tradeNo
       const year = new Date().getFullYear();
       const count = trades.length + 1;
       setTradeNo(`DOM-ORD-${year}-${String(count).padStart(3, '0')}`);
@@ -163,7 +181,7 @@ export const DomesticTrade: React.FC = () => {
       }
 
       setIsModalOpen(false);
-      fetchTrades();
+      fetchTradesAndMasters();
     } catch (err) {
       console.error("Failed to save domestic trade:", err);
       alert("저장 중 오류가 발생했습니다.");
@@ -177,7 +195,7 @@ export const DomesticTrade: React.FC = () => {
     if (!window.confirm("이 국내 주문 내역을 삭제하시겠습니까?")) return;
     try {
       await deleteDoc(doc(db, 'companies', 'YSACC', 'domestic_trades', id));
-      fetchTrades();
+      fetchTradesAndMasters();
     } catch (e) {
       console.error("Failed to delete item:", e);
       alert("삭제 중 오류가 발생했습니다.");
@@ -191,6 +209,23 @@ export const DomesticTrade: React.FC = () => {
   return (
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      {/* Global Datalists for DB Autocomplete */}
+      <datalist id="trade-customer-db-list">
+        {dbCustomers.map(c => (
+          <option key={c.id} value={c.nameKo || c.name}>
+            {c.nameKo || c.name} {c.representative ? `(대표: ${c.representative})` : ''}
+          </option>
+        ))}
+      </datalist>
+
+      <datalist id="trade-supplier-db-list">
+        {dbSuppliers.map(s => (
+          <option key={s.id} value={s.name}>
+            {s.name} {s.representative ? `(대표: ${s.representative})` : ''}
+          </option>
+        ))}
+      </datalist>
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -443,12 +478,24 @@ export const DomesticTrade: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    국내 매입처 (공급사) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      국내 매입처 (공급사) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      onChange={e => e.target.value && setSupplierName(e.target.value)}
+                      style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option value="">🏭 DB에서 선택...</option>
+                      {dbSuppliers.map(s => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     required
+                    list="trade-supplier-db-list"
                     placeholder="예: 삼오인서트, (주)한국소재"
                     value={supplierName}
                     onChange={e => setSupplierName(e.target.value)}
@@ -456,12 +503,24 @@ export const DomesticTrade: React.FC = () => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      onChange={e => e.target.value && setCustomerName(e.target.value)}
+                      style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option value="">🏢 DB에서 선택...</option>
+                      {dbCustomers.map(c => (
+                        <option key={c.id} value={c.nameKo || c.name}>{c.nameKo || c.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     required
+                    list="trade-customer-db-list"
                     placeholder="예: 현대모비스, 하영비나"
                     value={customerName}
                     onChange={e => setCustomerName(e.target.value)}

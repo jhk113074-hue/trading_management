@@ -11,6 +11,8 @@ export interface User {
   roleCode?: 'ADMIN' | 'MANAGER' | 'USER';
   avatar?: string;
   email?: string;
+  phone?: string;
+  mobile?: string;
   department?: string;
   position?: string;
   createdAt?: string;
