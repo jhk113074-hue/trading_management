@@ -21,6 +21,7 @@ export const DomesticTrade: React.FC = () => {
   const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
   const [dbUsers, setDbUsers] = useState<User[]>([]);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [myCompanies, setMyCompanies] = useState<Record<string, any>>({});
 
   // Sub-modal Popups (돋보기 🔍 DB 검색)
   const [showCustomerSearchModal, setShowCustomerSearchModal] = useState(false);
@@ -148,13 +149,20 @@ export const DomesticTrade: React.FC = () => {
   const fetchTradesAndMasters = async () => {
     setLoading(true);
     try {
-      const [tradesSnap, custSnap, suppSnap, userSnap, prodSnap] = await Promise.all([
+      const [tradesSnap, custSnap, suppSnap, userSnap, prodSnap, myCompSnap] = await Promise.all([
         getDocs(collection(db, 'companies', 'YSACC', 'domestic_trades')),
         getDocs(collection(db, 'companies', 'YSACC', 'customers')),
         getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
         getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'companies', 'YSACC', 'products'))
+        getDocs(collection(db, 'companies', 'YSACC', 'products')),
+        getDocs(collection(db, 'companies', 'YSACC', 'my_companies'))
       ]);
+
+      const compMap: Record<string, any> = {};
+      myCompSnap.forEach(d => {
+        compMap[d.id] = { id: d.id, ...d.data() };
+      });
+      setMyCompanies(compMap);
 
       const list: DomesticTradeItem[] = [];
       tradesSnap.forEach(d => {
@@ -1918,15 +1926,11 @@ export const DomesticTrade: React.FC = () => {
             <div style={{ padding: '30px', overflowY: 'auto', background: '#fff' }}>
               <div id="order-print-area" style={{ border: '2px solid #1e293b', padding: '24px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
                 
-                {/* Title */}
                 <h1 style={{ textAlign: 'center', fontSize: '28px', fontWeight: 900, letterSpacing: '12px', margin: '0 0 20px 0', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
                   주 문 서
                 </h1>
 
-                {/* Top Grid Info */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  
-                  {/* Left: Customer Info */}
                   <div style={{ border: '1px solid #000', padding: '12px', fontSize: '13px', lineHeight: '1.8' }}>
                     <div><strong>주문번호 :</strong> {previewItem.tradeNo}</div>
                     {previewItem.quoteNo && <div><strong>견적번호 :</strong> {previewItem.quoteNo}</div>}
@@ -1937,35 +1941,36 @@ export const DomesticTrade: React.FC = () => {
                     {previewItem.receiverFax && <div><strong>F A X :</strong> {previewItem.receiverFax}</div>}
                     <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 주문합니다.</div>
                   </div>
-
-                  {/* Right: YSACC / YS Company Stamp Info */}
-                  <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
-                    <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
-                    <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 900 }}>
-                      {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
-                    </div>
-                    <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><strong>대 표 :</strong> 김 주 한</span>
-                      <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
-                        (인)
+                  {(() => {
+                    const activeComp = myCompanies[previewItem.companyType] || myCompanies[previewItem.companyType === 'YS' ? 'YS' : 'YSACC'] || {};
+                    const compBizNo = activeComp.bizNo || '879-81-01648';
+                    const compName = activeComp.nameKo || (previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨');
+                    const compRep = activeComp.representative || '김 주 한';
+                    const compAddress = activeComp.addressKo || '충북 청주시 서원구 성봉로 180, 302호';
+                    const compPhone = activeComp.phone || '070-4141-2927';
+                    const compFax = activeComp.fax || '0303-3444-1130';
+                    return (
+                      <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
+                        <div style={{ marginTop: '6px', fontSize: '16px', fontWeight: 900 }}>{compName}</div>
+                        {compBizNo && <div style={{ fontSize: '11px', color: '#334155' }}><strong>등록번호 :</strong> {compBizNo}</div>}
+                        <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span><strong>대 표 :</strong> {compRep}</span>
+                          <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>(인)</div>
+                        </div>
+                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#334155' }}>◆ 주소 : {compAddress}<br/>TEL: {compPhone}, FAX: {compFax}</div>
                       </div>
-                    </div>
-                    <div style={{ marginTop: '6px', fontSize: '11px', color: '#334155' }}>
-                      ◆ 주소 : 충북 청주시 서원구 성봉로 180, 302호<br/>
-                      TEL: 070) 4141-2927, FAX: 0303) 3444-1130
-                    </div>
-                  </div>
-
+                    );
+                  })()}
                 </div>
 
-                {/* Table of Items */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', marginBottom: '20px', border: '1px solid #000' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #000' }}>
                       <th style={{ border: '1px solid #000', padding: '8px', width: '35px', textAlign: 'center' }}>No</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>품 명</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>규 격</th>
-                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', width: '90px' }}>수량({previewItem.items && previewItem.items[0]?.unit ? previewItem.items[0].unit : 'KG'})</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', width: '90px' }}>수량</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '100px' }}>단 가</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '120px' }}>금 액</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left', width: '110px' }}>비 고</th>
@@ -2016,49 +2021,29 @@ export const DomesticTrade: React.FC = () => {
                   </tfoot>
                 </table>
 
-                {/* Footer Notes & Manager Table */}
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'end' }}>
-                  
-                  {/* Left: Notes */}
                   <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
                     <div style={{ fontWeight: 800 }}>※ 특기사항</div>
                     <div style={{ marginBottom: '8px', color: '#334155' }}>{previewItem.specialNotes || '-'}</div>
-
                     <div style={{ fontWeight: 800 }}>※ 一 般 事 項</div>
                     <div>1. {previewItem.vatType || '부가가치세(VAT): 별도'}</div>
                     <div>2. {previewItem.paymentTerms || '결제조건 : 선금 30%, 잔금 70%'}</div>
                   </div>
-
-                  {/* Right: Sales Manager Stamp Table */}
                   <div style={{ border: '1px solid #000', fontSize: '12px' }}>
-                    <div style={{ background: '#f1f5f9', borderBottom: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 800 }}>
-                      담당자
-                    </div>
+                    <div style={{ background: '#f1f5f9', borderBottom: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 800 }}>담당자</div>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <tbody>
-                        <tr>
-                          <td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', width: '60px', textAlign: 'center', fontWeight: 700 }}>직 책</td>
-                          <td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerTitle || '이사'}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>담 당 자</td>
-                          <td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right', fontWeight: 800 }}>{previewItem.managerName || '이한중'}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>연 락 처</td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerContact || '010-6277-7418'}</td>
-                        </tr>
+                        <tr><td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', width: '60px', textAlign: 'center', fontWeight: 700 }}>직 책</td><td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerTitle || '이사'}</td></tr>
+                        <tr><td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>담 당 자</td><td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right', fontWeight: 800 }}>{previewItem.managerName || '이한중'}</td></tr>
+                        <tr><td style={{ borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>연 락 처</td><td style={{ padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerContact || '010-6277-7418'}</td></tr>
                       </tbody>
                     </table>
                   </div>
-
                 </div>
 
-                {/* Footer Brand Logo */}
                 <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '12px', fontSize: '14px', fontWeight: 900, color: '#1e293b' }}>
                   {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
                 </div>
-
               </div>
             </div>
 
@@ -2069,7 +2054,7 @@ export const DomesticTrade: React.FC = () => {
       {/* 📑 Transaction Statement (거래명세표) Print Preview Modal */}
       {statementItem && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '880px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '920px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
             
             {/* Modal Header Bar */}
             <div className="no-print" style={{ background: '#065f46', color: '#fff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2094,151 +2079,192 @@ export const DomesticTrade: React.FC = () => {
             </div>
 
             {/* Print Area */}
-            <div style={{ padding: '30px', overflowY: 'auto', background: '#fff' }}>
-              <div id="statement-print-area" style={{ border: '2px solid #065f46', padding: '24px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
+            <div style={{ padding: '24px', overflowY: 'auto', background: '#fff' }}>
+              <div id="statement-print-area" style={{ border: '2px solid #000', padding: '20px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
                 
                 {/* Header Title */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid #065f46', paddingBottom: '8px', marginBottom: '16px' }}>
-                  <h1 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '8px', margin: 0, color: '#065f46' }}>
-                    거 래 명 세 표
-                  </h1>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                    (공급받는자 보관용 / 공급자 보관용)
-                  </div>
-                </div>
+                <h1 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 900, letterSpacing: '12px', margin: '0 0 16px 0', color: '#000' }}>
+                  거 래 명 세 표
+                </h1>
 
-                {/* Top Info Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                  
-                  {/* Customer Box (공급받는자) */}
-                  <div style={{ border: '1px solid #000', padding: '10px', fontSize: '12.5px', lineHeight: '1.7' }}>
-                    <div style={{ background: '#f0fdf4', padding: '2px 6px', fontWeight: 900, marginBottom: '6px', borderBottom: '1px solid #000', color: '#065f46' }}>
-                      [ 공급받는자 ]
-                    </div>
-                    <div><strong>거래일자 :</strong> {statementItem.tradeDate}</div>
-                    <div><strong>주문번호 :</strong> {statementItem.tradeNo}</div>
-                    <div><strong>상 호 명 :</strong> <span style={{ fontSize: '14px', fontWeight: 800 }}>{statementItem.customerName}</span></div>
-                    {statementItem.receiverAttention && <div><strong>담당/참조 :</strong> {statementItem.receiverAttention}</div>}
-                    {statementItem.receiverTel && <div><strong>전화번호 :</strong> {statementItem.receiverTel}</div>}
-                    <div style={{ marginTop: '6px', fontWeight: 700 }}>아래와 같이 정히 거래(납품)하였음을 명세합니다.</div>
-                  </div>
+                {(() => {
+                  const supplierComp = myCompanies[statementItem.companyType] || myCompanies[statementItem.companyType === 'YS' ? 'YS' : 'YSACC'] || {};
+                  const suppBizNo = supplierComp.bizNo || '879-81-01648';
+                  const suppName = supplierComp.nameKo || (statementItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨');
+                  const suppRep = supplierComp.representative || '김주한';
+                  const suppAddress = supplierComp.addressKo || '충북 청주시 서원구 성봉로 180, 302호';
+                  const suppBizType = supplierComp.bizType || '도소매업 외';
+                  const suppItemName = supplierComp.itemName || '물탱크 및 기자재';
 
-                  {/* Supplier Box (공급자 - 자사) */}
-                  <div style={{ border: '1px solid #000', padding: '10px', fontSize: '12px', lineHeight: '1.6', position: 'relative' }}>
-                    <div style={{ background: '#f0fdf4', padding: '2px 6px', fontWeight: 900, marginBottom: '6px', borderBottom: '1px solid #000', color: '#065f46' }}>
-                      [ 공 급 자 ]
-                    </div>
-                    <div><strong>등록번호 :</strong> 879-81-01648</div>
-                    <div><strong>상 호 명 :</strong> <span style={{ fontSize: '14px', fontWeight: 900 }}>{statementItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}</span></div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><strong>대 표 자 :</strong> 김 주 한</span>
-                      <div style={{ width: '42px', height: '42px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
-                        (인)
-                      </div>
-                    </div>
-                    <div><strong>사업장 주소 :</strong> 충북 청주시 서원구 성봉로 180, 302호</div>
-                    <div><strong>TEL / FAX :</strong> 070-4141-2927 / 0303-3444-1130</div>
-                  </div>
+                  const custComp = dbCustomers.find(c => (c.nameKo && c.nameKo === statementItem.customerName) || (c.name && c.name === statementItem.customerName)) || {} as Partial<Customer>;
+                  const custBizNo = custComp.bizRegNumber || custComp.taxId || custComp.businessLicense || '-';
+                  const custName = statementItem.customerName;
+                  const custRep = custComp.representative || custComp.contactPerson || statementItem.receiverAttention || '-';
+                  const custAddress = custComp.addressKo || custComp.addressEn || '-';
+                  const custBizType = custComp.bizType || custComp.industryType || '-';
+                  const custItemName = custComp.itemName || '-';
 
-                </div>
+                  const tradeMonth = statementItem.tradeDate ? statementItem.tradeDate.slice(5, 7) : '';
+                  const tradeDay = statementItem.tradeDate ? statementItem.tradeDate.slice(8, 10) : '';
 
-                {/* Line Items Table */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '16px', border: '1px solid #000' }}>
-                  <thead>
-                    <tr style={{ background: '#f0fdf4', borderBottom: '1px solid #000' }}>
-                      <th style={{ border: '1px solid #000', padding: '6px', width: '30px', textAlign: 'center' }}>No</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>품 명</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>규 격</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', width: '55px' }}>단위</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', width: '65px' }}>수량</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '90px' }}>단 가</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '105px' }}>공급가액</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '90px' }}>세 액(VAT)</th>
-                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', width: '80px' }}>비 고</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {statementItem.items && statementItem.items.length > 0 ? (
-                      statementItem.items.map((it, idx) => {
-                        const vat = Math.round(it.salesAmount * 0.1);
-                        return (
-                          <tr key={it.id || idx}>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{idx + 1}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 800 }}>{it.productName}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px' }}>{it.spec || '-'}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{it.unit || 'KG'}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>₩ {it.salesUnitPrice.toLocaleString()}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 800 }}>₩ {it.salesAmount.toLocaleString()}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', color: '#059669' }}>₩ {vat.toLocaleString()}</td>
-                            <td style={{ border: '1px solid #000', padding: '6px' }}>{it.note || '-'}</td>
+                  const totalSupply = statementItem.salesAmount || 0;
+                  const totalVat = Math.round(totalSupply * 0.1);
+                  const grandTotal = totalSupply + totalVat;
+                  const uncollected = Math.max(0, totalSupply - (statementItem.collectedAmount ?? (statementItem.status === 'COMPLETED' ? totalSupply : 0)));
+
+                  return (
+                    <>
+                      {/* Standard Korean Dual Header Grid: 공급자 & 공급받는자 */}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '12px', border: '1.5px solid #000', tableLayout: 'fixed' }}>
+                        <tbody>
+                          <tr>
+                            <td rowSpan={4} style={{ border: '1px solid #000', width: '22px', textAlign: 'center', fontWeight: 900, background: '#f8fafc', padding: '4px', verticalAlign: 'middle', lineHeight: '1.3' }}>
+                              공<br/>급<br/>자
+                            </td>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', width: '75px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>등록번호</td>
+                            <td colSpan={3} style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800, fontSize: '12.5px' }}>{suppBizNo}</td>
+
+                            <td rowSpan={4} style={{ border: '1px solid #000', width: '22px', textAlign: 'center', fontWeight: 900, background: '#f8fafc', padding: '4px', verticalAlign: 'middle', lineHeight: '1.3' }}>
+                              공<br/>급<br/>받<br/>는<br/>자
+                            </td>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', width: '75px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>등록번호</td>
+                            <td colSpan={3} style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800, fontSize: '12.5px' }}>{custBizNo}</td>
                           </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>1</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 800 }}>{statementItem.productName}</td>
-                        <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>EA</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{statementItem.quantity || 1}</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>₩ {Math.round(statementItem.salesAmount / (statementItem.quantity || 1)).toLocaleString()}</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 800 }}>₩ {statementItem.salesAmount.toLocaleString()}</td>
-                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', color: '#059669' }}>₩ {Math.round(statementItem.salesAmount * 0.1).toLocaleString()}</td>
-                        <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
-                      </tr>
-                    )}
-                    {Array.from({ length: Math.max(0, 4 - (statementItem.items?.length || 1)) }).map((_, i) => (
-                      <tr key={`empty-${i}`}>
-                        <td style={{ border: '1px solid #000', padding: '10px' }}>&nbsp;</td>
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                        <td style={{ border: '1px solid #000', padding: '10px' }} />
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    {(() => {
-                      const totalSupply = statementItem.salesAmount || 0;
-                      const totalVat = Math.round(totalSupply * 0.1);
-                      const grandTotal = totalSupply + totalVat;
-                      return (
-                        <tr style={{ background: '#f0fdf4', fontWeight: 800 }}>
-                          <td colSpan={6} style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontSize: '13px' }}>
-                            합 계 ( 공급가액: ₩{totalSupply.toLocaleString()} + 세액: ₩{totalVat.toLocaleString()} )
-                          </td>
-                          <td colSpan={3} style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontSize: '14px', color: '#166534' }}>
-                            총 합계금액: ₩ {grandTotal.toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tfoot>
-                </table>
 
-                {/* Footer Receipt & Signature Box */}
-                <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa' }}>
-                  <div>
-                    <strong>※ 특기사항:</strong> {statementItem.specialNotes || '납품 및 정산 관련 명세 확인'}
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#1e293b' }}>
-                    위 물품을 인수(정산)함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인 / 서명)
-                  </div>
-                </div>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>상 호<br/>(법인명)</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800, fontSize: '12px' }}>{suppName}</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 4px', width: '35px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>성 명</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', position: 'relative', width: '90px' }}>
+                              <span style={{ fontWeight: 800 }}>{suppRep}</span>
+                              <div style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', width: '24px', height: '24px', border: '1.5px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 900 }}>(인)</div>
+                            </td>
 
-                {/* Bottom Brand */}
-                <div style={{ marginTop: '16px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '13px', fontWeight: 900, color: '#065f46' }}>
-                  {statementItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
-                </div>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>상 호<br/>(법인명)</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800, fontSize: '12px' }}>{custName}</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 4px', width: '35px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>성 명</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800, width: '90px' }}>{custRep}</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>사업장<br/>주 소</td>
+                            <td colSpan={3} style={{ border: '1px solid #000', padding: '5px 8px', fontSize: '11px', color: '#1e293b' }}>{suppAddress}</td>
+
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>사업장<br/>주 소</td>
+                            <td colSpan={3} style={{ border: '1px solid #000', padding: '5px 8px', fontSize: '11px', color: '#1e293b' }}>{custAddress}</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>업 태</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px' }}>{suppBizType}</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 4px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>종 목</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px' }}>{suppItemName}</td>
+
+                            <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>업 태</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px' }}>{custBizType}</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 4px', textAlign: 'center', background: '#f8fafc', fontWeight: 700 }}>종 목</td>
+                            <td style={{ border: '1px solid #000', padding: '5px 8px' }}>{custItemName}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Main Items Detail Table */}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '12px', border: '1.5px solid #000' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #000' }}>
+                            <th style={{ border: '1px solid #000', padding: '6px 2px', width: '28px', textAlign: 'center' }}>월</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 2px', width: '28px', textAlign: 'center' }}>일</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'left' }}>품 목</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'left', width: '85px' }}>규 격</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 4px', textAlign: 'center', width: '55px' }}>수 량</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', width: '85px' }}>단 가</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', width: '105px' }}>공 급 가 액</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', width: '85px' }}>세 액</th>
+                            <th style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'left', width: '80px' }}>비 고</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {statementItem.items && statementItem.items.length > 0 ? (
+                            statementItem.items.map((it, idx) => {
+                              const vat = Math.round(it.salesAmount * 0.1);
+                              return (
+                                <tr key={it.id || idx}>
+                                  <td style={{ border: '1px solid #000', padding: '5px 2px', textAlign: 'center' }}>{tradeMonth}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 2px', textAlign: 'center' }}>{tradeDay}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800 }}>{it.productName}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 6px' }}>{it.spec || '-'}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 4px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right' }}>{it.salesUnitPrice.toLocaleString()}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right', fontWeight: 800 }}>{it.salesAmount.toLocaleString()}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right', color: '#059669' }}>{vat.toLocaleString()}</td>
+                                  <td style={{ border: '1px solid #000', padding: '5px 6px' }}>{it.note || '-'}</td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td style={{ border: '1px solid #000', padding: '5px 2px', textAlign: 'center' }}>{tradeMonth}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 2px', textAlign: 'center' }}>{tradeDay}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 8px', fontWeight: 800 }}>{statementItem.productName}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 6px' }}>-</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 4px', textAlign: 'center' }}>{statementItem.quantity || 1}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right' }}>{Math.round(statementItem.salesAmount / (statementItem.quantity || 1)).toLocaleString()}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right', fontWeight: 800 }}>{statementItem.salesAmount.toLocaleString()}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 6px', textAlign: 'right', color: '#059669' }}>{Math.round(statementItem.salesAmount * 0.1).toLocaleString()}</td>
+                              <td style={{ border: '1px solid #000', padding: '5px 6px' }}>-</td>
+                            </tr>
+                          )}
+                          {Array.from({ length: Math.max(0, 8 - (statementItem.items?.length || 1)) }).map((_, i) => (
+                            <tr key={`empty-${i}`}>
+                              <td style={{ border: '1px solid #000', padding: '9px' }}>&nbsp;</td>
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                              <td style={{ border: '1px solid #000', padding: '9px' }} />
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                            <td colSpan={6} style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontSize: '11px', color: '#475569' }}>소 계</td>
+                            <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontSize: '12px', fontWeight: 800 }}>{totalSupply.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px 6px', textAlign: 'right', fontSize: '12px', color: '#059669' }}>{totalVat.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px 6px' }} />
+                          </tr>
+                        </tfoot>
+                      </table>
+
+                      {/* Bottom Total & Receipt Bar */}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', border: '1.5px solid #000', background: '#f8fafc' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', width: '75px', textAlign: 'center', fontWeight: 800 }}>공급가액</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#1e293b', width: '130px' }}>₩ {totalSupply.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', width: '55px', textAlign: 'center', fontWeight: 800 }}>세액</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#059669', width: '110px' }}>₩ {totalVat.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', width: '65px', textAlign: 'center', fontWeight: 800 }}>합계금액</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#2563eb', fontSize: '13px' }}>₩ {grandTotal.toLocaleString()}</td>
+                            {uncollected > 0 && (
+                              <>
+                                <td style={{ border: '1px solid #000', padding: '8px 10px', width: '55px', textAlign: 'center', fontWeight: 800, color: '#dc2626' }}>미수금</td>
+                                <td style={{ border: '1px solid #000', padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#dc2626' }}>₩ {uncollected.toLocaleString()}</td>
+                              </>
+                            )}
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', width: '60px', textAlign: 'center', fontWeight: 800 }}>인수자</td>
+                            <td style={{ border: '1px solid #000', padding: '8px 10px', textAlign: 'center', fontWeight: 700, minWidth: '100px' }}>(인 / 서명)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </>
+                  );
+                })()}
 
               </div>
             </div>
-
           </div>
         </div>
       )}

@@ -23,6 +23,7 @@ export const DomesticQuotes: React.FC = () => {
   const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
   const [dbUsers, setDbUsers] = useState<User[]>([]);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [myCompanies, setMyCompanies] = useState<Record<string, any>>({});
 
   // Sub-modal Popups (돋보기 🔍 DB 검색)
   const [showCustomerSearchModal, setShowCustomerSearchModal] = useState(false);
@@ -122,13 +123,20 @@ export const DomesticQuotes: React.FC = () => {
   const fetchQuotesAndMasters = async () => {
     setLoading(true);
     try {
-      const [quoteSnap, custSnap, suppSnap, userSnap, prodSnap] = await Promise.all([
+      const [quoteSnap, custSnap, suppSnap, userSnap, prodSnap, myCompSnap] = await Promise.all([
         getDocs(collection(db, 'companies', 'YSACC', 'domestic_quotes')),
         getDocs(collection(db, 'companies', 'YSACC', 'customers')),
         getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
         getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'companies', 'YSACC', 'products'))
+        getDocs(collection(db, 'companies', 'YSACC', 'products')),
+        getDocs(collection(db, 'companies', 'YSACC', 'my_companies'))
       ]);
+
+      const compMap: Record<string, any> = {};
+      myCompSnap.forEach(d => {
+        compMap[d.id] = { id: d.id, ...d.data() };
+      });
+      setMyCompanies(compMap);
 
       // Quotes
       const list: DomesticQuoteItem[] = [];
@@ -1616,22 +1624,35 @@ export const DomesticQuotes: React.FC = () => {
                   </div>
 
                   {/* Right: YSACC / YS Company Stamp Info */}
-                  <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
-                    <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
-                    <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 900 }}>
-                      {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
-                    </div>
-                    <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span><strong>대 표 :</strong> 김 주 한</span>
-                      <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
-                        (인)
+                  {(() => {
+                    const activeComp = myCompanies[previewItem.companyType] || myCompanies[previewItem.companyType === 'YS' ? 'YS' : 'YSACC'] || {};
+                    const compBizNo = activeComp.bizNo || '879-81-01648';
+                    const compName = activeComp.nameKo || (previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨');
+                    const compRep = activeComp.representative || '김 주 한';
+                    const compAddress = activeComp.addressKo || '충북 청주시 서원구 성봉로 180, 302호';
+                    const compPhone = activeComp.phone || '070-4141-2927';
+                    const compFax = activeComp.fax || '0303-3444-1130';
+
+                    return (
+                      <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
+                        <div style={{ marginTop: '6px', fontSize: '16px', fontWeight: 900 }}>
+                          {compName}
+                        </div>
+                        {compBizNo && <div style={{ fontSize: '11px', color: '#334155' }}><strong>등록번호 :</strong> {compBizNo}</div>}
+                        <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span><strong>대 표 :</strong> {compRep}</span>
+                          <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
+                            (인)
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#334155' }}>
+                          ◆ 주소 : {compAddress}<br/>
+                          TEL: {compPhone}, FAX: {compFax}
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ marginTop: '6px', fontSize: '11px', color: '#334155' }}>
-                      ◆ 주소 : 충북 청주시 서원구 성봉로 180, 302호<br/>
-                      TEL: 070) 4141-2927, FAX: 0303) 3444-1130
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                 </div>
 
