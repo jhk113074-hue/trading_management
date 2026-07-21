@@ -79,7 +79,7 @@ export const Login: React.FC = () => {
           flex-direction: column;
           align-items: center;
           background: #F8F8F9;
-          font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
           word-break: keep-all;
         }
         .yl-band {
@@ -125,7 +125,7 @@ export const Login: React.FC = () => {
           margin: 0;
         }
         .yl-headline {
-          font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
+          font-family: 'Pretendard', sans-serif;
           font-weight: 800;
           font-size: 40px;
           line-height: 1.2;
@@ -148,7 +148,7 @@ export const Login: React.FC = () => {
           box-sizing: border-box;
         }
         .yl-card-title {
-          font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
+          font-family: 'Pretendard', sans-serif;
           font-weight: 700;
           font-size: 24px;
           letter-spacing: -0.02em;
