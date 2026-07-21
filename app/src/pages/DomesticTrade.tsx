@@ -1,27 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { DomesticTradeItem } from '../types/domestic';
+import { useAuth } from '../contexts/AuthContext';
+import type { DomesticTradeItem, DomesticQuoteLineItem } from '../types/domestic';
 import type { Customer } from '../types/customer';
 import type { Supplier } from '../types/supplier';
+import type { User } from '../types/index';
 import type { Product } from '../types/product';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
 
 export const DomesticTrade: React.FC = () => {
+  const { userProfile } = useAuth();
   const [trades, setTrades] = useState<DomesticTradeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // DB Masters for Customer, Supplier & Products
+  // DB Masters for Customer, Supplier, Product & Users
   const [dbCustomers, setDbCustomers] = useState<Customer[]>([]);
   const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
+  const [dbUsers, setDbUsers] = useState<User[]>([]);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
 
-  // Sub-modal Search Popups (돋보기 🔍 DB 검색)
+  // Sub-modal Popups (돋보기 🔍 DB 검색)
   const [showCustomerSearchModal, setShowCustomerSearchModal] = useState(false);
   const [showSupplierSearchModal, setShowSupplierSearchModal] = useState(false);
   const [showProductSearchModal, setShowProductSearchModal] = useState(false);
+  const [activeItemIndexForProduct, setActiveItemIndexForProduct] = useState<number | null>(null);
 
   // Filters
   const [companyFilter, setCompanyFilter] = useState<'All' | 'YSACC' | 'YS'>('All');
@@ -32,16 +37,46 @@ export const DomesticTrade: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DomesticTradeItem | null>(null);
 
-  // Form State
+  // Preview Modal State
+  const [previewItem, setPreviewItem] = useState<DomesticTradeItem | null>(null);
+
+  // Form Fields
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().split('T')[0]);
   const [tradeNo, setTradeNo] = useState('');
+  const [quoteNo, setQuoteNo] = useState('');
   const [companyType, setCompanyType] = useState<'YSACC' | 'YS'>('YSACC');
   const [supplierName, setSupplierName] = useState('');
   const [customerName, setCustomerName] = useState('');
-  const [productName, setProductName] = useState('');
-  const [quantity, setQuantity] = useState<number>(1);
-  const [buyingAmount, setBuyingAmount] = useState<number>(0);
-  const [salesAmount, setSalesAmount] = useState<number>(0);
+  const [receiverAttention, setReceiverAttention] = useState('');
+  const [receiverTel, setReceiverTel] = useState('');
+  const [receiverFax, setReceiverFax] = useState('');
+
+  // Line Items
+  const [items, setItems] = useState<DomesticQuoteLineItem[]>([
+    {
+      id: 'item-1',
+      productName: '',
+      spec: '',
+      unit: 'KG',
+      quantity: 1,
+      buyingUnitPrice: 0,
+      targetMarginRate: 15,
+      salesUnitPrice: 0,
+      buyingAmount: 0,
+      salesAmount: 0,
+      margin: 0,
+      note: ''
+    }
+  ]);
+
+  // Terms & Footer
+  const [specialNotes, setSpecialNotes] = useState('');
+  const [vatType, setVatType] = useState('부가가치세(VAT): 별도');
+  const [paymentTerms, setPaymentTerms] = useState('결제조건 : 선금 30%, 잔금 70%');
+  const [managerTitle, setManagerTitle] = useState('이사');
+  const [managerName, setManagerName] = useState('이한중');
+  const [managerContact, setManagerContact] = useState('010-6277-7418');
+
   const [taxInvoiceIssued, setTaxInvoiceIssued] = useState(true);
   const [status, setStatus] = useState<'PENDING' | 'COMPLETED' | 'CANCELLED'>('COMPLETED');
   const [memo, setMemo] = useState('');
@@ -51,16 +86,38 @@ export const DomesticTrade: React.FC = () => {
   const fetchTradesAndMasters = async () => {
     setLoading(true);
     try {
-      const [tradesSnap, custSnap, suppSnap, prodSnap] = await Promise.all([
+      const [tradesSnap, custSnap, suppSnap, userSnap, prodSnap] = await Promise.all([
         getDocs(collection(db, 'companies', 'YSACC', 'domestic_trades')),
         getDocs(collection(db, 'companies', 'YSACC', 'customers')),
         getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
+        getDocs(collection(db, 'users')),
         getDocs(collection(db, 'companies', 'YSACC', 'products'))
       ]);
 
       const list: DomesticTradeItem[] = [];
       tradesSnap.forEach(d => {
-        list.push({ id: d.id, ...d.data() } as DomesticTradeItem);
+        const data = d.data();
+        let lineItems: DomesticQuoteLineItem[] = data.items || [];
+        if (!lineItems.length && data.productName) {
+          const qty = data.quantity || 1;
+          const salesPrice = data.salesAmount ? Math.round(data.salesAmount / qty) : 0;
+          const buyingPrice = data.buyingAmount ? Math.round(data.buyingAmount / qty) : 0;
+          lineItems = [{
+            id: 'legacy-1',
+            productName: data.productName,
+            spec: '',
+            unit: 'EA',
+            quantity: qty,
+            buyingUnitPrice: buyingPrice,
+            targetMarginRate: data.marginRate || 0,
+            salesUnitPrice: salesPrice,
+            buyingAmount: data.buyingAmount || 0,
+            salesAmount: data.salesAmount || 0,
+            margin: data.margin || 0,
+            note: ''
+          }];
+        }
+        list.push({ id: d.id, ...data, items: lineItems } as DomesticTradeItem);
       });
       list.sort((a, b) => (b.tradeDate || '').localeCompare(a.tradeDate || '') || b.id.localeCompare(a.id));
       setTrades(list);
@@ -72,6 +129,10 @@ export const DomesticTrade: React.FC = () => {
       const supps: Supplier[] = [];
       suppSnap.forEach(d => supps.push({ id: d.id, ...d.data() } as Supplier));
       setDbSuppliers(supps);
+
+      const users: User[] = [];
+      userSnap.forEach(d => users.push({ id: d.id, ...d.data() } as User));
+      setDbUsers(users);
 
       const prods: Product[] = [];
       prodSnap.forEach(d => prods.push({ id: d.id, ...d.data() } as Product));
@@ -90,7 +151,11 @@ export const DomesticTrade: React.FC = () => {
 
   // Selection Handlers from Sub-Modals
   const handleSelectCustomer = (cust: Customer) => {
-    setCustomerName(cust.nameKo || cust.name || '');
+    const displayName = cust.nameKo || cust.name || '';
+    setCustomerName(displayName);
+    setReceiverAttention(cust.contactPerson || cust.representative || '');
+    setReceiverTel(cust.contactPhone || cust.phone || '');
+    setReceiverFax(cust.fax || '');
     setShowCustomerSearchModal(false);
   };
 
@@ -100,15 +165,137 @@ export const DomesticTrade: React.FC = () => {
   };
 
   const handleSelectProduct = (prod: Product) => {
-    setProductName(prod.nameKo || prod.nameEn || prod.productCode);
-    if ((prod as any).costPrice && buyingAmount === 0) {
-      setBuyingAmount(Number((prod as any).costPrice) * (quantity || 1));
-    }
-    if ((prod as any).sellingPrice && salesAmount === 0) {
-      setSalesAmount(Number((prod as any).sellingPrice) * (quantity || 1));
-    }
+    if (activeItemIndexForProduct === null) return;
+    const nameStr = prod.nameKo || prod.nameEn || prod.productCode;
+    const specStr = prod.spec || prod.description || '';
+    const unitStr = prod.unit || 'KG';
+
+    setItems(prev => {
+      const updated = [...prev];
+      const idx = activeItemIndexForProduct;
+      const item = { ...updated[idx] };
+      item.productName = nameStr;
+      item.spec = specStr;
+      item.unit = unitStr;
+
+      if ((prod as any).costPrice) {
+        item.buyingUnitPrice = Number((prod as any).costPrice);
+      }
+      if ((prod as any).sellingPrice) {
+        item.salesUnitPrice = Number((prod as any).sellingPrice);
+      }
+
+      const qty = Number(item.quantity) || 1;
+      const buyingPrice = Number(item.buyingUnitPrice) || 0;
+      let salesPrice = Number(item.salesUnitPrice) || 0;
+      let marginRate = Number(item.targetMarginRate) || 15;
+
+      if (buyingPrice > 0 && salesPrice === 0) {
+        salesPrice = Math.round(buyingPrice * (1 + marginRate / 100));
+      } else if (salesPrice > 0 && buyingPrice > 0) {
+        marginRate = Math.round(((salesPrice - buyingPrice) / salesPrice) * 1000) / 10;
+      }
+
+      item.salesUnitPrice = salesPrice;
+      item.targetMarginRate = marginRate;
+      item.buyingAmount = qty * buyingPrice;
+      item.salesAmount = qty * salesPrice;
+      item.margin = item.salesAmount - item.buyingAmount;
+
+      updated[idx] = item;
+      return updated;
+    });
+
     setShowProductSearchModal(false);
+    setActiveItemIndexForProduct(null);
   };
+
+  const handleSelectManagerFromDb = (nameVal: string) => {
+    setManagerName(nameVal);
+    const found = dbUsers.find(u => u.name === nameVal || u.id === nameVal);
+    if (found) {
+      setManagerName(found.name);
+      if (found.position || found.role) {
+        setManagerTitle(found.position || found.role);
+      }
+      if (found.phone || found.mobile || found.email) {
+        setManagerContact(found.phone || found.mobile || found.email || '');
+      }
+    }
+  };
+
+  // Calculate Line Item values
+  const updateLineItem = (index: number, field: keyof DomesticQuoteLineItem, value: any) => {
+    setItems(prev => {
+      const updated = [...prev];
+      const item = { ...updated[index], [field]: value };
+
+      const qty = Number(item.quantity) || 0;
+      const buyingPrice = Number(item.buyingUnitPrice) || 0;
+      let salesPrice = Number(item.salesUnitPrice) || 0;
+      let marginRate = Number(item.targetMarginRate) || 0;
+
+      if (field === 'buyingUnitPrice' || field === 'targetMarginRate') {
+        if (buyingPrice > 0 && marginRate > 0) {
+          salesPrice = Math.round(buyingPrice * (1 + marginRate / 100));
+        }
+      } else if (field === 'salesUnitPrice') {
+        if (salesPrice > 0 && buyingPrice > 0) {
+          marginRate = Math.round(((salesPrice - buyingPrice) / salesPrice) * 1000) / 10;
+        }
+      }
+
+      const buyingAmt = qty * buyingPrice;
+      const salesAmt = qty * salesPrice;
+      const marginAmt = salesAmt - buyingAmt;
+
+      item.salesUnitPrice = salesPrice;
+      item.targetMarginRate = marginRate;
+      item.buyingAmount = buyingAmt;
+      item.salesAmount = salesAmt;
+      item.margin = marginAmt;
+
+      updated[index] = item;
+      return updated;
+    });
+  };
+
+  const addLineItem = () => {
+    setItems(prev => [
+      ...prev,
+      {
+        id: `item-${Date.now()}-${prev.length + 1}`,
+        productName: '',
+        spec: '',
+        unit: 'KG',
+        quantity: 1,
+        buyingUnitPrice: 0,
+        targetMarginRate: 15,
+        salesUnitPrice: 0,
+        buyingAmount: 0,
+        salesAmount: 0,
+        margin: 0,
+        note: ''
+      }
+    ]);
+  };
+
+  const removeLineItem = (index: number) => {
+    if (items.length <= 1) {
+      alert("최소 1개 이상의 품목이 필요합니다.");
+      return;
+    }
+    setItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Aggregated Totals
+  const totals = useMemo(() => {
+    const expectedBuyingAmount = items.reduce((sum, item) => sum + (Number(item.buyingAmount) || 0), 0);
+    const salesAmount = items.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
+    const margin = salesAmount - expectedBuyingAmount;
+    const marginRate = salesAmount > 0 ? Math.round((margin / salesAmount) * 1000) / 10 : 0;
+    return { expectedBuyingAmount, salesAmount, margin, marginRate };
+  }, [items]);
 
   // Filtered List
   const filteredTrades = useMemo(() => {
@@ -118,10 +305,11 @@ export const DomesticTrade: React.FC = () => {
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const matchNo = (t.tradeNo || '').toLowerCase().includes(term);
+        const matchQuoteNo = (t.quoteNo || '').toLowerCase().includes(term);
         const matchSupplier = (t.supplierName || '').toLowerCase().includes(term);
         const matchCustomer = (t.customerName || '').toLowerCase().includes(term);
         const matchProduct = (t.productName || '').toLowerCase().includes(term);
-        if (!matchNo && !matchSupplier && !matchCustomer && !matchProduct) return false;
+        if (!matchNo && !matchQuoteNo && !matchSupplier && !matchCustomer && !matchProduct) return false;
       }
       return true;
     });
@@ -147,13 +335,35 @@ export const DomesticTrade: React.FC = () => {
       setEditingItem(item);
       setTradeDate(item.tradeDate || new Date().toISOString().split('T')[0]);
       setTradeNo(item.tradeNo || '');
+      setQuoteNo(item.quoteNo || '');
       setCompanyType(item.companyType || 'YSACC');
       setSupplierName(item.supplierName || '');
       setCustomerName(item.customerName || '');
-      setProductName(item.productName || '');
-      setQuantity(item.quantity || 1);
-      setBuyingAmount(item.buyingAmount || 0);
-      setSalesAmount(item.salesAmount || 0);
+      setReceiverAttention(item.receiverAttention || '');
+      setReceiverTel(item.receiverTel || '');
+      setReceiverFax(item.receiverFax || '');
+      setItems(item.items && item.items.length > 0 ? item.items : [
+        {
+          id: 'item-1',
+          productName: item.productName || '',
+          spec: '',
+          unit: 'KG',
+          quantity: item.quantity || 1,
+          buyingUnitPrice: item.buyingAmount ? Math.round(item.buyingAmount / (item.quantity || 1)) : 0,
+          targetMarginRate: item.marginRate || 0,
+          salesUnitPrice: item.salesAmount ? Math.round(item.salesAmount / (item.quantity || 1)) : 0,
+          buyingAmount: item.buyingAmount || 0,
+          salesAmount: item.salesAmount || 0,
+          margin: item.margin || 0,
+          note: ''
+        }
+      ]);
+      setSpecialNotes(item.specialNotes || '');
+      setVatType(item.vatType || '부가가치세(VAT): 별도');
+      setPaymentTerms(item.paymentTerms || '결제조건 : 선금 30%, 잔금 70%');
+      setManagerTitle(item.managerTitle || '이사');
+      setManagerName(item.managerName || '이한중');
+      setManagerContact(item.managerContact || '010-6277-7418');
       setTaxInvoiceIssued(item.taxInvoiceIssued ?? true);
       setStatus(item.status || 'COMPLETED');
       setMemo(item.memo || '');
@@ -163,13 +373,43 @@ export const DomesticTrade: React.FC = () => {
       const year = new Date().getFullYear();
       const count = trades.length + 1;
       setTradeNo(`DOM-ORD-${year}-${String(count).padStart(3, '0')}`);
+      setQuoteNo('');
       setCompanyType('YSACC');
       setSupplierName('');
       setCustomerName('');
-      setProductName('');
-      setQuantity(1);
-      setBuyingAmount(0);
-      setSalesAmount(0);
+      setReceiverAttention('');
+      setReceiverTel('');
+      setReceiverFax('');
+      setItems([
+        {
+          id: 'item-1',
+          productName: '',
+          spec: '',
+          unit: 'KG',
+          quantity: 1,
+          buyingUnitPrice: 0,
+          targetMarginRate: 15,
+          salesUnitPrice: 0,
+          buyingAmount: 0,
+          salesAmount: 0,
+          margin: 0,
+          note: ''
+        }
+      ]);
+      setSpecialNotes('');
+      setVatType('부가가치세(VAT): 별도');
+      setPaymentTerms('결제조건 : 선금 30%, 잔금 70%');
+
+      if (userProfile) {
+        setManagerName(userProfile.name || '이한중');
+        setManagerTitle(userProfile.position || userProfile.role || '이사');
+        setManagerContact(userProfile.phone || userProfile.mobile || userProfile.email || '010-6277-7418');
+      } else {
+        setManagerTitle('이사');
+        setManagerName('이한중');
+        setManagerContact('010-6277-7418');
+      }
+
       setTaxInvoiceIssued(true);
       setStatus('COMPLETED');
       setMemo('');
@@ -180,28 +420,39 @@ export const DomesticTrade: React.FC = () => {
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supplierName.trim() || !customerName.trim() || !productName.trim()) {
-      alert("매입처, 매출처 및 품목명을 모두 입력해 주세요.");
+    if (!customerName.trim() || items.some(i => !i.productName.trim())) {
+      alert("매출처(고객사) 정보 및 각 품목의 품명은 필수 입력 사항입니다.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const margin = salesAmount - buyingAmount;
-      const marginRate = salesAmount > 0 ? Math.round((margin / salesAmount) * 1000) / 10 : 0;
+      const primaryProduct = items.map(i => i.productName).join(', ');
+      const totalQty = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
 
       const payload = {
         tradeDate,
         tradeNo: tradeNo || `DOM-ORD-${new Date().getFullYear()}-${Date.now().toString().slice(-3)}`,
+        quoteNo: quoteNo.trim() || null,
         companyType,
         supplierName: supplierName.trim(),
         customerName: customerName.trim(),
-        productName: productName.trim(),
-        quantity: Number(quantity) || 1,
-        buyingAmount: Number(buyingAmount) || 0,
-        salesAmount: Number(salesAmount) || 0,
-        margin,
-        marginRate,
+        receiverAttention: receiverAttention.trim(),
+        receiverTel: receiverTel.trim(),
+        receiverFax: receiverFax.trim(),
+        productName: primaryProduct,
+        quantity: totalQty,
+        items,
+        buyingAmount: totals.expectedBuyingAmount,
+        salesAmount: totals.salesAmount,
+        margin: totals.margin,
+        marginRate: totals.marginRate,
+        specialNotes: specialNotes.trim(),
+        vatType: vatType.trim(),
+        paymentTerms: paymentTerms.trim(),
+        managerTitle: managerTitle.trim(),
+        managerName: managerName.trim(),
+        managerContact: managerContact.trim(),
         taxInvoiceIssued,
         status,
         memo: memo.trim(),
@@ -267,7 +518,10 @@ export const DomesticTrade: React.FC = () => {
       {showProductSearchModal && (
         <ProductSearchModal
           products={dbProducts}
-          onClose={() => setShowProductSearchModal(false)}
+          onClose={() => {
+            setShowProductSearchModal(false);
+            setActiveItemIndexForProduct(null);
+          }}
           onSelect={handleSelectProduct}
         />
       )}
@@ -288,6 +542,24 @@ export const DomesticTrade: React.FC = () => {
           </option>
         ))}
       </datalist>
+
+      <datalist id="trade-user-db-list">
+        {dbUsers.map(u => (
+          <option key={u.id} value={u.name}>
+            {u.name} {u.position || u.role ? `(${u.position || u.role})` : ''}
+          </option>
+        ))}
+      </datalist>
+
+      {/* Print Specific CSS */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #order-print-area, #order-print-area * { visibility: visible; }
+          #order-print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -373,17 +645,17 @@ export const DomesticTrade: React.FC = () => {
 
         <input
           type="text"
-          placeholder="매출처, 매입처, 품목명, 관리번호 검색..."
+          placeholder="매출처, 매입처, 품목명, 주문/견적번호 검색..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', width: '260px' }}
+          style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', width: '280px' }}
         />
       </div>
 
       {/* Data Table */}
       <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '15px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14.5px' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주문일자</th>
@@ -391,26 +663,30 @@ export const DomesticTrade: React.FC = () => {
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주체</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매입처</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매출처</th>
-                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>품목명</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>수량</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>매입액 (원)</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>매출액 (원)</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>마진 (원)</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>품목 정보 (수량)</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매입액</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매출액</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>영업 마진</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리 및 주문서</th>
               </tr>
             </thead>
             <tbody>
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={13} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
+                  <td colSpan={12} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                     등록된 국내 주문 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
                 filteredTrades.map(item => {
                   const margin = (item.salesAmount || 0) - (item.buyingAmount || 0);
+                  const itemCount = item.items ? item.items.length : 1;
+                  const itemSummary = item.items && item.items.length > 0
+                    ? `${item.items[0].productName} ${itemCount > 1 ? `외 ${itemCount - 1}건` : ''}`
+                    : (item.productName || '품목');
+
                   return (
                     <tr 
                       key={item.id}
@@ -419,20 +695,31 @@ export const DomesticTrade: React.FC = () => {
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <td style={{ padding: '12px', color: '#475569', fontWeight: 600 }}>{item.tradeDate}</td>
-                      <td style={{ padding: '12px', fontWeight: 800, color: '#1e293b' }}>{item.tradeNo}</td>
+                      <td style={{ padding: '12px', fontWeight: 800, color: '#1e293b' }}>
+                        {item.tradeNo}
+                        {item.quoteNo && (
+                          <span style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                            ({item.quoteNo})
+                          </span>
+                        )}
+                      </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: item.companyType === 'YSACC' ? '#eff6ff' : '#fef3c7', color: item.companyType === 'YSACC' ? '#2563eb' : '#d97706' }}>
                           {item.companyType}
                         </span>
                       </td>
                       <td style={{ padding: '12px', color: '#334155', fontWeight: 600 }}>{item.supplierName}</td>
-                      <td style={{ padding: '12px', color: '#0f172a', fontWeight: 800 }}>{item.customerName}</td>
-                      <td style={{ padding: '12px', color: '#1e293b' }}>{item.productName}</td>
-                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: 700 }}>{item.quantity.toLocaleString()}</td>
+                      <td style={{ padding: '12px', color: '#0f172a', fontWeight: 800 }}>
+                        {item.customerName}
+                        {item.receiverAttention && <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, marginLeft: '4px' }}>({item.receiverAttention})</span>}
+                      </td>
+                      <td style={{ padding: '12px', color: '#1e293b' }}>
+                        {itemSummary}
+                      </td>
                       <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>₩{item.buyingAmount.toLocaleString()}</td>
                       <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#2563eb' }}>₩{item.salesAmount.toLocaleString()}</td>
                       <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: margin >= 0 ? '#10b981' : '#ef4444' }}>
-                        ₩{margin.toLocaleString()}
+                        ₩{margin.toLocaleString()} ({item.marginRate}%)
                       </td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         {item.taxInvoiceIssued ? (
@@ -454,7 +741,14 @@ export const DomesticTrade: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setPreviewItem(item)}
+                            title="엑셀/인쇄 양식 미리보기"
+                            style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#1d4ed8', cursor: 'pointer' }}
+                          >
+                            🖨️ 주문서 출력
+                          </button>
                           <button
                             onClick={() => handleOpenModal(item)}
                             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
@@ -478,7 +772,6 @@ export const DomesticTrade: React.FC = () => {
               <tfoot>
                 <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
                   <td colSpan={6} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredTrades.length}건)</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>{filteredTrades.reduce((s, t) => s + t.quantity, 0).toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>₩{stats.totalBuying.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: stats.totalMargin >= 0 ? '#10b981' : '#ef4444' }}>₩{stats.totalMargin.toLocaleString()}</td>
@@ -490,10 +783,10 @@ export const DomesticTrade: React.FC = () => {
         </div>
       </div>
 
-      {/* Add / Edit Modal */}
+      {/* 📝 Create / Edit Modal (Matching DomesticQuotes layout) */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '620px', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '920px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
             
             {/* Modal Header */}
             <div style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -508,229 +801,596 @@ export const DomesticTrade: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Modal Scrollable Form */}
+            <form onSubmit={handleSubmit} style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    주문일자 <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={tradeDate}
-                    onChange={e => setTradeDate(e.target.value)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
+              {/* Section 1: Basic Header Info & Customer/Supplier Sub-Modal Connection */}
+              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 주문 기본 및 수신자 정보 (고객사/공급사 🔍 DB 검색)</span>
+                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 서브 검색 팝업 열림</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    주체 (자사 구분) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    value={companyType}
-                    onChange={e => setCompanyType(e.target.value as any)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                  >
-                    <option value="YSACC">YSACC</option>
-                    <option value="YS">영성ACC</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {/* Supplier Input + 🔍 Button */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    국내 매입처 (공급사) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      주문번호 <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <input
                       type="text"
                       required
-                      list="trade-supplier-db-list"
-                      placeholder="예: 삼오인서트..."
-                      value={supplierName}
-                      onChange={e => setSupplierName(e.target.value)}
-                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                      value={tradeNo}
+                      onChange={e => setTradeNo(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowSupplierSearchModal(true)}
-                      title="공급업체관리 DB 서브창 검색"
-                      style={{ height: '34px', padding: '0 10px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      주문일자 <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={tradeDate}
+                      onChange={e => setTradeDate(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      주체 (자사 구분) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={companyType}
+                      onChange={e => setCompanyType(e.target.value as any)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                     >
-                      🔍 DB
-                    </button>
+                      <option value="YSACC">(주)와이에스에이씨씨 (YSACC)</option>
+                      <option value="YS">영성ACC</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Customer Input + 🔍 Button */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.4fr', gap: '12px' }}>
+                  
+                  {/* Customer Input + 🔍 Button */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <input
+                        type="text"
+                        required
+                        list="trade-customer-db-list"
+                        placeholder="고객사명..."
+                        value={customerName}
+                        onChange={e => setCustomerName(e.target.value)}
+                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerSearchModal(true)}
+                        title="고객사 DB 서브창 검색"
+                        style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
+                      >
+                        🔍 DB
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      참조
+                    </label>
                     <input
                       type="text"
-                      required
-                      list="trade-customer-db-list"
-                      placeholder="예: 현대모비스..."
-                      value={customerName}
-                      onChange={e => setCustomerName(e.target.value)}
-                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                      placeholder="예: 민재준 이사님"
+                      value={receiverAttention}
+                      onChange={e => setReceiverAttention(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomerSearchModal(true)}
-                      title="고객사 DB 서브창 검색"
-                      style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
-                    >
-                      🔍 DB
-                    </button>
                   </div>
-                </div>
-              </div>
 
-              {/* Product Input + 🔍 Button */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    품목명 <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      전화번호
+                    </label>
                     <input
                       type="text"
-                      required
-                      placeholder="품목명 입력 또는 🔍 DB검색"
-                      value={productName}
-                      onChange={e => setProductName(e.target.value)}
-                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                      placeholder="010-0000-0000"
+                      value={receiverTel}
+                      onChange={e => setReceiverTel(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowProductSearchModal(true)}
-                      title="상품 DB 서브창 검색"
-                      style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
-                    >
-                      🔍 상품DB
-                    </button>
+                  </div>
+
+                  {/* Supplier Input + 🔍 Button */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      국내 매입처 (공급사)
+                    </label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <input
+                        type="text"
+                        list="trade-supplier-db-list"
+                        placeholder="공급사명..."
+                        value={supplierName}
+                        onChange={e => setSupplierName(e.target.value)}
+                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSupplierSearchModal(true)}
+                        title="공급업체관리 DB 서브창 검색"
+                        style={{ height: '34px', padding: '0 10px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
+                      >
+                        🔍 DB
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Section 2: Line Items + 🔍 Product Sub-Modal */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                    2. 품목 목록 및 원가/마진산정 (상품 DB 🔍 연결)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={addLineItem}
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 12px', height: '28px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ➕ 제품 추가
+                  </button>
+                </div>
+
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                        <th style={{ padding: '8px', width: '30px', textAlign: 'center' }}>#</th>
+                        <th style={{ padding: '8px', minWidth: '150px' }}>품명 (🔍상품DB) *</th>
+                        <th style={{ padding: '8px', minWidth: '130px' }}>규격</th>
+                        <th style={{ padding: '8px', width: '65px', textAlign: 'center' }}>단위</th>
+                        <th style={{ padding: '8px', width: '75px', textAlign: 'center' }}>수량 *</th>
+                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>원가 (매입단가)</th>
+                        <th style={{ padding: '8px', width: '75px', textAlign: 'right' }}>마진율(%)</th>
+                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>매출 단가 *</th>
+                        <th style={{ padding: '8px', width: '105px', textAlign: 'right' }}>금액 (원)</th>
+                        <th style={{ padding: '8px', minWidth: '90px' }}>비고</th>
+                        <th style={{ padding: '8px', width: '40px', textAlign: 'center' }}>삭제</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item, idx) => (
+                        <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                          <td style={{ padding: '6px' }}>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <input
+                                type="text"
+                                required
+                                placeholder="품명 입력 또는 🔍"
+                                value={item.productName}
+                                onChange={e => updateLineItem(idx, 'productName', e.target.value)}
+                                style={{ flex: 1, height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600, boxSizing: 'border-box' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveItemIndexForProduct(idx);
+                                  setShowProductSearchModal(true);
+                                }}
+                                title="상품 DB 서브창 검색"
+                                style={{ height: '28px', padding: '0 6px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#1d4ed8' }}
+                              >
+                                🔍
+                              </button>
+                            </div>
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="text"
+                              placeholder="예: GPPS (25KG/BAG)"
+                              value={item.spec || ''}
+                              onChange={e => updateLineItem(idx, 'spec', e.target.value)}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="text"
+                              value={item.unit || 'KG'}
+                              onChange={e => updateLineItem(idx, 'unit', e.target.value)}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={e => updateLineItem(idx, 'quantity', Number(e.target.value))}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '12px', fontWeight: 700, boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="number"
+                              step={10}
+                              placeholder="0"
+                              value={item.buyingUnitPrice || ''}
+                              onChange={e => updateLineItem(idx, 'buyingUnitPrice', Number(e.target.value))}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '12px', color: '#64748b', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="number"
+                              step={0.5}
+                              value={item.targetMarginRate ?? ''}
+                              onChange={e => updateLineItem(idx, 'targetMarginRate', Number(e.target.value))}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px', fontSize: '12px', color: '#10b981', fontWeight: 700, boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="number"
+                              step={10}
+                              value={item.salesUnitPrice || ''}
+                              onChange={e => updateLineItem(idx, 'salesUnitPrice', Number(e.target.value))}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '12px', fontWeight: 800, color: '#2563eb', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
+                            ₩{(item.salesAmount || 0).toLocaleString()}
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input
+                              type="text"
+                              placeholder="예: 안산 도착도"
+                              value={item.note || ''}
+                              onChange={e => updateLineItem(idx, 'note', e.target.value)}
+                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => removeLineItem(idx)}
+                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontWeight: 800 }}
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
+                        <td colSpan={5} style={{ padding: '10px 12px', color: '#1e293b' }}>총 합계</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: '#64748b' }}>₩{totals.expectedBuyingAmount.toLocaleString()}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: '#10b981' }}>{totals.marginRate}%</td>
+                        <td colSpan={2} style={{ padding: '10px', textAlign: 'right', color: '#2563eb', fontSize: '14px' }}>₩{totals.salesAmount.toLocaleString()}</td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 3: Terms & Footer details & Sales Manager DB Link */}
+              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 판매 담당자 (직원 DB 연동)</span>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      ※ 특고사항
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="예: SMC 관련 품목, 물탱크 관련 부자재"
+                      value={specialNotes}
+                      onChange={e => setSpecialNotes(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      1. 부가가치세 (VAT) 조건
+                    </label>
+                    <input
+                      type="text"
+                      value={vatType}
+                      onChange={e => setVatType(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                    />
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    수량
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={e => setQuantity(Number(e.target.value))}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    총 매입액 (원화 KRW)
-                  </label>
-                  <input
-                    type="number"
-                    step={1000}
-                    value={buyingAmount}
-                    onChange={e => setBuyingAmount(Number(e.target.value))}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    총 매출액 (원화 KRW)
-                  </label>
-                  <input
-                    type="number"
-                    step={1000}
-                    value={salesAmount}
-                    onChange={e => setSalesAmount(Number(e.target.value))}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#2563eb', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      2. 결제 조건
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentTerms}
+                      onChange={e => setPaymentTerms(e.target.value)}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                    />
+                  </div>
 
-              {/* Auto calculated Margin Banner */}
-              <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#475569', fontWeight: 700 }}>예상 매출 이익 / 마진율:</span>
-                <strong style={{ color: (salesAmount - buyingAmount) >= 0 ? '#10b981' : '#ef4444', fontSize: '14px' }}>
-                  ₩{(salesAmount - buyingAmount).toLocaleString()} ({salesAmount > 0 ? (Math.round(((salesAmount - buyingAmount) / salesAmount) * 1000) / 10) : 0}%)
-                </strong>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    세금계산서 발행 여부
-                  </label>
-                  <select
-                    value={taxInvoiceIssued ? 'YES' : 'NO'}
-                    onChange={e => setTaxInvoiceIssued(e.target.value === 'YES')}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                  >
-                    <option value="YES">발행 완료</option>
-                    <option value="NO">미발행 / 진행중</option>
-                  </select>
+                  {/* Manager fields connected to Users DB */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자 성명</label>
+                        <select
+                          onChange={e => e.target.value && handleSelectManagerFromDb(e.target.value)}
+                          style={{ fontSize: '10px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                        >
+                          <option value="">👤 DB선택...</option>
+                          {dbUsers.map(u => (
+                            <option key={u.id} value={u.name}>{u.name} ({u.position || u.role})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <input
+                        type="text"
+                        list="trade-user-db-list"
+                        placeholder="이한중"
+                        value={managerName}
+                        onChange={e => handleSelectManagerFromDb(e.target.value)}
+                        style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 700 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>직책</label>
+                      <input type="text" value={managerTitle} onChange={e => setManagerTitle(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연락처</label>
+                      <input type="text" value={managerContact} onChange={e => setManagerContact(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                    정산 상태
-                  </label>
-                  <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value as any)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                  >
-                    <option value="COMPLETED">정산 완료</option>
-                    <option value="PENDING">정산 대기</option>
-                    <option value="CANCELLED">취소됨</option>
-                  </select>
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                  비고 / 메모
-                </label>
-                <input
-                  type="text"
-                  placeholder="특이사항, 결제 조건 등"
-                  value={memo}
-                  onChange={e => setMemo(e.target.value)}
-                  style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서 발행 여부</label>
+                    <select
+                      value={taxInvoiceIssued ? 'YES' : 'NO'}
+                      onChange={e => setTaxInvoiceIssued(e.target.value === 'YES')}
+                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff' }}
+                    >
+                      <option value="YES">발행 완료</option>
+                      <option value="NO">미발행 / 진행중</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>정산 상태</label>
+                    <select value={status} onChange={e => setStatus(e.target.value as any)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, background: '#fff' }}>
+                      <option value="COMPLETED">정산 완료</option>
+                      <option value="PENDING">정산 대기</option>
+                      <option value="CANCELLED">취소됨</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고 / 메모</label>
+                    <input type="text" placeholder="기타 사항" value={memo} onChange={e => setMemo(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                  </div>
+                </div>
+
               </div>
 
               {/* Modal Buttons */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{ height: '34px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ height: '34px', padding: '0 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 22px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
                   onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
-                  {isSubmitting ? '저장 중...' : editingItem ? '수정 저장' : '등록'}
+                  {isSubmitting ? '저장 중...' : editingItem ? '주문 수정 저장' : '주문 등록'}
                 </button>
               </div>
 
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* 🖨️ Order Print & Excel Format Preview Modal */}
+      {previewItem && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '850px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+            
+            {/* Modal Header Bar */}
+            <div className="no-print" style={{ background: '#1e293b', color: '#fff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800 }}>📄 국내 주문서 / 발주서 인쇄 미리보기</span>
+                <span style={{ fontSize: '12px', background: '#3b82f6', padding: '2px 8px', borderRadius: '4px' }}>{previewItem.tradeNo}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => window.print()}
+                  style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 16px', height: '32px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  🖨️ 즉시 인쇄 / PDF 저장
+                </button>
+                <button
+                  onClick={() => setPreviewItem(null)}
+                  style={{ background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 12px', height: '32px', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+
+            {/* Print Area matching Excel Format */}
+            <div style={{ padding: '30px', overflowY: 'auto', background: '#fff' }}>
+              <div id="order-print-area" style={{ border: '2px solid #1e293b', padding: '24px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
+                
+                {/* Title */}
+                <h1 style={{ textAlign: 'center', fontSize: '28px', fontWeight: 900, letterSpacing: '12px', margin: '0 0 20px 0', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+                  주 문 서
+                </h1>
+
+                {/* Top Grid Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  
+                  {/* Left: Customer Receiver Info */}
+                  <div style={{ border: '1px solid #000', padding: '12px', fontSize: '13px', lineHeight: '1.8' }}>
+                    <div><strong>주문번호 :</strong> {previewItem.tradeNo}</div>
+                    {previewItem.quoteNo && <div><strong>견적번호 :</strong> {previewItem.quoteNo}</div>}
+                    <div><strong>주문일자 :</strong> {previewItem.tradeDate}</div>
+                    <div><strong>수 신 :</strong> <span style={{ fontSize: '15px', fontWeight: 800 }}>{previewItem.customerName}</span></div>
+                    {previewItem.receiverAttention && <div><strong>참 조 :</strong> {previewItem.receiverAttention}</div>}
+                    {previewItem.receiverTel && <div><strong>전화번호 :</strong> {previewItem.receiverTel}</div>}
+                    {previewItem.receiverFax && <div><strong>F A X :</strong> {previewItem.receiverFax}</div>}
+                    <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 국내 주문 확정 드립니다.</div>
+                  </div>
+
+                  {/* Right: YSACC / YS Company Stamp Info */}
+                  <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
+                    <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
+                    <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 900 }}>
+                      {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
+                    </div>
+                    <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span><strong>대 표 :</strong> 김 주 한</span>
+                      <div style={{ width: '45px', height: '45px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
+                        (인)
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '6px', fontSize: '11px', color: '#334155' }}>
+                      ◆ 주소 : 충북 청주시 서원구 성봉로 180, 302호<br/>
+                      TEL: 070) 4141-2927, FAX: 0303) 3444-1130
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Table of Items */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', marginBottom: '20px', border: '1px solid #000' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #000' }}>
+                      <th style={{ border: '1px solid #000', padding: '8px', width: '35px', textAlign: 'center' }}>No</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>품 명</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>규 격</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', width: '90px' }}>수량({previewItem.items && previewItem.items[0]?.unit ? previewItem.items[0].unit : 'KG'})</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '100px' }}>단 가</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '120px' }}>금 액</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left', width: '110px' }}>비 고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewItem.items && previewItem.items.length > 0 ? (
+                      previewItem.items.map((it, idx) => (
+                        <tr key={it.id || idx}>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 800 }}>{it.productName}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>{it.spec || '-'}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {it.salesUnitPrice.toLocaleString()}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {it.salesAmount.toLocaleString()}</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>{it.note || '-'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>1</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 800 }}>{previewItem.productName}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px' }}>-</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{previewItem.quantity || 1}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {Math.round(previewItem.salesAmount / (previewItem.quantity || 1)).toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {previewItem.salesAmount.toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px' }}>-</td>
+                      </tr>
+                    )}
+                    {/* Padding rows if items < 4 for visual height */}
+                    {Array.from({ length: Math.max(0, 4 - (previewItem.items?.length || 1)) }).map((_, i) => (
+                      <tr key={`empty-${i}`}>
+                        <td style={{ border: '1px solid #000', padding: '12px' }}>&nbsp;</td>
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                        <td style={{ border: '1px solid #000', padding: '12px' }} />
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
+                      <td colSpan={5} style={{ border: '1px solid #000', padding: '10px', textAlign: 'center', fontSize: '14px' }}>합 계</td>
+                      <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'right', fontSize: '15px', color: '#1e293b' }}>₩ {previewItem.salesAmount.toLocaleString()}</td>
+                      <td style={{ border: '1px solid #000', padding: '10px' }} />
+                    </tr>
+                  </tfoot>
+                </table>
+
+                {/* Footer Notes & Manager Table */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'end' }}>
+                  
+                  {/* Left: Notes */}
+                  <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+                    <div style={{ fontWeight: 800 }}>※ 특기사항</div>
+                    <div style={{ marginBottom: '8px', color: '#334155' }}>{previewItem.specialNotes || '-'}</div>
+
+                    <div style={{ fontWeight: 800 }}>※ 一 般 事 項</div>
+                    <div>1. {previewItem.vatType || '부가가치세(VAT): 별도'}</div>
+                    <div>2. {previewItem.paymentTerms || '결제조건 : 선금 30%, 잔금 70%'}</div>
+                  </div>
+
+                  {/* Right: Sales Manager Stamp Table */}
+                  <div style={{ border: '1px solid #000', fontSize: '12px' }}>
+                    <div style={{ background: '#f1f5f9', borderBottom: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 800 }}>
+                      담당자
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', width: '60px', textAlign: 'center', fontWeight: 700 }}>직 책</td>
+                          <td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerTitle || '이사'}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ borderBottom: '1px solid #000', borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>담 당 자</td>
+                          <td style={{ borderBottom: '1px solid #000', padding: '4px 8px', textAlign: 'right', fontWeight: 800 }}>{previewItem.managerName || '이한중'}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ borderRight: '1px solid #000', padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>연 락 처</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right' }}>{previewItem.managerContact || '010-6277-7418'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+
+                {/* Footer Brand Logo */}
+                <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '12px', fontSize: '14px', fontWeight: 900, color: '#1e293b' }}>
+                  {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
+                </div>
+
+              </div>
+            </div>
 
           </div>
         </div>
