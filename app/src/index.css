@@ -478,3 +478,68 @@ textarea:focus {
   border-color: var(--focus-ring);
   box-shadow: var(--shadow-focus);
 }
+
+/* ── 전역 대시보드 본문 글자 굵기 완화 (제목/헤더 제외) ── */
+
+/* 1. 담당자 목록 및 미배정 패널 가늘게 */
+.kanban-left-panel,
+.kanban-left-panel span,
+.kanban-left-panel div,
+.kanban-left-panel a {
+  font-weight: 500 !important;
+}
+
+/* 2. 칸반 보드 카드 글씨 및 태그들 가늘게 */
+.task-card,
+.task-card * {
+  font-weight: 500 !important;
+}
+
+/* 3. 상단 통계 수치 및 텍스트 굵기 완화 */
+.dashboard-top-section,
+.dashboard-top-section span,
+.dashboard-top-section div,
+.dashboard-top-section p {
+  font-weight: 500 !important;
+}
+
+/* 4. 스케줄러 달력 날짜, 요일 및 일정 목록 가늘게 */
+.holiday-badge,
+.scheduler-event-item,
+.scheduler-event-item * {
+  font-weight: 500 !important;
+}
+/* 달력 셀 내부 숫자와 요일 표시부 */
+.dashboard-top-section span[style*="fontWeight: 800"],
+.dashboard-top-section span[style*="font-weight: 800"] {
+  font-weight: 500 !important;
+}
+
+/* ── 주요 대제목 및 바스켓 타이틀은 두껍게 유지 ── */
+.dashboard-top-section h2,
+.dashboard-top-section h2 *,
+.kanban-left-panel h3,
+.top-section h2,
+.top-section h2 *,
+.board-column div[style*="fontSize: '13px'"] {
+  font-weight: 800 !important;
+}
+
+/* 무역 실시간 매출 및 PI 현황 타이틀 */
+.dashboard-top-section h2 span {
+  font-weight: 800 !important;
+}
+
+/* 통계 지표의 핵심 수치(금액/건수)는 시인성을 위해 중간 굵기(650) 유지 */
+.dashboard-top-section span[style*="fontSize: '20px'"],
+.dashboard-top-section span[style*="fontSize: '19px'"] {
+  font-weight: 700 !important;
+}
+
+/* 요일 및 달력 숫자 굵기 완화 */
+.dashboard-top-section div[style*="repeat(7"] span {
+  font-weight: 500 !important;
+}
+.dashboard-top-section .holiday-badge {
+  font-weight: 500 !important;
+}
