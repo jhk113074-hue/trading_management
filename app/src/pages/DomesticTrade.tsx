@@ -4,14 +4,24 @@ import { db } from '../firebase';
 import type { DomesticTradeItem } from '../types/domestic';
 import type { Customer } from '../types/customer';
 import type { Supplier } from '../types/supplier';
+import type { Product } from '../types/product';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { SupplierSearchModal } from '../components/SupplierSearchModal';
+import { ProductSearchModal } from '../components/ProductSearchModal';
 
 export const DomesticTrade: React.FC = () => {
   const [trades, setTrades] = useState<DomesticTradeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // DB Masters for Customer & Supplier
+  // DB Masters for Customer, Supplier & Products
   const [dbCustomers, setDbCustomers] = useState<Customer[]>([]);
   const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+
+  // Sub-modal Search Popups (돋보기 🔍 DB 검색)
+  const [showCustomerSearchModal, setShowCustomerSearchModal] = useState(false);
+  const [showSupplierSearchModal, setShowSupplierSearchModal] = useState(false);
+  const [showProductSearchModal, setShowProductSearchModal] = useState(false);
 
   // Filters
   const [companyFilter, setCompanyFilter] = useState<'All' | 'YSACC' | 'YS'>('All');
@@ -41,10 +51,11 @@ export const DomesticTrade: React.FC = () => {
   const fetchTradesAndMasters = async () => {
     setLoading(true);
     try {
-      const [tradesSnap, custSnap, suppSnap] = await Promise.all([
+      const [tradesSnap, custSnap, suppSnap, prodSnap] = await Promise.all([
         getDocs(collection(db, 'companies', 'YSACC', 'domestic_trades')),
         getDocs(collection(db, 'companies', 'YSACC', 'customers')),
-        getDocs(collection(db, 'companies', 'YSACC', 'suppliers'))
+        getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
+        getDocs(collection(db, 'companies', 'YSACC', 'products'))
       ]);
 
       const list: DomesticTradeItem[] = [];
@@ -62,6 +73,10 @@ export const DomesticTrade: React.FC = () => {
       suppSnap.forEach(d => supps.push({ id: d.id, ...d.data() } as Supplier));
       setDbSuppliers(supps);
 
+      const prods: Product[] = [];
+      prodSnap.forEach(d => prods.push({ id: d.id, ...d.data() } as Product));
+      setDbProducts(prods);
+
     } catch (e) {
       console.error("Failed to load domestic trades & DB masters:", e);
     } finally {
@@ -72,6 +87,28 @@ export const DomesticTrade: React.FC = () => {
   useEffect(() => {
     fetchTradesAndMasters();
   }, []);
+
+  // Selection Handlers from Sub-Modals
+  const handleSelectCustomer = (cust: Customer) => {
+    setCustomerName(cust.nameKo || cust.name || '');
+    setShowCustomerSearchModal(false);
+  };
+
+  const handleSelectSupplier = (supp: Supplier) => {
+    setSupplierName(supp.name);
+    setShowSupplierSearchModal(false);
+  };
+
+  const handleSelectProduct = (prod: Product) => {
+    setProductName(prod.nameKo || prod.nameEn || prod.productCode);
+    if ((prod as any).costPrice && buyingAmount === 0) {
+      setBuyingAmount(Number((prod as any).costPrice) * (quantity || 1));
+    }
+    if ((prod as any).sellingPrice && salesAmount === 0) {
+      setSalesAmount(Number((prod as any).sellingPrice) * (quantity || 1));
+    }
+    setShowProductSearchModal(false);
+  };
 
   // Filtered List
   const filteredTrades = useMemo(() => {
@@ -209,6 +246,32 @@ export const DomesticTrade: React.FC = () => {
   return (
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      {/* 🔍 Sub-Modal Search Popups */}
+      {showCustomerSearchModal && (
+        <CustomerSearchModal
+          customers={dbCustomers}
+          onClose={() => setShowCustomerSearchModal(false)}
+          onSelect={handleSelectCustomer}
+        />
+      )}
+
+      {showSupplierSearchModal && (
+        <SupplierSearchModal
+          suppliers={dbSuppliers}
+          onClose={() => setShowSupplierSearchModal(false)}
+          onSelect={handleSelectSupplier}
+          onRefreshSuppliers={fetchTradesAndMasters}
+        />
+      )}
+
+      {showProductSearchModal && (
+        <ProductSearchModal
+          products={dbProducts}
+          onClose={() => setShowProductSearchModal(false)}
+          onSelect={handleSelectProduct}
+        />
+      )}
+
       {/* Global Datalists for DB Autocomplete */}
       <datalist id="trade-customer-db-list">
         {dbCustomers.map(c => (
@@ -430,7 +493,7 @@ export const DomesticTrade: React.FC = () => {
       {/* Add / Edit Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '600px', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '620px', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
             
             {/* Modal Header */}
             <div style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -477,71 +540,83 @@ export const DomesticTrade: React.FC = () => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Supplier Input + 🔍 Button */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      국내 매입처 (공급사) <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <select
-                      onChange={e => e.target.value && setSupplierName(e.target.value)}
-                      style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    국내 매입처 (공급사) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      type="text"
+                      required
+                      list="trade-supplier-db-list"
+                      placeholder="예: 삼오인서트..."
+                      value={supplierName}
+                      onChange={e => setSupplierName(e.target.value)}
+                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierSearchModal(true)}
+                      title="공급업체관리 DB 서브창 검색"
+                      style={{ height: '34px', padding: '0 10px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
                     >
-                      <option value="">🏭 DB에서 선택...</option>
-                      {dbSuppliers.map(s => (
-                        <option key={s.id} value={s.name}>{s.name}</option>
-                      ))}
-                    </select>
+                      🔍 DB
+                    </button>
                   </div>
-                  <input
-                    type="text"
-                    required
-                    list="trade-supplier-db-list"
-                    placeholder="예: 삼오인서트, (주)한국소재"
-                    value={supplierName}
-                    onChange={e => setSupplierName(e.target.value)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
                 </div>
+
+                {/* Customer Input + 🔍 Button */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <select
-                      onChange={e => e.target.value && setCustomerName(e.target.value)}
-                      style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      type="text"
+                      required
+                      list="trade-customer-db-list"
+                      placeholder="예: 현대모비스..."
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerSearchModal(true)}
+                      title="고객사 DB 서브창 검색"
+                      style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
                     >
-                      <option value="">🏢 DB에서 선택...</option>
-                      {dbCustomers.map(c => (
-                        <option key={c.id} value={c.nameKo || c.name}>{c.nameKo || c.name}</option>
-                      ))}
-                    </select>
+                      🔍 DB
+                    </button>
                   </div>
-                  <input
-                    type="text"
-                    required
-                    list="trade-customer-db-list"
-                    placeholder="예: 현대모비스, 하영비나"
-                    value={customerName}
-                    onChange={e => setCustomerName(e.target.value)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
                 </div>
               </div>
 
+              {/* Product Input + 🔍 Button */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                     품목명 <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="예: 너트, FRP 부품, 플라스틱 원료 등"
-                    value={productName}
-                    onChange={e => setProductName(e.target.value)}
-                    style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
-                  />
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      type="text"
+                      required
+                      placeholder="품목명 입력 또는 🔍 DB검색"
+                      value={productName}
+                      onChange={e => setProductName(e.target.value)}
+                      style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowProductSearchModal(true)}
+                      title="상품 DB 서브창 검색"
+                      style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
+                    >
+                      🔍 상품DB
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>

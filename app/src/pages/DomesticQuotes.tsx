@@ -6,16 +6,27 @@ import type { DomesticQuoteItem, DomesticQuoteLineItem } from '../types/domestic
 import type { Customer } from '../types/customer';
 import type { Supplier } from '../types/supplier';
 import type { User } from '../types/index';
+import type { Product } from '../types/product';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { SupplierSearchModal } from '../components/SupplierSearchModal';
+import { ProductSearchModal } from '../components/ProductSearchModal';
 
 export const DomesticQuotes: React.FC = () => {
   const { userProfile } = useAuth();
   const [quotes, setQuotes] = useState<DomesticQuoteItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // DB Collections for Customer, Supplier & Users (Team)
+  // DB Collections for Customer, Supplier, Product & Users (Team)
   const [dbCustomers, setDbCustomers] = useState<Customer[]>([]);
   const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
   const [dbUsers, setDbUsers] = useState<User[]>([]);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+
+  // Sub-modal Popups (돋보기 🔍 DB 검색)
+  const [showCustomerSearchModal, setShowCustomerSearchModal] = useState(false);
+  const [showSupplierSearchModal, setShowSupplierSearchModal] = useState(false);
+  const [showProductSearchModal, setShowProductSearchModal] = useState(false);
+  const [activeItemIndexForProduct, setActiveItemIndexForProduct] = useState<number | null>(null);
 
   // Filters
   const [companyFilter, setCompanyFilter] = useState<'All' | 'YSACC' | 'YS'>('All');
@@ -76,11 +87,12 @@ export const DomesticQuotes: React.FC = () => {
   const fetchQuotesAndMasters = async () => {
     setLoading(true);
     try {
-      const [quoteSnap, custSnap, suppSnap, userSnap] = await Promise.all([
+      const [quoteSnap, custSnap, suppSnap, userSnap, prodSnap] = await Promise.all([
         getDocs(collection(db, 'companies', 'YSACC', 'domestic_quotes')),
         getDocs(collection(db, 'companies', 'YSACC', 'customers')),
         getDocs(collection(db, 'companies', 'YSACC', 'suppliers')),
-        getDocs(collection(db, 'users'))
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'companies', 'YSACC', 'products'))
       ]);
 
       // Quotes
@@ -127,6 +139,11 @@ export const DomesticQuotes: React.FC = () => {
       userSnap.forEach(d => users.push({ id: d.id, ...d.data() } as User));
       setDbUsers(users);
 
+      // Products DB
+      const prods: Product[] = [];
+      prodSnap.forEach(d => prods.push({ id: d.id, ...d.data() } as Product));
+      setDbProducts(prods);
+
     } catch (e) {
       console.error("Failed to load domestic quotes & DB masters:", e);
     } finally {
@@ -138,26 +155,67 @@ export const DomesticQuotes: React.FC = () => {
     fetchQuotesAndMasters();
   }, []);
 
-  // Handle DB Customer Selection
-  const handleSelectCustomerFromDb = (nameVal: string) => {
-    setCustomerName(nameVal);
-    const found = dbCustomers.find(c => (c.name || c.nameKo || c.customerCode) === nameVal || c.id === nameVal);
-    if (found) {
-      const displayName = found.nameKo || found.name || nameVal;
-      setCustomerName(displayName);
-      setReceiverAttention(found.contactPerson || found.representative || '');
-      setReceiverTel(found.contactPhone || found.phone || '');
-      setReceiverFax(found.fax || '');
-    }
+  // Handle DB Customer Selection from Sub-Modal or Datalist
+  const handleSelectCustomer = (cust: Customer) => {
+    const displayName = cust.nameKo || cust.name || '';
+    setCustomerName(displayName);
+    setReceiverAttention(cust.contactPerson || cust.representative || '');
+    setReceiverTel(cust.contactPhone || cust.phone || '');
+    setReceiverFax(cust.fax || '');
+    setShowCustomerSearchModal(false);
   };
 
-  // Handle DB Supplier Selection
-  const handleSelectSupplierFromDb = (nameVal: string) => {
-    setSupplierName(nameVal);
-    const found = dbSuppliers.find(s => s.name === nameVal || s.supplierCode === nameVal || s.id === nameVal);
-    if (found) {
-      setSupplierName(found.name || nameVal);
-    }
+  // Handle DB Supplier Selection from Sub-Modal or Datalist
+  const handleSelectSupplier = (supp: Supplier) => {
+    setSupplierName(supp.name);
+    setShowSupplierSearchModal(false);
+  };
+
+  // Handle Product Selection from Sub-Modal
+  const handleSelectProduct = (prod: Product) => {
+    if (activeItemIndexForProduct === null) return;
+    const nameStr = prod.nameKo || prod.nameEn || prod.productCode;
+    const specStr = prod.spec || prod.description || '';
+    const unitStr = prod.unit || 'KG';
+
+    setItems(prev => {
+      const updated = [...prev];
+      const idx = activeItemIndexForProduct;
+      const item = { ...updated[idx] };
+      item.productName = nameStr;
+      item.spec = specStr;
+      item.unit = unitStr;
+
+      if ((prod as any).costPrice) {
+        item.buyingUnitPrice = Number((prod as any).costPrice);
+      }
+      if ((prod as any).sellingPrice) {
+        item.salesUnitPrice = Number((prod as any).sellingPrice);
+      }
+
+      const qty = Number(item.quantity) || 1;
+      const buyingPrice = Number(item.buyingUnitPrice) || 0;
+      let salesPrice = Number(item.salesUnitPrice) || 0;
+      let marginRate = Number(item.targetMarginRate) || 15;
+
+      if (buyingPrice > 0 && salesPrice === 0) {
+        salesPrice = Math.round(buyingPrice * (1 + marginRate / 100));
+      } else if (salesPrice > 0 && buyingPrice > 0) {
+        marginRate = Math.round(((salesPrice - buyingPrice) / salesPrice) * 1000) / 10;
+      }
+
+      item.salesUnitPrice = salesPrice;
+      item.targetMarginRate = marginRate;
+      item.buyingAmount = qty * buyingPrice;
+      item.salesAmount = qty * salesPrice;
+      item.margin = item.salesAmount - item.buyingAmount;
+
+      updated[idx] = item;
+      return updated;
+    });
+
+    setShowProductSearchModal(false);
+    setActiveItemIndexForProduct(null);
   };
 
   // Handle Sales Manager Selection from Users DB
@@ -501,6 +559,35 @@ export const DomesticQuotes: React.FC = () => {
   return (
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      {/* 🔍 Sub-Modal Search Popups */}
+      {showCustomerSearchModal && (
+        <CustomerSearchModal
+          customers={dbCustomers}
+          onClose={() => setShowCustomerSearchModal(false)}
+          onSelect={handleSelectCustomer}
+        />
+      )}
+
+      {showSupplierSearchModal && (
+        <SupplierSearchModal
+          suppliers={dbSuppliers}
+          onClose={() => setShowSupplierSearchModal(false)}
+          onSelect={handleSelectSupplier}
+          onRefreshSuppliers={fetchQuotesAndMasters}
+        />
+      )}
+
+      {showProductSearchModal && (
+        <ProductSearchModal
+          products={dbProducts}
+          onClose={() => {
+            setShowProductSearchModal(false);
+            setActiveItemIndexForProduct(null);
+          }}
+          onSelect={handleSelectProduct}
+        />
+      )}
+
       {/* Global Datalists for DB Autocomplete */}
       <datalist id="customer-db-list">
         {dbCustomers.map(c => (
@@ -767,7 +854,7 @@ export const DomesticQuotes: React.FC = () => {
       {/* 📝 Create / Edit / Revise Modal */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '920px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
             
             {/* Modal Header */}
             <div style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -786,11 +873,11 @@ export const DomesticQuotes: React.FC = () => {
             {/* Modal Scrollable Form */}
             <form onSubmit={handleSubmit} style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Section 1: Basic Header Info & Customer/Supplier DB Connection */}
+              {/* Section 1: Basic Header Info & Customer/Supplier Sub-Modal Connection */}
               <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 DB 연동)</span>
-                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>⚡ 고객사/공급사 선택 시 연락처/참조 자동입력</span>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 🔍 DB 검색)</span>
+                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 서브 검색 팝업 열림</span>
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
@@ -833,34 +920,34 @@ export const DomesticQuotes: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.4fr', gap: '12px' }}>
+                  
+                  {/* Customer Input + 🔍 Button */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                        수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
-                      </label>
-                      <select
-                        onChange={e => e.target.value && handleSelectCustomerFromDb(e.target.value)}
-                        style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <input
+                        type="text"
+                        required
+                        list="customer-db-list"
+                        placeholder="고객사명..."
+                        value={customerName}
+                        onChange={e => setCustomerName(e.target.value)}
+                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerSearchModal(true)}
+                        title="고객사 DB 서브창 검색"
+                        style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
                       >
-                        <option value="">🏢 DB에서 선택...</option>
-                        {dbCustomers.map(c => (
-                          <option key={c.id} value={c.nameKo || c.name}>
-                            {c.nameKo || c.name} {c.representative ? `(${c.representative})` : ''}
-                          </option>
-                        ))}
-                      </select>
+                        🔍 DB
+                      </button>
                     </div>
-                    <input
-                      type="text"
-                      required
-                      list="customer-db-list"
-                      placeholder="고객사명 선택 또는 입력..."
-                      value={customerName}
-                      onChange={e => handleSelectCustomerFromDb(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
-                    />
                   </div>
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       참조
@@ -873,6 +960,7 @@ export const DomesticQuotes: React.FC = () => {
                       style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       전화번호
@@ -885,41 +973,41 @@ export const DomesticQuotes: React.FC = () => {
                       style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
+
+                  {/* Supplier Input + 🔍 Button */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                        국내 매입처 (공급사)
-                      </label>
-                      <select
-                        onChange={e => e.target.value && handleSelectSupplierFromDb(e.target.value)}
-                        style={{ fontSize: '11px', border: 'none', background: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      국내 매입처 (공급사)
+                    </label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <input
+                        type="text"
+                        list="supplier-db-list"
+                        placeholder="공급사명..."
+                        value={supplierName}
+                        onChange={e => setSupplierName(e.target.value)}
+                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSupplierSearchModal(true)}
+                        title="공급업체관리 DB 서브창 검색"
+                        style={{ height: '34px', padding: '0 10px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
                       >
-                        <option value="">🏭 DB에서 선택...</option>
-                        {dbSuppliers.map(s => (
-                          <option key={s.id} value={s.name}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
+                        🔍 DB
+                      </button>
                     </div>
-                    <input
-                      type="text"
-                      list="supplier-db-list"
-                      placeholder="공급사명 선택 또는 입력..."
-                      value={supplierName}
-                      onChange={e => handleSelectSupplierFromDb(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
-                    />
                   </div>
+
                 </div>
 
               </div>
 
-              {/* Section 2: Line Items */}
+              {/* Section 2: Line Items + 🔍 Product Sub-Modal */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
-                    2. 품목 목록 및 원가/마진산정 (제품 추가 가능)
+                    2. 품목 목록 및 원가/마진산정 (상품 DB 🔍 연결)
                   </span>
                   <button
                     type="button"
@@ -935,15 +1023,15 @@ export const DomesticQuotes: React.FC = () => {
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                         <th style={{ padding: '8px', width: '30px', textAlign: 'center' }}>#</th>
-                        <th style={{ padding: '8px', minWidth: '120px' }}>품명 *</th>
-                        <th style={{ padding: '8px', minWidth: '140px' }}>규격</th>
-                        <th style={{ padding: '8px', width: '70px', textAlign: 'center' }}>단위</th>
-                        <th style={{ padding: '8px', width: '80px', textAlign: 'center' }}>수량 *</th>
-                        <th style={{ padding: '8px', width: '100px', textAlign: 'right' }}>원가 (매입단가)</th>
-                        <th style={{ padding: '8px', width: '80px', textAlign: 'right' }}>마진율(%)</th>
-                        <th style={{ padding: '8px', width: '100px', textAlign: 'right' }}>견적 단가 *</th>
-                        <th style={{ padding: '8px', width: '110px', textAlign: 'right' }}>금액 (원)</th>
-                        <th style={{ padding: '8px', minWidth: '100px' }}>비고</th>
+                        <th style={{ padding: '8px', minWidth: '150px' }}>품명 (🔍상품DB) *</th>
+                        <th style={{ padding: '8px', minWidth: '130px' }}>규격</th>
+                        <th style={{ padding: '8px', width: '65px', textAlign: 'center' }}>단위</th>
+                        <th style={{ padding: '8px', width: '75px', textAlign: 'center' }}>수량 *</th>
+                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>원가 (매입단가)</th>
+                        <th style={{ padding: '8px', width: '75px', textAlign: 'right' }}>마진율(%)</th>
+                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>견적 단가 *</th>
+                        <th style={{ padding: '8px', width: '105px', textAlign: 'right' }}>금액 (원)</th>
+                        <th style={{ padding: '8px', minWidth: '90px' }}>비고</th>
                         <th style={{ padding: '8px', width: '40px', textAlign: 'center' }}>삭제</th>
                       </tr>
                     </thead>
@@ -952,14 +1040,27 @@ export const DomesticQuotes: React.FC = () => {
                         <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '6px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
                           <td style={{ padding: '6px' }}>
-                            <input
-                              type="text"
-                              required
-                              placeholder="예: GP525"
-                              value={item.productName}
-                              onChange={e => updateLineItem(idx, 'productName', e.target.value)}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600, boxSizing: 'border-box' }}
-                            />
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <input
+                                type="text"
+                                required
+                                placeholder="품명 입력 또는 🔍"
+                                value={item.productName}
+                                onChange={e => updateLineItem(idx, 'productName', e.target.value)}
+                                style={{ flex: 1, height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600, boxSizing: 'border-box' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveItemIndexForProduct(idx);
+                                  setShowProductSearchModal(true);
+                                }}
+                                title="상품 DB 서브창 검색"
+                                style={{ height: '28px', padding: '0 6px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#1d4ed8' }}
+                              >
+                                🔍
+                              </button>
+                            </div>
                           </td>
                           <td style={{ padding: '6px' }}>
                             <input
