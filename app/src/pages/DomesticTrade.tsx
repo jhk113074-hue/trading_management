@@ -818,10 +818,8 @@ export const DomesticTrade: React.FC = () => {
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주문일자</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주문번호</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주체</th>
-                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매입처</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매출처</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>품목 정보 (수량)</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매입액 / 상태</th>
                 <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매출액 / 수금</th>
                 <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>영업 마진 / 실현이익</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서</th>
@@ -832,7 +830,7 @@ export const DomesticTrade: React.FC = () => {
             <tbody>
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={12} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
+                  <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                     등록된 국내 주문 내역이 없습니다.
                   </td>
                 </tr>
@@ -873,36 +871,12 @@ export const DomesticTrade: React.FC = () => {
                           {item.companyType === 'YS' ? '영성ACC' : 'YSACC'}
                         </span>
                       </td>
-                      <td style={{ padding: '12px', color: '#334155', fontWeight: 600 }}>{item.supplierName}</td>
                       <td style={{ padding: '12px', color: '#0f172a', fontWeight: 800 }}>
                         {item.customerName}
                         {item.receiverAttention && <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, marginLeft: '4px' }}>({item.receiverAttention})</span>}
                       </td>
                       <td style={{ padding: '12px', color: '#1e293b' }}>
                         {itemSummary}
-                      </td>
-                      
-                      {/* 매입액 및 정산상태 */}
-                      <td style={{ padding: '12px', textAlign: 'right' }}>
-                        <div style={{ color: '#64748b', fontWeight: 700 }}>₩{item.buyingAmount.toLocaleString()}</div>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenSettlementModal(item, 'purchase')}
-                          style={{
-                            fontSize: '10.5px',
-                            fontWeight: 800,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid',
-                            borderColor: item.purchaseSettled ? '#86efac' : '#fde047',
-                            background: item.purchaseSettled ? '#f0fdf4' : '#fefce8',
-                            color: item.purchaseSettled ? '#166534' : '#854d0e',
-                            cursor: 'pointer',
-                            marginTop: '2px'
-                          }}
-                        >
-                          {item.purchaseSettled ? '📦 매입완료' : '⏳ 매입대기'}
-                        </button>
                       </td>
 
                       {/* 매출액 및 수금상태 */}
@@ -1033,8 +1007,7 @@ export const DomesticTrade: React.FC = () => {
             {filteredTrades.length > 0 && (
               <tfoot>
                 <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
-                  <td colSpan={6} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredTrades.length}건)</td>
-                  <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>₩{stats.totalBuying.toLocaleString()}</td>
+                  <td colSpan={5} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredTrades.length}건)</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: stats.totalMargin >= 0 ? '#10b981' : '#ef4444' }}>₩{stats.totalMargin.toLocaleString()}</td>
                   <td colSpan={3} />
