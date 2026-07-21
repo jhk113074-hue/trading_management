@@ -34,6 +34,33 @@ export interface DomesticTradeItem {
 
   taxInvoiceIssued: boolean;   // 세금계산서 발행 여부
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED'; // 정산/거래 상태 (대기/완료/취소)
+
+  // 1. 매입 등록 (Purchase Settlement)
+  purchaseSettled?: boolean;         // 매입 정산 완료 여부
+  purchaseAmountActual?: number;     // 확정 매입액 (원)
+  purchaseDate?: string;             // 매입 정산일자
+  purchaseMemo?: string;             // 매입 관련 비고
+
+  // 2. 세금계산서 등록 (Tax Invoice Registration)
+  taxInvoiceStatus?: 'UNISSUED' | 'ISSUED' | 'RECEIVED'; // 세금계산서 처리 상태
+  taxInvoiceType?: 'ISSUED' | 'RECEIVED' | 'BOTH' | 'NONE'; // 발행 구분
+  taxInvoiceNo?: string;             // 세금계산서 승인번호/문서번호
+  taxInvoiceDate?: string;           // 발행/수취 일자
+  taxInvoiceAmount?: number;         // 세금계산서 공급가액
+  taxInvoiceVat?: number;            // 세금계산서 부가세액
+
+  // 3. 수금 등록 (Collection Settlement)
+  collectionStatus?: 'UNPAID' | 'PARTIAL' | 'PAID'; // 수금 상태 (미수금/부분수금/완납)
+  collectedAmount?: number;          // 수금 누적액 (원)
+  uncollectedAmount?: number;        // 미수금 잔액 (원)
+  collectionDate?: string;           // 최종 수금일자
+  paymentMethod?: string;            // 수금 수단 (계좌이체, 어음, 현금 등)
+
+  // 4. 이익 분석 (Profit Analysis)
+  additionalExpenses?: number;       // 기타 부대비용 / 운임 (원)
+  realizedProfit?: number;           // 실현 순이익 (매출액 - 확정매입액 - 기타비용)
+  realizedMarginRate?: number;       // 실현 마진율 (%)
+
   memo?: string;               // 비고
   createdAt: string;
   updatedAt?: string;

@@ -33,11 +33,11 @@ export const DomesticTrade: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'COMPLETED' | 'CANCELLED'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal State
+  // Form Modal State (Order Create/Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DomesticTradeItem | null>(null);
 
-  // Modeless Drag-to-move & Resizable Window Position
+  // Modeless Drag-to-move & Resizable Window Position for Order Modal
   const [modalPos, setModalPos] = useState({ x: Math.max(20, (window.innerWidth - 980) / 2), y: Math.max(15, (window.innerHeight - 720) / 2) });
   const [isDraggingModal, setIsDraggingModal] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -73,7 +73,33 @@ export const DomesticTrade: React.FC = () => {
   // Preview Modal State
   const [previewItem, setPreviewItem] = useState<DomesticTradeItem | null>(null);
 
-  // Form Fields
+  // ------------------------------------------------------------------
+  // 💳 Settlement & Profitability Sub-Window Modal State
+  // ------------------------------------------------------------------
+  const [settlementTrade, setSettlementTrade] = useState<DomesticTradeItem | null>(null);
+  const [settlementTab, setSettlementTab] = useState<'purchase' | 'taxInvoice' | 'collection' | 'profit'>('purchase');
+
+  // Settlement Form Fields
+  const [purchaseSettled, setPurchaseSettled] = useState(false);
+  const [purchaseAmountActual, setPurchaseAmountActual] = useState(0);
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [purchaseMemo, setPurchaseMemo] = useState('');
+
+  const [taxInvoiceStatus, setTaxInvoiceStatus] = useState<'UNISSUED' | 'ISSUED' | 'RECEIVED'>('UNISSUED');
+  const [taxInvoiceType, setTaxInvoiceType] = useState<'ISSUED' | 'RECEIVED' | 'BOTH' | 'NONE'>('ISSUED');
+  const [taxInvoiceNo, setTaxInvoiceNo] = useState('');
+  const [taxInvoiceDate, setTaxInvoiceDate] = useState('');
+  const [taxInvoiceAmount, setTaxInvoiceAmount] = useState(0);
+  const [taxInvoiceVat, setTaxInvoiceVat] = useState(0);
+
+  const [collectionStatus, setCollectionStatus] = useState<'UNPAID' | 'PARTIAL' | 'PAID'>('UNPAID');
+  const [collectedAmount, setCollectedAmount] = useState(0);
+  const [collectionDate, setCollectionDate] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('계좌이체');
+
+  const [additionalExpenses, setAdditionalExpenses] = useState(0);
+
+  // Order Form Fields
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().split('T')[0]);
   const [tradeNo, setTradeNo] = useState('');
   const [quoteNo, setQuoteNo] = useState('');
@@ -155,6 +181,7 @@ export const DomesticTrade: React.FC = () => {
       list.sort((a, b) => (b.tradeDate || '').localeCompare(a.tradeDate || '') || b.id.localeCompare(a.id));
       setTrades(list);
 
+      // Masters
       const custs: Customer[] = [];
       custSnap.forEach(d => custs.push({ id: d.id, ...d.data() } as Customer));
       setDbCustomers(custs);
@@ -172,7 +199,7 @@ export const DomesticTrade: React.FC = () => {
       setDbProducts(prods);
 
     } catch (e) {
-      console.error("Failed to load domestic trades & DB masters:", e);
+      console.error("Failed to load domestic trades:", e);
     } finally {
       setLoading(false);
     }
@@ -182,7 +209,7 @@ export const DomesticTrade: React.FC = () => {
     fetchTradesAndMasters();
   }, []);
 
-  // Selection Handlers from Sub-Modals
+  // Handle Customer DB selection
   const handleSelectCustomer = (cust: Customer) => {
     const displayName = cust.nameKo || cust.name || '';
     setCustomerName(displayName);
@@ -192,11 +219,13 @@ export const DomesticTrade: React.FC = () => {
     setShowCustomerSearchModal(false);
   };
 
+  // Handle Supplier DB selection
   const handleSelectSupplier = (supp: Supplier) => {
     setSupplierName(supp.name);
     setShowSupplierSearchModal(false);
   };
 
+  // Handle Product DB selection
   const handleSelectProduct = (prod: Product) => {
     if (activeItemIndexForProduct === null) return;
     const nameStr = prod.nameKo || prod.nameEn || prod.productCode;
@@ -243,6 +272,7 @@ export const DomesticTrade: React.FC = () => {
     setActiveItemIndexForProduct(null);
   };
 
+  // Handle Sales Manager Selection from Users DB
   const handleSelectManagerFromDb = (nameVal: string) => {
     setManagerName(nameVal);
     const found = dbUsers.find(u => u.name === nameVal || u.id === nameVal);
@@ -257,7 +287,7 @@ export const DomesticTrade: React.FC = () => {
     }
   };
 
-  // Calculate Line Item values
+  // Line item change calculations
   const updateLineItem = (index: number, field: keyof DomesticQuoteLineItem, value: any) => {
     setItems(prev => {
       const updated = [...prev];
@@ -321,7 +351,7 @@ export const DomesticTrade: React.FC = () => {
     setItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Aggregated Totals
+  // Aggregated totals for modal
   const totals = useMemo(() => {
     const expectedBuyingAmount = items.reduce((sum, item) => sum + (Number(item.buyingAmount) || 0), 0);
     const salesAmount = items.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
@@ -330,37 +360,85 @@ export const DomesticTrade: React.FC = () => {
     return { expectedBuyingAmount, salesAmount, margin, marginRate };
   }, [items]);
 
-  // Filtered List
-  const filteredTrades = useMemo(() => {
-    return trades.filter(t => {
-      if (companyFilter !== 'All' && t.companyType !== companyFilter) return false;
-      if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        const matchNo = (t.tradeNo || '').toLowerCase().includes(term);
-        const matchQuoteNo = (t.quoteNo || '').toLowerCase().includes(term);
-        const matchSupplier = (t.supplierName || '').toLowerCase().includes(term);
-        const matchCustomer = (t.customerName || '').toLowerCase().includes(term);
-        const matchProduct = (t.productName || '').toLowerCase().includes(term);
-        if (!matchNo && !matchQuoteNo && !matchSupplier && !matchCustomer && !matchProduct) return false;
+  // Open Settlement & Profitability Management Dialog
+  const handleOpenSettlementModal = (item: DomesticTradeItem, initialTab: 'purchase' | 'taxInvoice' | 'collection' | 'profit' = 'purchase') => {
+    setSettlementTrade(item);
+    setSettlementTab(initialTab);
+
+    setPurchaseSettled(item.purchaseSettled ?? (item.status === 'COMPLETED'));
+    setPurchaseAmountActual(item.purchaseAmountActual ?? item.buyingAmount);
+    setPurchaseDate(item.purchaseDate || item.tradeDate || new Date().toISOString().split('T')[0]);
+    setPurchaseMemo(item.purchaseMemo || '');
+
+    setTaxInvoiceStatus(item.taxInvoiceStatus || (item.taxInvoiceIssued ? 'ISSUED' : 'UNISSUED'));
+    setTaxInvoiceType(item.taxInvoiceType || 'ISSUED');
+    setTaxInvoiceNo(item.taxInvoiceNo || '');
+    setTaxInvoiceDate(item.taxInvoiceDate || item.tradeDate || new Date().toISOString().split('T')[0]);
+    setTaxInvoiceAmount(item.taxInvoiceAmount ?? item.salesAmount);
+    setTaxInvoiceVat(item.taxInvoiceVat ?? Math.round((item.salesAmount || 0) * 0.1));
+
+    setCollectionStatus(item.collectionStatus || (item.status === 'COMPLETED' ? 'PAID' : 'UNPAID'));
+    setCollectedAmount(item.collectedAmount ?? (item.status === 'COMPLETED' ? item.salesAmount : 0));
+    setCollectionDate(item.collectionDate || item.tradeDate || new Date().toISOString().split('T')[0]);
+    setPaymentMethod(item.paymentMethod || '계좌이체');
+
+    setAdditionalExpenses(item.additionalExpenses ?? 0);
+  };
+
+  // Save Settlement & Profit Data
+  const handleSaveSettlement = async () => {
+    if (!settlementTrade) return;
+    try {
+      const salesAmt = settlementTrade.salesAmount || 0;
+      const actualPurchase = purchaseAmountActual || 0;
+      const expenses = additionalExpenses || 0;
+
+      const realizedProfit = salesAmt - actualPurchase - expenses;
+      const realizedMarginRate = salesAmt > 0 ? Math.round((realizedProfit / salesAmt) * 1000) / 10 : 0;
+      const uncollectedAmount = Math.max(0, salesAmt - collectedAmount);
+
+      let newStatus = settlementTrade.status;
+      if (collectionStatus === 'PAID' && purchaseSettled) {
+        newStatus = 'COMPLETED';
       }
-      return true;
-    });
-  }, [trades, companyFilter, statusFilter, searchTerm]);
 
-  // Statistics
-  const stats = useMemo(() => {
-    const totalCount = filteredTrades.length;
-    const totalBuying = filteredTrades.reduce((sum, t) => sum + (Number(t.buyingAmount) || 0), 0);
-    const totalSales = filteredTrades.reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
-    const totalMargin = totalSales - totalBuying;
-    const marginRate = totalSales > 0 ? Math.round((totalMargin / totalSales) * 1000) / 10 : 0;
+      const payload = {
+        purchaseSettled,
+        purchaseAmountActual,
+        purchaseDate,
+        purchaseMemo: purchaseMemo.trim(),
 
-    const ysaccSales = filteredTrades.filter(t => t.companyType === 'YSACC').reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
-    const ysSales = filteredTrades.filter(t => t.companyType === 'YS').reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
+        taxInvoiceStatus,
+        taxInvoiceType,
+        taxInvoiceNo: taxInvoiceNo.trim(),
+        taxInvoiceDate,
+        taxInvoiceAmount,
+        taxInvoiceVat,
+        taxInvoiceIssued: taxInvoiceStatus === 'ISSUED' || taxInvoiceStatus === 'RECEIVED',
 
-    return { totalCount, totalBuying, totalSales, totalMargin, marginRate, ysaccSales, ysSales };
-  }, [filteredTrades]);
+        collectionStatus,
+        collectedAmount,
+        uncollectedAmount,
+        collectionDate,
+        paymentMethod,
+
+        additionalExpenses,
+        realizedProfit,
+        realizedMarginRate,
+
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateDoc(doc(db, 'companies', 'YSACC', 'domestic_trades', settlementTrade.id), payload);
+      alert("🎉 매입, 세금계산서, 수금 및 이익분석 정산 데이터가 성공적으로 저장되었습니다!");
+      setSettlementTrade(null);
+      fetchTradesAndMasters();
+    } catch (e: any) {
+      console.error("Failed to save settlement data:", e);
+      alert("정산 저장 중 오류가 발생했습니다: " + e.message);
+    }
+  };
 
   // Open Modal for Create or Edit
   const handleOpenModal = (item?: DomesticTradeItem) => {
@@ -379,12 +457,12 @@ export const DomesticTrade: React.FC = () => {
       setItems(item.items && item.items.length > 0 ? item.items : [
         {
           id: 'item-1',
-          productName: item.productName || '',
+          productName: item.supplierName || '',
           spec: '',
           unit: 'KG',
           quantity: item.quantity || 1,
           buyingUnitPrice: item.buyingAmount ? Math.round(item.buyingAmount / (item.quantity || 1)) : 0,
-          targetMarginRate: item.marginRate || 0,
+          targetMarginRate: item.marginRate || 15,
           salesUnitPrice: item.salesAmount ? Math.round(item.salesAmount / (item.quantity || 1)) : 0,
           buyingAmount: item.buyingAmount || 0,
           salesAmount: item.salesAmount || 0,
@@ -398,6 +476,7 @@ export const DomesticTrade: React.FC = () => {
       setManagerTitle(item.managerTitle || '이사');
       setManagerName(item.managerName || '이한중');
       setManagerContact(item.managerContact || '010-6277-7418');
+
       setTaxInvoiceIssued(item.taxInvoiceIssued ?? true);
       setStatus(item.status || 'COMPLETED');
       setMemo(item.memo || '');
@@ -519,10 +598,42 @@ export const DomesticTrade: React.FC = () => {
       await deleteDoc(doc(db, 'companies', 'YSACC', 'domestic_trades', id));
       fetchTradesAndMasters();
     } catch (e) {
-      console.error("Failed to delete item:", e);
+      console.error("Failed to delete trade:", e);
       alert("삭제 중 오류가 발생했습니다.");
     }
   };
+
+  // Filtered List
+  const filteredTrades = useMemo(() => {
+    return trades.filter(t => {
+      if (companyFilter !== 'All' && t.companyType !== companyFilter) return false;
+      if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const matchNo = (t.tradeNo || '').toLowerCase().includes(term);
+        const matchQuoteNo = (t.quoteNo || '').toLowerCase().includes(term);
+        const matchSupplier = (t.supplierName || '').toLowerCase().includes(term);
+        const matchCustomer = (t.customerName || '').toLowerCase().includes(term);
+        const matchProduct = (t.productName || '').toLowerCase().includes(term);
+        if (!matchNo && !matchQuoteNo && !matchSupplier && !matchCustomer && !matchProduct) return false;
+      }
+      return true;
+    });
+  }, [trades, companyFilter, statusFilter, searchTerm]);
+
+  // Overall KPI Statistics
+  const stats = useMemo(() => {
+    const totalCount = filteredTrades.length;
+    const totalBuying = filteredTrades.reduce((sum, t) => sum + (Number(t.buyingAmount) || 0), 0);
+    const totalSales = filteredTrades.reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
+    const totalMargin = totalSales - totalBuying;
+    const marginRate = totalSales > 0 ? Math.round((totalMargin / totalSales) * 1000) / 10 : 0;
+
+    const ysaccSales = filteredTrades.filter(t => t.companyType === 'YSACC').reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
+    const ysSales = filteredTrades.filter(t => t.companyType === 'YS').reduce((sum, t) => sum + (Number(t.salesAmount) || 0), 0);
+
+    return { totalCount, totalBuying, totalSales, totalMargin, marginRate, ysaccSales, ysSales };
+  }, [filteredTrades]);
 
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>국내 주문 데이터를 불러오는 중...</div>;
@@ -562,7 +673,7 @@ export const DomesticTrade: React.FC = () => {
       )}
 
       {/* Global Datalists for DB Autocomplete */}
-      <datalist id="trade-customer-db-list">
+      <datalist id="customer-db-list">
         {dbCustomers.map(c => (
           <option key={c.id} value={c.nameKo || c.name}>
             {c.nameKo || c.name} {c.representative ? `(대표: ${c.representative})` : ''}
@@ -570,7 +681,7 @@ export const DomesticTrade: React.FC = () => {
         ))}
       </datalist>
 
-      <datalist id="trade-supplier-db-list">
+      <datalist id="supplier-db-list">
         {dbSuppliers.map(s => (
           <option key={s.id} value={s.name}>
             {s.name} {s.representative ? `(대표: ${s.representative})` : ''}
@@ -578,7 +689,7 @@ export const DomesticTrade: React.FC = () => {
         ))}
       </datalist>
 
-      <datalist id="trade-user-db-list">
+      <datalist id="user-db-list">
         {dbUsers.map(u => (
           <option key={u.id} value={u.name}>
             {u.name} {u.position || u.role ? `(${u.position || u.role})` : ''}
@@ -599,8 +710,8 @@ export const DomesticTrade: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>🏬 국내 주문관리</h1>
-          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입 및 판매 주문 통합 관리</span>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>🏪 국내 주문관리</h1>
+          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 주문, 세금계산서, 수금등록 및 실현 이익분석 통합 관리</span>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -699,12 +810,12 @@ export const DomesticTrade: React.FC = () => {
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매입처</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>국내 매출처</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>품목 정보 (수량)</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매입액</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매출액</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>영업 마진</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매입액 / 상태</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 매출액 / 수금</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>영업 마진 / 실현이익</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리 및 주문서</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리 및 정산분석</th>
               </tr>
             </thead>
             <tbody>
@@ -721,6 +832,16 @@ export const DomesticTrade: React.FC = () => {
                   const itemSummary = item.items && item.items.length > 0
                     ? `${item.items[0].productName} ${itemCount > 1 ? `외 ${itemCount - 1}건` : ''}`
                     : (item.productName || '품목');
+
+                  // Realized profit calculation
+                  const actualPurchase = item.purchaseAmountActual ?? item.buyingAmount;
+                  const expenses = item.additionalExpenses ?? 0;
+                  const realizedProf = item.realizedProfit ?? (item.salesAmount - actualPurchase - expenses);
+                  const realizedRate = item.realizedMarginRate ?? item.marginRate;
+
+                  // Collection status badge
+                  const collected = item.collectedAmount ?? (item.status === 'COMPLETED' ? item.salesAmount : 0);
+                  const uncollected = Math.max(0, item.salesAmount - collected);
 
                   return (
                     <tr 
@@ -751,18 +872,99 @@ export const DomesticTrade: React.FC = () => {
                       <td style={{ padding: '12px', color: '#1e293b' }}>
                         {itemSummary}
                       </td>
-                      <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>₩{item.buyingAmount.toLocaleString()}</td>
-                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#2563eb' }}>₩{item.salesAmount.toLocaleString()}</td>
-                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: margin >= 0 ? '#10b981' : '#ef4444' }}>
-                        ₩{margin.toLocaleString()} ({item.marginRate}%)
+                      
+                      {/* 매입액 및 정산상태 */}
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <div style={{ color: '#64748b', fontWeight: 700 }}>₩{item.buyingAmount.toLocaleString()}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSettlementModal(item, 'purchase')}
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid',
+                            borderColor: item.purchaseSettled ? '#86efac' : '#fde047',
+                            background: item.purchaseSettled ? '#f0fdf4' : '#fefce8',
+                            color: item.purchaseSettled ? '#166534' : '#854d0e',
+                            cursor: 'pointer',
+                            marginTop: '2px'
+                          }}
+                        >
+                          {item.purchaseSettled ? '📦 매입완료' : '⏳ 매입대기'}
+                        </button>
                       </td>
+
+                      {/* 매출액 및 수금상태 */}
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: 800, color: '#2563eb' }}>₩{item.salesAmount.toLocaleString()}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSettlementModal(item, 'collection')}
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid',
+                            borderColor: item.collectionStatus === 'PAID' ? '#93c5fd' : item.collectionStatus === 'PARTIAL' ? '#fde047' : '#fca5a5',
+                            background: item.collectionStatus === 'PAID' ? '#eff6ff' : item.collectionStatus === 'PARTIAL' ? '#fefce8' : '#fef2f2',
+                            color: item.collectionStatus === 'PAID' ? '#1e40af' : item.collectionStatus === 'PARTIAL' ? '#854d0e' : '#991b1b',
+                            cursor: 'pointer',
+                            marginTop: '2px'
+                          }}
+                        >
+                          {item.collectionStatus === 'PAID' ? `💰 완납` : uncollected > 0 ? `미수 ₩${uncollected.toLocaleString()}` : `수금등록`}
+                        </button>
+                      </td>
+
+                      {/* 영업 마진 및 실현이익 */}
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: 800, color: margin >= 0 ? '#10b981' : '#ef4444' }}>
+                          ₩{margin.toLocaleString()} ({item.marginRate}%)
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSettlementModal(item, 'profit')}
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #d8b4fe',
+                            background: '#faf5ff',
+                            color: '#6b21a8',
+                            cursor: 'pointer',
+                            marginTop: '2px'
+                          }}
+                        >
+                          📊 실현 ₩{realizedProf.toLocaleString()} ({realizedRate}%)
+                        </button>
+                      </td>
+
+                      {/* 세금계산서 */}
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        {item.taxInvoiceIssued ? (
-                          <span style={{ fontSize: '12px', color: '#166534', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>발행완료</span>
-                        ) : (
-                          <span style={{ fontSize: '12px', color: '#991b1b', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>미발행</span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSettlementModal(item, 'taxInvoice')}
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid',
+                            borderColor: item.taxInvoiceStatus === 'ISSUED' || item.taxInvoiceIssued ? '#86efac' : '#fca5a5',
+                            background: item.taxInvoiceStatus === 'ISSUED' || item.taxInvoiceIssued ? '#dcfce7' : '#fee2e2',
+                            color: item.taxInvoiceStatus === 'ISSUED' || item.taxInvoiceIssued ? '#166534' : '#991b1b',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {item.taxInvoiceStatus === 'ISSUED' || item.taxInvoiceIssued ? '🧾 발행완료' : '🧾 미발행'}
+                        </button>
                       </td>
+
+                      {/* 상태 */}
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         <span style={{
                           fontSize: '12.5px',
@@ -775,8 +977,17 @@ export const DomesticTrade: React.FC = () => {
                           {item.status === 'COMPLETED' ? '정산완료' : item.status === 'PENDING' ? '정산대기' : '취소'}
                         </span>
                       </td>
+
+                      {/* 관리 및 정산분석 버튼 */}
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => handleOpenSettlementModal(item, 'profit')}
+                            title="매입, 세금계산서, 수금 및 실현이익 통합 정산 분석"
+                            style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', cursor: 'pointer' }}
+                          >
+                            💳 정산/이익관리
+                          </button>
                           <button
                             onClick={() => setPreviewItem(item)}
                             title="엑셀/인쇄 양식 미리보기"
@@ -817,6 +1028,365 @@ export const DomesticTrade: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 💳 Dedicated Settlement & Profitability Management Modeless Dialog  */}
+      {/* ------------------------------------------------------------------ */}
+      {settlementTrade && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10000,
+            pointerEvents: 'auto'
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '8px',
+              border: '1px solid #94a3b8',
+              width: '920px',
+              maxWidth: '96vw',
+              maxHeight: '92vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px rgba(15,23,42,0.4)',
+              minWidth: '700px'
+            }}
+          >
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(to right, #1e293b, #334155)', color: '#fff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>💳</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>국내 주문 정산 & 이익 분석 관리</h3>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                    주문번호: <strong>{settlementTrade.tradeNo}</strong> | 매출처: <strong>{settlementTrade.customerName}</strong> | 매입처: <strong>{settlementTrade.supplierName}</strong>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettlementTrade(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sub-Tabs Bar */}
+            <div style={{ display: 'flex', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '0 16px' }}>
+              <button
+                type="button"
+                onClick={() => setSettlementTab('purchase')}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  borderBottom: settlementTab === 'purchase' ? '3px solid #3b82f6' : '3px solid transparent',
+                  background: 'none',
+                  fontSize: '13.5px',
+                  fontWeight: settlementTab === 'purchase' ? 800 : 600,
+                  color: settlementTab === 'purchase' ? '#2563eb' : '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                📦 1. 매입 등록
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettlementTab('taxInvoice')}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  borderBottom: settlementTab === 'taxInvoice' ? '3px solid #3b82f6' : '3px solid transparent',
+                  background: 'none',
+                  fontSize: '13.5px',
+                  fontWeight: settlementTab === 'taxInvoice' ? 800 : 600,
+                  color: settlementTab === 'taxInvoice' ? '#2563eb' : '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                🧾 2. 세금계산서 등록
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettlementTab('collection')}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  borderBottom: settlementTab === 'collection' ? '3px solid #3b82f6' : '3px solid transparent',
+                  background: 'none',
+                  fontSize: '13.5px',
+                  fontWeight: settlementTab === 'collection' ? 800 : 600,
+                  color: settlementTab === 'collection' ? '#2563eb' : '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                💰 3. 수금 등록
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettlementTab('profit')}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  borderBottom: settlementTab === 'profit' ? '3px solid #6d28d9' : '3px solid transparent',
+                  background: 'none',
+                  fontSize: '13.5px',
+                  fontWeight: settlementTab === 'profit' ? 800 : 600,
+                  color: settlementTab === 'profit' ? '#6d28d9' : '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                📊 4. 이익 분석
+              </button>
+            </div>
+
+            {/* Tab Body */}
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* TAB 1: 📦 매입 등록 */}
+              {settlementTab === 'purchase' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>📦 국내 매입처 결제 & 매입 정산 관리</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>국내 매입처</label>
+                        <input type="text" readOnly value={settlementTrade.supplierName} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, background: '#f1f5f9' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>당초 매입예정액</label>
+                        <input type="text" readOnly value={`₩${(settlementTrade.buyingAmount || 0).toLocaleString()}`} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, background: '#f1f5f9' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>확정 매입금액 (원가)</label>
+                        <input type="number" value={purchaseAmountActual} onChange={e => setPurchaseAmountActual(Number(e.target.value))} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, color: '#166534' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>매입 정산일자</label>
+                      <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>매입 정산 상태</label>
+                      <button
+                        type="button"
+                        onClick={() => setPurchaseSettled(!purchaseSettled)}
+                        style={{
+                          height: '34px',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '13px',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          background: purchaseSettled ? '#dcfce7' : '#fefce8',
+                          color: purchaseSettled ? '#166534' : '#854d0e'
+                        }}
+                      >
+                        {purchaseSettled ? '✅ 매입 정산 완료 (클릭 시 변경)' : '⏳ 매입 정산 대기중 (클릭 시 완료)'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>매입 비고 & 지급 메모</label>
+                    <input type="text" placeholder="예: 7/25 계좌 송금 완료, 매입 세금계산서 수취 완료" value={purchaseMemo} onChange={e => setPurchaseMemo(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px' }} />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: 🧾 세금계산서 등록 */}
+              {settlementTab === 'taxInvoice' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>🧾 전자 세금계산서 발행 및 수취 관리</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>발행 구분</label>
+                        <select value={taxInvoiceType} onChange={e => setTaxInvoiceType(e.target.value as any)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700 }}>
+                          <option value="ISSUED">매출 세금계산서 발행 (자사 ➔ 고객사)</option>
+                          <option value="RECEIVED">매입 세금계산서 수취 (공급사 ➔ 자사)</option>
+                          <option value="BOTH">매출/매입 양쪽 처리</option>
+                          <option value="NONE">해당 없음</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>승인/관리 번호</label>
+                        <input type="text" placeholder="예: 20260721-41000-8899" value={taxInvoiceNo} onChange={e => setTaxInvoiceNo(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700 }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>발행/수취 일자</label>
+                        <input type="date" value={taxInvoiceDate} onChange={e => setTaxInvoiceDate(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>공급가액 (원)</label>
+                      <input type="number" value={taxInvoiceAmount} onChange={e => { const val = Number(e.target.value); setTaxInvoiceAmount(val); setTaxInvoiceVat(Math.round(val * 0.1)); }} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, color: '#2563eb' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>부가세액 (VAT 10%)</label>
+                      <input type="number" value={taxInvoiceVat} onChange={e => setTaxInvoiceVat(Number(e.target.value))} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, color: '#059669' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>세금계산서 상태</label>
+                      <select value={taxInvoiceStatus} onChange={e => setTaxInvoiceStatus(e.target.value as any)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, background: taxInvoiceStatus === 'ISSUED' ? '#dcfce7' : '#fee2e2', color: taxInvoiceStatus === 'ISSUED' ? '#166534' : '#991b1b' }}>
+                        <option value="UNISSUED">❌ 미발행</option>
+                        <option value="ISSUED">✅ 발행 완료</option>
+                        <option value="RECEIVED">📥 수취 완료</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: 💰 수금 등록 */}
+              {settlementTab === 'collection' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>💰 고객사 수금 등록 & 미수금 관리</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 매출액 (견적/주문)</label>
+                        <input type="text" readOnly value={`₩${(settlementTrade.salesAmount || 0).toLocaleString()}`} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, background: '#f1f5f9', color: '#2563eb' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>누적 수금액 (입금액)</label>
+                        <input type="number" value={collectedAmount} onChange={e => { const val = Number(e.target.value); setCollectedAmount(val); if (val >= (settlementTrade.salesAmount || 0)) setCollectionStatus('PAID'); else if (val > 0) setCollectionStatus('PARTIAL'); else setCollectionStatus('UNPAID'); }} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, color: '#059669' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>미수금 잔액</label>
+                        <input type="text" readOnly value={`₩${Math.max(0, (settlementTrade.salesAmount || 0) - collectedAmount).toLocaleString()}`} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, background: '#fef2f2', color: Math.max(0, (settlementTrade.salesAmount || 0) - collectedAmount) > 0 ? '#dc2626' : '#059669' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수금/입금 일자</label>
+                      <input type="date" value={collectionDate} onChange={e => setCollectionDate(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수금 수단</label>
+                      <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700 }}>
+                        <option value="계좌이체">🏦 계좌이체</option>
+                        <option value="어음">📜 전자/약속 어음</option>
+                        <option value="현금">💵 현금</option>
+                        <option value="신용카드">💳 신용카드</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수금 정산 상태</label>
+                      <select value={collectionStatus} onChange={e => setCollectionStatus(e.target.value as any)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 800, background: collectionStatus === 'PAID' ? '#dcfce7' : collectionStatus === 'PARTIAL' ? '#fefce8' : '#fee2e2', color: collectionStatus === 'PAID' ? '#166534' : collectionStatus === 'PARTIAL' ? '#854d0e' : '#991b1b' }}>
+                        <option value="UNPAID">❌ 미수금</option>
+                        <option value="PARTIAL">⏳ 부분 수금</option>
+                        <option value="PAID">✅ 수금 완료 (완납)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: 📊 이익 분석 */}
+              {settlementTab === 'profit' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ background: '#faf5ff', padding: '16px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 850, color: '#581c87', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📊 손익 종합 계산 & 실현 이익 분석
+                    </h4>
+
+                    {/* Cost Breakdown Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>총 매출액</span>
+                        <div style={{ fontSize: '16px', fontWeight: 900, color: '#2563eb', marginTop: '4px' }}>
+                          ₩{(settlementTrade.salesAmount || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>확정 매입액 (원가)</span>
+                        <div style={{ fontSize: '16px', fontWeight: 900, color: '#64748b', marginTop: '4px' }}>
+                          - ₩{(purchaseAmountActual || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>기타 부대비용/운임</span>
+                        <div style={{ fontSize: '16px', fontWeight: 900, color: '#dc2626', marginTop: '4px' }}>
+                          - ₩{(additionalExpenses || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ border: '2px solid #9333ea', borderRadius: '4px', padding: '12px', textAlign: 'center', background: '#f3e8ff' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#6b21a8' }}>실현 영업이익 (순이익)</span>
+                        <div style={{ fontSize: '18px', fontWeight: 900, color: (settlementTrade.salesAmount - purchaseAmountActual - additionalExpenses) >= 0 ? '#6b21a8' : '#dc2626', marginTop: '2px' }}>
+                          ₩{(settlementTrade.salesAmount - purchaseAmountActual - additionalExpenses).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#7e22ce', marginTop: '2px' }}>
+                          이익률: {settlementTrade.salesAmount > 0 ? Math.round(((settlementTrade.salesAmount - purchaseAmountActual - additionalExpenses) / settlementTrade.salesAmount) * 1000) / 10 : 0}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>추가 부대비용/운임 입력 (원)</label>
+                      <input type="number" value={additionalExpenses} onChange={e => setAdditionalExpenses(Number(e.target.value))} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700 }} placeholder="0" />
+                    </div>
+
+                    <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b' }}>종합 정산 완료 상태:</span>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                          매입: {purchaseSettled ? '✅완료' : '⏳대기'} | 세금계산서: {taxInvoiceStatus === 'ISSUED' ? '✅발행' : '⏳미발행'} | 수금: {collectionStatus === 'PAID' ? '✅완납' : '⏳미수'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Bottom Action Bar */}
+            <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                💡 입력하신 매입, 세금계산서, 수금 정보는 즉시 이익 분석에 실시간 반영됩니다.
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSettlementTrade(null)}
+                  style={{ height: '34px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveSettlement}
+                  style={{ height: '34px', padding: '0 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 2px 4px rgba(59,130,246,0.3)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+                >
+                  💾 정산/이익 데이터 저장
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* 📝 Create / Edit Modeless Resizable Dialog */}
       {isModalOpen && (
@@ -864,7 +1434,7 @@ export const DomesticTrade: React.FC = () => {
             >
               <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '14px', color: '#3b82f6' }}>✥</span>
-                {editingItem ? '✏️ 국내 주문 내역 수정' : '➕ 신규 국내 주문 등록'}
+                {editingItem ? '✏️ 국내 주문 수정' : '➕ 신규 국내 주문 등록'}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>✥ 상단 드래그 이동 | ↘ 오른쪽 아래 창크기 조절</span>
@@ -884,11 +1454,11 @@ export const DomesticTrade: React.FC = () => {
               {/* Section 1: Basic Header Info */}
               <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>1. 주문 기본 및 수신자 정보 (고객사/공급사 🔍 DB 연결)</span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>1. 주문 기본 및 매출/매입처 정보 (고객사/공급사 🔍 DB 연결)</span>
                   <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 DB 검색</span>
                 </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       주문번호 <span style={{ color: '#ef4444' }}>*</span>
@@ -898,6 +1468,18 @@ export const DomesticTrade: React.FC = () => {
                       required
                       value={tradeNo}
                       onChange={e => setTradeNo(e.target.value)}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 700, color: '#1e293b', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      연결 견적번호
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="예: 2026-YSACC-EST-01"
+                      value={quoteNo}
+                      onChange={e => setQuoteNo(e.target.value)}
                       style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
@@ -915,7 +1497,7 @@ export const DomesticTrade: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      주체 (자사 구분) <span style={{ color: '#ef4444' }}>*</span>
+                      발주 주체 (자사) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <select
                       value={companyType}
@@ -933,14 +1515,14 @@ export const DomesticTrade: React.FC = () => {
                   {/* Customer Input + 🔍 Button */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
+                      국내 매출처 (고객사) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <input
                         type="text"
                         required
-                        list="trade-customer-db-list"
-                        placeholder="고객사명..."
+                        list="customer-db-list"
+                        placeholder="매출처명..."
                         value={customerName}
                         onChange={e => setCustomerName(e.target.value)}
                         style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
@@ -958,11 +1540,11 @@ export const DomesticTrade: React.FC = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      참조
+                      참조 (담당자)
                     </label>
                     <input
                       type="text"
-                      placeholder="예: 민재준 이사님"
+                      placeholder="예: 김성기 사장님"
                       value={receiverAttention}
                       onChange={e => setReceiverAttention(e.target.value)}
                       style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
@@ -990,8 +1572,8 @@ export const DomesticTrade: React.FC = () => {
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <input
                         type="text"
-                        list="trade-supplier-db-list"
-                        placeholder="공급사명..."
+                        list="supplier-db-list"
+                        placeholder="매입처명..."
                         value={supplierName}
                         onChange={e => setSupplierName(e.target.value)}
                         style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
@@ -1015,7 +1597,7 @@ export const DomesticTrade: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
-                    2. 품목 목록 및 원가/마진산정 (상품 DB 🔍 연결)
+                    2. 품목 목록 및 단가/금액 산정 (상품 DB 🔍 연결)
                   </span>
                   <button
                     type="button"
@@ -1035,7 +1617,7 @@ export const DomesticTrade: React.FC = () => {
                         <th style={{ padding: '4px 6px', minWidth: '120px' }}>규격</th>
                         <th style={{ padding: '4px 6px', width: '55px', textAlign: 'center' }}>단위</th>
                         <th style={{ padding: '4px 6px', width: '65px', textAlign: 'center' }}>수량 *</th>
-                        <th style={{ padding: '4px 6px', width: '85px', textAlign: 'right' }}>원가 (매입단가)</th>
+                        <th style={{ padding: '4px 6px', width: '85px', textAlign: 'right' }}>매입 단가</th>
                         <th style={{ padding: '4px 6px', width: '65px', textAlign: 'right' }}>마진율(%)</th>
                         <th style={{ padding: '4px 6px', width: '85px', textAlign: 'right' }}>매출 단가 *</th>
                         <th style={{ padding: '4px 6px', width: '95px', textAlign: 'right' }}>금액 (원)</th>
@@ -1073,7 +1655,7 @@ export const DomesticTrade: React.FC = () => {
                           <td style={{ padding: '4px' }}>
                             <input
                               type="text"
-                              placeholder="예: GPPS"
+                              placeholder="예: PE Mesh"
                               value={item.spec || ''}
                               onChange={e => updateLineItem(idx, 'spec', e.target.value)}
                               style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '11.5px', boxSizing: 'border-box' }}
@@ -1163,7 +1745,7 @@ export const DomesticTrade: React.FC = () => {
 
               {/* Section 3: Terms & Footer details */}
               <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 판매 담당자 (직원 DB 연동)</span>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 담당자 (직원 DB 연동)</span>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1172,7 +1754,7 @@ export const DomesticTrade: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      placeholder="예: SMC 관련 품목, 물탱크 관련 부자재"
+                      placeholder="예: 안산 도착도, 납기 4월 15일"
                       value={specialNotes}
                       onChange={e => setSpecialNotes(e.target.value)}
                       style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
@@ -1221,7 +1803,7 @@ export const DomesticTrade: React.FC = () => {
                       </div>
                       <input
                         type="text"
-                        list="trade-user-db-list"
+                        list="user-db-list"
                         placeholder="이한중"
                         value={managerName}
                         onChange={e => handleSelectManagerFromDb(e.target.value)}
@@ -1239,28 +1821,32 @@ export const DomesticTrade: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서 발행 여부</label>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서 발행</label>
                     <select
-                      value={taxInvoiceIssued ? 'YES' : 'NO'}
-                      onChange={e => setTaxInvoiceIssued(e.target.value === 'YES')}
-                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', background: '#fff' }}
+                      value={taxInvoiceIssued ? 'true' : 'false'}
+                      onChange={e => setTaxInvoiceIssued(e.target.value === 'true')}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 700, background: '#fff', color: taxInvoiceIssued ? '#059669' : '#991b1b' }}
                     >
-                      <option value="YES">발행 완료</option>
-                      <option value="NO">미발행 / 진행중</option>
+                      <option value="true">✅ 발행 완료</option>
+                      <option value="false">❌ 미발행</option>
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>정산 상태</label>
-                    <select value={status} onChange={e => setStatus(e.target.value as any)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, background: '#fff' }}>
-                      <option value="COMPLETED">정산 완료</option>
-                      <option value="PENDING">정산 대기</option>
-                      <option value="CANCELLED">취소됨</option>
+                    <select
+                      value={status}
+                      onChange={e => setStatus(e.target.value as any)}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 700, background: '#fff', color: status === 'COMPLETED' ? '#059669' : '#1e293b' }}
+                    >
+                      <option value="COMPLETED">✅ 정산 완료</option>
+                      <option value="PENDING">⏳ 정산 대기</option>
+                      <option value="CANCELLED">❌ 취소</option>
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고 / 메모</label>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고</label>
                     <input type="text" placeholder="기타 사항" value={memo} onChange={e => setMemo(e.target.value)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600 }} />
                   </div>
                 </div>
@@ -1283,7 +1869,7 @@ export const DomesticTrade: React.FC = () => {
                   onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
                   onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
-                  {isSubmitting ? '저장 중...' : editingItem ? '주문 수정 저장' : '주문 등록'}
+                  {isSubmitting ? '저장 중...' : editingItem ? '주문 수정 저장' : '신규 주문 등록'}
                 </button>
               </div>
 
@@ -1293,7 +1879,7 @@ export const DomesticTrade: React.FC = () => {
         </div>
       )}
 
-      {/* 🖨️ Order Print & Excel Format Preview Modal */}
+      {/* 🖨️ Order Print Preview Modal */}
       {previewItem && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '850px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
@@ -1301,7 +1887,7 @@ export const DomesticTrade: React.FC = () => {
             {/* Modal Header Bar */}
             <div className="no-print" style={{ background: '#1e293b', color: '#fff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 800 }}>📄 국내 주문서 / 발주서 인쇄 미리보기</span>
+                <span style={{ fontSize: '16px', fontWeight: 800 }}>📄 국내 주문서 인쇄 / 미리보기</span>
                 <span style={{ fontSize: '12px', background: '#3b82f6', padding: '2px 8px', borderRadius: '4px' }}>{previewItem.tradeNo}</span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -1320,7 +1906,7 @@ export const DomesticTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Print Area matching Excel Format */}
+            {/* Print Area */}
             <div style={{ padding: '30px', overflowY: 'auto', background: '#fff' }}>
               <div id="order-print-area" style={{ border: '2px solid #1e293b', padding: '24px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
                 
@@ -1332,16 +1918,16 @@ export const DomesticTrade: React.FC = () => {
                 {/* Top Grid Info */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   
-                  {/* Left: Customer Receiver Info */}
+                  {/* Left: Customer Info */}
                   <div style={{ border: '1px solid #000', padding: '12px', fontSize: '13px', lineHeight: '1.8' }}>
                     <div><strong>주문번호 :</strong> {previewItem.tradeNo}</div>
                     {previewItem.quoteNo && <div><strong>견적번호 :</strong> {previewItem.quoteNo}</div>}
-                    <div><strong>주문일자 :</strong> {previewItem.tradeDate}</div>
+                    <div><strong>일 자 :</strong> {previewItem.tradeDate}</div>
                     <div><strong>수 신 :</strong> <span style={{ fontSize: '15px', fontWeight: 800 }}>{previewItem.customerName}</span></div>
                     {previewItem.receiverAttention && <div><strong>참 조 :</strong> {previewItem.receiverAttention}</div>}
                     {previewItem.receiverTel && <div><strong>전화번호 :</strong> {previewItem.receiverTel}</div>}
                     {previewItem.receiverFax && <div><strong>F A X :</strong> {previewItem.receiverFax}</div>}
-                    <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 국내 주문 확정 드립니다.</div>
+                    <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 주문합니다.</div>
                   </div>
 
                   {/* Right: YSACC / YS Company Stamp Info */}
@@ -1401,7 +1987,6 @@ export const DomesticTrade: React.FC = () => {
                         <td style={{ border: '1px solid #000', padding: '8px' }}>-</td>
                       </tr>
                     )}
-                    {/* Padding rows if items < 4 for visual height */}
                     {Array.from({ length: Math.max(0, 4 - (previewItem.items?.length || 1)) }).map((_, i) => (
                       <tr key={`empty-${i}`}>
                         <td style={{ border: '1px solid #000', padding: '12px' }}>&nbsp;</td>
