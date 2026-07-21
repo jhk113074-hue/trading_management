@@ -1,7 +1,7 @@
 export interface DomesticTradeItem {
   id: string;
-  tradeDate: string;           // 거래일자 (YYYY-MM-DD)
-  tradeNo: string;             // 관리번호 (예: DOM-2026-001)
+  tradeDate: string;           // 주문일자 (YYYY-MM-DD)
+  tradeNo: string;             // 주문번호 (예: DOM-ORD-2026-001)
   companyType: 'YSACC' | 'YS';  // 주체 구분 (YSACC / 영성)
   supplierName: string;        // 국내 매입처 (공급사)
   customerName: string;        // 국내 매출처 (고객사)
@@ -15,6 +15,26 @@ export interface DomesticTradeItem {
   marginRate: number;          // 마진율 (%)
   taxInvoiceIssued: boolean;   // 세금계산서 발행 여부
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED'; // 정산/거래 상태 (대기/완료/취소)
+  memo?: string;               // 비고
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface DomesticQuoteItem {
+  id: string;
+  quoteDate: string;           // 견적일자 (YYYY-MM-DD)
+  quoteNo: string;             // 견적번호 (예: DOM-EST-2026-001)
+  companyType: 'YSACC' | 'YS';  // 주체 구분 (YSACC / 영성)
+  supplierName: string;        // 국내 매입처 (공급처)
+  customerName: string;        // 국내 매출처 (고객사)
+  productName: string;         // 품목명
+  quantity: number;            // 수량
+  expectedBuyingAmount: number;// 예상 매입액 (원)
+  quoteAmount: number;         // 견적 금액 (원)
+  expectedMargin: number;      // 예상 마진 (원)
+  expectedMarginRate: number;  // 예상 마진율 (%)
+  status: 'REVIEW' | 'APPROVED' | 'REJECTED'; // 견적 상태 (검토중 / 고객승인 / 반려)
+  validUntil?: string;         // 견적 유효기간
   memo?: string;               // 비고
   createdAt: string;
   updatedAt?: string;

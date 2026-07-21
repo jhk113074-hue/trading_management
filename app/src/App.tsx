@@ -27,6 +27,7 @@ import { Imports } from './pages/Imports';
 import { ImportDetail } from './pages/ImportDetail';
 import { Credentials } from './pages/Credentials';
 import { DomesticTrade } from './pages/DomesticTrade';
+import { DomesticQuotes } from './pages/DomesticQuotes';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -82,7 +83,9 @@ const App: React.FC = () => {
               <Route path="import-quotes" element={<Imports mode="quotes" />} />
               <Route path="imports" element={<Imports mode="active" />} />
               <Route path="imports/:id" element={<ImportDetail />} />
-              <Route path="domestic-trade" element={<DomesticTrade />} />
+              <Route path="domestic-quotes" element={<DomesticQuotes />} />
+              <Route path="domestic-orders" element={<DomesticTrade />} />
+              <Route path="domestic-trade" element={<Navigate to="/domestic-orders" replace />} />
             </Route>
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />
