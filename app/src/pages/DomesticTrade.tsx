@@ -73,6 +73,9 @@ export const DomesticTrade: React.FC = () => {
   // Preview Modal State
   const [previewItem, setPreviewItem] = useState<DomesticTradeItem | null>(null);
 
+  // 📑 Transaction Statement (거래명세표) Preview Modal State
+  const [statementItem, setStatementItem] = useState<DomesticTradeItem | null>(null);
+
   // ------------------------------------------------------------------
   // 💳 Settlement & Profitability Sub-Window Modal State
   // ------------------------------------------------------------------
@@ -701,8 +704,8 @@ export const DomesticTrade: React.FC = () => {
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          #order-print-area, #order-print-area * { visibility: visible; }
-          #order-print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+          #order-print-area, #order-print-area *, #statement-print-area, #statement-print-area * { visibility: visible; }
+          #order-print-area, #statement-print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
           .no-print { display: none !important; }
         }
       `}</style>
@@ -711,7 +714,7 @@ export const DomesticTrade: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>🏪 국내 주문관리</h1>
-          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 주문, 세금계산서, 수금등록 및 실현 이익분석 통합 관리</span>
+          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 주문, 세금계산서, 수금등록, 거래명세표 및 이익분석 통합 관리</span>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -815,7 +818,7 @@ export const DomesticTrade: React.FC = () => {
                 <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>영업 마진 / 실현이익</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>세금계산서</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리 및 정산분석</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리 및 명세서</th>
               </tr>
             </thead>
             <tbody>
@@ -833,13 +836,11 @@ export const DomesticTrade: React.FC = () => {
                     ? `${item.items[0].productName} ${itemCount > 1 ? `외 ${itemCount - 1}건` : ''}`
                     : (item.productName || '품목');
 
-                  // Realized profit calculation
                   const actualPurchase = item.purchaseAmountActual ?? item.buyingAmount;
                   const expenses = item.additionalExpenses ?? 0;
                   const realizedProf = item.realizedProfit ?? (item.salesAmount - actualPurchase - expenses);
                   const realizedRate = item.realizedMarginRate ?? item.marginRate;
 
-                  // Collection status badge
                   const collected = item.collectedAmount ?? (item.status === 'COMPLETED' ? item.salesAmount : 0);
                   const uncollected = Math.max(0, item.salesAmount - collected);
 
@@ -978,9 +979,16 @@ export const DomesticTrade: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* 관리 및 정산분석 버튼 */}
+                      {/* 관리 및 명세서 버튼 */}
                       <td style={{ padding: '12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setStatementItem(item)}
+                            title="거래명세표 (Transaction Statement) 출력 및 인쇄"
+                            style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 800, color: '#166534', cursor: 'pointer' }}
+                          >
+                            📑 거래명세표
+                          </button>
                           <button
                             onClick={() => handleOpenSettlementModal(item, 'profit')}
                             title="매입, 세금계산서, 수금 및 실현이익 통합 정산 분석"
@@ -2049,6 +2057,183 @@ export const DomesticTrade: React.FC = () => {
                 {/* Footer Brand Logo */}
                 <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '12px', fontSize: '14px', fontWeight: 900, color: '#1e293b' }}>
                   {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 📑 Transaction Statement (거래명세표) Print Preview Modal */}
+      {statementItem && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '880px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+            
+            {/* Modal Header Bar */}
+            <div className="no-print" style={{ background: '#065f46', color: '#fff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800 }}>📑 거래명세표 (Transaction Statement) 미리보기</span>
+                <span style={{ fontSize: '12px', background: '#10b981', padding: '2px 8px', borderRadius: '4px' }}>{statementItem.tradeNo}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => window.print()}
+                  style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 16px', height: '32px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  🖨️ 즉시 인쇄 / PDF 저장
+                </button>
+                <button
+                  onClick={() => setStatementItem(null)}
+                  style={{ background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 12px', height: '32px', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+
+            {/* Print Area */}
+            <div style={{ padding: '30px', overflowY: 'auto', background: '#fff' }}>
+              <div id="statement-print-area" style={{ border: '2px solid #065f46', padding: '24px', background: '#fff', fontFamily: '"Malgun Gothic", Dotum, sans-serif', color: '#000' }}>
+                
+                {/* Header Title */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid #065f46', paddingBottom: '8px', marginBottom: '16px' }}>
+                  <h1 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '8px', margin: 0, color: '#065f46' }}>
+                    거 래 명 세 표
+                  </h1>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                    (공급받는자 보관용 / 공급자 보관용)
+                  </div>
+                </div>
+
+                {/* Top Info Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  
+                  {/* Customer Box (공급받는자) */}
+                  <div style={{ border: '1px solid #000', padding: '10px', fontSize: '12.5px', lineHeight: '1.7' }}>
+                    <div style={{ background: '#f0fdf4', padding: '2px 6px', fontWeight: 900, marginBottom: '6px', borderBottom: '1px solid #000', color: '#065f46' }}>
+                      [ 공급받는자 ]
+                    </div>
+                    <div><strong>거래일자 :</strong> {statementItem.tradeDate}</div>
+                    <div><strong>주문번호 :</strong> {statementItem.tradeNo}</div>
+                    <div><strong>상 호 명 :</strong> <span style={{ fontSize: '14px', fontWeight: 800 }}>{statementItem.customerName}</span></div>
+                    {statementItem.receiverAttention && <div><strong>담당/참조 :</strong> {statementItem.receiverAttention}</div>}
+                    {statementItem.receiverTel && <div><strong>전화번호 :</strong> {statementItem.receiverTel}</div>}
+                    <div style={{ marginTop: '6px', fontWeight: 700 }}>아래와 같이 정히 거래(납품)하였음을 명세합니다.</div>
+                  </div>
+
+                  {/* Supplier Box (공급자 - 자사) */}
+                  <div style={{ border: '1px solid #000', padding: '10px', fontSize: '12px', lineHeight: '1.6', position: 'relative' }}>
+                    <div style={{ background: '#f0fdf4', padding: '2px 6px', fontWeight: 900, marginBottom: '6px', borderBottom: '1px solid #000', color: '#065f46' }}>
+                      [ 공 급 자 ]
+                    </div>
+                    <div><strong>등록번호 :</strong> 879-81-01648</div>
+                    <div><strong>상 호 명 :</strong> <span style={{ fontSize: '14px', fontWeight: 900 }}>{statementItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span><strong>대 표 자 :</strong> 김 주 한</span>
+                      <div style={{ width: '42px', height: '42px', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, transform: 'rotate(-10deg)' }}>
+                        (인)
+                      </div>
+                    </div>
+                    <div><strong>사업장 주소 :</strong> 충북 청주시 서원구 성봉로 180, 302호</div>
+                    <div><strong>TEL / FAX :</strong> 070-4141-2927 / 0303-3444-1130</div>
+                  </div>
+
+                </div>
+
+                {/* Line Items Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '16px', border: '1px solid #000' }}>
+                  <thead>
+                    <tr style={{ background: '#f0fdf4', borderBottom: '1px solid #000' }}>
+                      <th style={{ border: '1px solid #000', padding: '6px', width: '30px', textAlign: 'center' }}>No</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>품 명</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>규 격</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', width: '55px' }}>단위</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', width: '65px' }}>수량</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '90px' }}>단 가</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '105px' }}>공급가액</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '90px' }}>세 액(VAT)</th>
+                      <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', width: '80px' }}>비 고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statementItem.items && statementItem.items.length > 0 ? (
+                      statementItem.items.map((it, idx) => {
+                        const vat = Math.round(it.salesAmount * 0.1);
+                        return (
+                          <tr key={it.id || idx}>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 800 }}>{it.productName}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px' }}>{it.spec || '-'}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{it.unit || 'KG'}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>₩ {it.salesUnitPrice.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 800 }}>₩ {it.salesAmount.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', color: '#059669' }}>₩ {vat.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '6px' }}>{it.note || '-'}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>1</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', fontWeight: 800 }}>{statementItem.productName}</td>
+                        <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>EA</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{statementItem.quantity || 1}</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>₩ {Math.round(statementItem.salesAmount / (statementItem.quantity || 1)).toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 800 }}>₩ {statementItem.salesAmount.toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', color: '#059669' }}>₩ {Math.round(statementItem.salesAmount * 0.1).toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '6px' }}>-</td>
+                      </tr>
+                    )}
+                    {Array.from({ length: Math.max(0, 4 - (statementItem.items?.length || 1)) }).map((_, i) => (
+                      <tr key={`empty-${i}`}>
+                        <td style={{ border: '1px solid #000', padding: '10px' }}>&nbsp;</td>
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                        <td style={{ border: '1px solid #000', padding: '10px' }} />
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    {(() => {
+                      const totalSupply = statementItem.salesAmount || 0;
+                      const totalVat = Math.round(totalSupply * 0.1);
+                      const grandTotal = totalSupply + totalVat;
+                      return (
+                        <tr style={{ background: '#f0fdf4', fontWeight: 800 }}>
+                          <td colSpan={6} style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontSize: '13px' }}>
+                            합 계 ( 공급가액: ₩{totalSupply.toLocaleString()} + 세액: ₩{totalVat.toLocaleString()} )
+                          </td>
+                          <td colSpan={3} style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontSize: '14px', color: '#166534' }}>
+                            총 합계금액: ₩ {grandTotal.toLocaleString()}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tfoot>
+                </table>
+
+                {/* Footer Receipt & Signature Box */}
+                <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa' }}>
+                  <div>
+                    <strong>※ 특기사항:</strong> {statementItem.specialNotes || '납품 및 정산 관련 명세 확인'}
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#1e293b' }}>
+                    위 물품을 인수(정산)함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인 / 서명)
+                  </div>
+                </div>
+
+                {/* Bottom Brand */}
+                <div style={{ marginTop: '16px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '13px', fontWeight: 900, color: '#065f46' }}>
+                  {statementItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
                 </div>
 
               </div>
