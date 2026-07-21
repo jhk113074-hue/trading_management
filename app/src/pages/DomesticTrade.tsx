@@ -537,6 +537,7 @@ export const DomesticTrade: React.FC = () => {
           customers={dbCustomers}
           onClose={() => setShowCustomerSearchModal(false)}
           onSelect={handleSelectCustomer}
+          onRefreshCustomers={fetchTradesAndMasters}
         />
       )}
 

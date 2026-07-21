@@ -733,6 +733,7 @@ export const DomesticQuotes: React.FC = () => {
           customers={dbCustomers}
           onClose={() => setShowCustomerSearchModal(false)}
           onSelect={handleSelectCustomer}
+          onRefreshCustomers={fetchQuotesAndMasters}
         />
       )}
 

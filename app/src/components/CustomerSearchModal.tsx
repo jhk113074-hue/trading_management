@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Customer } from '../types/customer';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import { CustomerModal } from './CustomerModal';
 
@@ -8,9 +8,35 @@ interface Props {
   onClose: () => void;
   onSelect: (customer: Customer) => void;
   customers: Customer[];
+  onRefreshCustomers?: () => void;
 }
 
-export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, customers }) => {
+export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, customers, onRefreshCustomers }) => {
+  // Real-time local customers list state
+  const [customerList, setCustomerList] = useState<Customer[]>(customers || []);
+
+  // Sync when parent props update
+  useEffect(() => {
+    if (customers && customers.length > 0) {
+      setCustomerList(customers);
+    }
+  }, [customers]);
+
+  // Real-time Firestore Customer Listener
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'companies', COMPANY_ID, 'customers'), (snapshot) => {
+      const fetched: Customer[] = [];
+      snapshot.forEach(d => {
+        fetched.push({ id: d.id, ...d.data() } as Customer);
+      });
+      // Sort alphabetically by Korean/English name
+      fetched.sort((a, b) => (a.nameKo || a.name || '').localeCompare(b.nameKo || b.name || ''));
+      setCustomerList(fetched);
+    }, (err) => {
+      console.error("Real-time customer search modal listener error:", err);
+    });
+    return () => unsub();
+  }, []);
 
   // Modeless Drag-to-move state
   const [position, setPosition] = useState({ x: 100, y: 80 });
@@ -18,6 +44,8 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
   const dragStartRef = React.useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
@@ -42,6 +70,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [isCustModalOpen, setIsCustModalOpen] = useState(false);
@@ -50,15 +79,15 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
   // Extract unique countries for filtering
   const countries = useMemo(() => {
     const list = new Set<string>();
-    customers.forEach(c => {
+    customerList.forEach(c => {
       if (c.countryName) list.add(c.countryName);
     });
     return ['All', ...Array.from(list)];
-  }, [customers]);
+  }, [customerList]);
 
   // Filtered customers list
   const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
+    return customerList.filter(c => {
       const matchSearch = 
         (c.customerCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +102,18 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
 
       return matchSearch && matchCountry;
     });
-  }, [customers, searchTerm, selectedCountry]);
+  }, [customerList, searchTerm, selectedCountry]);
+
+  // Delete customer handler
+  const handleDeleteCustomer = async (id: string, nameStr: string) => {
+    if (!window.confirm(`'${nameStr}' 고객사를 정말로 삭제하시겠습니까?`)) return;
+    try {
+      await deleteDoc(doc(db, 'companies', COMPANY_ID, 'customers', id));
+      onRefreshCustomers?.();
+    } catch (e: any) {
+      alert("고객사 삭제 중 오류가 발생했습니다: " + e.message);
+    }
+  };
 
   return (
     <div style={{
@@ -100,7 +140,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
             padding: '20px 24px', borderBottom: '1px solid var(--border-color)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             background: '#f8fafc',
-            cursor: 'move',
+            cursor: 'grab',
             userSelect: 'none'
           }}>
           <div>
@@ -118,253 +158,186 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
               color: 'var(--text-muted)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               padding: '4px', borderRadius: '50%', width: '36px', height: '36px',
-              transition: 'background-color 0.2s, color 0.2s'
+              transition: 'background 0.2s'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'var(--text-muted)';
-            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             ✕
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Toolbar */}
         <div style={{
-          padding: '16px 24px', background: '#fff', borderBottom: '1px solid #f1f5f9',
-          display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center'
+          padding: '16px 24px', borderBottom: '1px solid var(--border-color)',
+          display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between',
+          background: '#fff'
         }}>
-          {/* Text Search */}
-          <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-            <span style={{
-              position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text-muted)', fontSize: '14px'
-            }}>🔍</span>
-            <input
-              type="text"
-              placeholder="고객코드, 고객사명, 담당자, 이메일, 도착항 등 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%', padding: '10px 12px 10px 36px',
-                border: '1px solid var(--border-default)', borderRadius: '8px',
-                fontSize: '13px', color: 'var(--text-primary)', outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s, box-shadow 0.2s'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.15)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'var(--border-default)';
-                e.target.style.boxShadow = 'none';
-              }}
-              autoFocus
-            />
-          </div>
-
-          {/* Country Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>국가</label>
+          <div style={{ display: 'flex', gap: '12px', flex: 1, maxWidth: '600px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input 
+                type="text" 
+                placeholder="고객사명(국문/영문), 코드, 담당자, 이메일, 국가, 도착항 검색..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%', height: '40px', padding: '0 16px 0 40px',
+                  borderRadius: '8px', border: '1px solid var(--border-color)',
+                  fontSize: '14px', outline: 'none', background: '#fff'
+                }}
+              />
+              <span style={{ position: 'absolute', left: '12px', top: '10px', fontSize: '16px' }}>🔍</span>
+            </div>
             <select
               value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
+              onChange={e => setSelectedCountry(e.target.value)}
               style={{
-                padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border-default)',
-                fontSize: '13px', color: '#334155', outline: 'none', background: '#fff',
-                cursor: 'pointer'
+                height: '40px', padding: '0 12px', borderRadius: '8px',
+                border: '1px solid var(--border-color)', fontSize: '14px',
+                background: '#fff', outline: 'none', cursor: 'pointer'
               }}
             >
-              {countries.map(cnt => (
-                <option key={cnt} value={cnt}>{cnt === 'All' ? '전체 국가' : cnt}</option>
+              <option value="All">전체 국가</option>
+              {countries.filter(c => c !== 'All').map(c => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
+            {(searchTerm || selectedCountry !== 'All') && (
+              <button
+                onClick={() => { setSearchTerm(''); setSelectedCountry('All'); }}
+                style={{
+                  height: '40px', padding: '0 16px', borderRadius: '8px',
+                  border: '1px solid var(--border-color)', background: '#f1f5f9',
+                  fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: 600
+                }}
+              >
+                초기화
+              </button>
+            )}
           </div>
 
-          {/* Reset Search */}
-          {(searchTerm !== '' || selectedCountry !== 'All') && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCountry('All');
-              }}
-              style={{
-                background: '#f1f5f9', border: 'none', padding: '9px 14px',
-                borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                color: 'var(--text-secondary)', cursor: 'pointer',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-color)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-            >
-              초기화
-            </button>
-          )}
           <button
-            onClick={() => {
-              setEditingCust(undefined);
-              setIsCustModalOpen(true);
-            }}
+            onClick={() => { setEditingCust(undefined); setIsCustModalOpen(true); }}
             style={{
-              background: '#2563eb', border: 'none', padding: '9px 16px',
-              borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-              color: '#fff', cursor: 'pointer', marginLeft: 'auto',
-              transition: 'background-color 0.2s'
+              height: '40px', padding: '0 20px', borderRadius: '8px',
+              border: 'none', background: '#2563eb', color: '#fff',
+              fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
           >
             ➕ 고객 등록
           </button>
         </div>
 
         {/* Results Info */}
-        <div style={{
-          padding: '8px 24px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)',
-          fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500
-        }}>
-          검색 결과: <span style={{ color: '#2563eb', fontWeight: 700 }}>{filteredCustomers.length}</span>개 고객사
+        <div style={{ padding: '8px 24px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+          검색 결과: <strong style={{ color: 'var(--primary-color)' }}>{filteredCustomers.length}</strong>개 고객사
         </div>
 
-        {/* Table View */}
+        {/* List Table */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
             <thead>
-              <tr style={{
-                position: 'sticky', top: 0, background: '#fff', zIndex: 10,
-                borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 600
-              }}>
-                <th style={{ padding: '12px 8px' }}>고객코드</th>
+              <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '12px 8px', width: '100px' }}>고객코드</th>
                 <th style={{ padding: '12px 8px' }}>고객사명 (영문/국문)</th>
-                <th style={{ padding: '12px 8px' }}>국가</th>
+                <th style={{ padding: '12px 8px', width: '80px' }}>국가</th>
                 <th style={{ padding: '12px 8px' }}>담당자 / 이메일</th>
                 <th style={{ padding: '12px 8px' }}>도착항 / 인코텀즈 / 결제조건</th>
-                <th style={{ padding: '12px 8px', width: '160px', textAlign: 'center' }}>선택 / 관리</th>
+                <th style={{ padding: '12px 8px', width: '130px', textAlign: 'center' }}>선택 / 관리</th>
               </tr>
             </thead>
             <tbody>
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{
-                    textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)',
-                    fontSize: '14px'
-                  }}>
-                    검색 결과가 없습니다. 다른 검색어를 입력해보세요.
+                  <td colSpan={6} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    검색 결과가 없습니다.
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((c) => (
-                  <tr
-                    key={c.id}
-                    onDoubleClick={() => onSelect(c)}
+                filteredCustomers.map(cust => (
+                  <tr 
+                    key={cust.id}
+                    onDoubleClick={() => onSelect(cust)}
                     style={{
-                      borderBottom: '1px solid #f1f5f9',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.15s'
+                      borderBottom: '1px solid var(--border-color)',
+                      transition: 'background 0.2s',
+                      cursor: 'pointer'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f8fafc';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <td style={{ padding: '12px 8px', fontWeight: 600, color: '#0f172a' }}>
+                    <td style={{ padding: '12px 8px' }}>
                       <span style={{
+                        padding: '2px 6px', borderRadius: '4px',
                         background: '#eff6ff', color: '#1d4ed8',
-                        padding: '3px 8px', borderRadius: '4px', fontSize: '11px',
-                        border: '1px solid #bfdbfe'
+                        fontWeight: 600, fontSize: '12px', border: '1px solid #bfdbfe'
                       }}>
-                        {c.customerCode || '없음'}
+                        {cust.customerCode}
                       </span>
                     </td>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>{c.name || '-'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{c.nameKo || '-'}</div>
-                    </td>
-                    <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>
-                      📍 {c.countryName || '-'}
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {cust.nameKo || cust.name}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {cust.nameKo ? cust.name : '-'}
+                      </div>
                     </td>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontWeight: 500 }}>👤 {c.contactPerson || c.representative || '-'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>✉ {c.email || c.contactEmail || '-'}</div>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        📍 {cust.countryName || '-'}
+                      </span>
                     </td>
-                    <td style={{ padding: '12px 8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <div>⚓ {c.shippingPort || '-'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        Incoterms: <strong>{c.preferredIncoterms || '-'}</strong> | Pay: <strong>{c.paymentTerms || '-'}</strong>
+                    <td style={{ padding: '12px 8px' }}>
+                      <div style={{ fontWeight: 600 }}>
+                        👤 {cust.contactPerson || cust.representative || '-'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        ✉️ {cust.email || '-'}
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 8px' }}>
+                      <div>⚓ {cust.shippingPort || '-'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        Incoterms: <strong>{cust.preferredIncoterms || '-'}</strong> | Pay: {cust.paymentTerms || '-'}
                       </div>
                     </td>
                     <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelect(c);
-                          }}
+                          onClick={() => onSelect(cust)}
                           style={{
-                            background: '#2563eb', color: '#fff', border: 'none',
-                            padding: '6px 10px', borderRadius: '6px', fontSize: '11px',
-                            fontWeight: 600, cursor: 'pointer',
-                            transition: 'background-color 0.2s'
+                            padding: '4px 12px', borderRadius: '4px',
+                            background: '#2563eb', color: '#fff',
+                            border: 'none', fontSize: '12px', fontWeight: 600,
+                            cursor: 'pointer'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                         >
                           선택
                         </button>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCust(c);
-                            setIsCustModalOpen(true);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); setEditingCust(cust); setIsCustModalOpen(true); }}
                           style={{
-                            background: '#f1f5f9', color: 'var(--text-secondary)', border: '1px solid var(--border-default)',
-                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
-                            fontWeight: 600, cursor: 'pointer',
-                            transition: 'background-color 0.2s'
+                            padding: '4px 8px', borderRadius: '4px',
+                            background: '#f1f5f9', color: '#475569',
+                            border: '1px solid var(--border-color)', fontSize: '12px',
+                            cursor: 'pointer'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-color)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                          title="수정"
+                          title="고객사 정보 수정"
                         >
                           ✏️
                         </button>
                         <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`정말 "${c.name || c.customerCode}" 고객사를 삭제하시겠습니까?`)) {
-                              try {
-                                const cRef = doc(db, 'companies', COMPANY_ID, 'customers', c.id);
-                                await deleteDoc(cRef);
-                                alert('고객사가 삭제되었습니다.');
-                              } catch (err) {
-                                console.error('Failed to delete customer:', err);
-                                alert('고객사 삭제에 실패했습니다.');
-                              }
-                            }
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(cust.id, cust.nameKo || cust.name); }}
                           style={{
-                            background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2',
-                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
-                            fontWeight: 600, cursor: 'pointer',
-                            transition: 'background-color 0.2s'
+                            padding: '4px 8px', borderRadius: '4px',
+                            background: '#fee2e2', color: '#dc2626',
+                            border: '1px solid #fca5a5', fontSize: '12px',
+                            cursor: 'pointer'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fee2e2';
-                            e.currentTarget.style.borderColor = '#fca5a5';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fef2f2';
-                            e.currentTarget.style.borderColor = '#fee2e2';
-                          }}
-                          title="삭제"
+                          title="고객사 삭제"
                         >
                           🗑️
                         </button>

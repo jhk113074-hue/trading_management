@@ -8,9 +8,10 @@ import { SupplierSearchModal } from './SupplierSearchModal';
 interface Props {
   initialCustomer?: Customer;
   onClose: () => void;
+  onSave?: (savedCustomer: Customer) => void;
 }
 
-export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => {
+export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'crm'>('info');
   const [crmTasks, setCrmTasks] = useState<any[]>([]);
@@ -238,6 +239,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       const sanitizedData = cleanUndefined(finalData);
       await setDoc(doc(db, 'companies', COMPANY_ID, 'customers', docId), sanitizedData);
       alert('✅ 성공적으로 저장되었습니다.');
+      onSave?.({ id: docId, ...sanitizedData } as Customer);
       onClose();
     } catch (err: any) {
       alert('❌ 저장 실패: ' + err.message);
