@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -38,6 +38,39 @@ export const DomesticQuotes: React.FC = () => {
   // Form Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DomesticQuoteItem | null>(null);
+
+  // Modeless Drag-to-move & Resizable Window Position
+  const [modalPos, setModalPos] = useState({ x: Math.max(20, (window.innerWidth - 980) / 2), y: Math.max(15, (window.innerHeight - 720) / 2) });
+  const [isDraggingModal, setIsDraggingModal] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDownHeader = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+    setIsDraggingModal(true);
+    dragStartRef.current = { x: e.clientX - modalPos.x, y: e.clientY - modalPos.y };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingModal) return;
+      const nextX = Math.max(0, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+      const nextY = Math.max(0, Math.min(window.innerHeight - 100, e.clientY - dragStartRef.current.y));
+      setModalPos({ x: nextX, y: nextY });
+    };
+    const handleMouseUp = () => {
+      setIsDraggingModal(false);
+    };
+
+    if (isDraggingModal) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingModal]);
 
   // Preview Modal State
   const [previewItem, setPreviewItem] = useState<DomesticQuoteItem | null>(null);
@@ -310,6 +343,7 @@ export const DomesticQuotes: React.FC = () => {
 
   // Open Modal for Create, Edit, or Revise
   const handleOpenModal = (item?: DomesticQuoteItem, isRevise: boolean = false) => {
+    setModalPos({ x: Math.max(20, (window.innerWidth - 980) / 2), y: Math.max(15, (window.innerHeight - 720) / 2) });
     if (item) {
       if (isRevise) {
         setEditingItem(null);
@@ -959,37 +993,79 @@ export const DomesticQuotes: React.FC = () => {
         </div>
       </div>
 
-      {/* 📝 Create / Edit / Revise Modal */}
+      {/* 📝 Create / Edit / Revise Modeless Resizable Dialog */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', maxWidth: '920px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', overflow: 'hidden' }}>
+        <div
+          style={{
+            position: 'fixed',
+            left: `${modalPos.x}px`,
+            top: `${modalPos.y}px`,
+            zIndex: 9999,
+            pointerEvents: 'auto',
+            userSelect: isDraggingModal ? 'none' : 'auto'
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '8px',
+              border: '1px solid #94a3b8',
+              width: '980px',
+              maxWidth: '96vw',
+              maxHeight: '92vh',
+              resize: 'both',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 50px rgba(15,23,42,0.3)',
+              minWidth: '750px',
+              minHeight: '480px'
+            }}
+          >
             
-            {/* Modal Header */}
-            <div style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Draggable Header */}
+            <div
+              onMouseDown={handleMouseDownHeader}
+              style={{
+                background: 'linear-gradient(to right, #f8fafc, #f1f5f9)',
+                borderBottom: '1px solid #cbd5e1',
+                padding: '8px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: isDraggingModal ? 'grabbing' : 'grab',
+                userSelect: 'none'
+              }}
+            >
+              <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px', color: '#3b82f6' }}>✥</span>
                 {parentQuoteId ? '🔄 국내 견적서 Revise (개정 작성)' : editingItem ? '✏️ 국내 견적서 수정' : '➕ 신규 국내 견적서 작성'}
-                {revision > 0 && <span style={{ fontSize: '12px', background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '4px' }}>Rev {revision}</span>}
+                {revision > 0 && <span style={{ fontSize: '11px', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>Rev {revision}</span>}
               </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
-              >
-                ✕
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>✥ 상단 드래그 이동 | ↘ 오른쪽 아래 창크기 조절</span>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', padding: '0 4px', lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            {/* Modal Scrollable Form */}
-            <form onSubmit={handleSubmit} style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Compact Modal Form (Single Screen Fit) */}
+            <form onSubmit={handleSubmit} style={{ padding: '12px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               
-              {/* Section 1: Basic Header Info & Customer/Supplier Sub-Modal Connection */}
-              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Section 1: Basic Header Info */}
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 🔍 DB 검색)</span>
-                  <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 서브 검색 팝업 열림</span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 🔍 DB 연결)</span>
+                  <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 DB 검색</span>
                 </div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       견적번호 <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -998,10 +1074,10 @@ export const DomesticQuotes: React.FC = () => {
                       required
                       value={quoteNo}
                       onChange={e => setQuoteNo(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       견적일자 <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -1010,17 +1086,17 @@ export const DomesticQuotes: React.FC = () => {
                       required
                       value={quoteDate}
                       onChange={e => setQuoteDate(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       발신 주체 (자사) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <select
                       value={companyType}
                       onChange={e => setCompanyType(e.target.value as any)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                     >
                       <option value="YSACC">(주)와이에스에이씨씨 (YSACC)</option>
                       <option value="YS">영성ACC</option>
@@ -1028,10 +1104,10 @@ export const DomesticQuotes: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.4fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.4fr', gap: '8px' }}>
                   
                   {/* Customer Input + 🔍 Button */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       수신 (고객사) <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -1043,20 +1119,20 @@ export const DomesticQuotes: React.FC = () => {
                         placeholder="고객사명..."
                         value={customerName}
                         onChange={e => setCustomerName(e.target.value)}
-                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                        style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowCustomerSearchModal(true)}
                         title="고객사 DB 서브창 검색"
-                        style={{ height: '34px', padding: '0 10px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
+                        style={{ height: '30px', padding: '0 8px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}
                       >
                         🔍 DB
                       </button>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       참조
                     </label>
@@ -1065,11 +1141,11 @@ export const DomesticQuotes: React.FC = () => {
                       placeholder="예: 민재준 이사님"
                       value={receiverAttention}
                       onChange={e => setReceiverAttention(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       전화번호
                     </label>
@@ -1078,12 +1154,12 @@ export const DomesticQuotes: React.FC = () => {
                       placeholder="010-0000-0000"
                       value={receiverTel}
                       onChange={e => setReceiverTel(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
 
                   {/* Supplier Input + 🔍 Button */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       국내 매입처 (공급사)
                     </label>
@@ -1094,13 +1170,13 @@ export const DomesticQuotes: React.FC = () => {
                         placeholder="공급사명..."
                         value={supplierName}
                         onChange={e => setSupplierName(e.target.value)}
-                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                        style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowSupplierSearchModal(true)}
                         title="공급업체관리 DB 서브창 검색"
-                        style={{ height: '34px', padding: '0 10px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
+                        style={{ height: '30px', padding: '0 8px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 800, color: '#6d28d9', whiteSpace: 'nowrap' }}
                       >
                         🔍 DB
                       </button>
@@ -1112,50 +1188,50 @@ export const DomesticQuotes: React.FC = () => {
               </div>
 
               {/* Section 2: Line Items + 🔍 Product Sub-Modal */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
                     2. 품목 목록 및 원가/마진산정 (상품 DB 🔍 연결)
                   </span>
                   <button
                     type="button"
                     onClick={addLineItem}
-                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 12px', height: '28px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 10px', height: '24px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
                   >
                     ➕ 제품 추가
                   </button>
                 </div>
 
                 <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                        <th style={{ padding: '8px', width: '30px', textAlign: 'center' }}>#</th>
-                        <th style={{ padding: '8px', minWidth: '150px' }}>품명 (🔍상품DB) *</th>
-                        <th style={{ padding: '8px', minWidth: '130px' }}>규격</th>
-                        <th style={{ padding: '8px', width: '65px', textAlign: 'center' }}>단위</th>
-                        <th style={{ padding: '8px', width: '75px', textAlign: 'center' }}>수량 *</th>
-                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>원가 (매입단가)</th>
-                        <th style={{ padding: '8px', width: '75px', textAlign: 'right' }}>마진율(%)</th>
-                        <th style={{ padding: '8px', width: '95px', textAlign: 'right' }}>견적 단가 *</th>
-                        <th style={{ padding: '8px', width: '105px', textAlign: 'right' }}>금액 (원)</th>
-                        <th style={{ padding: '8px', minWidth: '90px' }}>비고</th>
-                        <th style={{ padding: '8px', width: '40px', textAlign: 'center' }}>삭제</th>
+                        <th style={{ padding: '4px 6px', width: '25px', textAlign: 'center' }}>#</th>
+                        <th style={{ padding: '4px 6px', minWidth: '140px' }}>품명 (🔍상품DB) *</th>
+                        <th style={{ padding: '4px 6px', minWidth: '120px' }}>규격</th>
+                        <th style={{ padding: '4px 6px', width: '55px', textAlign: 'center' }}>단위</th>
+                        <th style={{ padding: '4px 6px', width: '65px', textAlign: 'center' }}>수량 *</th>
+                        <th style={{ padding: '4px 6px', width: '85px', textAlign: 'right' }}>원가 (매입단가)</th>
+                        <th style={{ padding: '4px 6px', width: '65px', textAlign: 'right' }}>마진율(%)</th>
+                        <th style={{ padding: '4px 6px', width: '85px', textAlign: 'right' }}>견적 단가 *</th>
+                        <th style={{ padding: '4px 6px', width: '95px', textAlign: 'right' }}>금액 (원)</th>
+                        <th style={{ padding: '4px 6px', minWidth: '80px' }}>비고</th>
+                        <th style={{ padding: '4px 6px', width: '35px', textAlign: 'center' }}>삭제</th>
                       </tr>
                     </thead>
                     <tbody>
                       {items.map((item, idx) => (
                         <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '6px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
-                          <td style={{ padding: '6px' }}>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                          <td style={{ padding: '4px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                          <td style={{ padding: '4px' }}>
+                            <div style={{ display: 'flex', gap: '3px' }}>
                               <input
                                 type="text"
                                 required
                                 placeholder="품명 입력 또는 🔍"
                                 value={item.productName}
                                 onChange={e => updateLineItem(idx, 'productName', e.target.value)}
-                                style={{ flex: 1, height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600, boxSizing: 'border-box' }}
+                                style={{ flex: 1, height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '11.5px', fontWeight: 600, boxSizing: 'border-box' }}
                               />
                               <button
                                 type="button"
@@ -1164,83 +1240,83 @@ export const DomesticQuotes: React.FC = () => {
                                   setShowProductSearchModal(true);
                                 }}
                                 title="상품 DB 서브창 검색"
-                                style={{ height: '28px', padding: '0 6px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#1d4ed8' }}
+                                style={{ height: '26px', padding: '0 5px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 800, color: '#1d4ed8' }}
                               >
                                 🔍
                               </button>
                             </div>
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="text"
-                              placeholder="예: GPPS (25KG/BAG)"
+                              placeholder="예: GPPS"
                               value={item.spec || ''}
                               onChange={e => updateLineItem(idx, 'spec', e.target.value)}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '11.5px', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="text"
                               value={item.unit || 'KG'}
                               onChange={e => updateLineItem(idx, 'unit', e.target.value)}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '12px', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '11.5px', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="number"
                               min={1}
                               value={item.quantity}
                               onChange={e => updateLineItem(idx, 'quantity', Number(e.target.value))}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '12px', fontWeight: 700, boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '11.5px', fontWeight: 700, boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="number"
                               step={10}
                               placeholder="0"
                               value={item.buyingUnitPrice || ''}
                               onChange={e => updateLineItem(idx, 'buyingUnitPrice', Number(e.target.value))}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '12px', color: '#64748b', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '11.5px', color: '#64748b', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="number"
                               step={0.5}
                               value={item.targetMarginRate ?? ''}
                               onChange={e => updateLineItem(idx, 'targetMarginRate', Number(e.target.value))}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px', fontSize: '12px', color: '#10b981', fontWeight: 700, boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px', fontSize: '11.5px', color: '#10b981', fontWeight: 700, boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="number"
                               step={10}
                               value={item.salesUnitPrice || ''}
                               onChange={e => updateLineItem(idx, 'salesUnitPrice', Number(e.target.value))}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '12px', fontWeight: 800, color: '#2563eb', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontSize: '11.5px', fontWeight: 800, color: '#2563eb', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
+                          <td style={{ padding: '4px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
                             ₩{(item.salesAmount || 0).toLocaleString()}
                           </td>
-                          <td style={{ padding: '6px' }}>
+                          <td style={{ padding: '4px' }}>
                             <input
                               type="text"
-                              placeholder="예: 안산 도착도"
+                              placeholder="비고"
                               value={item.note || ''}
                               onChange={e => updateLineItem(idx, 'note', e.target.value)}
-                              style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '11.5px', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '6px', textAlign: 'center' }}>
+                          <td style={{ padding: '4px', textAlign: 'center' }}>
                             <button
                               type="button"
                               onClick={() => removeLineItem(idx)}
-                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontWeight: 800 }}
+                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', width: '20px', height: '20px', cursor: 'pointer', fontWeight: 800, fontSize: '11px' }}
                             >
                               ✕
                             </button>
@@ -1249,11 +1325,11 @@ export const DomesticQuotes: React.FC = () => {
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
-                        <td colSpan={5} style={{ padding: '10px 12px', color: '#1e293b' }}>총 합계</td>
-                        <td style={{ padding: '10px', textAlign: 'right', color: '#64748b' }}>₩{totals.expectedBuyingAmount.toLocaleString()}</td>
-                        <td style={{ padding: '10px', textAlign: 'right', color: '#10b981' }}>{totals.expectedMarginRate}%</td>
-                        <td colSpan={2} style={{ padding: '10px', textAlign: 'right', color: '#2563eb', fontSize: '14px' }}>₩{totals.quoteAmount.toLocaleString()}</td>
+                      <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '1px solid #cbd5e1' }}>
+                        <td colSpan={5} style={{ padding: '6px 8px', color: '#1e293b' }}>총 합계</td>
+                        <td style={{ padding: '6px', textAlign: 'right', color: '#64748b' }}>₩{totals.expectedBuyingAmount.toLocaleString()}</td>
+                        <td style={{ padding: '6px', textAlign: 'right', color: '#10b981' }}>{totals.expectedMarginRate}%</td>
+                        <td colSpan={2} style={{ padding: '6px', textAlign: 'right', color: '#2563eb', fontSize: '13px' }}>₩{totals.quoteAmount.toLocaleString()}</td>
                         <td colSpan={2} />
                       </tr>
                     </tfoot>
@@ -1261,12 +1337,12 @@ export const DomesticQuotes: React.FC = () => {
                 </div>
               </div>
 
-              {/* Section 3: Terms & Footer details & Sales Manager DB Link */}
-              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 판매 담당자 (직원 DB 연동)</span>
+              {/* Section 3: Terms & Footer details */}
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>3. 일반사항 & 결제 조건 및 판매 담당자 (직원 DB 연동)</span>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       ※ 특고사항
                     </label>
@@ -1275,10 +1351,10 @@ export const DomesticQuotes: React.FC = () => {
                       placeholder="예: SMC 관련 품목, 물탱크 관련 부자재"
                       value={specialNotes}
                       onChange={e => setSpecialNotes(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       1. 부가가치세 (VAT) 조건
                     </label>
@@ -1286,13 +1362,13 @@ export const DomesticQuotes: React.FC = () => {
                       type="text"
                       value={vatType}
                       onChange={e => setVatType(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                       2. 결제 조건
                     </label>
@@ -1300,13 +1376,13 @@ export const DomesticQuotes: React.FC = () => {
                       type="text"
                       value={paymentTerms}
                       onChange={e => setPaymentTerms(e.target.value)}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
 
                   {/* Manager fields connected to Users DB */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자 성명</label>
                         <select
@@ -1325,28 +1401,28 @@ export const DomesticQuotes: React.FC = () => {
                         placeholder="이한중"
                         value={managerName}
                         onChange={e => handleSelectManagerFromDb(e.target.value)}
-                        style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 700 }}
+                        style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 700 }}
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>직책</label>
-                      <input type="text" value={managerTitle} onChange={e => setManagerTitle(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                      <input type="text" value={managerTitle} onChange={e => setManagerTitle(e.target.value)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연락처</label>
-                      <input type="text" value={managerContact} onChange={e => setManagerContact(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
+                      <input type="text" value={managerContact} onChange={e => setManagerContact(e.target.value)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', fontWeight: 600 }} />
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적 상태</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <select
                         value={status}
                         onChange={e => setStatus(e.target.value as any)}
-                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, background: '#fff', color: status === 'APPROVED' ? '#059669' : '#1e293b' }}
+                        style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 700, background: '#fff', color: status === 'APPROVED' ? '#059669' : '#1e293b' }}
                       >
                         <option value="REVIEW">검토중</option>
                         <option value="APPROVED">고객승인 (주문확정)</option>
@@ -1354,31 +1430,31 @@ export const DomesticQuotes: React.FC = () => {
                       </select>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적 유효기간</label>
-                    <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                    <input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600 }} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고</label>
-                    <input type="text" placeholder="기타 사항" value={memo} onChange={e => setMemo(e.target.value)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600 }} />
+                    <input type="text" placeholder="기타 사항" value={memo} onChange={e => setMemo(e.target.value)} style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600 }} />
                   </div>
                 </div>
 
               </div>
 
               {/* Modal Buttons */}
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '6px', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{ height: '36px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  style={{ height: '32px', padding: '0 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ height: '36px', padding: '0 18px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ height: '32px', padding: '0 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
                   onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
@@ -1388,7 +1464,7 @@ export const DomesticQuotes: React.FC = () => {
                   type="button"
                   onClick={handleConfirmOrderFromModal}
                   disabled={isSubmitting}
-                  style={{ height: '36px', padding: '0 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 850, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(16,185,129,0.2)' }}
+                  style={{ height: '32px', padding: '0 18px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 850, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(16,185,129,0.2)' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#059669'}
                   onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
                 >
