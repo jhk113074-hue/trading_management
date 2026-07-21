@@ -26,7 +26,7 @@ import { MeetingMinutes } from './pages/MeetingMinutes';
 import { Imports } from './pages/Imports';
 import { ImportDetail } from './pages/ImportDetail';
 import { Credentials } from './pages/Credentials';
-
+import { DomesticTrade } from './pages/DomesticTrade';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -82,6 +82,7 @@ const App: React.FC = () => {
               <Route path="import-quotes" element={<Imports mode="quotes" />} />
               <Route path="imports" element={<Imports mode="active" />} />
               <Route path="imports/:id" element={<ImportDetail />} />
+              <Route path="domestic-trade" element={<DomesticTrade />} />
             </Route>
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />

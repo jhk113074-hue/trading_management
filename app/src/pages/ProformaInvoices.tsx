@@ -346,7 +346,7 @@ export const ProformaInvoices: React.FC = () => {
     <div className="page-container" style={{ padding: '24px 30px', background: '#f8fafc', minHeight: '100vh', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>견적관리</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>수출 견적관리</h1>
           <select 
             value={filterIssuer} 
             onChange={e => setFilterIssuer(e.target.value)} 

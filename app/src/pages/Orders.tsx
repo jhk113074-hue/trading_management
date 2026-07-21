@@ -1121,7 +1121,7 @@ export const Orders: React.FC = () => {
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>주문 관리 대시보드</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>수출 주문관리 대시보드</h1>
           <select 
             value={issuingCompanyFilter} 
             onChange={e => setIssuingCompanyFilter(e.target.value)} 
