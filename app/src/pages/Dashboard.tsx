@@ -2592,7 +2592,7 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '3px 8px',
+                  padding: '6px 8px',
                   borderRadius: '6px',
                   background: filter === '내 업무' ? 'rgba(190, 18, 60, 0.08)' : '#fff',
                   border: filter === '내 업무' ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
@@ -2601,15 +2601,15 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                     {userProfile?.name?.charAt(0) || '나'}
                   </div>
                   <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>{userProfile?.name} (본인)</span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>({tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건)</span>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>{userProfile?.name} (본인)</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>({tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건)</span>
                   </div>
                 </div>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#10b981' }} />
               </div>
 
               {/* Other assignees */}
@@ -2627,7 +2627,7 @@ export const Dashboard: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '3px 8px',
+                      padding: '6px 8px',
                       borderRadius: '6px',
                       background: isSelected ? 'rgba(190, 18, 60, 0.08)' : '#fff',
                       border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
@@ -2636,17 +2636,17 @@ export const Dashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {u.name?.charAt(0)}
                       </div>
                       <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }} title={`${u.name} (${u.department || '담당자'})`}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }} title={`${u.name} (${u.department || '담당자'})`}>
                           {u.name} ({u.department || '담당자'})
                         </span>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', flexShrink: 0 }}>({mTasks.length}건)</span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', flexShrink: 0 }}>({mTasks.length}건)</span>
                       </div>
                     </div>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} />
+                    <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: 'var(--text-muted)' }} />
                   </div>
                 );
               })}
