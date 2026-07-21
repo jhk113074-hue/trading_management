@@ -561,9 +561,9 @@ export const ProformaInvoices: React.FC = () => {
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>검색 결과가 없습니다</td></tr>
             ) : (
               filteredAndSorted.map(p => {
-                const issuerBadge = p.issuingCompany === 'YS' 
-                                 ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>영성ACC</span>
-                                 : <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+                const issuerBadge = (p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC')
+                                 ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>영성ACC</span>
+                                 : <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>YSACC</span>;
 
                 // PI 상태 배지
                 const piStatus = getPiStatus(p);

@@ -965,10 +965,10 @@ export const Orders: React.FC = () => {
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
                   const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#cbd5e1';
                   
-                  const isYS = order.issuingCompany === 'YS';
+                  const isYS = order.issuingCompany === 'YS' || order.issuingCompany === '영성ACC';
                   const issuerBadge = isYS
-                    ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>영성ACC</span>
-                    : <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+                    ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>영성ACC</span>
+                    : <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>YSACC</span>;
 
                   const displayStage = getFirstIncompleteStage(order);
                   const isAllFinished = displayStage === '완료';

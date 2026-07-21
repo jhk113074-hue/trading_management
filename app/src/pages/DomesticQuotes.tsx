@@ -954,7 +954,7 @@ export const DomesticQuotes: React.FC = () => {
                         </button>
                       </td>
                       <td style={{ padding: '12px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: item.companyType === 'YSACC' ? '#eff6ff' : '#fef3c7', color: item.companyType === 'YSACC' ? '#2563eb' : '#d97706' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, background: item.companyType === 'YSACC' ? '#ecfdf5' : '#eff6ff', color: item.companyType === 'YSACC' ? '#047857' : '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: item.companyType === 'YSACC' ? '1px solid #a7f3d0' : '1px solid #bfdbfe' }}>
                           {item.companyType === 'YS' ? '영성ACC' : 'YSACC'}
                         </span>
                       </td>
