@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +13,7 @@ import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
 
 export const DomesticQuotes: React.FC = () => {
+  const navigate = useNavigate();
   const { userProfile } = useAuth();
   const [quotes, setQuotes] = useState<DomesticQuoteItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -408,7 +410,7 @@ export const DomesticQuotes: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Submit Handler
+  // Submit Handler (Save Quote)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || items.some(i => !i.productName.trim())) {
@@ -470,9 +472,93 @@ export const DomesticQuotes: React.FC = () => {
     }
   };
 
-  // Convert Quote to Order
+  // Direct Order Confirmation Handler from Modal
+  const handleConfirmOrderFromModal = async () => {
+    if (!customerName.trim() || items.some(i => !i.productName.trim())) {
+      alert("수신(고객사) 정보 및 각 품목의 품명은 필수 입력 사항입니다.");
+      return;
+    }
+
+    if (!window.confirm(`'${quoteNo}' 견적을 국내 주문으로 확정 등록하고 '국내 주문관리' 화면으로 이동하시겠습니까?`)) return;
+
+    setIsSubmitting(true);
+    try {
+      const primaryProduct = items.map(i => i.productName).join(', ');
+      const totalQty = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
+
+      const payload = {
+        quoteDate,
+        quoteNo: quoteNo || `${new Date().getFullYear()}-YSACC-EST-${Date.now().toString().slice(-3)}`,
+        revision,
+        parentQuoteId: parentQuoteId || null,
+        companyType,
+        supplierName: supplierName.trim(),
+        customerName: customerName.trim(),
+        receiverAttention: receiverAttention.trim(),
+        receiverTel: receiverTel.trim(),
+        receiverFax: receiverFax.trim(),
+        productName: primaryProduct,
+        quantity: totalQty,
+        items,
+        expectedBuyingAmount: totals.expectedBuyingAmount,
+        quoteAmount: totals.quoteAmount,
+        expectedMargin: totals.expectedMargin,
+        expectedMarginRate: totals.expectedMarginRate,
+        specialNotes: specialNotes.trim(),
+        vatType: vatType.trim(),
+        paymentTerms: paymentTerms.trim(),
+        managerTitle: managerTitle.trim(),
+        managerName: managerName.trim(),
+        managerContact: managerContact.trim(),
+        status: 'APPROVED' as const, // Set status to APPROVED
+        validUntil: validUntil || '',
+        memo: memo.trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // 1. Save or Update Quote in domestic_quotes
+      if (editingItem) {
+        await updateDoc(doc(db, 'companies', 'YSACC', 'domestic_quotes', editingItem.id), payload);
+      } else {
+        await addDoc(collection(db, 'companies', 'YSACC', 'domestic_quotes'), {
+          ...payload,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      // 2. Register Domestic Order in domestic_trades
+      await addDoc(collection(db, 'companies', 'YSACC', 'domestic_trades'), {
+        tradeDate: new Date().toISOString().split('T')[0],
+        tradeNo: `DOM-ORD-${new Date().getFullYear()}-${Date.now().toString().slice(-3)}`,
+        companyType,
+        supplierName: supplierName.trim(),
+        customerName: customerName.trim(),
+        productName: primaryProduct,
+        quantity: totalQty,
+        buyingAmount: totals.expectedBuyingAmount,
+        salesAmount: totals.quoteAmount,
+        margin: totals.expectedMargin,
+        marginRate: totals.expectedMarginRate,
+        taxInvoiceIssued: true,
+        status: 'PENDING',
+        memo: `[견적확정] ${quoteNo} - ${memo.trim()}`,
+        createdAt: new Date().toISOString()
+      });
+
+      setIsModalOpen(false);
+      alert("🎉 국내 주문으로 성공적으로 확정 등록되었습니다!\n국내 주문관리 페이지로 이동합니다.");
+      navigate('/domestic-orders');
+    } catch (e) {
+      console.error("Failed to confirm order from modal:", e);
+      alert("주문 확정 처리 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Convert Quote to Order from Table Row Button
   const handleConvertToOrder = async (item: DomesticQuoteItem) => {
-    if (!window.confirm(`'${item.quoteNo}' 견적을 국내 주문관리로 확정 등록하시겠습니까?`)) return;
+    if (!window.confirm(`'${item.quoteNo}' 견적을 국내 주문관리로 확정 등록하고 이동하시겠습니까?`)) return;
 
     try {
       const margin = item.quoteAmount - item.expectedBuyingAmount;
@@ -501,8 +587,8 @@ export const DomesticQuotes: React.FC = () => {
         updatedAt: new Date().toISOString()
       });
 
-      alert("국내 주문으로 성공적으로 확정 등록되었습니다!");
-      fetchQuotesAndMasters();
+      alert("🎉 국내 주문으로 성공적으로 확정 등록되었습니다!\n국내 주문관리 페이지로 이동합니다.");
+      navigate('/domestic-orders');
     } catch (e) {
       console.error("Failed to convert quote to order:", e);
       alert("주문 전환 중 오류가 발생했습니다.");
@@ -789,7 +875,7 @@ export const DomesticQuotes: React.FC = () => {
                           background: item.status === 'APPROVED' ? '#d1fae5' : item.status === 'REVIEW' ? '#fef3c7' : '#fee2e2',
                           color: item.status === 'APPROVED' ? '#065f46' : item.status === 'REVIEW' ? '#92400e' : '#991b1b'
                         }}>
-                          {item.status === 'APPROVED' ? '고객승인' : item.status === 'REVIEW' ? '검토중' : '반려'}
+                          {item.status === 'APPROVED' ? '고객승인 (주문확정)' : item.status === 'REVIEW' ? '검토중' : '반려'}
                         </span>
                       </td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
@@ -811,10 +897,10 @@ export const DomesticQuotes: React.FC = () => {
                           {item.status !== 'APPROVED' && (
                             <button
                               onClick={() => handleConvertToOrder(item)}
-                              title="국내 주문으로 확정 전환"
-                              style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#166534', cursor: 'pointer' }}
+                              title="국내 주문으로 확정 전환 후 이동"
+                              style={{ background: '#10b981', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 800, color: '#fff', cursor: 'pointer' }}
                             >
-                              주문전환
+                              🛒 주문확정
                             </button>
                           )}
                           <button
@@ -1231,14 +1317,20 @@ export const DomesticQuotes: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적 상태</label>
-                    <select value={status} onChange={e => setStatus(e.target.value as any)} style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, background: '#fff' }}>
-                      <option value="REVIEW">검토중</option>
-                      <option value="APPROVED">고객승인 (주문확정)</option>
-                      <option value="REJECTED">반려</option>
-                    </select>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <select
+                        value={status}
+                        onChange={e => setStatus(e.target.value as any)}
+                        style={{ flex: 1, height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, background: '#fff', color: status === 'APPROVED' ? '#059669' : '#1e293b' }}
+                      >
+                        <option value="REVIEW">검토중</option>
+                        <option value="APPROVED">고객승인 (주문확정)</option>
+                        <option value="REJECTED">반려</option>
+                      </select>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적 유효기간</label>
@@ -1253,22 +1345,32 @@ export const DomesticQuotes: React.FC = () => {
               </div>
 
               {/* Modal Buttons */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{ height: '34px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ height: '34px', padding: '0 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 18px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
                   onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
-                  {isSubmitting ? '저장 중...' : editingItem ? '수정 저장' : parentQuoteId ? 'Revise 저장' : '등록'}
+                  {isSubmitting ? '저장 중...' : editingItem ? '견적 수정 저장' : parentQuoteId ? 'Revise 저장' : '견적 등록'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmOrderFromModal}
+                  disabled={isSubmitting}
+                  style={{ height: '36px', padding: '0 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 850, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(16,185,129,0.2)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
+                >
+                  🛒 주문확정 (국내 주문 등록 & 이동)
                 </button>
               </div>
 
