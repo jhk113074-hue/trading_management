@@ -873,7 +873,6 @@ export const DomesticTrade: React.FC = () => {
                       </td>
                       <td style={{ padding: '12px', color: '#0f172a', fontWeight: 800 }}>
                         {item.customerName}
-                        {item.receiverAttention && <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, marginLeft: '4px' }}>({item.receiverAttention})</span>}
                       </td>
                       <td style={{ padding: '12px', color: '#1e293b' }}>
                         {itemSummary}
