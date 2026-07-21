@@ -1594,7 +1594,7 @@ export const Dashboard: React.FC = () => {
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
                               borderRadius: '6px',
-                              fontSize: '14.5px',
+                              fontSize: '13px',
                               fontWeight: 700,
                               cursor: 'pointer',
                               display: 'flex',
@@ -1606,15 +1606,15 @@ export const Dashboard: React.FC = () => {
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13.5px', color: '#0f172a' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', color: '#0f172a' }}>
                                 {!e.isPublic && <span>🔒</span>}
                                 <strong>{e.title}</strong>
                               </span>
-                              <span style={{ fontSize: '10.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
+                              <span style={{ fontSize: '10px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
                                 {e.type}
                               </span>
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
                               <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                               <span>👤 {e.creatorName}</span>
                             </div>
@@ -1678,7 +1678,7 @@ export const Dashboard: React.FC = () => {
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
                               borderRadius: '6px',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               fontWeight: 700,
                               cursor: 'pointer',
                               display: 'flex',
@@ -1690,15 +1690,15 @@ export const Dashboard: React.FC = () => {
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13.5px', color: '#0f172a' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#0f172a' }}>
                                 {!e.isPublic && <span>🔒</span>}
                                 <strong>{e.title}</strong>
                               </span>
-                              <span style={{ fontSize: '10.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
+                              <span style={{ fontSize: '9.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
                                 {e.type}
                               </span>
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                            <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
                               <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
                               <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                             </div>
