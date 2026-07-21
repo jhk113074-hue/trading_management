@@ -300,37 +300,37 @@ export const LeaveManagement: React.FC = () => {
             
             {/* Accrual Card */}
             <div style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', color: '#fff', borderRadius: '8px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-              <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 700 }}>{userProfile?.name} 님의 휴가 정보</div>
-              <div style={{ fontSize: '12px', color: '#38bdf8', marginTop: '4px', fontWeight: 600 }}>
+              <div style={{ fontSize: '14.5px', color: '#94a3b8', fontWeight: 700 }}>{userProfile?.name} 님의 휴가 정보</div>
+              <div style={{ fontSize: '14px', color: '#38bdf8', marginTop: '4px', fontWeight: 600 }}>
                 입사일: {myJoinDate} ({myAccruals.tenureYears > 0 ? `${myAccruals.tenureYears}년 ` : ''}{myAccruals.tenureMonths % 12}개월 근무)
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '18px', textAlign: 'center' }}>
                 <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '10px' }}>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>총 발생</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', marginTop: '4px' }}>{myAccruals.total}<span style={{ fontSize: '12px' }}>일</span></div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>총 발생</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#fff', marginTop: '4px' }}>{myAccruals.total}<span style={{ fontSize: '14px' }}>일</span></div>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '10px' }}>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>사용 연차</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#ef4444', marginTop: '4px' }}>{myAccruals.used}<span style={{ fontSize: '12px' }}>일</span></div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>사용 연차</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ef4444', marginTop: '4px' }}>{myAccruals.used}<span style={{ fontSize: '14px' }}>일</span></div>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '10px' }}>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>잔여 연차</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10b981', marginTop: '4px' }}>{myAccruals.remaining}<span style={{ fontSize: '12px' }}>일</span></div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>잔여 연차</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#10b981', marginTop: '4px' }}>{myAccruals.remaining}<span style={{ fontSize: '14px' }}>일</span></div>
                 </div>
               </div>
             </div>
 
             {/* Leave Request Form */}
             <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '20px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b' }}>✈ 휴가 신청서 작성</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b' }}>✈ 휴가 신청서 작성</h3>
               <form onSubmit={handleRequestSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>휴가 구분</label>
+                  <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>휴가 구분</label>
                   <select
                     value={leaveType}
                     onChange={e => setLeaveType(e.target.value as any)}
-                    style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', height: '34px', outline: 'none', color: '#1e293b', cursor: 'pointer', boxSizing: 'border-box' }}
+                    style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', backgroundColor: 'white', height: '36px', outline: 'none', color: '#1e293b', cursor: 'pointer', boxSizing: 'border-box' }}
                   >
                     <option value="FULL">종일 휴가 (1.0일)</option>
                     <option value="AM_HALF">오전 반차 (0.5일 - 09:00~13:00)</option>
@@ -341,22 +341,22 @@ export const LeaveManagement: React.FC = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: leaveType === 'FULL' ? '1fr 1fr' : '1fr', gap: '10px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{leaveType === 'FULL' ? '시작일' : '휴가 희망일'}</label>
+                    <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{leaveType === 'FULL' ? '시작일' : '휴가 희망일'}</label>
                     <input
                       type="date"
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
-                      style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
+                      style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
                     />
                   </div>
                   {leaveType === 'FULL' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
+                      <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
                       <input
                         type="date"
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
-                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
+                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
                       />
                     </div>
                   )}
@@ -365,40 +365,40 @@ export const LeaveManagement: React.FC = () => {
                 {leaveType === 'HOURLY' && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작시간</label>
+                      <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작시간</label>
                       <input
                         type="time"
                         value={startTime}
                         onChange={e => setStartTime(e.target.value)}
-                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
+                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료시간</label>
+                      <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료시간</label>
                       <input
                         type="time"
                         value={endTime}
                         onChange={e => setEndTime(e.target.value)}
-                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
+                        style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
                       />
                     </div>
                   </div>
                 )}
 
-                <div style={{ background: '#f8fafc', padding: '0 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '34px', boxSizing: 'border-box' }}>
+                <div style={{ background: '#f8fafc', padding: '0 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '14.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', boxSizing: 'border-box' }}>
                   <span style={{ color: '#475569', fontWeight: 700 }}>총 차감일수:</span>
-                  <strong style={{ color: '#3b82f6', fontSize: '13.5px' }}>{calculateRequestedDays()} 일</strong>
+                  <strong style={{ color: '#3b82f6', fontSize: '15.5px' }}>{calculateRequestedDays()} 일</strong>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사유 및 비고</label>
+                  <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사유 및 비고</label>
                   <input
                     type="text"
                     required
                     placeholder="예: 개인 사정, 병가, 건강검진 등"
                     value={reason}
                     onChange={e => setReason(e.target.value)}
-                    style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
+                    style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', outline: 'none', height: '36px', color: '#1e293b', boxSizing: 'border-box' }}
                   />
                 </div>
 
@@ -411,11 +411,11 @@ export const LeaveManagement: React.FC = () => {
                     color: '#fff', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    fontSize: '12.5px', 
+                    fontSize: '14.5px', 
                     fontWeight: 700, 
                     cursor: 'pointer', 
                     transition: 'background 0.2s', 
-                    height: '34px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -439,21 +439,21 @@ export const LeaveManagement: React.FC = () => {
             <>
               {/* Employee Summary list */}
               <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '20px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>👥 전 직원 연차 대장</span>
                 </h3>
                 
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#475569', textAlign: 'left', fontWeight: 'bold' }}>
-                        <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>성명</th>
-                        <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>부서 / 직위</th>
-                        <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>입사일</th>
-                        <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>근속년수</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 발생연차</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사용 연차</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>잔여 연차</th>
+                        <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>성명</th>
+                        <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>부서 / 직위</th>
+                        <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>입사일</th>
+                        <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>근속년수</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>총 발생연차</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>사용 연차</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>잔여 연차</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -489,12 +489,12 @@ export const LeaveManagement: React.FC = () => {
 
               {/* Pending Approvals */}
               <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '20px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>⏳ 결재 대기 중인 휴가 신청 ({requests.filter(r => r.status === 'PENDING').length}건)</span>
                 </h3>
                 
                 {requests.filter(r => r.status === 'PENDING').length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}>
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '14.5px' }}>
                     결재 대기 중인 휴가 신청서가 없습니다.
                   </div>
                 ) : (
@@ -503,28 +503,28 @@ export const LeaveManagement: React.FC = () => {
                       <div key={r.id} style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <strong style={{ fontSize: '13.5px', color: '#1e293b' }}>{r.userName}</strong>
-                            <span style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                            <strong style={{ fontSize: '15.5px', color: '#1e293b' }}>{r.userName}</strong>
+                            <span style={{ fontSize: '13px', background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
                               {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`} ({r.totalDays}일)
                             </span>
                           </div>
-                          <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '4px' }}>
+                          <div style={{ fontSize: '14.5px', color: '#475569', marginTop: '4px' }}>
                             기간: 📅 {r.startDate} ~ {r.endDate}
                           </div>
-                          <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                          <div style={{ fontSize: '14px', color: '#475569', marginTop: '2px' }}>
                             사유: "{r.reason}"
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
                             onClick={() => handleApprove(r.id)}
-                            style={{ padding: '0 12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', height: '30px' }}
+                            style={{ padding: '0 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', height: '32px' }}
                           >
                             승인
                           </button>
                           <button
                             onClick={() => setShowRejectModal(r.id)}
-                            style={{ padding: '0 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', height: '30px' }}
+                            style={{ padding: '0 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', height: '32px' }}
                           >
                             반려
                           </button>
@@ -539,26 +539,26 @@ export const LeaveManagement: React.FC = () => {
 
           {/* User Request History */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '20px', flex: 1 }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 14px 0', color: '#1e293b' }}>
               {userProfile?.role === '관리자' ? '📋 전사 휴가 신청/결재 내역' : '📋 나의 휴가 신청 내역'}
             </h3>
             
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#475569', textAlign: 'left', fontWeight: 'bold' }}>
-                    {userProfile?.role === '관리자' && <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>신청자</th>}
-                    <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>구분</th>
-                    <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기간</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사용 일수</th>
-                    <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사유</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
+                    {userProfile?.role === '관리자' && <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>신청자</th>}
+                    <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>구분</th>
+                    <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>기간</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>사용 일수</th>
+                    <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>사유</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(userProfile?.role === '관리자' ? requests : myRequests).length === 0 ? (
                     <tr>
-                      <td colSpan={userProfile?.role === '관리자' ? 6 : 5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
+                      <td colSpan={userProfile?.role === '관리자' ? 6 : 5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                         신청 내역이 존재하지 않습니다.
                       </td>
                     </tr>
@@ -566,7 +566,7 @@ export const LeaveManagement: React.FC = () => {
                     <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       {userProfile?.role === '관리자' && <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{r.userName}</td>}
                       <td style={{ padding: '10px 12px' }}>
-                        <span style={{ fontSize: '10.5px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                        <span style={{ fontSize: '12.5px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
                           {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`}
                         </span>
                       </td>
@@ -575,14 +575,14 @@ export const LeaveManagement: React.FC = () => {
                       <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                         {r.reason}
                         {r.rejectReason && (
-                          <div style={{ color: '#ef4444', fontSize: '11px', marginTop: '2px', fontWeight: 'bold' }}>
+                          <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '2px', fontWeight: 'bold' }}>
                             ↳ 반려 사유: {r.rejectReason}
                           </div>
                         )}
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                         <span style={{
-                          fontSize: '11px',
+                          fontSize: '13px',
                           fontWeight: 800,
                           padding: '3px 8px',
                           borderRadius: '20px',

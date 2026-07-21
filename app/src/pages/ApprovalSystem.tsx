@@ -724,7 +724,7 @@ export const ApprovalSystem: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>✍️ 전자결재 시스템</h2>
-          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '6px 0 0 0' }}>온라인 기안 상신, 결재선 지정, 실시간 품의서 결재 및 반려 보관 시스템입니다.</p>
+          <p style={{ fontSize: '14.5px', color: '#64748b', margin: '6px 0 0 0' }}>온라인 기안 상신, 결재선 지정, 실시간 품의서 결재 및 반려 보관 시스템입니다.</p>
         </div>
         <button 
           onClick={() => { setAttachments([]); setShowDraftModal(true); }}
@@ -734,8 +734,8 @@ export const ApprovalSystem: React.FC = () => {
             border: 'none',
             borderRadius: '4px',
             padding: '0 16px',
-            height: '34px',
-            fontSize: '12.5px',
+            height: '36px',
+            fontSize: '14.5px',
             fontWeight: 700,
             cursor: 'pointer',
             transition: 'background 0.2s',
@@ -758,7 +758,7 @@ export const ApprovalSystem: React.FC = () => {
             padding: '10px 16px',
             border: 'none',
             background: 'none',
-            fontSize: '13px',
+            fontSize: '15px',
             fontWeight: 700,
             cursor: 'pointer',
             color: activeTab === 'pending' ? '#3b82f6' : '#64748b',
@@ -773,7 +773,7 @@ export const ApprovalSystem: React.FC = () => {
             padding: '10px 16px',
             border: 'none',
             background: 'none',
-            fontSize: '13px',
+            fontSize: '15px',
             fontWeight: 700,
             cursor: 'pointer',
             color: activeTab === 'submitted' ? '#3b82f6' : '#64748b',
@@ -788,7 +788,7 @@ export const ApprovalSystem: React.FC = () => {
             padding: '10px 16px',
             border: 'none',
             background: 'none',
-            fontSize: '13px',
+            fontSize: '15px',
             fontWeight: 700,
             cursor: 'pointer',
             color: activeTab === 'archive' ? '#3b82f6' : '#64748b',
@@ -802,21 +802,21 @@ export const ApprovalSystem: React.FC = () => {
       {/* List Container */}
       <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#475569', textAlign: 'left', fontWeight: 'bold' }}>
-                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>문서 종류</th>
-                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안 제목</th>
-                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안자</th>
-                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재선 (결재권자)</th>
-                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안일시</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>문서 종류</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안 제목</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안자</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재선 (결재권자)</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안일시</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
               </tr>
             </thead>
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                     보관함에 보관된 문서가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -834,7 +834,7 @@ export const ApprovalSystem: React.FC = () => {
                   >
                     <td style={{ padding: '12px' }}>
                       <span style={{
-                        fontSize: '11px',
+                        fontSize: '13px',
                         fontWeight: 800,
                         padding: '3px 8px',
                         borderRadius: '4px',
@@ -849,10 +849,10 @@ export const ApprovalSystem: React.FC = () => {
                     </td>
                     <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{doc.requesterName}</td>
                     <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>👤 {doc.approverName}</td>
-                    <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '11.5px' }}>{new Date(doc.createdAt).toLocaleString()}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '13.5px' }}>{new Date(doc.createdAt).toLocaleString()}</td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <span style={{
-                        fontSize: '11.5px',
+                        fontSize: '13.5px',
                         fontWeight: 800,
                         padding: '3px 8px',
                         borderRadius: '20px',
