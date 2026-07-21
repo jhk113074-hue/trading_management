@@ -1513,16 +1513,18 @@ export const Dashboard: React.FC = () => {
               {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
                 
-                {/* 1. 오늘의 일정 */}
+                {/* 1. 금주의 일정 */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                      📌 <span>오늘의 일정 ({
+                      📌 <span>금주의 일정 ({
                         derivedEvents.filter(e => {
-                          const todayStr = new Date().toISOString().split('T')[0];
-                          const start = e.startDate;
-                          const end = e.endDate || start;
-                          return todayStr >= start && todayStr <= end;
+                          const { start, end } = getWeekRange(0);
+                          const wStart = toLocalDateStr(start);
+                          const wEnd = toLocalDateStr(end);
+                          const eStart = e.startDate;
+                          const eEnd = e.endDate || eStart;
+                          return eStart <= wEnd && eEnd >= wStart;
                         }).length
                       }건)</span>
                     </span>
@@ -1552,22 +1554,26 @@ export const Dashboard: React.FC = () => {
 
                   <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '170px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
-                      const todayStr = new Date().toISOString().split('T')[0];
-                      const start = e.startDate;
-                      const end = e.endDate || start;
-                      return todayStr >= start && todayStr <= end;
+                      const { start, end } = getWeekRange(0);
+                      const wStart = toLocalDateStr(start);
+                      const wEnd = toLocalDateStr(end);
+                      const eStart = e.startDate;
+                      const eEnd = e.endDate || eStart;
+                      return eStart <= wEnd && eEnd >= wStart;
                     }).length === 0 ? (
                       <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '10px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        오늘 등록된 일정이 없습니다.
+                        이번 주에 등록된 일정이 없습니다.
                       </div>
                     ) : (
                       derivedEvents.filter(e => {
-                        const todayStr = new Date().toISOString().split('T')[0];
-                        const start = e.startDate;
-                        const end = e.endDate || start;
-                        return todayStr >= start && todayStr <= end;
+                        const { start, end } = getWeekRange(0);
+                        const wStart = toLocalDateStr(start);
+                        const wEnd = toLocalDateStr(end);
+                        const eStart = e.startDate;
+                        const eEnd = e.endDate || eStart;
+                        return eStart <= wEnd && eEnd >= wStart;
                       })
-                      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                      .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
                       .map(e => {
                         const colors = getEventBadgeColor(e.type);
                         return (
@@ -1615,6 +1621,7 @@ export const Dashboard: React.FC = () => {
                               </span>
                             </div>
                             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                              <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
                               <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                               <span>👤 {e.creatorName}</span>
                             </div>
