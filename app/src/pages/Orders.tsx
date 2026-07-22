@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
@@ -1114,6 +1115,33 @@ export const Orders: React.FC = () => {
   );
 };
 
+  const handleExportExcel = () => {
+    const data = processedOrders.map(order => {
+      const pi = quotations.find(q => q.id === order.quotationId);
+      const amountUsd = pi?.totalUsd || order.totalAmount || 0;
+      const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
+      const salesKrw = Math.round(amountUsd * rate);
+
+      return {
+        '주문일자': order.poDate || '-',
+        '주문번호': order.id || '-',
+        '수주사': order.issuingCompany === 'YSACC' ? 'YSACC' : '영성ACC',
+        '발주사(바이어)': order.customer || '-',
+        '수주금액(USD)': amountUsd,
+        '매출액(KRW)': salesKrw,
+        'ETD': order.etd || '-',
+        'ETA': order.eta || '-',
+        '현재단계': order.status || '-',
+        '담당자': order.manager || '-'
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "ExportOrders");
+    XLSX.writeFile(wb, "export_orders.xlsx");
+  };
+
   // ── 메인 렌더링 ───────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1137,14 +1165,24 @@ export const Orders: React.FC = () => {
             <option value="YS">영성ACC</option>
           </select>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
-          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
-          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
-        >
-          ➕ 신규 PO 등록
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '34px' }}>
+          <button
+            onClick={handleExportExcel}
+            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+          >
+            📥 목록 받기 (Excel)
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+          >
+            ➕ 신규 PO 등록
+          </button>
+        </div>
       </div>
 
       {/* 스탯 카드 */}

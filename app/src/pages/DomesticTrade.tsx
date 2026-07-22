@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -646,6 +647,37 @@ export const DomesticTrade: React.FC = () => {
     return { totalCount, totalBuying, totalSales, totalMargin, marginRate, ysaccSales, ysSales };
   }, [filteredTrades]);
 
+  const handleExportExcel = () => {
+    const data = filteredTrades.map(t => {
+      const margin = (t.salesAmount || 0) - (t.buyingAmount || 0);
+      const marginRate = t.salesAmount > 0 ? Math.round((margin / t.salesAmount) * 100) : 0;
+      const itemCount = t.items ? t.items.length : 1;
+      const itemSummary = t.items && t.items.length > 0
+        ? `${t.items[0].productName} ${itemCount > 1 ? `외 ${itemCount - 1}건` : ''}`
+        : (t.productName || '품목');
+
+      return {
+        '주문일자': t.tradeDate || '-',
+        '주문번호': t.tradeNo || '-',
+        '견적번호': t.quoteNo || '-',
+        '주체': t.companyType === 'YSACC' ? 'YSACC' : '영성ACC',
+        '국내 매출처': t.customerName || '-',
+        '국내 매입처': t.supplierName || '-',
+        '품목 정보': itemSummary,
+        '매입액(KRW)': t.buyingAmount ? Number(t.buyingAmount) : 0,
+        '매출액(KRW)': t.salesAmount ? Number(t.salesAmount) : 0,
+        '영업마진': margin,
+        '마진율(%)': marginRate,
+        '진행상태': t.status === 'COMPLETED' ? '정산완료' : t.status === 'PENDING' ? '정산대기' : '취소'
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DomesticTrades");
+    XLSX.writeFile(wb, "domestic_trades.xlsx");
+  };
+
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>국내 주문 데이터를 불러오는 중...</div>;
   }
@@ -715,7 +747,6 @@ export const DomesticTrade: React.FC = () => {
           #order-print-area, #order-print-area *, #statement-print-area, #statement-print-area * { visibility: visible; }
           #order-print-area, #statement-print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
           .no-print { display: none !important; }
-        }
       `}</style>
 
       {/* Header */}
@@ -724,29 +755,54 @@ export const DomesticTrade: React.FC = () => {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>🏪 국내 주문관리</h1>
           <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 주문, 세금계산서, 수금등록, 거래명세표 및 이익분석 통합 관리</span>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          style={{
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '0 16px',
-            height: '34px',
-            fontSize: '14.5px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'background 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            boxSizing: 'border-box'
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
-          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
-        >
-          ➕ 신규 국내 주문 등록
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '34px' }}>
+          <button
+            onClick={handleExportExcel}
+            style={{
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              color: '#475569',
+              borderRadius: '4px',
+              padding: '0 14px',
+              height: '34px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+          >
+            📥 목록 받기 (Excel)
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            style={{
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '0 16px',
+              height: '34px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+          >
+            ➕ 신규 국내 주문 등록
+          </button>
+        </div>
       </div>
 
       {/* KPI Stats Banner */}
