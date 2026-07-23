@@ -7209,7 +7209,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             palletGrossWeight: p?.palletGrossWeight || 0
                           };
 
-                          const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
+                          const customQtyPerPallet = (basicForm.packingList as any)?.[`custom_qty_per_pallet_${itemCode}_${idx}`];
+                          const qtyPerPallet = customQtyPerPallet !== undefined ? Number(customQtyPerPallet) : (matchedMethod.qtyPerPallet || 100);
                           const fullPallets = Math.floor(qty / qtyPerPallet);
                           const residue = qty % qtyPerPallet;
 
@@ -7230,13 +7231,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                           
                            // Dimensions logic
-                           let w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
-                           let l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
-                           let h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
-                           if (w === 0) w = (p?.palletWidth || p?.unitWidth || 0);
-                           if (l === 0) l = (p?.palletLength || p?.unitLength || 0);
-                           if (h === 0) h = (p?.palletHeight || p?.unitHeight || 0);
-                           const dimsStr = w || l || h ? `${w}x${l}x${h}` : '-';
+                           const customW = (basicForm.packingList as any)?.[`custom_w_${itemCode}_${idx}`];
+                           const customL = (basicForm.packingList as any)?.[`custom_l_${itemCode}_${idx}`];
+                           const customH = (basicForm.packingList as any)?.[`custom_h_${itemCode}_${idx}`];
+
+                           let w = customW !== undefined ? Number(customW) : (isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0));
+                           let l = customL !== undefined ? Number(customL) : (isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0));
+                           let h = customH !== undefined ? Number(customH) : (isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0));
+                           if (w === 0 && customW === undefined) w = (p?.palletWidth || p?.unitWidth || 0);
+                           if (l === 0 && customL === undefined) l = (p?.palletLength || p?.unitLength || 0);
+                           if (h === 0 && customH === undefined) h = (p?.palletHeight || p?.unitHeight || 0);
+                           const dimsStr = w || l || h ? `${w}x${l}x${h}` : '0x0x0';
 
                            // Supplier logic
                            const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
@@ -7338,6 +7343,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                          await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
                                        }
                                      }
+                                     setBasicForm(prev => {
+                                       const nextPL = { ...(prev.packingList || {}) };
+                                       (nextPL as any)[`custom_${dimKey}_${itemCode}_${idx}`] = numericVal;
+                                       return { ...prev, packingList: nextPL };
+                                     });
                                    };
 
                                    return (
@@ -7398,6 +7408,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         }
                                         await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
                                       }
+                                      setBasicForm(prev => {
+                                        const nextPL = { ...(prev.packingList || {}) };
+                                        (nextPL as any)[`custom_qty_per_pallet_${itemCode}_${idx}`] = val;
+                                        return { ...prev, packingList: nextPL };
+                                      });
                                     }}
                                     style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', width: '70px', textAlign: 'right' }}
                                   />
