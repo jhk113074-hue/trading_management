@@ -15,7 +15,7 @@ export const ProformaInvoices: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [dateFilterType, setDateFilterType] = useState<string>('Monthly');
+  const [dateFilterType, setDateFilterType] = useState<string>('Recent3Months');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
@@ -139,7 +139,12 @@ export const ProformaInvoices: React.FC = () => {
         const d = new Date(p.piDate);
         if (isNaN(d.getTime())) return false;
         const y = d.getFullYear(), m = d.getMonth() + 1;
-        if (dateFilterType === 'Monthly') {
+        if (dateFilterType === 'Recent3Months') {
+          const now = new Date();
+          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+          if (d < threeMonthsAgo || d > endOfCurrentMonth) return false;
+        } else if (dateFilterType === 'Monthly') {
           if (y !== selectedYear || m !== selectedMonth) return false;
         } else if (dateFilterType === 'Quarterly') {
           const q = Math.floor((m - 1) / 3) + 1;
@@ -435,6 +440,7 @@ export const ProformaInvoices: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</span>
           <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '0 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12.5px', backgroundColor: '#fff', color: '#3b82f6', fontWeight: 600, outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}>
+            <option value="Recent3Months">최근 3개월</option>
             <option value="All">전체 기간</option>
             <option value="Monthly">월별</option>
             <option value="Quarterly">분기별</option>
