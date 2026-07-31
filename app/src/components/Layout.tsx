@@ -85,6 +85,8 @@ export const Layout: React.FC = () => {
     return window.innerWidth <= 1028;
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [notifFilterTab, setNotifFilterTab] = useState<'all' | 'unread'>('all');
+  const [latestToast, setLatestToast] = useState<any | null>(null);
 
   const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -714,144 +716,247 @@ export const Layout: React.FC = () => {
                   )}
                 </button>
 
-                {showNotifications && (
-                  <Card
-                    padding="0"
-                    style={{
-                      position: 'absolute',
-                      top: '42px',
-                      right: '0',
-                      width: '380px',
-                      zIndex: 9999,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      maxHeight: '480px',
-                      overflow: 'hidden',
-                      boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1'
-                    }}
-                  >
-                    {/* 알림 드롭다운 헤더 */}
-                    <div
-                      style={{
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #e2e8f0',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: '#f8fafc'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>🔔 알림 센터</span>
-                        <span style={{ background: '#ef4444', color: '#fff', padding: '1px 7px', borderRadius: '10px', fontSize: '11px', fontWeight: 800 }}>
+            {/* ── 메이저 그룹웨어 스타일 우측 슬라이드 알림 패널 (Slide Drawer) ── */}
+            {showNotifications && (
+              <div 
+                onClick={() => setShowNotifications(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  backgroundColor: 'rgba(15, 23, 42, 0.35)',
+                  backdropFilter: 'blur(2px)',
+                  zIndex: 999998,
+                  display: 'flex',
+                  justifyContent: 'flex-end'
+                }}
+              >
+                <div 
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    width: '420px',
+                    maxWidth: '90vw',
+                    height: '100vh',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '-10px 0 30px rgba(15, 23, 42, 0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    zIndex: 999999
+                  }}
+                >
+                  {/* 패널 상단 헤더 */}
+                  <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>🔔 알림 센터</span>
+                      {notifications.filter(n => !n.isRead).length > 0 && (
+                        <span style={{ background: '#ef4444', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 800 }}>
                           {notifications.filter(n => !n.isRead).length}
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            playNotificationSound();
-                          }}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            color: '#475569',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                          }}
-                          title="알림 사운드 미리 듣기"
-                        >
-                          🔊 소리 테스트
-                        </button>
-                      </div>
-                      {notifications.filter(n => !n.isRead).length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleMarkAllAsRead}
-                          style={{ padding: '2px 8px', color: '#2563eb', fontSize: '11.5px', fontWeight: 700 }}
-                        >
-                          ✓ 모두 읽음
-                        </Button>
                       )}
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playNotificationSound();
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '4px',
+                          color: '#475569',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          padding: '4px 8px'
+                        }}
+                        title="소리 테스트"
+                      >
+                        🔊 소리
+                      </button>
+                      <button
+                        onClick={() => setShowNotifications(false)}
+                        style={{ background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b', padding: '4px' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
 
-                    {/* 알림 목록 */}
-                    <div style={{ overflowY: 'auto', flex: 1, maxHeight: '400px' }}>
-                      {notifications.length === 0 ? (
-                        <div style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
-                          <div style={{ fontSize: '24px', marginBottom: '6px' }}>🔕</div>
-                          새로운 알림이 없습니다.
-                        </div>
-                      ) : (
-                        notifications.map((n) => {
-                          const displayTitle = n.title || (n.senderName ? `${n.senderName}님의 알림` : '시스템 알림');
-                          const displayContent = n.content || n.commentContent || (n.taskTitle ? `업무: ${n.taskTitle}` : '');
+                  {/* 필터 탭 & 모두 읽음 서브 바 */}
+                  <div style={{ padding: '12px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+                    <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '3px', borderRadius: '6px' }}>
+                      <button
+                        onClick={() => setNotifFilterTab('all')}
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: notifFilterTab === 'all' ? '#ffffff' : 'transparent',
+                          color: notifFilterTab === 'all' ? '#0f172a' : '#64748b',
+                          fontSize: '12px',
+                          fontWeight: 750,
+                          cursor: 'pointer',
+                          boxShadow: notifFilterTab === 'all' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                      >
+                        전체 ({notifications.length})
+                      </button>
+                      <button
+                        onClick={() => setNotifFilterTab('unread')}
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: notifFilterTab === 'unread' ? '#ffffff' : 'transparent',
+                          color: notifFilterTab === 'unread' ? '#0f172a' : '#64748b',
+                          fontSize: '12px',
+                          fontWeight: 750,
+                          cursor: 'pointer',
+                          boxShadow: notifFilterTab === 'unread' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                      >
+                        안 읽음 ({notifications.filter(n => !n.isRead).length})
+                      </button>
+                    </div>
 
-                          return (
-                            <div
-                              key={n.id}
-                              onClick={() => handleNotificationClick(n)}
-                              style={{
-                                padding: '12px 16px',
-                                borderBottom: '1px solid #f1f5f9',
-                                cursor: 'pointer',
-                                background: n.isRead ? '#ffffff' : '#f0f9ff',
-                                transition: 'all 0.15s ease',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '6px',
-                                textAlign: 'left'
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? '#ffffff' : '#f0f9ff'; }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {renderNotifBadge(n.type)}
-                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
-                                    {n.senderName && n.senderName.toUpperCase() !== 'SYSTEM' ? n.senderName : '시스템'}
-                                  </span>
-                                </div>
-                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                                  {formatRelativeTime(n.createdAt)}
+                    {notifications.filter(n => !n.isRead).length > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        style={{ background: 'transparent', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ✓ 모두 읽음
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 알림 목록 피드 */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+                    {(() => {
+                      const list = notifFilterTab === 'unread' ? notifications.filter(n => !n.isRead) : notifications;
+                      if (list.length === 0) {
+                        return (
+                          <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔕</div>
+                            {notifFilterTab === 'unread' ? '안 읽은 알림이 없습니다.' : '새로운 알림이 없습니다.'}
+                          </div>
+                        );
+                      }
+
+                      return list.map(n => {
+                        const displayTitle = n.title || (n.senderName ? `${n.senderName}님의 알림` : '시스템 알림');
+                        const displayContent = n.content || n.commentContent || (n.taskTitle ? `업무: ${n.taskTitle}` : '');
+
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              handleNotificationClick(n);
+                              setShowNotifications(false);
+                            }}
+                            style={{
+                              padding: '14px 16px',
+                              marginBottom: '10px',
+                              borderRadius: '8px',
+                              border: n.isRead ? '1px solid #f1f5f9' : '1px solid #bae6fd',
+                              backgroundColor: n.isRead ? '#ffffff' : '#f0f9ff',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              boxShadow: n.isRead ? 'none' : '0 2px 8px rgba(56, 189, 248, 0.12)'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = n.isRead ? '#ffffff' : '#f0f9ff'; }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {renderNotifBadge(n.type)}
+                                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>
+                                  {n.senderName && n.senderName.toUpperCase() !== 'SYSTEM' ? n.senderName : '시스템'}
                                 </span>
                               </div>
-
-                              <div style={{ fontSize: '13.5px', color: '#0f172a', fontWeight: n.isRead ? 600 : 800, lineHeight: 1.3 }}>
-                                {displayTitle}
-                              </div>
-
-                              {displayContent && (
-                                <div style={{
-                                  fontSize: '12.5px',
-                                  color: '#475569',
-                                  background: n.isRead ? '#f8fafc' : '#ffffff',
-                                  border: '1px solid #e2e8f0',
-                                  padding: '8px 10px',
-                                  borderRadius: '6px',
-                                  lineHeight: 1.4,
-                                  whiteSpace: 'pre-wrap',
-                                  wordBreak: 'break-word',
-                                  maxHeight: '80px',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
-                                }}>
-                                  {displayContent}
-                                </div>
-                              )}
+                              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                                {formatRelativeTime(n.createdAt)}
+                              </span>
                             </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </Card>
+
+                            <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: n.isRead ? 600 : 800, lineHeight: 1.35 }}>
+                              {displayTitle}
+                            </div>
+
+                            {displayContent && (
+                              <div style={{
+                                fontSize: '12.5px',
+                                color: '#475569',
+                                background: n.isRead ? '#f8fafc' : '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                padding: '10px 12px',
+                                borderRadius: '6px',
+                                lineHeight: 1.45,
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                maxHeight: '100px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {displayContent}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── 우측 하단 실시간 알림 토스트 (Real-time Toast Alert) ── */}
+            {latestToast && (
+              <div 
+                onClick={() => {
+                  handleNotificationClick(latestToast);
+                  setLatestToast(null);
+                }}
+                style={{
+                  position: 'fixed',
+                  bottom: '24px',
+                  right: '24px',
+                  zIndex: 999999,
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  padding: '16px 20px',
+                  borderRadius: '10px',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                  maxWidth: '380px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  border: '1px solid #334155'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🔔 새 알림 도착
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>방금 전</span>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
+                  {latestToast.title || latestToast.taskTitle || '새로운 알림이 도착했습니다.'}
+                </div>
+                {latestToast.content && (
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {latestToast.content}
+                  </div>
                 )}
+              </div>
+            )}
               </div>
             )}
             {/* 세션 남은 시간 카운트다운 표시 영역 */}
