@@ -50,8 +50,10 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [isDraggingModeless, setIsDraggingModeless] = useState(false);
   const modelessDragStartRef = React.useRef({ x: 0, y: 0 });
   
-  const [requesterName] = useState(initialTask?.requesterName || '');
-  const [requesterId, setRequesterId] = useState(initialTask?.requesterId || '');
+  const { userProfile } = useAuth();
+  
+  const [requesterName, setRequesterName] = useState(initialTask?.requesterName || userProfile?.name || '');
+  const [requesterId, setRequesterId] = useState(initialTask?.requesterId || userProfile?.id || '');
   
   const [assigneeName] = useState(initialTask?.assigneeName || '');
   const [assigneeId, setAssigneeId] = useState(initialTask?.assigneeId || '');
@@ -75,7 +77,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const { userProfile } = useAuth();
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);

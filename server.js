@@ -35,6 +35,61 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
+// API: Send Email (SendGrid / SMTP Server)
+// ─────────────────────────────────────────
+app.post('/api/email/send', async (req, res) => {
+  try {
+    const { to, cc, subject, text, html } = req.body;
+    if (!to || !subject || !text) {
+      return res.status(400).json({ error: 'to, subject, and text are required' });
+    }
+
+    const sendgridApiKey = process.env.SENDGRID_API_KEY || process.env.VITE_SENDGRID_API_KEY;
+
+    if (sendgridApiKey) {
+      const ccList = Array.isArray(cc) ? cc.filter(Boolean) : (cc ? [cc] : []);
+      const sgPayload = {
+        personalizations: [
+          {
+            to: [{ email: to }],
+            ...(ccList.length > 0 ? { cc: ccList.map(e => ({ email: e })) } : {})
+          }
+        ],
+        from: { email: 'admin@ysacc.co.kr', name: 'YSACC 무역관리' },
+        subject: subject,
+        content: [
+          { type: 'text/plain', value: text },
+          { type: 'text/html', value: html || `<div style="font-family: sans-serif; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${text.replace(/\n/g, '<br/>')}</div>` }
+        ]
+      };
+
+      const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendgridApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sgPayload)
+      });
+
+      if (sgRes.status >= 200 && sgRes.status < 300) {
+        return res.json({ success: true, message: 'SendGrid 서버에서 발주서 이메일이 즉시 발송되었습니다.' });
+      } else {
+        const sgErr = await sgRes.text();
+        console.error('SendGrid API error response:', sgErr);
+        return res.status(sgRes.status).json({ error: 'SendGrid email send failed', details: sgErr });
+      }
+    } else {
+      console.warn('SENDGRID_API_KEY environment variable is missing on server.');
+      return res.status(503).json({ error: 'SendGrid API Key is not configured on server.' });
+    }
+  } catch (e) {
+    console.error('Failed to send email:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─────────────────────────────────────────
 // API: Customers
 // ─────────────────────────────────────────
 app.get('/api/customers', async (req, res) => {

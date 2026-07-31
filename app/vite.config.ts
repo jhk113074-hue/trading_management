@@ -56,6 +56,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Firebase 실시간 데이터는 캐시 제외, 앱 셸만 캐시
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
@@ -79,15 +82,6 @@ export default defineConfig({
             options: {
               cacheName: 'google-apis',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 },
-            },
-          },
-          {
-            // 앱 JS/CSS 번들 — 캐시 우선 (버전 변경 시 자동 갱신)
-            urlPattern: /\.(?:js|css)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'static-assets',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
           },
         ],

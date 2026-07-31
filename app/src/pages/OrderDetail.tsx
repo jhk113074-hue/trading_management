@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage, auth } from '../firebase';
@@ -18,7 +18,17 @@ import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
+import { sendPoEmailDirectly } from '../services/emailService';
+import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
+
+const STEP_LABEL_TO_STAGE_KEY: Record<string, StageKey | undefined> = {
+  '수주정보': '수주정보',
+  '소싱/발주': '소싱발주',
+  '물류/선적': '물류선적',
+  '서류관리': '서류관리',
+  '정산/결제': '정산결제',
+};
 
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
@@ -123,6 +133,25 @@ const fromCommaString = (val: string): number => {
 
 const steps = ["수주정보", "소싱/발주", "물류/선적", "서류관리", "정산/결제", "변경이력"] as const;
 
+const STEP_DEFAULT_SUBTAB: Record<string, Record<string, string>> = {
+  "소싱/발주": { sourcingTab: "소싱발주" },
+  "물류/선적": { logisticsTab: "선적관리" },
+  "서류관리": { documentTab: "서류업로드" },
+  "정산/결제": { settlementTab: "정산현황" },
+};
+
+const normalizeStep = (raw: string | null): typeof steps[number] => {
+  if (!raw) return "수주정보";
+  const clean = raw.trim();
+  if (clean === 'PO접수' || clean === '수주정보') return '수주정보';
+  if (clean === '소싱발주' || clean === '소싱/발주') return '소싱/발주';
+  if (clean === '물류/선적') return '물류/선적';
+  if (clean === '수출관리' || clean === '서류관리') return '서류관리';
+  if (clean === '정산마감' || clean === '정산/결제') return '정산/결제';
+  if (clean === '변경이력(Log)' || clean === '변경이력') return '변경이력';
+  return "수주정보";
+};
+
 export const OrderDetail: React.FC = () => {
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
@@ -130,12 +159,49 @@ export const OrderDetail: React.FC = () => {
   }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState<typeof steps[number]>("수주정보");
-  const [activeSettlementTab, setActiveSettlementTab] = useState<'세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황'>('정산현황');
-  const [activeLogisticsTab, setActiveLogisticsTab] = useState<'선적관리' | '패킹리스트' | '도착보고_쉬핑마크'>('선적관리');
-  const [activeDocumentTab, setActiveDocumentTab] = useState<'서류업로드' | 'CI_PL작성'>('서류업로드');
+
+  // Unified query updater using functional setSearchParams (prevents stale closure)
+  const updateQuery = (patch: Record<string, string | undefined>, options?: { replace?: boolean }) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(patch).forEach(([key, value]) => {
+        if (value === undefined) {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+      });
+      return next;
+    }, options);
+  };
+
+  // URL Query Parameter derived tab states
+  const activeStep = normalizeStep(searchParams.get("step"));
+  const activeSourcingTab = (searchParams.get("sourcingTab") || "소싱발주") as '소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제' | '대금결제관리';
+  const activeLogisticsTab = (searchParams.get("logisticsTab") || "선적관리") as '선적관리' | '패킹리스트' | '도착보고_쉬핑마크';
+  const activeDocumentTab = (searchParams.get("documentTab") || "서류업로드") as '서류업로드' | 'CI_PL작성';
+  const activeSettlementTab = (searchParams.get("settlementTab") || "정산현황") as '세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황';
+
+  const initialStepSetRef = useRef(false);
+  useEffect(() => {
+    const rawStep = searchParams.get("step");
+    if (rawStep && !steps.includes(rawStep.trim() as any)) {
+      updateQuery({ step: "수주정보" }, { replace: true });
+    } else if (!rawStep && order?.status && !initialStepSetRef.current) {
+      initialStepSetRef.current = true;
+      const mappedStatus = 
+        order.status === '주문' ? '수주정보' :
+        order.status === '발주' ? '소싱/발주' :
+        order.status === '선적관리' ? '물류/선적' :
+        order.status === '이익관리' ? '정산/결제' : '수주정보';
+      const defaultSubTabs = STEP_DEFAULT_SUBTAB[mappedStatus] || {};
+      updateQuery({ step: mappedStatus, ...defaultSubTabs }, { replace: true });
+    }
+  }, [searchParams, order?.status]);
   const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
   const [showPoDetails, setShowPoDetails] = useState(false);
   const exportExcelRef = useRef<(() => void) | null>(null);
@@ -248,7 +314,6 @@ export const OrderDetail: React.FC = () => {
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
-  const [activeSourcingTab, setActiveSourcingTab] = useState<'소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제' | '대금결제관리'>('소싱발주');
   
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
@@ -777,6 +842,9 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  // Checklist collapse state for minimal space view (default: collapsed)
+  const [isChecklistCollapsed, setIsChecklistCollapsed] = useState(true);
+
   // CFS related states
   const [cfsList, setCfsList] = useState<string[]>([]);
   const [isAddingCfs, setIsAddingCfs] = useState(false);
@@ -1151,16 +1219,7 @@ export const OrderDetail: React.FC = () => {
     orderItems, forwardersList, issuedDocs, manualOverride
   ]);
 
-  const getStageProgress = (stage: StageKey) => {
-    let items = { ...(stageCompletion[stage] || {}) };
-    if (stage === '수주정보' && basicForm.isLc !== 'Y') {
-      delete items['L/C 거래 상세 정보 입력'];
-    }
-    const total = Object.keys(items).length;
-    const done = Object.values(items).filter(Boolean).length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-    return { done, total, pct };
-  };
+
 
   const [myCompanies, setMyCompanies] = useState<any[]>([]);
 
@@ -1563,28 +1622,7 @@ export const OrderDetail: React.FC = () => {
           setIssuedDocs((data as any).po_issued_documents);
         }
         
-        if (!initialLoadRef.current) {
-          const params = new URLSearchParams(window.location.search);
-          const urlStep = params.get('step');
-          if (urlStep) {
-            let targetStep = "수주정보";
-            if (urlStep === 'PO접수' || urlStep === '수주정보') targetStep = '수주정보';
-            else if (urlStep === '소싱발주' || urlStep === '소싱/발주') targetStep = '소싱/발주';
-            else if (urlStep === '물류/선적') targetStep = '물류/선적';
-            else if (urlStep === '수출관리' || urlStep === '서류관리') targetStep = '서류관리';
-            else if (urlStep === '정산마감' || urlStep === '정산/결제') targetStep = '정산/결제';
-            else if (urlStep === '변경이력(Log)' || urlStep === '변경이력') targetStep = '변경이력';
-            setActiveStep(targetStep as any);
-          } else if (data.status) {
-            const mappedStatus = 
-              data.status === '주문' ? '수주정보' :
-              data.status === '발주' ? '소싱/발주' :
-              data.status === '선적관리' ? '물류/선적' :
-              data.status === '이익관리' ? '정산/결제' : '수주정보';
-            setActiveStep(mappedStatus as any);
-          }
-          initialLoadRef.current = true;
-        }
+        initialLoadRef.current = true;
         setBasicForm({
           piNumber: data.piNumber || data.quotationId || '',
           customer: data.customer || '',
@@ -1735,9 +1773,7 @@ export const OrderDetail: React.FC = () => {
         setOrderItems(itemsWithHs);
         setSourcingItems(alignedSourcing);
         setForwardersList(data.forwarders || []);
-        if (data.activeSourcingTab) {
-          setActiveSourcingTab(data.activeSourcingTab as any);
-        }
+
         // stageCompletion 로드 — 없으면 기본값 유지
         if ((data as any).stageCompletion) {
           setStageCompletion(prev => ({
@@ -1841,9 +1877,14 @@ export const OrderDetail: React.FC = () => {
     };
   }, [basicForm, orderItems, sourcingItems, forwardersList, order]);
 
-  // Switch active tab view locally
+  // Switch active tab view via URL and handle save on click
   const handleStepClick = async (stepName: typeof steps[number]) => {
-    setActiveStep(stepName);
+    const defaultSubTabs = STEP_DEFAULT_SUBTAB[stepName] || {};
+    updateQuery({
+      step: stepName,
+      ...defaultSubTabs,
+    });
+
     await handleSaveBasic(false, undefined, stepName);
   };
 
@@ -4130,6 +4171,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       alert('✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
       setIssuedDocs(updatedDocs);
       
+      setTimeout(() => {
+        handleEmailAndKakaoSimultaneous(supplierName, items, downloadURL);
+      }, 400);
+      
     } catch (e) {
       console.error(e);
       alert('발행 중 오류가 발생했습니다.');
@@ -4193,65 +4238,139 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
     }
   };
 
-  /*
-  const handleEmailSupplierPo = (supplierName: string, items: OrderItem[]) => {
-    if (!order) return;
+  const buildPoNotificationMessage = (supplierName: string, items: OrderItem[], customPdfUrl?: string) => {
+    if (!order) return { text: '', supplierEmail: '', ccEmails: '', poNum: '', subject: '' };
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
 
     const targetSupplier = suppliersList.find(s => s.name === supplierName);
-    const defaultEmail = targetSupplier?.purchaseEmail || '';
-
-    const email = prompt("발송할 공급업체 이메일 주소를 확인해주세요 (기본값: 거래처 등록 이메일):", defaultEmail);
-    if (email === null) return; // User cancelled
-
-    const subject = encodeURIComponent(`[발주서] PO No: ${poNum} (${order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'})`);
-    
-    const itemsText = items.map(it => {
-      const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
-      const currencySymbol = it.currency === 'KRW' ? '₩' : '$';
-      const spec = it.grade ? ` / 규격: ${it.grade}` : '';
-      return `- 품명: ${it.name}${spec} / 수량: ${it.qty?.toLocaleString()} ${it.unit} / 단가: ${currencySymbol}${price.toLocaleString()}`;
-    }).join('\n');
+    const supplierEmail = targetSupplier?.purchaseEmail || targetSupplier?.email || '';
 
     const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
-    
-    let pdfLinkStr = '';
-    if (latestDoc) {
-      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\n${latestDoc.fileUrl}\n\n`;
+    const pdfUrl = customPdfUrl || latestDoc?.fileUrl || '(발주서 발행 후 생성됩니다)';
+
+    const itemsText = items.map(it => {
+      const spec = (it as any).grade ? ` ${(it as any).grade}` : '';
+      return `• [${it.name}${spec}] ${it.name}${spec} (${(it.qty || 0).toLocaleString()}${it.unit || 'EA'})`;
+    }).join('\n');
+
+    const totalAmt = items.reduce((sum, it) => {
+      const price = (it as any).purchaseUnitPrice != null ? (it as any).purchaseUnitPrice : it.unitPrice;
+      return sum + (price || 0) * (it.qty || 0);
+    }, 0);
+
+    const formattedAmt = totalAmt > 0 ? `₩${Math.round(totalAmt).toLocaleString()} (VAT포함)` : '₩0 (VAT포함)';
+
+    const now = new Date();
+    const dateFormatted = now.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    }) + '. ' + now.toLocaleTimeString('ko-KR', {
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: true
+    });
+
+    const ccEmails = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
+
+    let text = `[YSACC 발주서 발행 및 메일전송 알림]\n`;
+    text += `------------------------------------\n`;
+    text += `▪ 발주번호: ${poNum}\n`;
+    text += `▪ 공급업체: ${supplierName}\n`;
+    text += `▪ 발주품목:\n${itemsText}\n`;
+    text += `▪ 발주금액: ${formattedAmt}\n`;
+    text += `------------------------------------\n`;
+    text += `▪ 발신담당: 김 주 한 대표이사 (010-7361-1130)\n`;
+    text += `▪ 수신(TO): ${supplierEmail || '미지정'}\n`;
+    text += `▪ 참조(CC): ${ccEmails}\n`;
+    text += `▪ 발행일시: ${dateFormatted}\n`;
+    text += `------------------------------------\n`;
+    text += `📄 발주서 PDF 원본 다운로드:\n${pdfUrl}`;
+
+    const subject = `[YSACC 발주서 발행 및 메일전송 알림] ${poNum} - ${supplierName}`;
+
+    return { text, supplierEmail, ccEmails, poNum, subject };
+  };
+
+  const handleEmailAndKakaoSimultaneous = async (supplierName: string, items: OrderItem[], customPdfUrl?: string) => {
+    if (!order) return;
+    const { text, supplierEmail, ccEmails, subject } = buildPoNotificationMessage(supplierName, items, customPdfUrl);
+
+    // 1. Copy KakaoTalk notification message to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).catch(() => {});
     }
 
-    const body = encodeURIComponent(
-      `안녕하세요,\n\n` +
-      `${supplierName} 담당자님 귀하,\n\n` +
-      `아래와 같이 발주서를 전달해 드립니다.\n\n` +
-      `- 발주번호: ${poNum}\n` +
-      `- 발주일자: ${new Date().toISOString().split('T')[0]}\n\n` +
-      `[발주 내역]\n` +
-      `${itemsText}\n\n` +
-      pdfLinkStr +
-      `자세한 내용은 본 이메일 혹은 시스템에 접속하여 첨부된 발주서(PDF)를 참조해 주시기 바랍니다.\n` +
-      `감사합니다.\n` +
-      `\n` +
-      `${order.issuingCompany === 'YS' ? '영성에이씨씨' : '(주)와이에스에이씨씨'} 대표이사 김주한`
-    );
-
-    if (latestDoc) {
-      alert("이메일 작성 창이 열립니다. 이메일 내용에 발주서 다운로드 링크가 포함되어 있습니다.");
+    // 2. Trigger server direct email send via SendGrid / Backend API
+    let emailResultMsg = '';
+    if (supplierEmail) {
+      try {
+        const res = await sendPoEmailDirectly({
+          to: supplierEmail,
+          cc: ccEmails,
+          subject,
+          text,
+          pdfUrl: customPdfUrl
+        });
+        emailResultMsg = `\n- 이메일: ${res.message}`;
+      } catch (e: any) {
+        console.warn('Server direct email send error:', e);
+      }
     } else {
-      alert("보안 정책상 브라우저에서 이메일에 파일을 자동으로 첨부할 수 없습니다.\n\n확인을 누르시면 발주서 인쇄 창과 이메일 작성 창이 함께 열립니다.\n발주서를 'PDF로 저장' 하신 후 이메일에 첨부해 주시기 바랍니다.");
+      // If email is unassigned, open mailto fallback
+      const mailtoUrl = `mailto:${supplierEmail}?cc=${encodeURIComponent(ccEmails)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+      setTimeout(() => {
+        window.location.href = mailtoUrl;
+      }, 400);
     }
+
+    // 3. User feedback & open KakaoTalk
+    alert(`✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다!\n${emailResultMsg}\n- 카카오톡: 발주 알림 문구가 클립보드에 자동 복사되었습니다. (Ctrl+V로 붙여넣기)\n\n확인을 누르시면 카카오톡 웹이 열립니다.`);
 
     setTimeout(() => {
-      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-    }, 500);
+      window.open('https://web.kakao.com/', '_blank');
+    }, 800);
+  };
 
-    if (!latestDoc) {
-      handlePrintSupplierPo(supplierName, items);
+  const handleEmailSupplierPo = async (supplierName: string, items: OrderItem[]) => {
+    if (!order) return;
+    const { text, supplierEmail, ccEmails, subject } = buildPoNotificationMessage(supplierName, items);
+
+    const email = prompt("발송할 공급업체 이메일 주소를 확인해주세요 (기본값: 거래처 등록 이메일):", supplierEmail);
+    if (email === null) return; // User cancelled
+
+    const res = await sendPoEmailDirectly({
+      to: email,
+      cc: ccEmails,
+      subject,
+      text
+    });
+
+    alert(`✅ ${res.message}`);
+  };
+
+  const handleKakaoSupplierPo = (supplierName: string, items: OrderItem[]) => {
+    if (!order) return;
+    const { text } = buildPoNotificationMessage(supplierName, items);
+    const targetSupplier = suppliersList.find(s => s.name === supplierName);
+    const contactPhone = targetSupplier?.contactPhone || targetSupplier?.phone || '';
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`💬 발주 알림 문구가 클립보드에 복사되었습니다!\n\n카카오톡 열기 창이 뜬 후 담당자 채팅방에 붙여넣기(Ctrl+V) 하여 전송해 주세요.\n\n[공급사 연락처]: ${contactPhone || '미등록'}`);
+    }).catch(() => {
+      alert(`💬 전송 문구:\n\n${text}`);
+    });
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && contactPhone) {
+      window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(text)}`;
+    } else {
+      window.open('https://web.kakao.com/', '_blank');
     }
   };
-  */
 
   // CI automated print handler
   const handlePrintCI = () => {
@@ -4840,7 +4959,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       </div>
 
       {/* ── 단계별 독립 체크리스트 대시보드 ── */}
-      {activeStep === '변경이력' && (() => {
+      {(() => {
         type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
         const stageMeta: { key: StageKey; label: string; icon: string; tabTarget: typeof steps[number] }[] = [
           { key: '수주정보', label: '수주정보', icon: '📋', tabTarget: '수주정보' },
@@ -4850,35 +4969,66 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           { key: '정산결제', label: '정산/결제', icon: '💰', tabTarget: '정산/결제' },
         ];
 
-        // 전체 완료율
-        const allItems = stageMeta.flatMap(s => {
-          const keys = Object.keys(stageCompletion[s.key] || {});
-          if (s.key === '수주정보' && basicForm.isLc !== 'Y') {
-            return keys.filter(k => k !== 'L/C 정보 입력');
-          }
-          return keys;
-        });
-        const allDone = stageMeta.flatMap(s => {
-          const entries = Object.entries(stageCompletion[s.key] || {});
-          let validEntries = entries;
-          if (s.key === '수주정보' && basicForm.isLc !== 'Y') {
-            validEntries = entries.filter(([k]) => k !== 'L/C 정보 입력');
-          }
-          return validEntries.map(([_, v]) => v).filter(Boolean);
-        });
-        const totalPct = allItems.length > 0 ? Math.round((allDone.length / allItems.length) * 100) : 0;
+        // 전체 완료율 (공용 유틸 활용)
+        const { done: allDoneCount, total: allItemsCount, pct: totalPct } = getOverallProgress(stageCompletion, basicForm.isLc);
 
         return (
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 20px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
-            {/* 헤더 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>
-                🚩 단계별 진행 체크리스트
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
-                  전체 {allDone.length}/{allItems.length} ({totalPct}%)
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: isChecklistCollapsed ? '8px 14px' : '12px 16px', marginBottom: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', transition: 'all 0.2s' }}>
+            {/* 상단 통합 헤더 바 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🚩 진행 현황
                 </span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '2px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
+                  전체 {allDoneCount}/{allItemsCount} ({totalPct}%)
+                </span>
+
+                {/* 슬림 전체 진행바 */}
+                <div style={{ width: '100px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${totalPct}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px', transition: 'width 0.3s' }} />
+                </div>
+
+                {/* 5개 단계 슬림 배지 칩들 */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {stageMeta.map(({ key, label, icon, tabTarget }) => {
+                    const { done, total } = getStageProgress(stageCompletion, basicForm.isLc, key);
+                    const isFullyDone = done === total;
+                    const isPartiallyDone = done > 0 && done < total;
+                    const isActive = activeStep === tabTarget;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleStepClick(tabTarget)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: isActive ? '1.5px solid #2563eb' : isFullyDone ? '1px solid #86efac' : isPartiallyDone ? '1px solid #bfdbfe' : '1px solid #cbd5e1',
+                          background: isActive ? '#eff6ff' : isFullyDone ? '#f0fdf4' : isPartiallyDone ? '#f0f9ff' : '#f8fafc',
+                          color: isFullyDone ? '#15803d' : isPartiallyDone ? '#1d4ed8' : '#64748b',
+                          transition: 'all 0.15s'
+                        }}
+                        title={`${label} 단계로 이동 (${done}/${total} 완료)`}
+                      >
+                        <span>{icon}</span>
+                        <span>{label}</span>
+                        <span style={{ fontSize: '11px', opacity: 0.9 }}>{done}/{total}</span>
+                        {isFullyDone && <span style={{ color: '#16a34a', fontWeight: 900 }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 우측 버튼 그룹 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
                 <button
                   onClick={handleForceCompleteAll}
                   style={{
@@ -4887,7 +5037,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     color: '#fff',
                     padding: '3px 10px',
                     borderRadius: '20px',
-                    fontSize: '12.5px',
+                    fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',
                     transition: 'all 0.15s',
@@ -4897,161 +5047,168 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 >
                   ⚡ 전체 일괄 완료
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsChecklistCollapsed(!isChecklistCollapsed)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {isChecklistCollapsed ? '▼ 상세 보기' : '▲ 접기'}
+                </button>
               </div>
             </div>
 
-            {/* 전체 진행바 */}
-            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px' }}>
-              <div style={{ width: `${totalPct}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px', transition: 'width 0.3s' }} />
-            </div>
+            {/* 상세 체크리스트 영역 (펼침 상태일 때만 출력) */}
+            {!isChecklistCollapsed && (
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                {/* 5개 단계 카드 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                  {stageMeta.map(({ key, label, icon, tabTarget }) => {
+                    const { done, total, pct } = getStageProgress(stageCompletion, basicForm.isLc, key);
+                    const isActive = activeStep === tabTarget;
+                    let items = { ...(stageCompletion[key] || {}) };
+                    if (key === '수주정보' && basicForm.isLc !== 'Y') {
+                      delete items['L/C 거래 상세 정보 입력'];
+                    }
 
-            {/* 5개 단계 카드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-              {stageMeta.map(({ key, label, icon, tabTarget }) => {
-                const { done, total, pct } = getStageProgress(key);
-                const isActive = activeStep === tabTarget;
-                let items = { ...(stageCompletion[key] || {}) };
-                if (key === '수주정보' && basicForm.isLc !== 'Y') {
-                  delete items['L/C 거래 상세 정보 입력'];
-                }
+                    // 단계 상태 색상
+                    const stageColor = done === total ? '#10b981' : done > 0 ? '#2563eb' : 'var(--text-muted)';
+                    const stageBg = done === total ? '#f0fdf4' : done > 0 ? '#eff6ff' : '#f8fafc';
+                    const stageBorder = done === total ? '#86efac' : done > 0 ? '#bfdbfe' : 'var(--border-color)';
 
-                // 단계 상태 색상
-                const stageColor = done === total ? '#10b981' : done > 0 ? '#2563eb' : 'var(--text-muted)';
-                const stageBg = done === total ? '#f0fdf4' : done > 0 ? '#eff6ff' : '#f8fafc';
-                const stageBorder = done === total ? '#86efac' : done > 0 ? '#bfdbfe' : 'var(--border-color)';
+                    return (
+                      <div
+                        key={key}
+                        style={{
+                          border: isActive ? '2px solid #2563eb' : `1px solid ${stageBorder}`,
+                          borderRadius: '8px',
+                          background: isActive ? '#eff6ff' : stageBg,
+                          padding: '8px 10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          boxShadow: isActive ? '0 0 0 2px rgba(37,99,235,0.15)' : 'none',
+                        }}
+                        onClick={() => handleStepClick(tabTarget)}
+                      >
+                        {/* 단계 헤더 */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: isActive ? '#1d4ed8' : '#374151' }}>
+                            {icon} {label}
+                          </span>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: stageColor }}>
+                            {done}/{total}
+                          </span>
+                        </div>
 
-                return (
-                  <div
-                    key={key}
-                    style={{
-                      border: isActive ? '2px solid #2563eb' : `1px solid ${stageBorder}`,
-                      borderRadius: '10px',
-                      background: isActive ? '#eff6ff' : stageBg,
-                      padding: '10px 12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      boxShadow: isActive ? '0 0 0 2px rgba(37,99,235,0.15)' : 'none',
-                    }}
-                    onClick={() => handleStepClick(tabTarget)}
-                  >
-                    {/* 단계 헤더 */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14.5px', fontWeight: 800, color: isActive ? '#1d4ed8' : '#374151' }}>
-                        {icon} {label}
-                      </span>
-                      <span style={{ fontSize: '14.5px', fontWeight: 700, color: stageColor }}>
-                        {done}/{total}
-                      </span>
-                    </div>
+                        {/* 단계 진행바 */}
+                        <div style={{ width: '100%', height: '3px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: stageColor, borderRadius: '2px', transition: 'width 0.3s' }} />
+                        </div>
 
-                    {/* 단계 진행바 */}
-                    <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: stageColor, borderRadius: '2px', transition: 'width 0.3s' }} />
-                    </div>
-
-                    {/* 체크리스트 항목 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {Object.entries(items).map(([itemKey, checked]) => {
-                        const overrideKey = `${key}__${itemKey}`;
-                        const isOverridden = !!manualOverride[overrideKey]; // 수동 해제된 항목
-                        // 자동감지로 켜진 항목 = checked이고 override 아닌 것 (수동 체크도 포함)
-                        // 구분하려면 별도 autoDetected 맵이 필요하지만, override 없이 checked = 자동 or 수동 둘 다
-                        // 시각 표현: override된 항목은 취소선 + 회색 표시
-                        return (
-                          <div
-                            key={itemKey}
-                            onClick={e => { e.stopPropagation(); handleChecklistToggle(key, itemKey); }}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '5px',
-                              cursor: 'pointer', padding: '2px 0',
-                              opacity: isOverridden ? 0.5 : 1,
-                            }}
-                            title={isOverridden ? '자동감지 조건 충족이지만 수동 해제됨 (다시 클릭하면 복구)' : checked ? '완료 (클릭하면 해제)' : '미완료 (클릭하면 완료 처리)'}
-                          >
-                            {/* 체크박스 */}
-                            <div style={{
-                              width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
-                              border: checked ? 'none' : '1.5px solid var(--border-default)',
-                              background: checked ? '#10b981' : '#fff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 0.15s',
-                            }}>
-                              {checked && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
-                            </div>
-                            {/* 항목 텍스트 */}
-                            <span style={{
-                              fontSize: '14.5px', fontWeight: checked ? 600 : 400,
-                              color: isOverridden ? 'var(--text-muted)' : checked ? '#065f46' : 'var(--text-secondary)',
-                              textDecoration: isOverridden ? 'line-through' : 'none',
-                              lineHeight: 1.3, flex: 1,
-                            }}>
-                              {itemKey === '발주서 발행 및 저장' ? (
-                                `발주서 발행 및 저장 (${allOrderSuppliers.filter(s => issuedDocs.some(d => d.status === 'active' && (d.supplier_name === s || d.po_number.includes(s.replace(/\s+/g, '').substring(0,3).toUpperCase())))).length}/${allOrderSuppliers.length}건)`
-                              ) : itemKey === '공급업체 대금 결제 완료' ? (
-                                `공급업체 대금 결제 완료 (${allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료' || basicForm.supplierPayments?.[s]?.status === '입금완료').length}/${allOrderSuppliers.length}건)`
-                              ) : itemKey}
-                            </span>
-                            {/* 자동감지 표시 아이콘 */}
-                            {checked && !isOverridden && (
-                              <span
-                                style={{ fontSize: '8px', color: 'var(--text-muted)', flexShrink: 0 }}
-                                title="데이터 자동 감지 또는 수동 완료"
+                        {/* 체크리스트 항목 */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {Object.entries(items).map(([itemKey, checked]) => {
+                            const overrideKey = `${key}__${itemKey}`;
+                            const isOverridden = !!manualOverride[overrideKey];
+                            return (
+                              <div
+                                key={itemKey}
+                                onClick={e => { e.stopPropagation(); handleChecklistToggle(key, itemKey); }}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '4px',
+                                  cursor: 'pointer', padding: '1px 0',
+                                  opacity: isOverridden ? 0.5 : 1,
+                                }}
+                                title={isOverridden ? '자동감지 조건 충족이지만 수동 해제됨' : checked ? '완료 (클릭하면 해제)' : '미완료 (클릭하면 완료)'}
                               >
-                                ⚡
-                              </span>
-                            )}
-                            {isOverridden && (
-                              <span
-                                style={{ fontSize: '8px', color: '#f59e0b', flexShrink: 0 }}
-                                title="수동 해제됨"
-                              >
-                                ✋
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                                {/* 체크박스 */}
+                                <div style={{
+                                  width: '12px', height: '12px', borderRadius: '3px', flexShrink: 0,
+                                  border: checked ? 'none' : '1.5px solid var(--border-default)',
+                                  background: checked ? '#10b981' : '#fff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  transition: 'all 0.15s',
+                                }}>
+                                  {checked && <span style={{ color: '#fff', fontSize: '8px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                                </div>
+                                {/* 항목 텍스트 */}
+                                <span style={{
+                                  fontSize: '12px', fontWeight: checked ? 600 : 400,
+                                  color: isOverridden ? 'var(--text-muted)' : checked ? '#065f46' : 'var(--text-secondary)',
+                                  textDecoration: isOverridden ? 'line-through' : 'none',
+                                  lineHeight: 1.2, flex: 1,
+                                }}>
+                                  {itemKey === '발주서 발행 및 저장' ? (
+                                    `발주서 발행 및 저장 (${allOrderSuppliers.filter(s => issuedDocs.some(d => d.status === 'active' && (d.supplier_name === s || d.po_number.includes(s.replace(/\s+/g, '').substring(0,3).toUpperCase())))).length}/${allOrderSuppliers.length}건)`
+                                  ) : itemKey === '공급업체 대금 결제 완료' ? (
+                                    `공급업체 대금 결제 완료 (${allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료' || basicForm.supplierPayments?.[s]?.status === '입금완료').length}/${allOrderSuppliers.length}건)`
+                                  ) : itemKey}
+                                </span>
+                                {checked && !isOverridden && (
+                                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', flexShrink: 0 }} title="자동감지/수동완료">⚡</span>
+                                )}
+                                {isOverridden && (
+                                  <span style={{ fontSize: '8px', color: '#f59e0b', flexShrink: 0 }} title="수동해제">✋</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 하단 미완료 요약 & 범례 한 줄 통합 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontSize: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  {(() => {
+                    const pending = stageMeta.flatMap(s =>
+                      Object.entries(stageCompletion[s.key] || {})
+                        .filter(([, v]) => !v)
+                        .map(([k]) => ({ stage: s.label, item: k }))
+                    );
+                    if (pending.length === 0) return (
+                      <span style={{ fontWeight: 700, color: '#15803d' }}>
+                        🎉 모든 단계 완료! 오더가 마감되었습니다.
+                      </span>
+                    );
+                    return (
+                      <div>
+                        <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>⏳ 미완료 항목 ({pending.length}건): </span>
+                        {pending.slice(0, 5).map((p, i) => (
+                          <span key={i} style={{ color: 'var(--text-secondary)', marginRight: '6px' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>[{p.stage}]</span> {p.item}{i < Math.min(pending.length, 5) - 1 ? ' · ' : ''}
+                          </span>
+                        ))}
+                        {pending.length > 5 && <span style={{ color: 'var(--text-muted)' }}>외 {pending.length - 5}건</span>}
+                      </div>
+                    );
+                  })()}
+
+                  <div style={{ display: 'flex', gap: '10px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <span>⚡ 자동감지/수동완료</span>
+                    <span>✋ 수동해제</span>
+                    <span>* 클릭하여 완료/해제</span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* 미완료 항목 요약 */}
-            {(() => {
-              const pending = stageMeta.flatMap(s =>
-                Object.entries(stageCompletion[s.key] || {})
-                  .filter(([, v]) => !v)
-                  .map(([k]) => ({ stage: s.label, item: k }))
-              );
-              if (pending.length === 0) return (
-                <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', fontSize: '14.5px', fontWeight: 700, color: '#15803d', textAlign: 'center' }}>
-                  🎉 모든 단계 완료! 오더가 마감되었습니다.
                 </div>
-              );
-              return (
-                <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>⏳ 미완료 항목 ({pending.length}건): </span>
-                  {pending.slice(0, 6).map((p, i) => (
-                    <span key={i} style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginRight: '6px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>[{p.stage}]</span> {p.item}{i < Math.min(pending.length, 6) - 1 ? ' · ' : ''}
-                    </span>
-                  ))}
-                  {pending.length > 6 && <span style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>외 {pending.length - 6}건</span>}
-                </div>
-              );
-            })()}
-
-            {/* 아이콘 범례 */}
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '14.5px', color: 'var(--text-muted)', fontWeight: 600 }}>아이콘 안내:</span>
-              <span style={{ fontSize: '14.5px', color: 'var(--text-secondary)' }}>⚡ 자동감지 또는 수동 완료</span>
-              <span style={{ fontSize: '14.5px', color: 'var(--text-secondary)' }}>✋ 조건 충족이지만 수동 해제됨</span>
-              <span style={{ fontSize: '14.5px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>* 항목 클릭으로 완료/해제 전환 가능</span>
-            </div>
+              </div>
+            )}
           </div>
         );
       })()}
@@ -5060,6 +5217,16 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       <div style={{ display: 'flex', gap: '6px', padding: '4px 0', borderBottom: '1px solid var(--border-color)' }}>
         {steps.filter(step => order?.type !== 'consulting' || step !== '물류/선적').map((step) => {
           const isCurrent = step === activeStep;
+          const stageKey = STEP_LABEL_TO_STAGE_KEY[step];
+          const badge = (() => {
+            if (!stageKey) return null;
+            const { done, total, pct } = getStageProgress(stageCompletion, basicForm.isLc, stageKey);
+            if (total === 0) return null;
+            if (pct === 100) return <span style={{ marginLeft: '6px', fontSize: '12px', fontWeight: 800, color: isCurrent ? '#6ee7b7' : '#10b981' }}>✓</span>;
+            if (pct === 0) return <span style={{ marginLeft: '6px', fontSize: '12px', fontWeight: 600, color: isCurrent ? '#cbd5e1' : '#94a3b8' }}>○</span>;
+            return <span style={{ marginLeft: '6px', fontSize: '11.5px', fontWeight: 700, color: isCurrent ? '#93c5fd' : '#2563eb', background: isCurrent ? 'rgba(255,255,255,0.2)' : '#eff6ff', padding: '1px 6px', borderRadius: '10px' }}>{done}/{total}</span>;
+          })();
+
           return (
             <button
               key={step}
@@ -5074,10 +5241,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 fontSize: '16.5px',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: isCurrent ? '0 2px 4px rgba(37, 99, 235, 0.2)' : 'none'
+                boxShadow: isCurrent ? '0 2px 4px rgba(37, 99, 235, 0.2)' : 'none',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}
             >
               {step}
+              {badge}
             </button>
           );
         })}
@@ -5348,17 +5518,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
       {/* Main Content: Selected activeStep Input Forms */}
       <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '24px', minHeight: '400px', width: '100%', boxSizing: 'border-box' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '12px', marginBottom: '20px' }}>
-            <div>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#1e3a8a' }}>
-                👉 단계: {activeStep}
-              </span>
-              <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', marginLeft: '10px' }}>
-                (상단 Stepper에서 원하는 단계를 선택하여 바로 이동할 수 있습니다)
-              </span>
-            </div>
-          </div>
           {/* Render corresponding form/contents based on activeStep */}
 
           {/* 2. PO접수 */}
@@ -5967,6 +6126,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 >
                                   📥 발주서 발행 및 저장
                                 </button>
+                                <button 
+                                  onClick={() => handleEmailSupplierPo(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  title="이메일로 발주서 및 PDF 다운로드 링크 전달"
+                                >
+                                  ✉️ 이메일 발송
+                                </button>
+                                <button 
+                                  onClick={() => handleKakaoSupplierPo(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  title="카카오톡으로 발주서 안내 및 PDF 링크 전달"
+                                >
+                                  💬 카카오톡 전송
+                                </button>
                                 
                               </div>
                             </div>
@@ -6523,8 +6696,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       })
                     )}
                   </div>
-                <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📁 발주서(PO) 통합 보관함</h4>
+
+                {allOrderSuppliers.length >= 2 && (
+                  <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📁 전체 공급사 발주서 통합 보관함 ({allOrderSuppliers.length}개사)</h4>
                     <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
                       해당 오더에 대해 시스템을 통해 발행된 모든 발주서 PDF 원본을 통합 관리합니다.
                     </div>
@@ -6576,6 +6751,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       </div>
                     )}
                   </div>
+                )}
 
                   </>
             </div>
@@ -6587,9 +6763,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {/* 물류/선적 하위 탭 메뉴 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
-                  { id: '선적관리', label: '1) 포워딩/운송사 선정' },
-                  { id: '패킹리스트', label: '2) 패킹 및 컨테이너로딩플랜' },
-                  { id: '도착보고_쉬핑마크', label: '3) 도착보고' }
+                  { id: '선적관리', label: '포워딩/운송사 선정' },
+                  { id: '패킹리스트', label: '패킹 및 컨테이너로딩플랜' },
+                  { id: '도착보고_쉬핑마크', label: '도착보고' }
                 ].map(tab => {
                   const isActive = activeLogisticsTab === tab.id;
                   return (
@@ -6597,8 +6773,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       key={tab.id}
                       type="button"
                       onClick={async () => {
-                        setActiveLogisticsTab(tab.id as any);
-                        setActiveSourcingTab(tab.id as any);
+                        updateQuery({ logisticsTab: tab.id });
                         await handleSaveBasic(false, tab.id);
                       }}
                       style={{
@@ -6625,7 +6800,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {activeLogisticsTab === '선적관리' && (
 
                 <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🚢 2) 포워딩/운송사 선정</h4>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🚢 포워딩/운송사 선정</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     {/* 제품준비일 및 선적일정 수립 가이드 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '8px', gridColumn: 'span 3', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -7122,7 +7297,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           💾 쉬핑마크 설정 저장 (클라우드)
                         </button>
                         <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)' }}>
-                          ※ 수정한 마크 설정을 저장한 후, 4) 도착보고 탭에서<br/>
+                          ※ 수정한 마크 설정을 저장한 후, 도착보고 탭에서<br/>
                           '⚡ 테이블에 마크 적용' 버튼을 눌러 적용하세요.
                         </span>
                       </div>
@@ -7137,7 +7312,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                 <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
-                    <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📦 3) 패킹리스트 작성 및 검토 (자동/수동 편집 지원)</h4>
+                    <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📦 패킹리스트 작성 및 검토 (자동/수동 편집 지원)</h4>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         type="button" 
@@ -9616,15 +9791,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {/* 서류관리 하위 탭 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
-                  { id: '서류업로드', label: '1) 서류 업로드 및 수출신고' },
-                  { id: 'CI_PL작성', label: '2) CI / PL 작성 및 Excel 내보내기' }
+                  { id: '서류업로드', label: '서류 업로드 및 수출신고' },
+                  { id: 'CI_PL작성', label: 'CI / PL 작성 및 Excel 내보내기' }
                 ].map(tab => {
                   const isActive = activeDocumentTab === tab.id;
                   return (
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setActiveDocumentTab(tab.id as any)}
+                      onClick={() => updateQuery({ documentTab: tab.id })}
                       style={{
                         padding: '8px 16px',
                         border: 'none',
@@ -10181,11 +10356,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {/* 정산/결제 하위 탭 메뉴 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
-                  { id: '세금계산서', label: '1) 세금계산서' },
-                  { id: '대금결제', label: '2) 대금결제' },
-                  { id: 'BANK_CHARGES', label: '3) 지급수수료' },
-                  { id: '수금관리', label: '4) 수금관리' },
-                  { id: '정산현황', label: '5) 정산현황' }
+                  { id: '세금계산서', label: '세금계산서' },
+                  { id: '대금결제', label: '대금결제' },
+                  { id: 'BANK_CHARGES', label: '지급수수료' },
+                  { id: '수금관리', label: '수금관리' },
+                  { id: '정산현황', label: '정산현황' }
                 ].map(tab => {
                   const isActive = activeSettlementTab === tab.id;
                   return (
@@ -10193,12 +10368,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       key={tab.id}
                       type="button"
                       onClick={() => {
-                        setActiveSettlementTab(tab.id as any);
-                        if (tab.id === '세금계산서') {
-                          setActiveSourcingTab('세금계산서_결제');
-                        } else if (tab.id === '대금결제') {
-                          setActiveSourcingTab('대금결제관리');
-                        }
+                        updateQuery({ settlementTab: tab.id });
                       }}
                       style={{
                         padding: '10px 16px',

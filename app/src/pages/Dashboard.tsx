@@ -991,11 +991,16 @@ export const Dashboard: React.FC = () => {
     const targetUser = users.find(u => u.id === assigneeId);
     if (!targetUser) return;
     try {
+      const currentAssignerId = userProfile?.id || currentUser?.uid || '';
+      const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
       const { id, ...rest } = task;
       await updateDoc(doc(db, 'tasks', id), {
         ...rest,
         assigneeId: targetUser.id,
         assigneeName: targetUser.name,
+        requesterId: currentAssignerId,
+        requesterName: currentAssignerName,
+        type: targetUser.id !== currentAssignerId ? 'DELEGATED' : (task.type || 'DAILY'),
         updatedAt: new Date().toISOString(),
       });
     } catch (err) {
@@ -1011,11 +1016,15 @@ export const Dashboard: React.FC = () => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     try {
+      const currentAssignerId = userProfile?.id || currentUser?.uid || '';
+      const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
       const { id, ...rest } = task;
       await updateDoc(doc(db, 'tasks', id), {
         ...rest,
         assigneeId: '',
         assigneeName: '미배정',
+        requesterId: currentAssignerId,
+        requesterName: currentAssignerName,
         updatedAt: new Date().toISOString(),
       });
     } catch (err) {
@@ -1026,6 +1035,8 @@ export const Dashboard: React.FC = () => {
 
   const handleUnassignedQuickAdd = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && delegatedQuickTitle.trim()) {
+      const currentAssignerId = userProfile?.id || currentUser?.uid || '';
+      const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
       await addTask({
         title: delegatedQuickTitle,
         description: '',
@@ -1037,6 +1048,8 @@ export const Dashboard: React.FC = () => {
         quadrant: 'Q2',
         assigneeId: '',
         assigneeName: '미배정',
+        requesterId: currentAssignerId,
+        requesterName: currentAssignerName,
         createdAt: new Date().toISOString()
       } as any);
       setDelegatedQuickTitle('');

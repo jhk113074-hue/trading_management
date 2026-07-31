@@ -16,32 +16,10 @@ interface NextAction {
   step: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료';
 }
 
-// stageCompletion 기반 전체 진행률 계산
-type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
-const STAGE_KEYS: StageKey[] = ['수주정보', '소싱발주', '물류선적', '서류관리', '정산결제'];
+import { getOverallProgress as utilGetOverallProgress, getStageProgress as utilGetStageProgress, STAGE_KEYS, type StageKey } from '../utils/orderProgress';
 
-const getOverallProgress = (order: Order) => {
-  const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
-  if (!sc) return { done: 0, total: 0, pct: 0 };
-  const isLc = (order as any).isLc || (order as any).basicForm?.isLc;
-  const allKeys = STAGE_KEYS.flatMap(k => {
-    const keys = Object.keys(sc[k] || {});
-    if (k === '수주정보' && isLc !== 'Y') {
-      return keys.filter(x => x !== 'L/C 정보 입력');
-    }
-    return keys;
-  });
-  const allDone = STAGE_KEYS.flatMap(k => {
-    const entries = Object.entries(sc[k] || {});
-    let validEntries = entries;
-    if (k === '수주정보' && isLc !== 'Y') {
-      validEntries = entries.filter(([x]) => x !== 'L/C 정보 입력');
-    }
-    return validEntries.map(([_, v]) => v).filter(Boolean);
-  });
-  if (allKeys.length === 0) return { done: 0, total: 0, pct: 0 };
-  return { done: allDone.length, total: allKeys.length, pct: Math.round((allDone.length / allKeys.length) * 100) };
-};
+const getOverallProgress = (order: Order) => utilGetOverallProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc);
+const getStageProgress = (order: Order, stageKey: StageKey) => utilGetStageProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc, stageKey);
 
 const mapStatusToStep = (st: string, order?: Order): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료' => {
   if (st === "완료" || st === "정산완료" || (order && getOverallProgress(order).pct === 100)) return "완료";
@@ -70,18 +48,6 @@ const getFirstIncompleteStage = (o: Order): '수주정보' | '소싱/발주' | '
     }
   }
   return "완료";
-};
-
-const getStageProgress = (order: Order, stageKey: StageKey) => {
-  const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
-  if (!sc || !sc[stageKey]) return { done: 0, total: 0, pct: 0 };
-  let keys = Object.keys(sc[stageKey]);
-  const isLc = (order as any).isLc || (order as any).basicForm?.isLc;
-  if (stageKey === '수주정보' && isLc !== 'Y') {
-    keys = keys.filter(x => x !== 'L/C 정보 입력');
-  }
-  const done = keys.filter(x => sc[stageKey][x]).length;
-  return { done, total: keys.length, pct: keys.length > 0 ? Math.round((done / keys.length) * 100) : 0 };
 };
 
 const getNextTodoItem = (order: Order): string => {
