@@ -600,71 +600,128 @@ export const TaskList: React.FC = () => {
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
             
-            <div style={{ position: 'relative', height: '34px', zIndex: 9999 }}>
-              <button
-                type="button"
-                onClick={() => setShowColMenu(!showColMenu)}
-                className="btn"
-                style={{ padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 750, color: '#1e293b', boxSizing: 'border-box', transition: 'all 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-              >
-                ⚙️ 열 설정
-              </button>
-              {showColMenu && (
-                <div style={{
-                  position: 'absolute', top: '38px', left: 0, background: '#fff', border: '1px solid #cbd5e1',
-                  borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '12px', zIndex: 100,
-                  width: '180px', maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px'
-                }}>
-                  <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '2px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>표시할 열 선택</div>
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const selectable = columns.filter(c => c.key !== 'select' && c.key !== 'title' && c.key !== 'actions').map(c => c.key);
-                        setVisibleColumns(['select', 'title', 'actions', ...selectable]);
-                      }}
-                      style={{ flex: 1, padding: '4px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff', color: '#475569' }}
-                    >
-                      전체 선택
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVisibleColumns(['select', 'title', 'actions']);
-                      }}
-                      style={{ flex: 1, padding: '4px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff', color: '#475569' }}
-                    >
-                      전체 해제
-                    </button>
-                  </div>
-                  {columns.map(col => {
-                    if (col.key === 'select' || col.key === 'title' || col.key === 'actions') return null;
-                    const checked = visibleColumns.includes(col.key);
-                    return (
-                      <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            if (checked) {
-                              setVisibleColumns(prev => prev.filter(k => k !== col.key));
-                            } else {
-                              setVisibleColumns(prev => [...prev, col.key]);
-                            }
-                          }}
-                        />
-                        {col.label}
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowColMenu(true)}
+              className="btn"
+              style={{ padding: '0 14px', display: 'flex', alignItems: 'center', gap: '6px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 750, color: '#1e293b', boxSizing: 'border-box', transition: 'all 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+            >
+              ⚙️ 열 설정
+            </button>
           </div>
         </div>
       </div>
+
+      {/* ── 열 설정 최상위 모달 (100% 노출 보장) ── */}
+      {showColMenu && (
+        <div 
+          onClick={() => setShowColMenu(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
+              width: '320px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              animation: 'fadeIn 0.15s ease-out'
+            }}
+          >
+            {/* 헤더 */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ⚙️ 표시할 열 설정
+              </div>
+              <button 
+                onClick={() => setShowColMenu(false)}
+                style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 컨트롤 버튼 */}
+            <div style={{ padding: '12px 20px 8px', display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const selectable = columns.filter(c => c.key !== 'select' && c.key !== 'title' && c.key !== 'actions').map(c => c.key);
+                  setVisibleColumns(['select', 'title', 'actions', ...selectable]);
+                }}
+                style={{ flex: 1, padding: '8px 0', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#334155' }}
+              >
+                전체 선택
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVisibleColumns(['select', 'title', 'actions']);
+                }}
+                style={{ flex: 1, padding: '8px 0', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#334155' }}
+              >
+                전체 해제
+              </button>
+            </div>
+
+            {/* 열 목록 */}
+            <div style={{ padding: '8px 20px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+              {columns.map(col => {
+                if (col.key === 'select' || col.key === 'title' || col.key === 'actions') return null;
+                const checked = visibleColumns.includes(col.key);
+                return (
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', cursor: 'pointer', color: '#1e293b', fontWeight: 600, padding: '4px 0' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          setVisibleColumns(prev => prev.filter(k => k !== col.key));
+                        } else {
+                          setVisibleColumns(prev => [...prev, col.key]);
+                        }
+                      }}
+                      style={{ width: '17px', height: '17px', accentColor: '#3b82f6', cursor: 'pointer' }}
+                    />
+                    {col.label}
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* 하단 푸터 버튼 */}
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowColMenu(false)}
+                style={{ padding: '8px 20px', background: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                확인 및 닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 가로 스크롤 최적화 컨테이너 */}
       <div className="table-scroll-container" style={{ flex: 1, overflow: 'auto', padding: '0 30px 30px' }}>
