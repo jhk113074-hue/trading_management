@@ -6122,20 +6122,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 >
                                   📥 발주서 발행 및 저장
                                 </button>
-                                <button 
-                                  onClick={() => handleEmailSupplierPo(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
-                                  title="이메일로 발주서 및 PDF 다운로드 링크 전달"
-                                >
-                                  ✉️ 이메일 발송
-                                </button>
-                                <button 
-                                  onClick={() => handleKakaoSupplierPo(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
-                                  title="카카오톡으로 발주서 안내 및 PDF 링크 전달"
-                                >
-                                  💬 카카오톡 전송
-                                </button>
+                                
                                 
                               </div>
                             </div>
