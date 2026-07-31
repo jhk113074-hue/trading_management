@@ -9,4 +9,5 @@ dist/
 *firebase-adminsdk*.json
 serviceAccountKey.json
 SDXC/
-
+# 임시 테스트 스크립트 (API Key 포함 가능)
+scratch/

@@ -28,10 +28,45 @@ export const sendPoEmailDirectly = async (params: SendEmailParams): Promise<Send
     ? cc.filter(Boolean) 
     : (cc ? cc.split(',').map(s => s.trim()).filter(Boolean) : []);
 
+  const brevoApiKey = import.meta.env.VITE_BREVO_API_KEY || localStorage.getItem('BREVO_API_KEY');
   const sendgridApiKey = import.meta.env.VITE_SENDGRID_API_KEY || localStorage.getItem('SENDGRID_API_KEY');
   const backendUrl = import.meta.env.VITE_API_URL || 'https://ysacc-backend.onrender.com';
 
-  // 1. Try Backend Express API endpoint if reachable
+  // 1. Try Brevo Direct REST API (Fastest & 300 free emails/day)
+  if (brevoApiKey) {
+    try {
+      const brevoPayload = {
+        sender: { name: 'YSACC 무역관리', email: 'jhkim1130@ysacc.co.kr' },
+        to: [{ email: to }],
+        ...(ccArray.length > 0 ? { cc: ccArray.map(email => ({ email })) } : {}),
+        subject: subject,
+        textContent: text,
+        htmlContent: html || `<div style="font-family: sans-serif; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${text.replace(/\n/g, '<br/>')}</div>`
+      };
+
+      const bRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'accept': 'application/json',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(brevoPayload)
+      });
+
+      if (bRes.status >= 200 && bRes.status < 300) {
+        return {
+          success: true,
+          message: 'Brevo 이메일 API를 통해 발주서가 수신자 및 참조자에게 즉시 전송되었습니다.',
+          method: 'backend_api'
+        };
+      }
+    } catch (err) {
+      console.warn('Brevo direct API call failed:', err);
+    }
+  }
+
+  // 2. Try Backend Express API endpoint
   try {
     const response = await fetch(`${backendUrl}/api/email/send`, {
       method: 'POST',
@@ -57,7 +92,7 @@ export const sendPoEmailDirectly = async (params: SendEmailParams): Promise<Send
       };
     }
   } catch (err) {
-    console.warn('Backend email API send failed or unreachable, trying SendGrid direct/fallback:', err);
+    console.warn('Backend email API send failed or unreachable:', err);
   }
 
   // 2. Try SendGrid Direct REST API if API Key is available

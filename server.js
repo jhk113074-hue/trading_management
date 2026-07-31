@@ -35,7 +35,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// API: Send Email (SendGrid / SMTP Server)
+// API: Send Email (Brevo / SendGrid / REST API)
 // ─────────────────────────────────────────
 app.post('/api/email/send', async (req, res) => {
   try {
@@ -44,10 +44,40 @@ app.post('/api/email/send', async (req, res) => {
       return res.status(400).json({ error: 'to, subject, and text are required' });
     }
 
+    const brevoApiKey = process.env.BREVO_API_KEY || process.env.VITE_BREVO_API_KEY;
     const sendgridApiKey = process.env.SENDGRID_API_KEY || process.env.VITE_SENDGRID_API_KEY;
 
+    const ccList = Array.isArray(cc) ? cc.filter(Boolean) : (cc ? [cc] : []);
+
+    // 1. Try Brevo API
+    if (brevoApiKey) {
+      const brevoPayload = {
+        sender: { name: 'YSACC 무역관리', email: 'jhkim1130@ysacc.co.kr' },
+        to: [{ email: to }],
+        ...(ccList.length > 0 ? { cc: ccList.map(e => ({ email: e })) } : {}),
+        subject: subject,
+        textContent: text,
+        htmlContent: html || `<div style="font-family: sans-serif; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${text.replace(/\n/g, '<br/>')}</div>`
+      };
+
+      const bRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'accept': 'application/json',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(brevoPayload)
+      });
+
+      if (bRes.status >= 200 && bRes.status < 300) {
+        const bData = await bRes.json();
+        return res.json({ success: true, message: 'Brevo 이메일 서버에서 발주서가 즉시 전송되었습니다.', data: bData });
+      }
+    }
+
+    // 2. Try SendGrid API
     if (sendgridApiKey) {
-      const ccList = Array.isArray(cc) ? cc.filter(Boolean) : (cc ? [cc] : []);
       const sgPayload = {
         personalizations: [
           {
@@ -74,15 +104,10 @@ app.post('/api/email/send', async (req, res) => {
 
       if (sgRes.status >= 200 && sgRes.status < 300) {
         return res.json({ success: true, message: 'SendGrid 서버에서 발주서 이메일이 즉시 발송되었습니다.' });
-      } else {
-        const sgErr = await sgRes.text();
-        console.error('SendGrid API error response:', sgErr);
-        return res.status(sgRes.status).json({ error: 'SendGrid email send failed', details: sgErr });
       }
-    } else {
-      console.warn('SENDGRID_API_KEY environment variable is missing on server.');
-      return res.status(503).json({ error: 'SendGrid API Key is not configured on server.' });
     }
+
+    return res.status(503).json({ error: 'Email API Key is not configured on server.' });
   } catch (e) {
     console.error('Failed to send email:', e);
     res.status(500).json({ error: e.message });
