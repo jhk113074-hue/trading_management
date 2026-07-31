@@ -49,6 +49,15 @@ const toLocalDateStr = (val?: string | Date): string => {
   }
 };
 
+const formatDateShort = (val?: string | Date): string => {
+  const full = toLocalDateStr(val);
+  if (!full) return '-';
+  if (full.length === 10 && full.startsWith('20')) {
+    return full.substring(2); // YYYY-MM-DD -> YY-MM-DD
+  }
+  return full;
+};
+
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
@@ -883,46 +892,47 @@ export const TaskList: React.FC = () => {
                       );
                     case 'status':
                       return (
-                        <td style={{ padding: '0 12px', fontSize: '13.5px' }}>
+                        <td style={{ padding: '0 12px', fontSize: '13.5px', whiteSpace: 'nowrap' }}>
                           <span style={{ 
                             color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#2563eb' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
                             fontWeight: '800',
-                            textDecoration: isDone ? 'line-through' : 'none'
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            whiteSpace: 'nowrap'
                           }}>
                             {statusLabels[task.status] || task.status}
                           </span>
                         </td>
                       );
                     case 'type':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{typeLabels[task.type] || task.type}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{typeLabels[task.type] || task.type}</td>;
                     case 'schedule':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>;
                     case 'project':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#2563eb', fontWeight: '700', opacity: isDone ? 0.6 : 1 }}>{task.projectName || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#2563eb', fontWeight: '700', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.projectName || '-'}</td>;
                     case 'customer':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.customerName || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.customerName || '-'}</td>;
                     case 'delegator':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.requesterName || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.requesterName || '-'}</td>;
                     case 'assignee':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', fontWeight: '800', color: '#0f172a', opacity: isDone ? 0.6 : 1 }}>{task.assigneeName}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', fontWeight: '800', color: '#0f172a', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.assigneeName}</td>;
                     case 'startDate':
-                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.startDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{formatDateShort(task.startDate)}</td>;
                     case 'dueDate':
-                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.dueDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{formatDateShort(task.dueDate)}</td>;
                     case 'createdAt':
-                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.createdAt ? task.createdAt.split('T')[0] : '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{formatDateShort(task.createdAt)}</td>;
                     case 'recurrence':
-                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.recurrence || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.recurrence || '-'}</td>;
                     case 'recurrenceEnd':
-                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.recurrenceEndDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{formatDateShort(task.recurrenceEndDate)}</td>;
                     case 'link':
-                      return <td style={{ padding: '0 12px', textAlign: 'center', fontSize: '14px', opacity: isDone ? 0.6 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>;
+                      return <td style={{ padding: '0 12px', textAlign: 'center', fontSize: '14px', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{task.externalFileLink ? '🔗' : '-'}</td>;
                     case 'visibility':
-                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1, whiteSpace: 'nowrap' }}>{visibilityLabels[task.visibility] || task.visibility}</td>;
                     case 'updatedAt':
-                      return <td style={{ padding: '0 12px', color: '#475569', fontSize: '13px', fontWeight: '600' }}>{task.updatedAt?.split('T')[0] || '-'}</td>;
+                      return <td style={{ padding: '0 12px', color: '#475569', fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap' }}>{formatDateShort(task.updatedAt)}</td>;
                     case 'doneAt':
-                      return <td style={{ padding: '0 12px', color: isDone ? '#15803d' : '#64748b', fontSize: '13px', fontWeight: isDone ? '700' : '500' }}>{task.completedAt?.split('T')[0] || '-'}</td>;
+                      return <td style={{ padding: '0 12px', color: isDone ? '#15803d' : '#64748b', fontSize: '13px', fontWeight: isDone ? '700' : '500', whiteSpace: 'nowrap' }}>{formatDateShort(task.completedAt)}</td>;
                     case 'actions':
                       return (
                         <td style={{ padding: '0 12px', textAlign: 'center' }}>
