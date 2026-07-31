@@ -8,6 +8,34 @@ import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatc
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 import { BUILD_FULL_TEXT, APP_VERSION } from '../version';
+
+const formatRelativeTime = (val?: string) => {
+  if (!val) return '';
+  try {
+    const diff = Math.floor((Date.now() - new Date(val).getTime()) / 1000);
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+    if (diff < 172800) return '어제';
+    return val.split('T')[0];
+  } catch {
+    return val;
+  }
+};
+
+const renderNotifBadge = (type?: string) => {
+  switch (type) {
+    case 'TASK_DELEGATED':
+      return <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: '11px', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>🤝 업무 위임</span>;
+    case 'TASK_COMPLETED':
+      return <span style={{ background: '#dcfce7', color: '#15803d', fontSize: '11px', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>✅ 완료 보고</span>;
+    case 'APPROVAL_REQUEST':
+      return <span style={{ background: '#f3e8ff', color: '#6b21a8', fontSize: '11px', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>📄 결재 요청</span>;
+    default:
+      return <span style={{ background: '#fef3c7', color: '#b45309', fontSize: '11px', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>📢 시스템 알림</span>;
+  }
+};
+
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -691,20 +719,24 @@ export const Layout: React.FC = () => {
                     padding="0"
                     style={{
                       position: 'absolute',
-                      top: '40px',
+                      top: '42px',
                       right: '0',
-                      width: '320px',
-                      zIndex: 1000,
+                      width: '380px',
+                      zIndex: 9999,
                       display: 'flex',
                       flexDirection: 'column',
-                      maxHeight: '400px',
-                      overflow: 'hidden'
+                      maxHeight: '480px',
+                      overflow: 'hidden',
+                      boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1'
                     }}
                   >
+                    {/* 알림 드롭다운 헤더 */}
                     <div
                       style={{
-                        padding: '10px 12px',
-                        borderBottom: '1px solid var(--border-color)',
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #e2e8f0',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -712,7 +744,10 @@ export const Layout: React.FC = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>알림</span>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>🔔 알림 센터</span>
+                        <span style={{ background: '#ef4444', color: '#fff', padding: '1px 7px', borderRadius: '10px', fontSize: '11px', fontWeight: 800 }}>
+                          {notifications.filter(n => !n.isRead).length}
+                        </span>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -720,16 +755,16 @@ export const Layout: React.FC = () => {
                             playNotificationSound();
                           }}
                           style={{
-                            background: '#f1f5f9',
-                            border: '1px solid var(--border-default)',
-                            borderRadius: 'var(--radius-xs)',
-                            color: 'var(--text-secondary)',
-                            fontSize: '10px',
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            color: '#475569',
+                            fontSize: '11px',
                             cursor: 'pointer',
                             fontWeight: 700,
-                            padding: '2px 6px',
+                            padding: '2px 8px',
                           }}
-                          title="알림 사운드 미리 듣기 및 브라우저 오디오 블록 해제"
+                          title="알림 사운드 미리 듣기"
                         >
                           🔊 소리 테스트
                         </button>
@@ -739,57 +774,86 @@ export const Layout: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={handleMarkAllAsRead}
-                          style={{ padding: '2px 6px', color: 'var(--text-link)', fontSize: '11px' }}
+                          style={{ padding: '2px 8px', color: '#2563eb', fontSize: '11.5px', fontWeight: 700 }}
                         >
-                          ✓ 모두 읽음 처리
+                          ✓ 모두 읽음
                         </Button>
                       )}
                     </div>
-                    <div style={{ overflowY: 'auto', flex: 1 }}>
+
+                    {/* 알림 목록 */}
+                    <div style={{ overflowY: 'auto', flex: 1, maxHeight: '400px' }}>
                       {notifications.length === 0 ? (
-                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        <div style={{ padding: '36px 20px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                          <div style={{ fontSize: '24px', marginBottom: '6px' }}>🔕</div>
                           새로운 알림이 없습니다.
                         </div>
                       ) : (
-                        notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            onClick={() => handleNotificationClick(n)}
-                            style={{
-                              padding: '10px 12px',
-                              borderBottom: '1px solid #f1f5f9',
-                              cursor: 'pointer',
-                              background: n.isRead ? '#ffffff' : '#f0f9ff',
-                              transition: 'background 0.2s',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px',
-                              textAlign: 'left'
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? '#ffffff' : '#f0f9ff'; }}
-                          >
-                            <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: n.isRead ? 400 : 600 }}>
-                              📢 <strong>{(!n.senderName || n.senderName.toUpperCase() === 'SYSTEM') ? '알림' : n.senderName}</strong>님이 검토를 요청했습니다.
+                        notifications.map((n) => {
+                          const displayTitle = n.title || (n.senderName ? `${n.senderName}님의 알림` : '시스템 알림');
+                          const displayContent = n.content || n.commentContent || (n.taskTitle ? `업무: ${n.taskTitle}` : '');
+
+                          return (
+                            <div
+                              key={n.id}
+                              onClick={() => handleNotificationClick(n)}
+                              style={{
+                                padding: '12px 16px',
+                                borderBottom: '1px solid #f1f5f9',
+                                cursor: 'pointer',
+                                background: n.isRead ? '#ffffff' : '#f0f9ff',
+                                transition: 'all 0.15s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                textAlign: 'left'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? '#ffffff' : '#f0f9ff'; }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {renderNotifBadge(n.type)}
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                                    {n.senderName && n.senderName.toUpperCase() !== 'SYSTEM' ? n.senderName : '시스템'}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                                  {formatRelativeTime(n.createdAt)}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '13.5px', color: '#0f172a', fontWeight: n.isRead ? 600 : 800, lineHeight: 1.3 }}>
+                                {displayTitle}
+                              </div>
+
+                              {displayContent && (
+                                <div style={{
+                                  fontSize: '12.5px',
+                                  color: '#475569',
+                                  background: n.isRead ? '#f8fafc' : '#ffffff',
+                                  border: '1px solid #e2e8f0',
+                                  padding: '8px 10px',
+                                  borderRadius: '6px',
+                                  lineHeight: 1.4,
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                  maxHeight: '80px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {displayContent}
+                                </div>
+                              )}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              업무: {n.taskTitle}
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', background: '#f1f5f9', padding: '4px 6px', borderRadius: 'var(--radius-xs)', marginTop: '4px', fontStyle: 'italic' }}>
-                              "{n.commentContent}"
-                            </div>
-                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', alignSelf: 'flex-end', marginTop: '2px' }}>
-                              {new Date(n.createdAt).toLocaleString()}
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </Card>
                 )}
               </div>
             )}
-
             {/* 세션 남은 시간 카운트다운 표시 영역 */}
             <div className="header-session-time" style={{
               display: 'inline-flex',
