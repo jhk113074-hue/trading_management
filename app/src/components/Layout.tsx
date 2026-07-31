@@ -7,6 +7,7 @@ import { Button, Card } from './ui';
 import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
+import { BUILD_FULL_TEXT, APP_VERSION } from '../version';
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -543,10 +544,10 @@ export const Layout: React.FC = () => {
           })}
         </nav>
 
-        {/* 하단 사용자 영역 */}
+        {/* 하단 사용자 영역 및 배포 버전 정보 */}
         {userProfile && (
-          <div style={{ padding: '12px 16px 20px', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-color), var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                 {userProfile.name?.charAt(0)}
               </div>
@@ -554,6 +555,9 @@ export const Layout: React.FC = () => {
                 <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.name}</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.department || userProfile.role || ''}</div>
               </div>
+            </div>
+            <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748b', textAlign: 'center', background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {BUILD_FULL_TEXT}
             </div>
           </div>
         )}
@@ -604,9 +608,25 @@ export const Layout: React.FC = () => {
             >
               ☰
             </button>
-            <div className="header-logo-text" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-              <span style={{ color: 'var(--primary-color)', marginRight: '6px' }}>YSACC</span>
+            <div className="header-logo-text" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '8px' }}>
+              <span style={{ color: 'var(--primary-color)', marginRight: '2px' }}>YSACC</span>
               <span style={{ color: 'var(--text-primary)' }}>업무포탈</span>
+              <span 
+                title={BUILD_FULL_TEXT} 
+                style={{ 
+                  padding: '3px 9px', 
+                  background: '#eff6ff', 
+                  border: '1px solid #93c5fd', 
+                  color: '#1e40af', 
+                  borderRadius: '12px', 
+                  fontSize: '12px', 
+                  fontWeight: 750,
+                  letterSpacing: '0.02em',
+                  marginLeft: '4px' 
+                }}
+              >
+                {APP_VERSION}
+              </span>
             </div>
           </div>
           <div style={{ flex: 1 }} />
