@@ -584,7 +584,6 @@ export const TaskList: React.FC = () => {
 
         {/* 얇은 수직 구분선 */}
         <div style={{ width: '1px', height: '22px', background: '#cbd5e1', margin: '0 6px', flexShrink: 0 }} />
-
         {/* (2) 담당자/유형/상태 select 그룹 */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, height: '34px' }}>
           <select className="btn" style={{ padding: '0 12px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#475569', cursor: 'pointer', backgroundColor: '#fff', boxSizing: 'border-box' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
@@ -601,12 +600,12 @@ export const TaskList: React.FC = () => {
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
             
-            <div style={{ position: 'relative', height: '34px' }}>
+            <div style={{ position: 'relative', height: '34px', zIndex: 9999 }}>
               <button
                 type="button"
                 onClick={() => setShowColMenu(!showColMenu)}
                 className="btn"
-                style={{ padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: '#475569', boxSizing: 'border-box', transition: 'all 0.2s' }}
+                style={{ padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 750, color: '#1e293b', boxSizing: 'border-box', transition: 'all 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                 onMouseLeave={e => e.currentTarget.style.background = '#fff'}
               >
