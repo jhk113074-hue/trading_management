@@ -105,13 +105,9 @@ export const sendPoEmailDirectly = async (params: SendEmailParams): Promise<Send
     }
   }
 
-  // 3. Fallback to Mailto client
-  const mailtoUrl = `mailto:${to}?cc=${encodeURIComponent(ccArray.join(','))}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-  window.location.href = mailtoUrl;
-
   return {
-    success: true,
-    message: '메일 작성 창이 수신자 및 참조(CC)와 함께 열렸습니다.',
-    method: 'mailto_fallback'
+    success: false,
+    message: '서버 이메일 전송 API 연결을 확인해 주세요.',
+    method: 'backend_api'
   };
 };

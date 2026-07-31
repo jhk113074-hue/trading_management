@@ -4171,10 +4171,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       alert('✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
       setIssuedDocs(updatedDocs);
       
-      setTimeout(() => {
-        handleEmailAndKakaoSimultaneous(supplierName, items, downloadURL);
-      }, 400);
-      
     } catch (e) {
       console.error(e);
       alert('발행 중 오류가 발생했습니다.');
