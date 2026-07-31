@@ -52,7 +52,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   
   const { userProfile } = useAuth();
   
-  const [requesterName, setRequesterName] = useState(initialTask?.requesterName || userProfile?.name || '');
+  const [requesterName] = useState(initialTask?.requesterName || userProfile?.name || '');
   const [requesterId, setRequesterId] = useState(initialTask?.requesterId || userProfile?.id || '');
   
   const [assigneeName] = useState(initialTask?.assigneeName || '');
