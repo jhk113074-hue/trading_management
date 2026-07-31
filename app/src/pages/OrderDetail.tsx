@@ -20,6 +20,7 @@ import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
+import { useAuth } from '../contexts/AuthContext';
 
 const STEP_LABEL_TO_STAGE_KEY: Record<string, StageKey | undefined> = {
   '수주정보': '수주정보',
@@ -152,6 +153,23 @@ const normalizeStep = (raw: string | null): typeof steps[number] => {
 };
 
 export const OrderDetail: React.FC = () => {
+  const { userProfile } = useAuth();
+
+  const isAdmin = useMemo(() => {
+    const email = auth.currentUser?.email || '';
+    const role = userProfile?.role || '';
+    const name = userProfile?.name || auth.currentUser?.displayName || '';
+
+    if (
+      email === 'jhkim1130@ysacc.co.kr' ||
+      ['관리자', '대표이사', 'ADMIN', 'CEO'].includes(role) ||
+      name.includes('대표이사') ||
+      name.includes('관리자')
+    ) {
+      return true;
+    }
+    return false;
+  }, [userProfile]);
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
@@ -4884,12 +4902,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button 
+          {isAdmin && (
+            <button 
             onClick={handleDeleteOrder}
             style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '14.5px', cursor: 'pointer', fontWeight: 600 }}
           >
             ❌ PO 삭제 및 발주 취소
           </button>
+          )}
         </div>
       </div>
 
@@ -6677,7 +6697,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   >
                                     🔍
                                   </button>
-                                  <button type="button" onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 8px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }} title="발행 문서 삭제">🗑️ 삭제</button>
+                                  {isAdmin && (
+                                    <button type="button" onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 8px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }} title="발행 문서 삭제">🗑️ 삭제</button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
