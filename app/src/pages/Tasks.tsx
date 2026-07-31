@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { TaskCompletionModal } from '../components/TaskCompletionModal';
 
 export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -19,6 +20,7 @@ export const Tasks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [completingTask, setCompletingTask] = useState<any | null>(null);
   
   const { userProfile } = useAuth();
 
@@ -228,6 +230,44 @@ export const Tasks: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+    {completingTask && (
+        <TaskCompletionModal
+          taskTitle={completingTask.title}
+          assigneeName={completingTask.assigneeName || completingTask.assignee}
+          requesterName={completingTask.requesterName}
+          onConfirm={async (comment) => {
+            try {
+              const dbStatus = 'DONE';
+              await updateDoc(doc(db, 'tasks', completingTask.id), {
+                status: dbStatus,
+                completedAt: new Date().toISOString(),
+                completionComment: comment,
+                updatedAt: new Date().toISOString()
+              });
+              // Send completion notification to requester if delegated
+              const requesterId = completingTask.createdBy || completingTask.requesterId;
+              if (requesterId && userProfile) {
+                await addDoc(collection(db, 'mails'), {
+                  recipientId: requesterId,
+                  senderName: userProfile.name || '담당자',
+                  senderId: userProfile.id || 'system',
+                  title: `✅ [업무 완료 보고] ${completingTask.title}`,
+                  content: `${userProfile.name || '담당자'}님이 위임받은 업무를 완료 처리했습니다.\n\n- 업무명: ${completingTask.title}\n- 완료 시각: ${new Date().toLocaleString()}\n\n💬 [완료 코멘트]\n${comment || '코멘트 없음'}`,
+                  taskId: completingTask.id,
+                  type: 'TASK_COMPLETED',
+                  isRead: false,
+                  createdAt: new Date().toISOString()
+                });
+              }
+              setCompletingTask(null);
+              fetchData();
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          onCancel={() => setCompletingTask(null)}
+        />
       )}
     </div>
   );

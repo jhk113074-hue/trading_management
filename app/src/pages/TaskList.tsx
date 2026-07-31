@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
+import { TaskCompletionModal } from '../components/TaskCompletionModal';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
@@ -91,6 +92,7 @@ export const TaskList: React.FC = () => {
   };
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [inlineStatus, setInlineStatus] = useState<string>('TODO');
   const [inlineType, setInlineType] = useState<string>('DAILY');
@@ -915,7 +917,11 @@ export const TaskList: React.FC = () => {
                             onClick={e => e.stopPropagation()}
                             onChange={async (e) => {
                               e.stopPropagation();
-                              await updateTaskStatus(task.id, isDone ? 'TODO' : 'DONE');
+                              if (isDone) {
+                                await updateTaskStatus(task.id, 'TODO');
+                              } else {
+                                setCompletingTask(task);
+                              }
                             }}
                             style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#16a34a' }}
                           />
@@ -1040,6 +1046,19 @@ export const TaskList: React.FC = () => {
           background-color: #f0f9ff !important;
         }
       `}</style>
+
+      {completingTask && (
+        <TaskCompletionModal
+          taskTitle={completingTask.title}
+          assigneeName={completingTask.assigneeName}
+          requesterName={completingTask.requesterName}
+          onConfirm={async (comment) => {
+            await updateTaskStatus(completingTask.id, 'DONE', comment);
+            setCompletingTask(null);
+          }}
+          onCancel={() => setCompletingTask(null)}
+        />
+      )}
 
       {editingTask && (
         <TaskModal
