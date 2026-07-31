@@ -661,14 +661,14 @@ export const TaskList: React.FC = () => {
       {/* 가로 스크롤 최적화 컨테이너 */}
       <div className="table-scroll-container" style={{ flex: 1, overflow: 'auto', padding: '0 30px 30px' }}>
         <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', width: 'max-content', minWidth: '100%' }}>
-          <table style={{ borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed', width: 'max-content', backgroundColor: 'white' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed', width: 'max-content', backgroundColor: 'white' }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 20, backgroundColor: '#f8fafc' }}>
-              <tr style={{ height: '42px', borderBottom: '1px solid #cbd5e1' }}>
+              <tr style={{ height: '44px', borderBottom: '1px solid #cbd5e1' }}>
                 {renderedColumns.map(col => (
                   <th key={col.key} onClick={() => handleSort(col.key)} style={{ 
-                    width: colWidths[col.key], padding: '0 8px', textAlign: 'left', color: '#475569', fontWeight: '750', borderRight: '1px solid #e2e8f0', position: 'relative', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    width: colWidths[col.key], padding: '0 8px', textAlign: 'left', color: '#1e293b', fontWeight: '800', borderRight: '1px solid #e2e8f0', position: 'relative', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     cursor: (col.key === 'select' || col.key === 'actions') ? 'default' : 'pointer',
-                    fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase',
+                    fontSize: '12.5px', letterSpacing: '0.02em', textTransform: 'uppercase',
                     ...(col.key === 'title' ? { position: 'sticky', left: 0, zIndex: 30, backgroundColor: '#f8fafc', borderRight: '2px solid #cbd5e1' } : {})
                   }}>
                     {col.label} {sortField === col.key ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
@@ -690,7 +690,13 @@ export const TaskList: React.FC = () => {
                   if (col.key === 'actions') {
                     return (
                       <td key={col.key} style={{ textAlign: 'center' }}>
-                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#2563eb'} onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}>+</button>
+                        <button
+                          onClick={handleQuickAdd}
+                          style={{ background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', width: '26px', height: '26px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="빠른 업무 추가"
+                        >
+                          +
+                        </button>
                       </td>
                     );
                   }
@@ -700,7 +706,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineImportance}
                           onChange={e => setInlineImportance(e.target.value)}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="A">A</option>
                           <option value="B">B</option>
@@ -715,7 +721,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineUrgency}
                           onChange={e => setInlineUrgency(Number(e.target.value))}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
@@ -724,7 +730,7 @@ export const TaskList: React.FC = () => {
                   }
                   if (col.key === 'quadrant') {
                     const quad = calculateQuadrant(inlineImportance, inlineUrgency);
-                    return <td key={col.key} style={{ padding: '0 8px', fontWeight: 'bold', color: '#475569', fontSize: '12.5px' }}>{quad}</td>;
+                    return <td key={col.key} style={{ padding: '0 8px', fontWeight: 'bold', color: '#1e293b', fontSize: '13px' }}>{quad}</td>;
                   }
                   if (col.key === 'title') {
                     return (
@@ -734,7 +740,7 @@ export const TaskList: React.FC = () => {
                           value={quickTitle}
                           onChange={e => setQuickTitle(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
-                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none', fontSize: '13px', height: '30px', boxSizing: 'border-box' }} 
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none', fontSize: '13.5px', height: '32px', boxSizing: 'border-box' }} 
                         />
                       </td>
                     );
@@ -745,7 +751,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineStatus}
                           onChange={e => setInlineStatus(e.target.value)}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="TODO">시작 안 함</option>
                           <option value="IN_PROGRESS">진행중</option>
@@ -761,7 +767,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineType}
                           onChange={e => setInlineType(e.target.value)}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="PROJECT">📁 프로젝트</option>
                           <option value="DAILY">📝 일상업무</option>
@@ -777,7 +783,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineSchedule}
                           onChange={e => setInlineSchedule(e.target.value)}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="SELF">스스로 계획</option>
                           <option value="SCHEDULED">일정기반</option>
@@ -794,7 +800,7 @@ export const TaskList: React.FC = () => {
                           placeholder="프로젝트명"
                           value={inlineProjectName}
                           onChange={e => setInlineProjectName(e.target.value)}
-                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', boxSizing: 'border-box' }}
                         />
                       </td>
                     );
@@ -806,7 +812,7 @@ export const TaskList: React.FC = () => {
                           placeholder="고객명"
                           value={inlineCustomerName}
                           onChange={e => setInlineCustomerName(e.target.value)}
-                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', boxSizing: 'border-box' }}
                         />
                       </td>
                     );
@@ -817,7 +823,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineAssignee}
                           onChange={e => setInlineAssignee(e.target.value)}
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '32px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="">담당자 지정</option>
                           {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -846,20 +852,20 @@ export const TaskList: React.FC = () => {
                               e.stopPropagation();
                               await updateTaskStatus(task.id, isDone ? 'TODO' : 'DONE');
                             }}
-                            style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#16a34a' }}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#16a34a' }}
                           />
                         </td>
                       );
                     case 'urgency_icon':
-                      return <td style={{ textAlign: 'center', fontWeight: '800', color: task.importance === 'A' ? '#ef4444' : 'var(--text-muted)' }}>{task.importance}</td>;
+                      return <td style={{ textAlign: 'center', fontWeight: '800', fontSize: '13.5px', color: task.importance === 'A' ? '#ef4444' : '#64748b' }}>{task.importance}</td>;
                     case 'urgency':
-                      return <td style={{ padding: '0 12px' }}>{task.urgency}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#1e293b' }}>{task.urgency}</td>;
                     case 'quadrant':
-                      return <td style={{ padding: '0 12px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>;
                     case 'title':
                       return (
-                        <td style={{ padding: '0 8px', fontWeight: '600', color: isDone ? '#9ca3af' : '#111827', position: 'sticky', left: 0, zIndex: 10, backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white'), borderRight: '2px solid #f1f5f9' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        <td style={{ padding: '0 10px', fontWeight: '700', fontSize: '14px', color: isDone ? '#9ca3af' : '#0f172a', position: 'sticky', left: 0, zIndex: 10, backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white'), borderRight: '2px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             textDecoration: isDone ? 'line-through' : 'none',
                             opacity: isDone ? 0.6 : 1
                           }}>
@@ -867,7 +873,7 @@ export const TaskList: React.FC = () => {
                             {(task.commentCount ?? 0) > 0 && (
                               <span 
                                 className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
-                                style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
+                                style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
                               >
                                 💬 {task.commentCount}
                               </span>
@@ -877,10 +883,10 @@ export const TaskList: React.FC = () => {
                       );
                     case 'status':
                       return (
-                        <td style={{ padding: '0 12px' }}>
+                        <td style={{ padding: '0 12px', fontSize: '13.5px' }}>
                           <span style={{ 
-                            color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#3b82f6' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
-                            fontWeight: '700',
+                            color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#2563eb' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
+                            fontWeight: '800',
                             textDecoration: isDone ? 'line-through' : 'none'
                           }}>
                             {statusLabels[task.status] || task.status}
@@ -888,41 +894,41 @@ export const TaskList: React.FC = () => {
                         </td>
                       );
                     case 'type':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{typeLabels[task.type] || task.type}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{typeLabels[task.type] || task.type}</td>;
                     case 'schedule':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>;
                     case 'project':
-                      return <td style={{ padding: '0 12px', color: 'var(--focus-ring)', fontWeight: '600', opacity: isDone ? 0.5 : 1 }}>{task.projectName}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#2563eb', fontWeight: '700', opacity: isDone ? 0.6 : 1 }}>{task.projectName || '-'}</td>;
                     case 'customer':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.customerName || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.customerName || '-'}</td>;
                     case 'delegator':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.requesterName || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.requesterName || '-'}</td>;
                     case 'assignee':
-                      return <td style={{ padding: '0 12px', fontWeight: '700', opacity: isDone ? 0.5 : 1 }}>{task.assigneeName}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', fontWeight: '800', color: '#0f172a', opacity: isDone ? 0.6 : 1 }}>{task.assigneeName}</td>;
                     case 'startDate':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.startDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.startDate || '-'}</td>;
                     case 'dueDate':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.dueDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.dueDate || '-'}</td>;
                     case 'createdAt':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.createdAt ? task.createdAt.split('T')[0] : '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.createdAt ? task.createdAt.split('T')[0] : '-'}</td>;
                     case 'recurrence':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrence || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.recurrence || '-'}</td>;
                     case 'recurrenceEnd':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrenceEndDate || '-'}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{task.recurrenceEndDate || '-'}</td>;
                     case 'link':
-                      return <td style={{ padding: '0 12px', textAlign: 'center', opacity: isDone ? 0.5 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>;
+                      return <td style={{ padding: '0 12px', textAlign: 'center', fontSize: '14px', opacity: isDone ? 0.6 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>;
                     case 'visibility':
-                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>;
+                      return <td style={{ padding: '0 12px', fontSize: '13.5px', color: '#334155', opacity: isDone ? 0.6 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>;
                     case 'updatedAt':
-                      return <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.updatedAt?.split('T')[0]}</td>;
+                      return <td style={{ padding: '0 12px', color: '#475569', fontSize: '13px', fontWeight: '600' }}>{task.updatedAt?.split('T')[0] || '-'}</td>;
                     case 'doneAt':
-                      return <td style={{ padding: '0 12px', color: isDone ? '#16a34a' : '#9ca3af', fontSize: '0.7rem', fontWeight: isDone ? 700 : 400 }}>{task.completedAt?.split('T')[0]}</td>;
+                      return <td style={{ padding: '0 12px', color: isDone ? '#15803d' : '#64748b', fontSize: '13px', fontWeight: isDone ? '700' : '500' }}>{task.completedAt?.split('T')[0] || '-'}</td>;
                     case 'actions':
                       return (
                         <td style={{ padding: '0 12px', textAlign: 'center' }}>
                           <button onClick={(e) => { e.stopPropagation(); if (window.confirm('정말 삭제하시겠습니까?')) deleteTask(task.id); }}
                             title="삭제"
-                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>🗑️</button>
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px' }}>🗑️</button>
                         </td>
                       );
                     default:
