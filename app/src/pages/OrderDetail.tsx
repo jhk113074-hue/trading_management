@@ -2347,11 +2347,13 @@ export const OrderDetail: React.FC = () => {
       }
 
       isDirtyRef.current = false;
-      const logDescription = changes.length > 0 ? changes.join(', ') : '주문 정보 저장';
       const piNum = basicForm.piNumber || order.piNumber || '알수없음';
       const customer = basicForm.customer || order.customer || '알수없음';
-      
-      await autoRegisterOrderTask(piNum, customer, logDescription);
+
+      if (changes.length > 0) {
+        const logDescription = changes.join(', ');
+        await autoRegisterOrderTask(piNum, customer, logDescription);
+      }
 
       const isCompleted = basicForm.shipmentCompleted === 'Y' || mappedStatus === '이익관리';
       if (isCompleted) {
