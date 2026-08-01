@@ -199,11 +199,16 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
 
+    const debugMsg = `targetId="${targetId}" | targetCode="${targetCode}" | targetName="${targetName}" | targetNameKo="${targetNameKo}"`;
+
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
+      setDebugInfo(`${debugMsg}\n→ EARLY RETURN 발동!`);
       setSalesHistory([]);
       setIsLoadingSales(false);
       return;
     }
+
+    setDebugInfo(`${debugMsg}\n→ early return 통과, 구독 시작 중...`);
 
     // ── Real-time listeners using server-side WHERE queries (no client-side name matching) ──
     // Build the set of exact values to query against for the customer field
