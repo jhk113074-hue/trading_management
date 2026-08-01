@@ -25,6 +25,7 @@ interface Mail {
   taskId?: string;
   attachments?: Attachment[];
   scheduledAt?: string; // Future scheduled send date ISO string
+  isImportant?: boolean;
 }
 
 export const Mails: React.FC = () => {
@@ -47,9 +48,10 @@ export const Mails: React.FC = () => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
 
-  // Scheduling states
+  // Scheduling & Importance states
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
+  const [isImportant, setIsImportant] = useState(false);
 
   // Task Auto Creation states
   const [createTaskOption, setCreateTaskOption] = useState(false);
@@ -150,10 +152,15 @@ export const Mails: React.FC = () => {
       return;
     }
 
-    const receiver = selectedReceiverId === userProfile.id
-      ? userProfile
-      : users.find(u => u.id === selectedReceiverId);
-    if (!receiver) return;
+    const isAllUsers = selectedReceiverId === 'ALL_USERS';
+    const targetReceivers = isAllUsers
+      ? users.filter(u => u.id !== userProfile.id)
+      : [selectedReceiverId === userProfile.id ? userProfile : users.find(u => u.id === selectedReceiverId)].filter(Boolean);
+
+    if (targetReceivers.length === 0) {
+      alert("수신 대상자가 존재하지 않습니다.");
+      return;
+    }
 
     const mailBody = editorRef.current ? editorRef.current.innerHTML : contentHTML;
     if (!mailBody || mailBody.trim() === '<br>' || mailBody.trim() === '') {
@@ -162,55 +169,59 @@ export const Mails: React.FC = () => {
     }
 
     const scheduledIso = isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : '';
+    const finalTitle = isImportant ? `[⭐ 중요] ${title}` : title;
 
     setIsSending(true);
     try {
-      let createdTaskId = '';
+      for (const receiver of targetReceivers) {
+        if (!receiver) continue;
+        let createdTaskId = '';
 
-      // 1. If 'Create Task' option is enabled, add a new task to 'tasks' collection
-      if (createTaskOption) {
-        const plainTextBody = editorRef.current ? (editorRef.current.innerText || '') : '';
-        const taskDoc = {
-          title: `[쪽지 업무] ${title}`,
-          description: `${plainTextBody}\n\n------------------------------------\n✉️ 발송 쪽지 연동 업무 (발신자: ${userProfile.name})`,
-          status: 'PENDING',
-          type: taskType || 'DAILY',
-          scheduleType: 'SELF',
-          importance: taskImportance || 'B',
-          urgency: taskUrgency || 5,
-          quadrant: taskImportance === 'A' ? (taskUrgency >= 4 ? 'Q1' : 'Q2') : (taskUrgency >= 4 ? 'Q3' : 'Q4'),
-          assigneeId: selectedReceiverId,
-          assigneeName: receiver.name,
-          createdBy: userProfile.id,
+        if (createTaskOption) {
+          const plainTextBody = editorRef.current ? (editorRef.current.innerText || '') : '';
+          const taskDoc = {
+            title: `[쪽지 업무] ${finalTitle}`,
+            description: `${plainTextBody}\n\n------------------------------------\n✉️ 발송 쪽지 연동 업무 (발신자: ${userProfile.name})`,
+            status: 'PENDING',
+            type: taskType || 'DAILY',
+            scheduleType: 'SELF',
+            importance: taskImportance || 'B',
+            urgency: taskUrgency || 5,
+            quadrant: taskImportance === 'A' ? (taskUrgency >= 4 ? 'Q1' : 'Q2') : (taskUrgency >= 4 ? 'Q3' : 'Q4'),
+            assigneeId: receiver.id,
+            assigneeName: receiver.name,
+            createdBy: userProfile.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            dueDate: taskDueDate || null
+          };
+          const taskRef = await addDoc(collection(db, 'tasks'), taskDoc);
+          createdTaskId = taskRef.id;
+        }
+
+        await addDoc(collection(db, 'mails'), {
+          senderId: userProfile.id,
+          senderName: userProfile.name,
+          receiverId: receiver.id,
+          receiverName: receiver.name,
+          title: finalTitle,
+          content: mailBody,
+          isRead: false,
+          isImportant,
+          attachments,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          dueDate: taskDueDate || null
-        };
-        const taskRef = await addDoc(collection(db, 'tasks'), taskDoc);
-        createdTaskId = taskRef.id;
+          scheduledAt: scheduledIso || null,
+          taskId: createdTaskId || null,
+          type: createTaskOption ? 'TASK_DELEGATED' : 'GENERAL'
+        });
       }
-
-      // 2. Save Mail document with linked taskId
-      await addDoc(collection(db, 'mails'), {
-        senderId: userProfile.id,
-        senderName: userProfile.name,
-        receiverId: selectedReceiverId,
-        receiverName: receiver.name,
-        title,
-        content: mailBody,
-        isRead: false,
-        attachments,
-        createdAt: new Date().toISOString(),
-        scheduledAt: scheduledIso || null,
-        taskId: createdTaskId || null,
-        type: createTaskOption ? 'TASK_DELEGATED' : 'GENERAL'
-      });
 
       setTitle('');
       setContentHTML('');
       setAttachments([]);
       setIsScheduled(false);
       setScheduledAt('');
+      setIsImportant(false);
       setCreateTaskOption(false);
       setTaskDueDate('');
       setTaskType('DAILY');
@@ -1033,7 +1044,18 @@ export const Mails: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>받는 사람 <span style={{ color: '#ef4444' }}>*</span></label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>받는 사람 <span style={{ color: '#ef4444' }}>*</span></label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 750, color: isImportant ? '#eab308' : '#64748b' }}>
+                    <input
+                      type="checkbox"
+                      checked={isImportant}
+                      onChange={e => setIsImportant(e.target.checked)}
+                      style={{ accentColor: '#eab308', width: '14px', height: '14px', cursor: 'pointer' }}
+                    />
+                    <span>⭐ 중요 쪽지 표시</span>
+                  </label>
+                </div>
                 <select
                   required
                   value={selectedReceiverId}
@@ -1041,6 +1063,7 @@ export const Mails: React.FC = () => {
                   style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: 'white', height: '34px', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}
                 >
                   <option value="">수신자를 선택해 주세요</option>
+                  <option value="ALL_USERS">📢 [전체 직원] 전사 공지 발송</option>
                   <option value={userProfile?.id}>📝 나에게 쓰기 (내게 메모 보내기)</option>
                   {addressableUsers.map(u => (
                     <option key={u.id} value={u.id}>
