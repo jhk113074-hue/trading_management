@@ -257,24 +257,35 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     if (exactNameKo) orderQueries.push(query(ordersRef, where('customer',     '==', exactNameKo)));
     if (exactName)   orderQueries.push(query(ordersRef, where('customerName', '==', exactName)));
     if (exactNameKo) orderQueries.push(query(ordersRef, where('customerName', '==', exactNameKo)));
+    if (targetCode && exactName) orderQueries.push(query(ordersRef, where('customer', '==', `[${targetCode}] ${exactName}`)));
+    if (targetCode && exactNameKo) orderQueries.push(query(ordersRef, where('customer', '==', `[${targetCode}] ${exactNameKo}`)));
 
     const orderResults = new Map<string, any>();
-    if (orderQueries.length === 0) {
-      exportRecords = [];
-      updateCombinedSales();
-    } else {
-      orderQueries.forEach(q => {
-        const unsub = onSnapshot(q, (snap: any) => {
-          snap.docs.forEach((d: any) => { orderResults.set(d.id, toExportRecord(d)); });
-          exportRecords = [...orderResults.values()];
-          updateCombinedSales();
-        }, (err: any) => {
-          console.error('[CRM] orders query error:', err);
-          updateCombinedSales();
-        });
-        unsubs.push(unsub);
+    
+    // Subscribe to all orders as fallback/broad match to guarantee 100% precision
+    const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
+      snap.docs.forEach((d: any) => {
+        const data = d.data();
+        const cVal = String(data.customer || data.customerName || '').trim().toLowerCase();
+        const cId = String(data.customerId || '').trim().toLowerCase();
+        const cCode = String(data.customerCode || '').trim().toLowerCase();
+
+        const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
+        const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
+        const matchName = targetName && (cVal.includes(targetName) || targetName.includes(cVal.replace(/[^a-z0-9]/g, '')));
+        const matchNameKo = targetNameKo && (cVal.includes(targetNameKo) || targetNameKo.includes(cVal.replace(/[^a-z0-9가-힣]/g, '')));
+
+        if (matchCode || matchId || matchName || matchNameKo) {
+          orderResults.set(d.id, toExportRecord(d));
+        }
       });
-    }
+      exportRecords = [...orderResults.values()];
+      updateCombinedSales();
+    }, (err: any) => {
+      console.error('[CRM] all orders query error:', err);
+      updateCombinedSales();
+    });
+    unsubs.push(allOrdersUnsub);
 
     // B. Imports – query by every possible customer identifier
     const importQueries: any[] = [];
