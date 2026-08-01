@@ -28,6 +28,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   // Integrated Sales & Payment History State
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
+  const [selectedSalesYear, setSelectedSalesYear] = useState<string>('ALL');
 
   const [formData, setFormData] = useState<Partial<Customer>>({
     customerCode: '', name: '', nameKo: '', countryName: '', city: '',
@@ -179,8 +180,30 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     };
 
     const fetchSalesHistory = async () => {
-      const customerIdQuery = initialCustomer?.id || formData.customerCode;
-      const nameToQuery = formData.name || initialCustomer?.name || formData.nameKo;
+      const cId = initialCustomer?.id || formData.customerCode || '';
+      const cName = formData.name || initialCustomer?.name || '';
+      const cNameKo = formData.nameKo || initialCustomer?.nameKo || '';
+
+      const matchCustomer = (data: any) => {
+        if (!data) return false;
+        const fields = [
+          data.customerId, data.customerCode, data.customer,
+          data.customerName, data.buyer, data.buyerName,
+          data.companyName, data.importerName, data.supplierName
+        ].filter(Boolean).map(v => String(v).toLowerCase().replace(/\s+/g, ''));
+
+        if (fields.length === 0) return false;
+
+        const strId = cId.toLowerCase().replace(/\s+/g, '');
+        const strName = cName.toLowerCase().replace(/\s+/g, '');
+        const strNameKo = cNameKo.toLowerCase().replace(/\s+/g, '');
+
+        return fields.some(val => 
+          (strId && (val.includes(strId) || strId.includes(val))) ||
+          (strName && (val.includes(strName) || strName.includes(val))) ||
+          (strNameKo && (val.includes(strNameKo) || strNameKo.includes(val)))
+        );
+      };
 
       setIsLoadingSales(true);
       try {
@@ -191,16 +214,16 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const snapOrders = await getDocs(ordersRef);
         snapOrders.forEach(d => {
           const data = d.data();
-          const matchesCust = (customerIdQuery && data.customerId === customerIdQuery) ||
-                              (nameToQuery && (data.customerName?.toLowerCase().includes(nameToQuery.toLowerCase()) || data.customerCode === customerIdQuery));
-          if (matchesCust) {
-            const totAmt = Number(data.totalAmount || data.grandTotal || 0);
+          if (matchCustomer(data)) {
+            const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || 0);
             const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
+            const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
             records.push({
               id: d.id,
               type: '수출',
-              date: data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-',
-              ciNumber: data.ciNumber || data.piNumber || data.orderNo || d.id,
+              date: dateStr,
+              year: dateStr.substring(0, 4),
+              ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
               totalAmount: totAmt,
               currency: data.currency || 'USD',
               paidAmount: paidAmt,
@@ -214,15 +237,15 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const snapImports = await getDocs(importsRef);
         snapImports.forEach(d => {
           const data = d.data();
-          const matchesCust = (customerIdQuery && (data.customerId === customerIdQuery || data.supplierId === customerIdQuery)) ||
-                              (nameToQuery && (data.importerName?.toLowerCase().includes(nameToQuery.toLowerCase()) || data.supplierName?.toLowerCase().includes(nameToQuery.toLowerCase())));
-          if (matchesCust) {
+          if (matchCustomer(data)) {
             const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
             const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
+            const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
             records.push({
               id: d.id,
               type: '수입',
-              date: data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-',
+              date: dateStr,
+              year: dateStr.substring(0, 4),
               ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
               totalAmount: totAmt,
               currency: data.currency || 'USD',
@@ -237,15 +260,15 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const snapDomestic = await getDocs(domesticRef);
         snapDomestic.forEach(d => {
           const data = d.data();
-          const matchesCust = (customerIdQuery && data.customerId === customerIdQuery) ||
-                              (nameToQuery && (data.customerName?.toLowerCase().includes(nameToQuery.toLowerCase()) || data.customerCode === customerIdQuery));
-          if (matchesCust) {
+          if (matchCustomer(data)) {
             const totAmt = Number(data.totalAmount || data.totalPrice || 0);
             const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
+            const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
             records.push({
               id: d.id,
               type: '국내',
-              date: data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-',
+              date: dateStr,
+              year: dateStr.substring(0, 4),
               ciNumber: data.tradeNo || data.statementNo || d.id,
               totalAmount: totAmt,
               currency: data.currency || 'KRW',
@@ -527,115 +550,175 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
             {/* SECTION 2: 통합 판매 및 수금 이력 (수출/수입/국내) */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  💰 통합 주문/판매 및 수금 이력 ({salesHistory.length}건)
-                </span>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  * 수출주문관리, 수입주문관리, 국내주문관리 실시간 매칭 기록
-                </span>
-              </div>
+              {(() => {
+                const availableYears = Array.from(new Set(salesHistory.map(s => s.year).filter(y => y && y !== '-'))).sort().reverse();
+                const filteredList = selectedSalesYear === 'ALL'
+                  ? salesHistory
+                  : salesHistory.filter(s => s.year === selectedSalesYear);
 
-              {/* Financial Summary Badges */}
-              {salesHistory.length > 0 && (() => {
-                const totalAmtUSD = salesHistory.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.totalAmount, 0);
-                const totalPaidUSD = salesHistory.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.paidAmount, 0);
-                const totalAmtKRW = salesHistory.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.totalAmount, 0);
-                const totalPaidKRW = salesHistory.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.paidAmount, 0);
+                const totalAmtUSD = filteredList.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.totalAmount, 0);
+                const totalPaidUSD = filteredList.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.paidAmount, 0);
+                const totalAmtKRW = filteredList.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.totalAmount, 0);
+                const totalPaidKRW = filteredList.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.paidAmount, 0);
 
                 return (
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                    {totalAmtUSD > 0 && (
-                      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, color: '#1e40af' }}>USD 총 매출:</span>
-                        <span style={{ fontWeight: 800, color: '#2563eb' }}>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                        <span style={{ color: '#94a3b8' }}>|</span>
-                        <span style={{ fontWeight: 800, color: '#16a34a' }}>수금 완료: ${totalPaidUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                        {totalAmtUSD - totalPaidUSD > 0 && (
-                          <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })})</span>
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          💰 통합 주문/판매 및 수금 이력 ({filteredList.length}건)
+                        </span>
+                        {/* Year Filter Dropdown */}
+                        <select
+                          value={selectedSalesYear}
+                          onChange={(e) => setSelectedSalesYear(e.target.value)}
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            backgroundColor: '#f8fafc',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        >
+                          <option value="ALL">📅 전체 연도 보기 ({salesHistory.length}건)</option>
+                          {availableYears.map(yr => (
+                            <option key={yr} value={yr}>{yr}년 ({salesHistory.filter(s => s.year === yr).length}건)</option>
+                          ))}
+                        </select>
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        * 수출주문관리, 수입주문관리, 국내주문관리 실시간 매칭 기록
+                      </span>
+                    </div>
+
+                    {/* Financial Summary Badges */}
+                    {filteredList.length > 0 && (
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        {totalAmtUSD > 0 && (
+                          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#1e40af' }}>USD 총 매출:</span>
+                            <span style={{ fontWeight: 800, color: '#2563eb' }}>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span style={{ color: '#94a3b8' }}>|</span>
+                            <span style={{ fontWeight: 800, color: '#16a34a' }}>수금 완료: ${totalPaidUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            {totalAmtUSD - totalPaidUSD > 0 && (
+                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })})</span>
+                            )}
+                          </div>
+                        )}
+                        {totalAmtKRW > 0 && (
+                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#166534' }}>KRW 총 매출:</span>
+                            <span style={{ fontWeight: 800, color: '#16a34a' }}>₩{Math.round(totalAmtKRW).toLocaleString()}</span>
+                            <span style={{ color: '#94a3b8' }}>|</span>
+                            <span style={{ fontWeight: 800, color: '#2563eb' }}>수금 완료: ₩{Math.round(totalPaidKRW).toLocaleString()}</span>
+                            {totalAmtKRW - totalPaidKRW > 0 && (
+                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
-                    {totalAmtKRW > 0 && (
-                      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, color: '#166534' }}>KRW 총 매출:</span>
-                        <span style={{ fontWeight: 800, color: '#16a34a' }}>₩{Math.round(totalAmtKRW).toLocaleString()}</span>
-                        <span style={{ color: '#94a3b8' }}>|</span>
-                        <span style={{ fontWeight: 800, color: '#2563eb' }}>수금 완료: ₩{Math.round(totalPaidKRW).toLocaleString()}</span>
-                        {totalAmtKRW - totalPaidKRW > 0 && (
-                          <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})</span>
-                        )}
+
+                    {/* Table */}
+                    {isLoadingSales ? (
+                      <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                        ⏳ 주문/판매 및 수금 이력을 불러오는 중입니다...
+                      </div>
+                    ) : filteredList.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        📭 해당 조건의 등록된 판매/수금 이력이 없습니다.
+                      </div>
+                    ) : (
+                      <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
+                          <thead style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                            <tr>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>년월일 (Date)</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>구분</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>CI / 문서 번호</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>판매/계약 금액</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>수금/입금 금액</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center' }}>수금 상태</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredList.map((s) => {
+                              const amtFormatted = s.currency === 'KRW'
+                                ? `₩${Math.round(s.totalAmount).toLocaleString()}`
+                                : `$${s.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                              
+                              const paidFormatted = s.currency === 'KRW'
+                                ? `₩${Math.round(s.paidAmount).toLocaleString()}`
+                                : `$${s.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                              const isPaidFull = s.paidAmount >= s.totalAmount && s.totalAmount > 0;
+
+                              return (
+                                <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
+                                  <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: 600 }}>{s.date}</td>
+                                  <td style={{ padding: '6px 10px' }}>
+                                    <span style={{
+                                      fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                                      background: s.type === '수출' ? '#eff6ff' : s.type === '수입' ? '#f0fdf4' : '#fffbeb',
+                                      color: s.type === '수출' ? '#2563eb' : s.type === '수입' ? '#16a34a' : '#d97706'
+                                    }}>
+                                      {s.type === '수출' ? '🚢 수출' : s.type === '수입' ? '🛃 수입' : '🇰🇷 국내'}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb' }}>{s.ciNumber}</td>
+                                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{amtFormatted}</td>
+                                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#3b82f6' }}>{paidFormatted}</td>
+                                  <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                                    <span style={{
+                                      fontSize: '11px', fontWeight: 800, padding: '2px 7px', borderRadius: '4px',
+                                      background: isPaidFull ? '#dcfce7' : '#fee2e2',
+                                      color: isPaidFull ? '#15803d' : '#b91c1c'
+                                    }}>
+                                      {isPaidFull ? '🟢 수금완료' : '🔴 미수금'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+
+                          {/* TOTAL Row */}
+                          <tfoot style={{ background: '#f1f5f9', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
+                            <tr>
+                              <td colSpan={3} style={{ padding: '10px', color: '#1e293b', fontSize: '13px' }}>
+                                📊 합계 (TOTAL - {selectedSalesYear === 'ALL' ? '전체' : selectedSalesYear + '년'} 총 {filteredList.length}건)
+                              </td>
+                              <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a', fontSize: '13.5px' }}>
+                                {totalAmtUSD > 0 && <div>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
+                                {totalAmtKRW > 0 && <div>₩{Math.round(totalAmtKRW).toLocaleString()}</div>}
+                              </td>
+                              <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontSize: '13.5px' }}>
+                                {totalAmtUSD > 0 && <div>${totalPaidUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
+                                {totalAmtKRW > 0 && <div>₩{Math.round(totalPaidKRW).toLocaleString()}</div>}
+                              </td>
+                              <td style={{ padding: '10px', textAlign: 'center' }}>
+                                {totalAmtUSD - totalPaidUSD > 0 || totalAmtKRW - totalPaidKRW > 0 ? (
+                                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c', fontWeight: 800 }}>
+                                    미수금 잔액 존재
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: '#dcfce7', color: '#15803d', fontWeight: 800 }}>
+                                    전액 수금 완료
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     )}
-                  </div>
+                  </>
                 );
               })()}
-
-              {/* Table */}
-              {isLoadingSales ? (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                  ⏳ 주문/판매 및 수금 이력을 불러오는 중입니다...
-                </div>
-              ) : salesHistory.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                  📭 해당 고객사의 등록된 판매/수금 이력이 없습니다.
-                </div>
-              ) : (
-                <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-                    <thead style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                      <tr>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>년월일 (Date)</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>구분</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>CI / 문서 번호</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>판매/계약 금액</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>수금/입금 금액</th>
-                        <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center' }}>수금 상태</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesHistory.map((s) => {
-                        const amtFormatted = s.currency === 'KRW'
-                          ? `₩${Math.round(s.totalAmount).toLocaleString()}`
-                          : `$${s.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        
-                        const paidFormatted = s.currency === 'KRW'
-                          ? `₩${Math.round(s.paidAmount).toLocaleString()}`
-                          : `$${s.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-                        const isPaidFull = s.paidAmount >= s.totalAmount && s.totalAmount > 0;
-
-                        return (
-                          <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
-                            <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: 600 }}>{s.date}</td>
-                            <td style={{ padding: '6px 10px' }}>
-                              <span style={{
-                                fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
-                                background: s.type === '수출' ? '#eff6ff' : s.type === '수입' ? '#f0fdf4' : '#fffbeb',
-                                color: s.type === '수출' ? '#2563eb' : s.type === '수입' ? '#16a34a' : '#d97706'
-                              }}>
-                                {s.type === '수출' ? '🚢 수출' : s.type === '수입' ? '🛃 수입' : '🇰🇷 국내'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb' }}>{s.ciNumber}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{amtFormatted}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#3b82f6' }}>{paidFormatted}</td>
-                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                              <span style={{
-                                fontSize: '11px', fontWeight: 800, padding: '2px 7px', borderRadius: '4px',
-                                background: isPaidFull ? '#dcfce7' : '#fee2e2',
-                                color: isPaidFull ? '#15803d' : '#b91c1c'
-                              }}>
-                                {isPaidFull ? '🟢 수금완료' : '🔴 미수금'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
           </div>
         ) : (
