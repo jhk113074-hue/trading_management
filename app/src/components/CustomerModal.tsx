@@ -223,9 +223,9 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       setIsLoadingSales(true);
 
       try {
-        const ordersRef  = collection(doc(db, 'companies', COMPANY_ID), 'orders');
-        const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
-        const domRef     = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
+        const ordersRef  = collection(db, 'companies', COMPANY_ID, 'orders');
+        const importsRef = collection(db, 'companies', COMPANY_ID, 'imports');
+        const domRef     = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
 
         // Helper: convert a Firestore doc to record
         const toExportRecord = (d: any) => {
