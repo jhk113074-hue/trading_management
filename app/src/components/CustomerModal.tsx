@@ -206,6 +206,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
+    console.log('EARLY CHECK:', targetId, targetCode, targetName, targetNameKo);
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
       setSalesHistory([]);
       setIsLoadingSales(false);
@@ -350,6 +351,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       }
     };
 
+    setSalesHistory([{ id: 'DEBUG2', type: `fetchSalesHistory 호출됨 | stableKey: ${stableCustomerKey}`, date: '-', year: '-', ciNumber: `targetId:${targetId} targetCode:${targetCode} targetName:${targetName}`, totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: '' }]);
     fetchSalesHistory();
 
     return () => { cancelled = true; };
