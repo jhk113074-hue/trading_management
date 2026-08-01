@@ -4390,6 +4390,68 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     }
   };
 
+  const handleSendArrivalShippingEmail = (supplierName: string) => {
+    if (!order) return;
+    const cleanSupplierName = supplierName.replace(/\s+/g, '');
+    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+
+    const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
+    const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
+      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).slice(-1)[0];
+    const shippingDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active')
+      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).slice(-1)[0];
+
+    const arrivalPdfUrl = arrivalDoc?.fileUrl || '';
+    const shippingPdfUrl = shippingDoc?.fileUrl || '';
+
+    const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
+    const items = groupedSupplierItems[supplierName] || [];
+    const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '';
+    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
+
+    let contentStr = `[YSACC 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}`;
+
+    setPoEmailModalData({
+      supplierName: `${supplierName}_arrival`,
+      items,
+      defaultToEmail: toEmail,
+      defaultCcEmails: defaultCc,
+      defaultSubject: `[YSACC] ${supplierName} 도착보고서 및 쉬핑마크 라벨 발행 알림 (${poNum})`,
+      defaultContent: contentStr,
+      pdfUrl: arrivalPdfUrl || shippingPdfUrl
+    });
+  };
+
+  const handleCopyArrivalShippingKatalkMessage = (supplierName: string) => {
+    if (!order) return;
+    const cleanSupplierName = supplierName.replace(/\s+/g, '');
+    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+
+    const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
+    const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
+      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).slice(-1)[0];
+    const shippingDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active')
+      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).slice(-1)[0];
+
+    const arrivalPdfUrl = arrivalDoc?.fileUrl || '';
+    const shippingPdfUrl = shippingDoc?.fileUrl || '';
+
+    const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
+    const items = groupedSupplierItems[supplierName] || [];
+    const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
+    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
+
+    const msg = `[YSACC 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (도착보고서 발행 버튼을 먼저 클릭해주세요)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (쉬핑마크 라벨 발행 버튼을 먼저 클릭해주세요)'}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(msg).catch(() => {});
+    }
+    setKatalkModalSupplier(`${supplierName}_arrival`);
+    setKatalkModalMsg(msg);
+  };
+
   const handleDeletePoIssuedDoc = async (docId: string, fileName: string) => {
     if (!order) return;
     const confirmed = window.confirm(`발행된 발주서를 삭제하시겠습니까?\n\n파일명: ${fileName}\n⚠️ 삭제 시 복구할 수 없으며, 목록에서 제거됩니다.`);
@@ -9778,6 +9840,64 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 style={{ padding: '5px 10px', background: '#059669', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                               >
                                 📥 쉬핑마크 라벨 발행 및 저장
+                              </button>
+                              <button 
+                                onClick={() => handleSendArrivalShippingEmail(supplierName)}
+                                style={{ 
+                                  padding: '5px 10px', 
+                                  background: ((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.emailSent || sentEmailSuppliers[`${supplierName}_arrival`]) ? '#dcfce7' : '#f0fdf4', 
+                                  border: ((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.emailSent || sentEmailSuppliers[`${supplierName}_arrival`]) ? '1px solid #86efac' : '1px solid #bbf7d0', 
+                                  color: ((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.emailSent || sentEmailSuppliers[`${supplierName}_arrival`]) ? '#166534' : '#15803d', 
+                                  borderRadius: '4px', 
+                                  cursor: 'pointer', 
+                                  fontWeight: 750, 
+                                  fontSize: '13.5px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="도착보고서 및 쉬핑마크 라벨 2개 파일 유첨 메일 발송"
+                              >
+                                {((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.emailSent || sentEmailSuppliers[`${supplierName}_arrival`]) ? (
+                                  <>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>메일 발송</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    <span>메일 발송</span>
+                                  </>
+                                )}
+                              </button>
+                              <button 
+                                onClick={() => handleCopyArrivalShippingKatalkMessage(supplierName)}
+                                style={{ 
+                                  padding: '5px 10px', 
+                                  background: '#FEE500', 
+                                  border: ((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.katalkCopied || copiedKatalkSuppliers[`${supplierName}_arrival`]) ? '1px solid #ca8a04' : '1px solid #eab308', 
+                                  color: '#191919', 
+                                  borderRadius: '4px', 
+                                  cursor: 'pointer', 
+                                  fontWeight: 750, 
+                                  fontSize: '13.5px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="도착보고서 및 쉬핑마크 2개 원본 링크 포함 카카오톡 메시지 복사"
+                              >
+                                {((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.katalkCopied || copiedKatalkSuppliers[`${supplierName}_arrival`]) ? (
+                                  <>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#191919" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>카톡 발송</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#191919"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
+                                    <span>카톡 발송</span>
+                                  </>
+                                )}
                               </button>
                             </div>
                           </div>
