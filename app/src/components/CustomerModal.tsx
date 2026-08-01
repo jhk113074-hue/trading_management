@@ -182,33 +182,45 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     fetchCrmTasks();
 
     // Real-time Sales & Payment History Subscription
-    const currentName = String(formData.name || initialCustomer?.name || '').trim();
-    const currentCode = String(formData.customerCode || initialCustomer?.customerCode || initialCustomer?.id || '').trim();
-    const currentNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim();
+    const targetId = String(initialCustomer?.id || formData.customerCode || '').trim();
+    const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
+    const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
+    const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
 
-    const rawTargets = [currentName, currentCode, currentNameKo].filter(Boolean);
-    if (rawTargets.length === 0) {
+    if (!targetId && !targetCode && !targetName && !targetNameKo) {
       setSalesHistory([]);
       setIsLoadingSales(false);
       return;
     }
 
-    const cleanTokens = rawTargets.map(t => t.toLowerCase().replace(/\s+/g, '')).filter(t => t.length >= 2);
-    const words = currentName.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'ab', 'l.l.c'].includes(w));
-
     const isOrderMatched = (docData: any) => {
       if (!docData) return false;
-      const str = JSON.stringify(docData).toLowerCase();
-      const cleanStr = str.replace(/\s+/g, '');
 
-      // 1. Direct Token Containment
-      for (const tok of cleanTokens) {
-        if (cleanStr.includes(tok) || tok.includes(cleanStr)) return true;
+      // 1. Direct ID/Code Match
+      const docCustId = String(docData.customerId || docData.customerCode || '').trim();
+      if ((targetId && docCustId && docCustId === targetId) || (targetCode && docCustId && docCustId === targetCode)) {
+        return true;
       }
 
-      // 2. Word Keyword Match (e.g. "bassam", "international")
-      for (const w of words) {
-        if (str.includes(w)) return true;
+      // 2. Customer Name Field Match (strictly inspect customer name property, not whole JSON string)
+      let docCustName = '';
+      if (typeof docData.customer === 'string') docCustName = docData.customer;
+      else if (docData.customer?.name) docCustName = docData.customer.name;
+      else if (docData.customerName) docCustName = docData.customerName;
+      else if (docData.buyerName) docCustName = docData.buyerName;
+      else if (docData.buyer) docCustName = typeof docData.buyer === 'string' ? docData.buyer : docData.buyer.name;
+      else if (docData.importerName) docCustName = docData.importerName;
+      else if (docData.supplierName) docCustName = docData.supplierName;
+
+      if (!docCustName) return false;
+
+      const cleanDocName = String(docCustName).toLowerCase().replace(/\s+/g, '');
+
+      if (targetName && cleanDocName) {
+        if (cleanDocName.includes(targetName) || targetName.includes(cleanDocName)) return true;
+      }
+      if (targetNameKo && cleanDocName) {
+        if (cleanDocName.includes(targetNameKo) || targetNameKo.includes(cleanDocName)) return true;
       }
 
       return false;
