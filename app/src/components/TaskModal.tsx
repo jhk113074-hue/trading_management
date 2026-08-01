@@ -639,6 +639,83 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     }
   };
 
+  const handleSendReportMail = async (reportType: 'IN_PROGRESS' | 'DONE') => {
+    if (!initialTask?.id || !userProfile) return;
+    
+    const recipientId = initialTask.createdBy && initialTask.createdBy !== userProfile.id 
+      ? initialTask.createdBy 
+      : (initialTask.assigneeId || userProfile.id);
+    const recipientUser = users.find(u => u.id === recipientId || u.name === initialTask.createdBy);
+    const recipientName = recipientUser?.name || initialTask.createdBy || '담당자';
+
+    let commentPrompt = '';
+    if (reportType === 'DONE') {
+      commentPrompt = prompt('✅ 업무 완료 보고 코멘트를 입력해주세요 (선택):') || '';
+    }
+
+    try {
+      setIsSaving(true);
+      const isProgress = reportType === 'IN_PROGRESS';
+      const mailTitle = isProgress 
+        ? `[착수보고] "${title}" 업무 착수 및 진행 알림` 
+        : `[완료보고] "${title}" 업무 최종 처리 완료 알림`;
+
+      const mailBody = `
+        <div style="background: ${isProgress ? '#eff6ff' : '#f0fdf4'}; padding: 14px; border-left: 4px solid ${isProgress ? '#3b82f6' : '#16a34a'}; border-radius: 6px; margin-bottom: 14px;">
+          <h3 style="margin: 0 0 6px 0; color: ${isProgress ? '#1e40af' : '#166534'}; font-size: 14px; font-weight: 800;">
+            ${isProgress ? '🏃 업무 착수 (진행중) 보고' : '✅ 업무 처리 완료 보고'}
+          </h3>
+          <p style="margin: 0; font-size: 13px; color: #1e293b;">
+            담당자 <strong>${userProfile.name}</strong>님이 해당 업무의 상태를 <strong>${isProgress ? '진행중 (IN_PROGRESS)' : '완료 (DONE)'}</strong>(으)로 갱신하고 보고합니다.
+          </p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+          <tbody>
+            <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; width: 100px; border: 1px solid #cbd5e1;">업무명</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${title}</td></tr>
+            <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">지시자/위임자</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${initialTask.createdBy || '미지정'}</td></tr>
+            <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">보고자/수행자</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${userProfile.name}</td></tr>
+            ${commentPrompt ? `<tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">완료 코멘트</td><td style="padding: 6px; border: 1px solid #cbd5e1; color: #166534; font-weight: 700;">${commentPrompt}</td></tr>` : ''}
+          </tbody>
+        </table>
+      `;
+
+      await addDoc(collection(db, 'mails'), {
+        senderId: userProfile.id,
+        senderName: userProfile.name,
+        receiverId: recipientId,
+        receiverName: recipientName,
+        title: mailTitle,
+        content: mailBody,
+        isRead: false,
+        taskId: initialTask.id,
+        type: isProgress ? 'TASK_DELEGATED' : 'TASK_COMPLETED',
+        createdAt: new Date().toISOString()
+      });
+
+      const newStatus = isProgress ? 'IN_PROGRESS' : 'DONE';
+      const taskUpdatePayload: any = {
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      };
+      if (newStatus === 'DONE') {
+        taskUpdatePayload.completedAt = new Date().toISOString();
+        if (commentPrompt) {
+          taskUpdatePayload.completionComment = commentPrompt;
+        }
+      }
+      await updateDoc(doc(db, 'tasks', initialTask.id), taskUpdatePayload);
+
+      setStatus(newStatus);
+      alert(isProgress ? '🏃 업무 착수 보고 쪽지가 정상 발송되었습니다.' : '✅ 업무 완료 보고 쪽지가 정상 발송되었습니다.');
+      onClose();
+    } catch (e: any) {
+      console.error(e);
+      alert('보고 발송에 실패했습니다: ' + e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div
       className="modal-overlay"
@@ -1487,32 +1564,66 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         {/* Footer */}
         <div style={{
           padding: '12px 20px', borderTop: '1px solid var(--border-color)',
-          display: 'flex', justifyContent: 'flex-end', gap: '8px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           background: '#f8fafc'
         }}>
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            style={{
-              padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px',
-              fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: isSaving ? 'not-allowed' : 'pointer',
-              opacity: isSaving ? 0.6 : 1
-            }}
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              padding: '8px 24px', background: 'var(--focus-ring)', border: 'none', borderRadius: '6px',
-              fontSize: '0.85rem', fontWeight: 700, color: '#fff', cursor: isSaving ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 4px -1px rgba(13, 148, 136, 0.2)',
-              opacity: isSaving ? 0.6 : 1
-            }}
-          >
-            {isSaving ? '저장 중...' : (initialTask ? '저장' : '등록')}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {initialTask?.id && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleSendReportMail('IN_PROGRESS')}
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px',
+                    fontSize: '0.82rem', fontWeight: 750, color: '#1e40af', cursor: isSaving ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '4px'
+                  }}
+                  title="지시자/담당자에게 업무 착수(진행중) 보고 쪽지 및 실시간 알림 발송"
+                >
+                  🏃 착수보고 발송
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSendReportMail('DONE')}
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px',
+                    fontSize: '0.82rem', fontWeight: 750, color: '#15803d', cursor: isSaving ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '4px'
+                  }}
+                  title="지시자/담당자에게 업무 최종 처리 완료 보고 쪽지 및 실시간 알림 발송"
+                >
+                  ✅ 완료보고 발송
+                </button>
+              </>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              style={{
+                padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px',
+                fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: isSaving ? 'not-allowed' : 'pointer',
+                opacity: isSaving ? 0.6 : 1
+              }}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              style={{
+                padding: '8px 24px', background: 'var(--focus-ring)', border: 'none', borderRadius: '6px',
+                fontSize: '0.85rem', fontWeight: 700, color: '#fff', cursor: isSaving ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 4px -1px rgba(13, 148, 136, 0.2)',
+                opacity: isSaving ? 0.6 : 1
+              }}
+            >
+              {isSaving ? '저장 중...' : (initialTask ? '저장' : '등록')}
+            </button>
+          </div>
         </div>
       </div>
       {/* AI Processing overlay loader */}
