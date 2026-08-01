@@ -368,7 +368,14 @@ export const Orders: React.FC = () => {
     let result = orders.map(o => ({ ...o, nextAction: getNextAction(o) }));
     if (issuingCompanyFilter !== 'All') result = result.filter(o => o.issuingCompany === issuingCompanyFilter);
     if (managerFilter !== 'All') result = result.filter(o => o.manager === managerFilter);
-    if (customerFilter !== 'All') result = result.filter(o => o.customer === customerFilter);
+    if (customerFilter !== 'All') {
+      const cleanFilter = customerFilter.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      result = result.filter(o => {
+        const cVal = (o.customer || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+        const cCode = ((o as any).customerCode || (o as any).customerId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cVal.includes(cleanFilter) || cleanFilter.includes(cVal) || (cCode && cleanFilter.includes(cCode));
+      });
+    }
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
     if (completedFilter === 'Hide') result = result.filter(o => mapStatusToStep(o.status || '', o) !== '완료');

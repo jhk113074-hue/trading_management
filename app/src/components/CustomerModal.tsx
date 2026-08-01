@@ -541,7 +541,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
               transition: 'all 0.15s'
             }}
           >
-            📝 CRM 및 업무 이력 연동 ({crmTasks.length})
+            📝 CRM 및 업무 이력 연동 ({salesHistory.length > 0 ? `매출 ${salesHistory.length}건` : crmTasks.length})
           </button>
         </div>
 
