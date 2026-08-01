@@ -253,8 +253,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
     const unsubOrders = onSnapshot(ordersRef, (snap) => {
       exportRecords = [];
+      console.log(`[CRM DEBUG] orders snapshot: ${snap.docs.length} docs, targetName="${targetName}", targetCode="${targetCode}", targetId="${targetId}"`);
       snap.docs.forEach(d => {
         const data = d.data();
+        console.log(`[CRM DEBUG] order doc ${d.id}: customer="${data.customer}", customerId="${data.customerId}", customerCode="${data.customerCode}", matched=${isOrderMatched(data)}`);
         if (isOrderMatched(data)) {
           const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
           const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
