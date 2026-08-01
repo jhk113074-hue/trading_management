@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
@@ -29,6 +29,17 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
   const [selectedSalesYear, setSelectedSalesYear] = useState<string>('ALL');
+
+  const availableYears = useMemo<string[]>(() => {
+    return Array.from(new Set(salesHistory.map((s: any) => s.year).filter((y: any) => y && y !== '-'))).sort().reverse();
+  }, [salesHistory]);
+
+  const filteredList = useMemo<any[]>(() => {
+    if (selectedSalesYear === 'ALL') return salesHistory;
+    return salesHistory.filter((s: any) => s.year === selectedSalesYear);
+  }, [salesHistory, selectedSalesYear]);
+
+  const salesCount = useMemo<number>(() => filteredList.length, [filteredList]);
 
   const [formData, setFormData] = useState<Partial<Customer>>({
     customerCode: '', name: '', nameKo: '', countryName: '', city: '',
@@ -539,7 +550,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
               transition: 'all 0.15s'
             }}
           >
-            📝 CRM 및 업무 이력 연동 ({isLoadingSales ? '...' : salesHistory.length > 0 ? `매출 ${salesHistory.length}건` : crmTasks.length})
+            📝 CRM 및 업무 이력 연동 ({isLoadingSales ? '...' : salesCount > 0 ? `매출 ${salesCount}건` : crmTasks.length})
           </button>
         </div>
 
@@ -623,22 +634,17 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
             {/* SECTION 2: 통합 판매 및 수금 이력 (수출/수입/국내) */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginTop: '8px' }}>
               {(() => {
-                const availableYears = Array.from(new Set(salesHistory.map(s => s.year).filter(y => y && y !== '-'))).sort().reverse();
-                const filteredList = selectedSalesYear === 'ALL'
-                  ? salesHistory
-                  : salesHistory.filter(s => s.year === selectedSalesYear);
-
-                const totalAmtUSD = filteredList.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.totalAmount, 0);
-                const totalPaidUSD = filteredList.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.paidAmount, 0);
-                const totalAmtKRW = filteredList.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.totalAmount, 0);
-                const totalPaidKRW = filteredList.filter(s => s.currency === 'KRW').reduce((sum, s) => sum + s.paidAmount, 0);
+                const totalAmtUSD = filteredList.filter((s: any) => s.currency === 'USD').reduce((sum: number, s: any) => sum + s.totalAmount, 0);
+                const totalPaidUSD = filteredList.filter((s: any) => s.currency === 'USD').reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+                const totalAmtKRW = filteredList.filter((s: any) => s.currency === 'KRW').reduce((sum: number, s: any) => sum + s.totalAmount, 0);
+                const totalPaidKRW = filteredList.filter((s: any) => s.currency === 'KRW').reduce((sum: number, s: any) => sum + s.paidAmount, 0);
 
                 return (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          💰 통합 주문/판매 및 수금 이력 ({filteredList.length}건)
+                          💰 통합 주문/판매 및 수금 이력 ({salesCount}건)
                         </span>
                         {/* Year Filter Dropdown */}
                         <select
@@ -657,8 +663,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                           }}
                         >
                           <option value="ALL">📅 전체 연도 보기 ({salesHistory.length}건)</option>
-                          {availableYears.map(yr => (
-                            <option key={yr} value={yr}>{yr}년 ({salesHistory.filter(s => s.year === yr).length}건)</option>
+                          {availableYears.map((yr: string) => (
+                            <option key={yr} value={yr}>{yr}년 ({salesHistory.filter((s: any) => s.year === yr).length}건)</option>
                           ))}
                         </select>
                       </div>
@@ -718,7 +724,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                             </tr>
                           </thead>
                           <tbody>
-                            {filteredList.map((s) => {
+                            {filteredList.map((s: any) => {
                               const amtFormatted = s.currency === 'KRW'
                                 ? `₩${Math.round(s.totalAmount).toLocaleString()}`
                                 : `$${s.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
