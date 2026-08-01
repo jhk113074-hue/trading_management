@@ -193,53 +193,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       return;
     }
 
-    // Build target name set: include both name and nameKo, and the customer code
-    // because name="AB" and nameKo="AL BASSAM INTERNATIONAL FACTORIES" are swapped in some records
-    const targetNames = new Set<string>();
-    [targetName, targetNameKo].forEach(t => { if (t && t.length >= 1) targetNames.add(t); });
-
-    const isOrderMatched = (docData: any) => {
-      if (!docData) return false;
-
-      // 1. Direct ID/Code Match (most reliable)
-      const docCustId = String(docData.customerId || docData.customerCode || '').trim();
-      if (docCustId && docCustId !== 'undefined') {
-        if ((targetId && docCustId === targetId) || (targetCode && docCustId === targetCode)) {
-          return true;
-        }
-      }
-
-      // 2. Collect ALL candidate customer name values from the document
-      // - Export orders: data.customer (string) = pi.customerName = customer.name (may be short like "AB")
-      // - Import orders: data.finalCustomer = customer full name
-      // - Domestic trades: data.customerName / data.buyer
-      const candidateNames: string[] = [];
-      if (typeof docData.customer === 'string' && docData.customer) candidateNames.push(docData.customer);
-      else if (docData.customer?.name) candidateNames.push(docData.customer.name);
-      if (docData.finalCustomer) candidateNames.push(docData.finalCustomer);
-      if (docData.customerName) candidateNames.push(docData.customerName);
-      if (docData.buyerName) candidateNames.push(docData.buyerName);
-      if (docData.buyer && typeof docData.buyer === 'string') candidateNames.push(docData.buyer);
-      else if (docData.buyer?.name) candidateNames.push(docData.buyer.name);
-
-      for (const rawName of candidateNames) {
-        if (!rawName) continue;
-        const cleanDocName = String(rawName).toLowerCase().replace(/\s+/g, '');
-        if (!cleanDocName) continue;
-
-        for (const tgt of targetNames) {
-          if (!tgt) continue;
-          // Exact match (handles short names like "ab" = "ab")
-          if (cleanDocName === tgt) return true;
-          // Containment: doc contains target (e.g. doc="albassam..." includes tgt="albassam...")
-          if (tgt.length >= 2 && cleanDocName.includes(tgt)) return true;
-          // Containment: target contains doc name (only if doc name is long enough to be meaningful)
-          if (cleanDocName.length >= 8 && tgt.includes(cleanDocName)) return true;
-        }
-      }
-
-      return false;
-    };
+    // ── Real-time listeners using server-side WHERE queries (no client-side name matching) ──
+    // Build the set of exact values to query against for the customer field
+    const exactName   = String(formData.name      || initialCustomer?.name      || '').trim();
+    const exactNameKo = String(formData.nameKo    || initialCustomer?.nameKo    || '').trim();
 
     setIsLoadingSales(true);
 
@@ -249,113 +206,157 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
     const updateCombinedSales = () => {
       const combinedMap = new Map<string, any>();
-
       [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
         combinedMap.set(r.id, r);
       });
-
       const list = Array.from(combinedMap.values());
       list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
       setSalesHistory(list);
       setIsLoadingSales(false);
     };
 
-    // A. Export Orders Real-time Listener (Orders.tsx exact doc collection syntax)
-    const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
-    const unsubOrders = onSnapshot(ordersRef, (snap) => {
-      exportRecords = [];
-      // Debug: show all unique customer values stored in orders collection
-      const uniqueCustomers = [...new Set(snap.docs.map(d => String(d.data().customer || '')))].filter(Boolean).sort();
-      console.log(`[CRM DEBUG] orders: ${snap.docs.length} docs | target="${targetName}" code="${targetCode}" id="${targetId}"`);
-      console.log('[CRM UNIQUE CUSTOMERS IN ORDERS]', JSON.stringify(uniqueCustomers));
-      snap.docs.forEach(d => {
-        const data = d.data();
-        const matched = isOrderMatched(data);
-        if (matched) console.log(`[CRM MATCH ✅] doc=${d.id} customer="${data.customer}"`);
-        if (isOrderMatched(data)) {
-          const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
-          const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
-          const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
-          exportRecords.push({
-            id: d.id,
-            type: '수출',
-            date: dateStr,
-            year: dateStr.substring(0, 4),
-            ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
-            totalAmount: totAmt,
-            currency: data.currency || 'USD',
-            paidAmount: paidAmt,
-            paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID')
-          });
-        }
-      });
-      updateCombinedSales();
-    }, (err) => {
-      console.error("Error in orders onSnapshot:", err);
-      setIsLoadingSales(false);
-    });
-
-    // B. Imports Real-time Listener
-    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
-    const unsubImports = onSnapshot(importsRef, (snap) => {
-      importRecords = [];
-      snap.docs.forEach(d => {
-        const data = d.data();
-        if (isOrderMatched(data)) {
-          const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
-          const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
-          const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
-          importRecords.push({
-            id: d.id,
-            type: '수입',
-            date: dateStr,
-            year: dateStr.substring(0, 4),
-            ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
-            totalAmount: totAmt,
-            currency: data.currency || 'USD',
-            paidAmount: paidAmt,
-            paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING')
-          });
-        }
-      });
-      updateCombinedSales();
-    }, (err) => {
-      console.error("Error in imports onSnapshot:", err);
-    });
-
-    // C. Domestic Trades Real-time Listener
-    const domesticRef = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
-    const unsubDomestic = onSnapshot(domesticRef, (snap) => {
-      domesticRecords = [];
-      snap.docs.forEach(d => {
-        const data = d.data();
-        if (isOrderMatched(data)) {
-          const totAmt = Number(data.totalAmount || data.totalPrice || 0);
-          const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
-          const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
-          domesticRecords.push({
-            id: d.id,
-            type: '국내',
-            date: dateStr,
-            year: dateStr.substring(0, 4),
-            ciNumber: data.tradeNo || data.statementNo || d.id,
-            totalAmount: totAmt,
-            currency: data.currency || 'KRW',
-            paidAmount: paidAmt,
-            paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금')
-          });
-        }
-      });
-      updateCombinedSales();
-    }, (err) => {
-      console.error("Error in domesticTrades onSnapshot:", err);
-    });
-
-    return () => {
-      unsubOrders();
-      unsubImports();
-      unsubDomestic();
+    // Helper: convert a Firestore snapshot doc to an export record
+    const toExportRecord = (d: any) => {
+      const data = d.data();
+      const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
+      const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
+      const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
+      return { id: d.id, type: '수출', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID') };
     };
+    const toImportRecord = (d: any) => {
+      const data = d.data();
+      const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
+      const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
+      const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
+      return { id: d.id, type: '수입', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING') };
+    };
+    const toDomesticRecord = (d: any) => {
+      const data = d.data();
+      const totAmt = Number(data.totalAmount || data.totalPrice || 0);
+      const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
+      const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
+      return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmount: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
+    };
+
+    const ordersRef  = collection(doc(db, 'companies', COMPANY_ID), 'orders');
+    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
+    const domRef     = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
+
+    const unsubs: (() => void)[] = [];
+
+    // A. Export Orders – query by every possible customer identifier
+    const orderQueries: any[] = [];
+    if (targetCode) {
+      orderQueries.push(query(ordersRef, where('customerId',   '==', targetCode)));
+      orderQueries.push(query(ordersRef, where('customerCode', '==', targetCode)));
+    }
+    if (targetId && targetId !== targetCode) {
+      orderQueries.push(query(ordersRef, where('customerId', '==', targetId)));
+    }
+    if (exactName)   orderQueries.push(query(ordersRef, where('customer',     '==', exactName)));
+    if (exactNameKo) orderQueries.push(query(ordersRef, where('customer',     '==', exactNameKo)));
+    if (exactName)   orderQueries.push(query(ordersRef, where('customerName', '==', exactName)));
+    if (exactNameKo) orderQueries.push(query(ordersRef, where('customerName', '==', exactNameKo)));
+
+    let orderListenerCount = orderQueries.length || 1;
+    const orderResults = new Map<string, any>();
+    const onOrderQueryDone = () => {
+      orderListenerCount--;
+      if (orderListenerCount <= 0) {
+        exportRecords = [...orderResults.values()];
+        updateCombinedSales();
+      }
+    };
+
+    if (orderQueries.length === 0) {
+      exportRecords = [];
+      updateCombinedSales();
+    } else {
+      orderQueries.forEach(q => {
+        const unsub = onSnapshot(q, (snap: any) => {
+          snap.docs.forEach((d: any) => { orderResults.set(d.id, toExportRecord(d)); });
+          onOrderQueryDone();
+        }, (err: any) => { console.error('[CRM] orders query error:', err); onOrderQueryDone(); });
+        unsubs.push(unsub);
+      });
+    }
+
+    // B. Imports – query by every possible customer identifier
+    const importQueries: any[] = [];
+    if (targetCode) {
+      importQueries.push(query(importsRef, where('customerId',   '==', targetCode)));
+      importQueries.push(query(importsRef, where('customerCode', '==', targetCode)));
+    }
+    if (targetId && targetId !== targetCode) {
+      importQueries.push(query(importsRef, where('customerId', '==', targetId)));
+    }
+    if (exactName)   importQueries.push(query(importsRef, where('finalCustomer', '==', exactName)));
+    if (exactNameKo) importQueries.push(query(importsRef, where('finalCustomer', '==', exactNameKo)));
+    if (exactName)   importQueries.push(query(importsRef, where('customerName',  '==', exactName)));
+    if (exactNameKo) importQueries.push(query(importsRef, where('customerName',  '==', exactNameKo)));
+
+    let importListenerCount = importQueries.length || 1;
+    const importResults = new Map<string, any>();
+    const onImportQueryDone = () => {
+      importListenerCount--;
+      if (importListenerCount <= 0) {
+        importRecords = [...importResults.values()];
+        updateCombinedSales();
+      }
+    };
+
+    if (importQueries.length === 0) {
+      importRecords = [];
+      updateCombinedSales();
+    } else {
+      importQueries.forEach(q => {
+        const unsub = onSnapshot(q, (snap: any) => {
+          snap.docs.forEach((d: any) => { importResults.set(d.id, toImportRecord(d)); });
+          onImportQueryDone();
+        }, (err: any) => { console.error('[CRM] imports query error:', err); onImportQueryDone(); });
+        unsubs.push(unsub);
+      });
+    }
+
+    // C. Domestic Trades – query by every possible customer identifier
+    const domQueries: any[] = [];
+    if (targetCode) {
+      domQueries.push(query(domRef, where('customerId',   '==', targetCode)));
+      domQueries.push(query(domRef, where('customerCode', '==', targetCode)));
+    }
+    if (targetId && targetId !== targetCode) {
+      domQueries.push(query(domRef, where('customerId', '==', targetId)));
+    }
+    if (exactName)   domQueries.push(query(domRef, where('customer',     '==', exactName)));
+    if (exactNameKo) domQueries.push(query(domRef, where('customer',     '==', exactNameKo)));
+    if (exactName)   domQueries.push(query(domRef, where('customerName', '==', exactName)));
+    if (exactNameKo) domQueries.push(query(domRef, where('customerName', '==', exactNameKo)));
+    if (exactName)   domQueries.push(query(domRef, where('buyer',        '==', exactName)));
+
+    let domListenerCount = domQueries.length || 1;
+    const domResults = new Map<string, any>();
+    const onDomQueryDone = () => {
+      domListenerCount--;
+      if (domListenerCount <= 0) {
+        domesticRecords = [...domResults.values()];
+        updateCombinedSales();
+      }
+    };
+
+    if (domQueries.length === 0) {
+      domesticRecords = [];
+      updateCombinedSales();
+    } else {
+      domQueries.forEach(q => {
+        const unsub = onSnapshot(q, (snap: any) => {
+          snap.docs.forEach((d: any) => { domResults.set(d.id, toDomesticRecord(d)); });
+          onDomQueryDone();
+        }, (err: any) => { console.error('[CRM] domestic query error:', err); onDomQueryDone(); });
+        unsubs.push(unsub);
+      });
+    }
+
+    return () => { unsubs.forEach(u => u()); };
   }, [formData.name, formData.customerCode, initialCustomer, activeTab]);
 
   const handleChange = (field: keyof Customer, value: any) => {
