@@ -342,9 +342,16 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
         console.log('setSalesHistory 호출, 건수:', list.length);
         setSalesHistory(list);
-      } catch (err) {
-        console.error('[CRM] fetchSalesHistory error:', err);
-        setSalesHistory([]);
+      } catch (err: any) {
+        console.error('[CRM] fetchSalesHistory error:', err.message, err.code, err.stack?.substring(0, 200));
+        setSalesHistory([{ 
+          id: 'CATCH_ERROR', 
+          type: `에러: ${err.message}`, 
+          date: '-', year: '-', 
+          ciNumber: `code: ${err.code}`, 
+          totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: '' 
+        }]);
+        setIsLoadingSales(false);
       } finally {
         setIsLoadingSales(false);
       }
