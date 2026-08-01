@@ -4333,8 +4333,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
       const htmlContent = `<div style="font-family: sans-serif; max-width: 640px; padding: 24px; border: 1px solid #cbd5e1; border-radius: 8px;"><h3 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0;">📋 YSACC 발주서 발행 알림</h3><pre style="font-family: sans-serif; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${emailData.content}</pre>${pdfUrl ? '<div style="margin-top: 12px; padding: 12px; background: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;"><p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 13px;">📄 발주서 PDF 원본 다운로드</p><a href="' + pdfUrl + '" style="color: #2563eb; word-break: break-all; font-size: 12px;">' + pdfUrl + '</a></div>' : ''}</div>`;
 
+      const senderEmail = userProfile?.email || 'jhkim1130@ysacc.co.kr';
+      const senderName = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (YSACC)`;
+
       const payload: any = {
-        sender: { name: 'YSACC (와이에스에이씨)', email: 'jhk113074@gmail.com' },
+        sender: { name: senderName, email: senderEmail },
         to: [{ email: emailData.to, name: poEmailModalData.supplierName }],
         cc: ccList.length > 0 ? ccList : undefined,
         subject: emailData.subject,
@@ -4374,12 +4377,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           setOrder(prev => prev ? ({ ...prev, po_dispatch_status: updatedDispatchStatus }) : prev);
         }
 
-        alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
+        alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n발신자: ${senderEmail}\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(`❌ 메일 발송 실패: ${errData.message || '알 수 없는 오류'}`);
+        console.error('Brevo Email Dispatch Failed:', res.status, errData);
+        alert(`❌ 이메일 발송 실패 (상태 코드: ${res.status})\n\n원인: ${errData.message || errData.code || '알 수 없는 원인으로 전송이 거부되었습니다.'}\n발신자: ${senderEmail}`);
       }
     } catch (e: any) {
       alert(`❌ 메일 발송 중 오류가 발생했습니다: ${e.message}`);
