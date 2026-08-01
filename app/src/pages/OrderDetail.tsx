@@ -1254,6 +1254,15 @@ export const OrderDetail: React.FC = () => {
 
 
   const [myCompanies, setMyCompanies] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setUsersList(list);
+    });
+    return () => unsubscribeUsers();
+  }, []);
 
   const getShipperText = (issuingCompany: string) => {
     const comp = myCompanies.find(c => c.id === issuingCompany);
@@ -12441,9 +12450,27 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       const getUserDisplayName = (userStr?: string) => {
                         if (!userStr) return '시스템 (System)';
                         const val = userStr.trim();
-                        if (val === 'jhkim1130' || val.includes('jhkim1130') || val.includes('jhk01')) return '김주한 대표이사';
-                        if (val === 'jhk010624' || val.includes('jhk010624')) return '김하은 대리';
-                        if (val === 'alexpark' || val.includes('alexpark')) return '박현 이사';
+                        const valLower = val.toLowerCase();
+
+                        // 1. Dynamic 1:1 lookup from users DB (team management)
+                        const matched = usersList.find(u => {
+                          const uId = (u.id || '').toLowerCase();
+                          const uEmail = (u.email || '').toLowerCase();
+                          const uName = (u.name || '').toLowerCase();
+                          return uId === valLower || uEmail === valLower || uName === valLower ||
+                                 (uEmail && valLower.includes(uEmail)) ||
+                                 (uId && valLower.includes(uId));
+                        });
+
+                        if (matched && matched.name) {
+                          const pos = matched.position?.trim() ? ` ${matched.position.trim()}` : '';
+                          return `${matched.name}${pos}`;
+                        }
+
+                        // 2. Exact email/ID fallback parsing if not yet loaded in DB
+                        if (valLower.includes('jhk010624')) return '김하은 대리';
+                        if (valLower.includes('jhkim1130')) return '김주한 대표이사';
+                        if (valLower.includes('alexpark')) return '박현 이사';
                         if (val.includes('@')) return val.split('@')[0];
                         return val;
                       };
