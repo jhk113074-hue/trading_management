@@ -180,42 +180,44 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     };
 
     const fetchSalesHistory = async () => {
-      const cId = initialCustomer?.id || formData.customerCode || '';
-      const cName = formData.name || initialCustomer?.name || '';
-      const cNameKo = formData.nameKo || initialCustomer?.nameKo || '';
+      const searchTokens = Array.from(new Set([
+        initialCustomer?.id, initialCustomer?.customerCode, initialCustomer?.name, initialCustomer?.nameKo,
+        formData.customerCode, formData.name, formData.nameKo
+      ].filter(Boolean).map(s => String(s).toLowerCase().replace(/\s+/g, ''))));
+
+      if (searchTokens.length === 0) {
+        setSalesHistory([]);
+        setIsLoadingSales(false);
+        return;
+      }
 
       const matchCustomer = (data: any) => {
         if (!data) return false;
-        const fields = [
-          data.customerId, data.customerCode, data.customer,
-          data.customerName, data.buyer, data.buyerName,
-          data.companyName, data.importerName, data.supplierName
-        ].filter(Boolean).map(v => String(v).toLowerCase().replace(/\s+/g, ''));
-
-        if (fields.length === 0) return false;
-
-        const strId = cId.toLowerCase().replace(/\s+/g, '');
-        const strName = cName.toLowerCase().replace(/\s+/g, '');
-        const strNameKo = cNameKo.toLowerCase().replace(/\s+/g, '');
-
-        return fields.some(val => 
-          (strId && (val.includes(strId) || strId.includes(val))) ||
-          (strName && (val.includes(strName) || strName.includes(val))) ||
-          (strNameKo && (val.includes(strNameKo) || strNameKo.includes(val)))
-        );
+        const dataJson = JSON.stringify(data).toLowerCase().replace(/\s+/g, '');
+        return searchTokens.some(token => token.length >= 2 && dataJson.includes(token));
       };
 
       setIsLoadingSales(true);
       try {
         let records: any[] = [];
+        const seenIds = new Set<string>();
 
-        // A. Fetch Export Orders (orders)
-        const ordersRef = collection(db, 'companies', COMPANY_ID, 'orders');
-        const snapOrders = await getDocs(ordersRef);
-        snapOrders.forEach(d => {
+        // A. Fetch Export Orders (orders - Subcollection & Root Collection fallback)
+        const subOrdersRef = collection(db, 'companies', COMPANY_ID, 'orders');
+        const rootOrdersRef = collection(db, 'orders');
+        
+        const [snapSubOrders, snapRootOrders] = await Promise.all([
+          getDocs(subOrdersRef).catch(() => ({ docs: [] })),
+          getDocs(rootOrdersRef).catch(() => ({ docs: [] }))
+        ]);
+
+        const allOrderDocs = [...snapSubOrders.docs, ...snapRootOrders.docs];
+        allOrderDocs.forEach(d => {
+          if (seenIds.has(d.id)) return;
           const data = d.data();
           if (matchCustomer(data)) {
-            const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || 0);
+            seenIds.add(d.id);
+            const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
             const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
             const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
             records.push({
@@ -233,11 +235,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         });
 
         // B. Fetch Imports (imports)
-        const importsRef = collection(db, 'companies', COMPANY_ID, 'imports');
-        const snapImports = await getDocs(importsRef);
-        snapImports.forEach(d => {
+        const subImportsRef = collection(db, 'companies', COMPANY_ID, 'imports');
+        const rootImportsRef = collection(db, 'imports');
+        const [snapSubImports, snapRootImports] = await Promise.all([
+          getDocs(subImportsRef).catch(() => ({ docs: [] })),
+          getDocs(rootImportsRef).catch(() => ({ docs: [] }))
+        ]);
+
+        const allImportDocs = [...snapSubImports.docs, ...snapRootImports.docs];
+        allImportDocs.forEach(d => {
+          if (seenIds.has(d.id)) return;
           const data = d.data();
           if (matchCustomer(data)) {
+            seenIds.add(d.id);
             const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
             const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
             const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
@@ -256,11 +266,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         });
 
         // C. Fetch Domestic Trades (domesticTrades)
-        const domesticRef = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
-        const snapDomestic = await getDocs(domesticRef);
-        snapDomestic.forEach(d => {
+        const subDomRef = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
+        const rootDomRef = collection(db, 'domesticTrades');
+        const [snapSubDom, snapRootDom] = await Promise.all([
+          getDocs(subDomRef).catch(() => ({ docs: [] })),
+          getDocs(rootDomRef).catch(() => ({ docs: [] }))
+        ]);
+
+        const allDomDocs = [...snapSubDom.docs, ...snapRootDom.docs];
+        allDomDocs.forEach(d => {
+          if (seenIds.has(d.id)) return;
           const data = d.data();
           if (matchCustomer(data)) {
+            seenIds.add(d.id);
             const totAmt = Number(data.totalAmount || data.totalPrice || 0);
             const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
             const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
