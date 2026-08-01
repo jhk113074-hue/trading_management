@@ -257,10 +257,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const orderSnap = await getDocs(ordersRef);
         const abDoc = orderSnap.docs.find(d => d.id === 'YS(AB)-26-01');
         if (abDoc) {
-          const d = abDoc.data();
-          throw new Error(`AB오더 customerCode="${d.customerCode}" customerId="${d.customerId}" customer="${d.customer}"`);
-        } else {
-          throw new Error(`YS(AB)-26-01 문서를 getDocs에서 찾을 수 없음. 전체 ${orderSnap.size}건`);
+          const data = abDoc.data();
+          const rawCVal = String(data.customer || data.customerName || '').trim();
+          const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+          const cId = String(data.customerId || '').trim().toLowerCase();
+          const cCode = String(data.customerCode || '').trim().toLowerCase();
+          const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
+          const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
+          const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
+          let matchName = false;
+          if (cleanTargetName && cleanTargetName.length >= 2) {
+            matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
+          }
+          throw new Error(`cCode="${cCode}" cId="${cId}" matchCode=${matchCode} matchId=${matchId} matchName=${matchName} | targetCode="${targetCode}" targetId="${targetId}" cleanTargetName="${cleanTargetName}" cValClean="${cValClean}"`);
         }
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
