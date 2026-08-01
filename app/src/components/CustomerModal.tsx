@@ -193,18 +193,25 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       return;
     }
 
+    // Build target name set: include both name and nameKo, and the customer code
+    // because name="AB" and nameKo="AL BASSAM INTERNATIONAL FACTORIES" are swapped in some records
+    const targetNames = new Set<string>();
+    [targetName, targetNameKo].forEach(t => { if (t && t.length >= 1) targetNames.add(t); });
+
     const isOrderMatched = (docData: any) => {
       if (!docData) return false;
 
       // 1. Direct ID/Code Match (most reliable)
       const docCustId = String(docData.customerId || docData.customerCode || '').trim();
-      if ((targetId && docCustId && docCustId === targetId) || (targetCode && docCustId && docCustId === targetCode)) {
-        return true;
+      if (docCustId && docCustId !== 'undefined') {
+        if ((targetId && docCustId === targetId) || (targetCode && docCustId === targetCode)) {
+          return true;
+        }
       }
 
-      // 2. Collect candidate customer name fields from the document
-      // - Export orders: data.customer (string)
-      // - Import orders: data.finalCustomer (최종 고객사)
+      // 2. Collect ALL candidate customer name values from the document
+      // - Export orders: data.customer (string) = pi.customerName = customer.name (may be short like "AB")
+      // - Import orders: data.finalCustomer = customer full name
       // - Domestic trades: data.customerName / data.buyer
       const candidateNames: string[] = [];
       if (typeof docData.customer === 'string' && docData.customer) candidateNames.push(docData.customer);
@@ -218,13 +225,17 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       for (const rawName of candidateNames) {
         if (!rawName) continue;
         const cleanDocName = String(rawName).toLowerCase().replace(/\s+/g, '');
-        if (!cleanDocName || cleanDocName.length < 2) continue;
+        if (!cleanDocName) continue;
 
-        // Forward containment only (avoid short-string reverse false positives)
-        if (targetName && cleanDocName.includes(targetName)) return true;
-        if (targetName && targetName.includes(cleanDocName) && cleanDocName.length >= 8) return true;
-        if (targetNameKo && cleanDocName.includes(targetNameKo)) return true;
-        if (targetNameKo && targetNameKo.includes(cleanDocName) && cleanDocName.length >= 4) return true;
+        for (const tgt of targetNames) {
+          if (!tgt) continue;
+          // Exact match (handles short names like "ab" = "ab")
+          if (cleanDocName === tgt) return true;
+          // Containment: doc contains target (e.g. doc="albassam..." includes tgt="albassam...")
+          if (tgt.length >= 2 && cleanDocName.includes(tgt)) return true;
+          // Containment: target contains doc name (only if doc name is long enough to be meaningful)
+          if (cleanDocName.length >= 8 && tgt.includes(cleanDocName)) return true;
+        }
       }
 
       return false;
