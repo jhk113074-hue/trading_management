@@ -58,10 +58,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     [customerId, customerCode, customerName]
   );
 
-  useEffect(() => {
-    console.log('stableCustomerKey 변경됨:', stableCustomerKey, new Date().toISOString());
-  }, [stableCustomerKey]);
-
   // 겸업(공급사 연결) 검색용
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -210,7 +206,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
-    console.log('EARLY CHECK:', targetId, targetCode, targetName, targetNameKo);
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
       setSalesHistory([]);
       setIsLoadingSales(false);
@@ -227,7 +222,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       setIsLoadingSales(true);
 
       try {
-        const ordersRef  = collection(db, 'companies', COMPANY_ID, 'orders');
+        const ordersRef  = collection(db, 'companies', '영성ACC', 'orders');
         const importsRef = collection(db, 'companies', COMPANY_ID, 'imports');
         const domRef     = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
 
@@ -260,12 +255,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
-        // 첫 번째 문서의 모든 필드를 출력
-        const firstDoc = orderSnap.docs[0];
-        if (firstDoc) {
-          const d = firstDoc.data();
-          throw new Error(`첫문서ID=${firstDoc.id} | customer="${d.customer}" | customerCode="${d.customerCode}" | customerId="${d.customerId}"`);
-        }
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
@@ -360,7 +349,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       }
     };
 
-    setSalesHistory([{ id: 'DEBUG2', type: `fetchSalesHistory 호출됨 | stableKey: ${stableCustomerKey}`, date: '-', year: '-', ciNumber: `targetId:${targetId} targetCode:${targetCode} targetName:${targetName}`, totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: '' }]);
     fetchSalesHistory();
 
     return () => { cancelled = true; };
