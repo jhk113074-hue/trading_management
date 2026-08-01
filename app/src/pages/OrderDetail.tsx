@@ -17,6 +17,7 @@ import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { KatalkMessageModal } from '../components/KatalkMessageModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
@@ -225,6 +226,8 @@ export const OrderDetail: React.FC = () => {
   const isEditing = true;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [katalkModalMsg, setKatalkModalMsg] = useState<string | null>(null);
+  const [katalkModalSupplier, setKatalkModalSupplier] = useState<string>('');
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
   type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
@@ -4248,12 +4251,8 @@ ${itemsText}
 📄 발주서 PDF 원본 다운로드:
 ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발행 및 저장해 주세요.)'}`;
 
-      navigator.clipboard.writeText(msg).then(() => {
-        alert(`📋 [카카오톡 공유 메시지 복사 완료]\n\n카카오톡 대화창에서 Ctrl+V 키를 누르시면 완벽히 붙여넣어집니다!`);
-      }).catch(err => {
-        console.error(err);
-        alert('❌ 클립보드 복사 실패');
-      });
+      setKatalkModalSupplier(supplierName);
+      setKatalkModalMsg(msg);
     } catch (e) {
       console.error(e);
       alert('오류가 발생했습니다.');
@@ -12643,6 +12642,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               };
             })
           }}
+        />
+      )}
+
+      {katalkModalMsg && (
+        <KatalkMessageModal
+          message={katalkModalMsg}
+          supplierName={katalkModalSupplier}
+          onClose={() => setKatalkModalMsg(null)}
         />
       )}
 
