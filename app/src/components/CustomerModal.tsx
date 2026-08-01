@@ -673,6 +673,20 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                       </span>
                     </div>
 
+                    {/* ===== 임시 디버그 박스 (확인 후 제거) ===== */}
+                    <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '8px', margin: '8px 0', fontSize: '11px', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                      DEBUG:{'\n'}
+                      isLoadingSales = {String(isLoadingSales)}{'\n'}
+                      salesHistory.length = {salesHistory.length}{'\n'}
+                      selectedSalesYear = {selectedSalesYear}{'\n'}
+                      formData.name = {formData?.name || '(없음)'}{'\n'}
+                      formData.customerCode = {formData?.customerCode || '(없음)'}{'\n'}
+                      initialCustomer.id = {initialCustomer?.id || '(없음)'}{'\n'}
+                      COMPANY_ID = {String(COMPANY_ID)}{'\n'}
+                      salesHistory 첫 항목 = {salesHistory[0] ? JSON.stringify(salesHistory[0]).substring(0, 100) : '(비어있음)'}
+                    </div>
+                    {/* ===== 임시 디버그 박스 끝 ===== */}
+
                     {/* Financial Summary Badges */}
                     {filteredList.length > 0 && (
                       <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
