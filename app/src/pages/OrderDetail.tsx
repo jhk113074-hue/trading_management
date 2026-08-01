@@ -4355,6 +4355,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       if (res.ok) {
         alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
+        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -6179,7 +6180,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </button>
                                 <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  style={{ padding: '5px 10px', background: sentEmailSuppliers[supplierName] ? '#dcfce7' : '#f0fdf4', border: sentEmailSuppliers[supplierName] ? '1px solid #16a34a' : '1px solid #86efac', color: sentEmailSuppliers[supplierName] ? '#15803d' : '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
                                   title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
                                 >
                                   📧 메일 발송
