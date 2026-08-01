@@ -6202,43 +6202,64 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 >
                                   📥 발주서 발행 및 저장
                                 </button>
-                                <button 
+                                 <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
                                   style={{ 
                                     padding: '5px 10px', 
                                     background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#dcfce7' : '#f0fdf4', 
-                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #16a34a' : '1px solid #86efac', 
-                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#15803d' : '#166534', 
+                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #86efac' : '1px solid #bbf7d0', 
+                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#166534' : '#15803d', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
                                     fontWeight: 750, 
-                                    fontSize: '14.5px' 
+                                    fontSize: '13.5px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
                                   }}
                                   title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
                                 >
-                                  {((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '☑️ 메일 발송' : '📧 메일 발송'}
+                                  {((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? (
+                                    <>
+                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      <span>메일 발송</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                      <span>메일 발송</span>
+                                    </>
+                                  )}
                                 </button>
                                 <button 
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
                                   style={{ 
                                     padding: '5px 10px', 
-                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '#FEF01B' : '#FEE500', 
+                                    background: '#FEE500', 
                                     border: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '1px solid #ca8a04' : '1px solid #eab308', 
-                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '#15803d' : '#191919', 
+                                    color: '#191919', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
                                     fontWeight: 750, 
-                                    fontSize: '14.5px' 
+                                    fontSize: '13.5px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
                                   }}
                                   title="카카오톡 단체방 공유용 텍스트 메시지 복사"
                                 >
-                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '☑️ 카톡 발송' : '💬 카톡 발송'}
+                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? (
+                                    <>
+                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#191919" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      <span>카톡 발송</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#191919"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
+                                      <span>카톡 발송</span>
+                                    </>
+                                  )}
                                 </button>
-                                {copiedKatalkSuppliers[supplierName] && (
-                                  <span style={{ padding: '3px 8px', background: '#fef9c3', color: '#854d0e', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #fde047', display: 'inline-flex', alignItems: 'center' }}>
-                                    ✅ 복사완료
-                                  </span>
-                                )}
                                 
                                 
                               </div>
