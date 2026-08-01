@@ -4,12 +4,14 @@ interface KatalkMessageModalProps {
   message: string;
   supplierName: string;
   onClose: () => void;
+  onCopySuccess?: () => void;
 }
 
 export const KatalkMessageModal: React.FC<KatalkMessageModalProps> = ({
   message,
   supplierName,
-  onClose
+  onClose,
+  onCopySuccess
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -22,6 +24,7 @@ export const KatalkMessageModal: React.FC<KatalkMessageModalProps> = ({
   const handleCopy = () => {
     navigator.clipboard.writeText(message).then(() => {
       setCopied(true);
+      if (onCopySuccess) onCopySuccess();
       setTimeout(() => setCopied(false), 2500);
       alert('📋 [카카오톡 공유 메시지 복사 완료]\n\n카카오톡 단체 채팅방에 바로 Ctrl+V 키로 붙여넣으세요!');
     }).catch(err => {

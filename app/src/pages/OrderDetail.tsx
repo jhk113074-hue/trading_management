@@ -229,6 +229,8 @@ export const OrderDetail: React.FC = () => {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [katalkModalMsg, setKatalkModalMsg] = useState<string | null>(null);
   const [katalkModalSupplier, setKatalkModalSupplier] = useState<string>('');
+  const [sentEmailSuppliers, setSentEmailSuppliers] = useState<Record<string, boolean>>({});
+  const [copiedKatalkSuppliers, setCopiedKatalkSuppliers] = useState<Record<string, boolean>>({});
   const [poEmailModalData, setPoEmailModalData] = useState<{
     supplierName: string;
     items: OrderItem[];
@@ -4352,6 +4354,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
       if (res.ok) {
         alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
+        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -6181,6 +6184,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 >
                                   📧 메일 발송
                                 </button>
+                                {sentEmailSuppliers[supplierName] && (
+                                  <span style={{ padding: '3px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #86efac', display: 'inline-flex', alignItems: 'center' }}>
+                                    ✅ 발송완료
+                                  </span>
+                                )}
                                 <button 
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
                                   style={{ padding: '5px 10px', background: '#FEE500', border: '1px solid #eab308', color: '#191919', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
@@ -6188,6 +6196,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 >
                                   💬 카톡 메시지 복사
                                 </button>
+                                {copiedKatalkSuppliers[supplierName] && (
+                                  <span style={{ padding: '3px 8px', background: '#fef9c3', color: '#854d0e', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #fde047', display: 'inline-flex', alignItems: 'center' }}>
+                                    ✅ 복사완료
+                                  </span>
+                                )}
                                 
                                 
                               </div>
@@ -12692,6 +12705,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           message={katalkModalMsg}
           supplierName={katalkModalSupplier}
           onClose={() => setKatalkModalMsg(null)}
+        />
+      )}
+
+      {katalkModalMsg && (
+        <KatalkMessageModal
+          message={katalkModalMsg}
+          supplierName={katalkModalSupplier}
+          onClose={() => setKatalkModalMsg(null)}
+          onCopySuccess={() => setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }))}
         />
       )}
 
