@@ -51,6 +51,13 @@ export const Mails: React.FC = () => {
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
 
+  // Task Auto Creation states
+  const [createTaskOption, setCreateTaskOption] = useState(false);
+  const [taskDueDate, setTaskDueDate] = useState('');
+  const [taskType, setTaskType] = useState('DAILY');
+  const [taskImportance, setTaskImportance] = useState('B');
+  const [taskUrgency, setTaskUrgency] = useState(5);
+
   // Mail Detail State
   const [selectedMail, setSelectedMail] = useState<Mail | null>(null);
 
@@ -158,6 +165,32 @@ export const Mails: React.FC = () => {
 
     setIsSending(true);
     try {
+      let createdTaskId = '';
+
+      // 1. If 'Create Task' option is enabled, add a new task to 'tasks' collection
+      if (createTaskOption) {
+        const plainTextBody = editorRef.current ? (editorRef.current.innerText || '') : '';
+        const taskDoc = {
+          title: `[쪽지 업무] ${title}`,
+          description: `${plainTextBody}\n\n------------------------------------\n✉️ 발송 쪽지 연동 업무 (발신자: ${userProfile.name})`,
+          status: 'IN_PROGRESS',
+          type: taskType || 'DAILY',
+          scheduleType: 'SELF',
+          importance: taskImportance || 'B',
+          urgency: taskUrgency || 5,
+          quadrant: taskImportance === 'A' ? (taskUrgency >= 4 ? 'Q1' : 'Q2') : (taskUrgency >= 4 ? 'Q3' : 'Q4'),
+          assigneeId: selectedReceiverId,
+          assigneeName: receiver.name,
+          createdBy: userProfile.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          dueDate: taskDueDate || null
+        };
+        const taskRef = await addDoc(collection(db, 'tasks'), taskDoc);
+        createdTaskId = taskRef.id;
+      }
+
+      // 2. Save Mail document with linked taskId
       await addDoc(collection(db, 'mails'), {
         senderId: userProfile.id,
         senderName: userProfile.name,
@@ -168,7 +201,9 @@ export const Mails: React.FC = () => {
         isRead: false,
         attachments,
         createdAt: new Date().toISOString(),
-        scheduledAt: scheduledIso || null
+        scheduledAt: scheduledIso || null,
+        taskId: createdTaskId || null,
+        type: createTaskOption ? 'TASK_DELEGATED' : 'GENERAL'
       });
 
       setTitle('');
@@ -176,12 +211,17 @@ export const Mails: React.FC = () => {
       setAttachments([]);
       setIsScheduled(false);
       setScheduledAt('');
+      setCreateTaskOption(false);
+      setTaskDueDate('');
+      setTaskType('DAILY');
+      setTaskImportance('B');
+      setTaskUrgency(5);
       if (editorRef.current) editorRef.current.innerHTML = '';
       setSelectedReceiverId('');
       setIsComposeModalOpen(false);
       setActiveTab('sent');
       fetchMailsData();
-      alert("쪽지가 발송되었습니다.");
+      alert(createTaskOption ? "✅ 쪽지 발송 및 신규 업무 할당이 완료되었습니다." : "쪽지가 발송되었습니다.");
     } catch (err) {
       console.error(err);
       alert("발송에 실패했습니다.");
@@ -1042,6 +1082,73 @@ export const Mails: React.FC = () => {
                       onChange={e => setScheduledAt(e.target.value)}
                       style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                     />
+                  </div>
+                )}
+              </div>
+
+              {/* Task Creation options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#eff6ff', padding: '12px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 'bold', color: '#1e40af', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={createTaskOption}
+                    onChange={e => setCreateTaskOption(e.target.checked)}
+                  />
+                  📋 신규 업무 자동 생성 및 할당 (수신자에게 Task 연동 및 위임)
+                </label>
+                {createTaskOption && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #93c5fd' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 750 }}>업무 마감일</label>
+                        <input
+                          type="date"
+                          value={taskDueDate}
+                          onChange={e => setTaskDueDate(e.target.value)}
+                          style={{ padding: '0 8px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', height: '32px', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 750 }}>업무 유형</label>
+                        <select
+                          value={taskType}
+                          onChange={e => setTaskType(e.target.value)}
+                          style={{ padding: '0 8px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', height: '32px', boxSizing: 'border-box' }}
+                        >
+                          <option value="DAILY">📝 일상 업무</option>
+                          <option value="PURCHASE">🛒 발주/소싱</option>
+                          <option value="LOGISTICS">🚢 선적/물류</option>
+                          <option value="DOCS">📄 서류 관리</option>
+                          <option value="SETTLEMENT">💰 정산/결제</option>
+                          <option value="NOTICE">📢 공지/안내</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 750 }}>중요도</label>
+                        <select
+                          value={taskImportance}
+                          onChange={e => setTaskImportance(e.target.value)}
+                          style={{ padding: '0 8px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', height: '32px', boxSizing: 'border-box' }}
+                        >
+                          <option value="A">🔴 A (매우 중요)</option>
+                          <option value="B">🟡 B (보통 중요)</option>
+                          <option value="C">🟢 C (일반)</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 750 }}>긴급도 ({taskUrgency}단계)</label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          value={taskUrgency}
+                          onChange={e => setTaskUrgency(Number(e.target.value))}
+                          style={{ height: '32px' }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
