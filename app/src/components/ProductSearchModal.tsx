@@ -67,13 +67,60 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
     return ['All', ...Array.from(list)];
   }, [products]);
 
-  // Filtered products list
+  // Intelligent Bi-directional Trade & Manufacturing Synonym Dictionary
+  const BILINGUAL_SYNONYMS: Record<string, string[]> = useMemo(() => ({
+    '수위계': ['level gauge', 'water level gauge', 'water gauge', 'level indicator', 'gauge', 'liquid level'],
+    '히터': ['heater', 'electric heater', 'heating element', 'heating', 'boiler'],
+    '볼트': ['bolt', 'hex bolt', 'anchor bolt', 'fastener'],
+    '너트': ['nut', 'hex nut', 'lock nut'],
+    '밸브': ['valve', 'ball valve', 'gate valve', 'check valve', 'butterfly valve', 'control valve'],
+    '파이프': ['pipe', 'piping', 'tube', 'tubing'],
+    '배관': ['pipe', 'piping', 'plumbing', 'fitting'],
+    '플랜지': ['flange', 'pipe flange'],
+    '개스킷': ['gasket', 'seal', 'packing'],
+    '가스켓': ['gasket', 'seal', 'packing'],
+    '펌프': ['pump', 'water pump', 'chemical pump'],
+    '탱크': ['tank', 'vessel', 'reservoir'],
+    '변압기': ['transformer'],
+    '계전기': ['relay'],
+    '차단기': ['breaker', 'circuit breaker'],
+    '모터': ['motor', 'electric motor'],
+    '센서': ['sensor', 'detector', 'probe'],
+    '스위치': ['switch'],
+    '필터': ['filter', 'strainer'],
+    '콘덴서': ['condenser', 'capacitor'],
+    '컴프레서': ['compressor', 'air compressor'],
+    '압축기': ['compressor'],
+    '감속기': ['reducer', 'gearbox', 'gear reducer'],
+    '베어링': ['bearing', 'ball bearing'],
+    '벨트': ['belt', 'v belt', 'timing belt'],
+    '커플링': ['coupling'],
+    '패킹': ['packing', 'gasket'],
+    '피팅': ['fitting', 'pipe fitting'],
+    '엘보': ['elbow', 'pipe elbow'],
+    '티': ['tee'],
+    '니플': ['nipple'],
+    '부싱': ['bushing'],
+    '유량계': ['flow meter', 'flowmeter'],
+    '압력계': ['pressure gauge', 'manometer'],
+    '온도계': ['thermometer', 'temperature gauge'],
+    '온도센서': ['thermocouple', 'rtd', 'temp sensor'],
+    '변환기': ['converter', 'transducer'],
+    '인버터': ['inverter', 'vfd'],
+    '노즐': ['nozzle'],
+    '실린더': ['cylinder', 'air cylinder'],
+    '액추에이터': ['actuator'],
+    '솔레노이드': ['solenoid', 'solenoid valve'],
+    '케이블': ['cable', 'wire'],
+    '커넥터': ['connector'],
+    '소켓': ['socket'],
+    '플러그': ['plug']
+  }), []);
+
+  // Filtered products list with Smart Cross-Language Matching
   const filteredProducts = useMemo(() => {
     const uniqueList: Product[] = [];
     const seen = new Set<string>();
-    const boppItems = products.filter(p => (p.nameKo || p.nameEn || p.productCode || '').toLowerCase().includes('bopp'));
-    console.log("=== BOPP ITEMS JSON ===");
-    console.log(JSON.stringify(boppItems, null, 2));
 
     products.forEach(p => {
       const code = (p.productCode || p.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
@@ -85,17 +132,46 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
       }
     });
 
-    console.log("Unique list count:", uniqueList.length);
-    console.log("Unique list:", uniqueList.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })));
+    const searchLower = searchTerm.trim().toLowerCase();
+    if (!searchLower) {
+      return uniqueList.filter(p => {
+        const matchCategory = selectedCategory === 'All' || p.categoryLarge === selectedCategory;
+        const matchSupplier = selectedSupplier === 'All' || p.supplierName === selectedSupplier;
+        return matchCategory && matchSupplier;
+      });
+    }
+
+    // Expand search query with bilingual synonyms
+    const matchedSynonymKeywords = new Set<string>([searchLower]);
+    Object.entries(BILINGUAL_SYNONYMS).forEach(([krWord, enWords]) => {
+      const isKrMatch = searchLower.includes(krWord) || krWord.includes(searchLower);
+      const isEnMatch = enWords.some(en => searchLower.includes(en) || en.includes(searchLower));
+
+      if (isKrMatch || isEnMatch) {
+        matchedSynonymKeywords.add(krWord.toLowerCase());
+        enWords.forEach(en => matchedSynonymKeywords.add(en.toLowerCase()));
+      }
+    });
+
+    const synonymArray = Array.from(matchedSynonymKeywords);
 
     const result = uniqueList.filter(p => {
-      const matchSearch = 
-        (p.productCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.nameKo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.nameEn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.spec || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.supplierName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const pCode = (p.productCode || '').toLowerCase();
+      const pNameKo = (p.nameKo || '').toLowerCase();
+      const pNameEn = (p.nameEn || '').toLowerCase();
+      const pSpec = (p.spec || '').toLowerCase();
+      const pDesc = (p.description || '').toLowerCase();
+      const pSupplier = (p.supplierName || '').toLowerCase();
+
+      // Check standard search or synonym cross-matching
+      const matchSearch = synonymArray.some(keyword => 
+        pCode.includes(keyword) ||
+        pNameKo.includes(keyword) ||
+        pNameEn.includes(keyword) ||
+        pSpec.includes(keyword) ||
+        pDesc.includes(keyword) ||
+        pSupplier.includes(keyword)
+      );
 
       const matchCategory = selectedCategory === 'All' || p.categoryLarge === selectedCategory;
       const matchSupplier = selectedSupplier === 'All' || p.supplierName === selectedSupplier;
@@ -103,11 +179,8 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
       return matchSearch && matchCategory && matchSupplier;
     });
 
-    console.log("=== FILTERED PRODUCTS JSON ===");
-    console.log(JSON.stringify(result.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })), null, 2));
-
     return result;
-  }, [products, searchTerm, selectedCategory, selectedSupplier]);
+  }, [products, searchTerm, selectedCategory, selectedSupplier, BILINGUAL_SYNONYMS]);
 
   return (
     <div style={{
@@ -145,8 +218,11 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
               🔍 상품 검색 및 불러오기 (Subwindow)
             </h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              더블 클릭하거나 [선택] 버튼을 눌러 견적서 상품 라인에 추가할 수 있습니다.
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>더블 클릭하거나 [선택] 버튼을 눌러 견적서 상품 라인에 추가할 수 있습니다.</span>
+              <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 800 }}>
+                🌐 한/영 지능형 교차 검색 지원 (예: Level Gauge ➔ 수위계 매칭)
+              </span>
             </p>
           </div>
           <button 
