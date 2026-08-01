@@ -180,47 +180,33 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     };
 
     const fetchSalesHistory = async () => {
-      const rawNames = [
-        initialCustomer?.name, initialCustomer?.nameKo, initialCustomer?.customerCode, initialCustomer?.id,
-        formData.name, formData.nameKo, formData.customerCode
-      ].filter(Boolean).map(s => String(s).trim());
+      const currentName = String(formData.name || initialCustomer?.name || '').trim();
+      const currentCode = String(formData.customerCode || initialCustomer?.customerCode || initialCustomer?.id || '').trim();
+      const currentNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim();
 
-      if (rawNames.length === 0) {
+      const rawTargets = [currentName, currentCode, currentNameKo].filter(Boolean);
+      if (rawTargets.length === 0) {
         setSalesHistory([]);
         setIsLoadingSales(false);
         return;
       }
 
-      const searchTokens = Array.from(new Set(rawNames.map(s => s.toLowerCase().replace(/\s+/g, ''))));
+      const cleanTokens = rawTargets.map(t => t.toLowerCase().replace(/\s+/g, '')).filter(t => t.length >= 2);
+      const words = currentName.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'ab', 'l.l.c'].includes(w));
 
-      const getKeywords = (text: string) => {
-        const clean = text.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ');
-        return clean.split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'corp', 'ab', 'l.l.c'].includes(w));
-      };
+      const isOrderMatched = (docData: any) => {
+        if (!docData) return false;
+        const str = JSON.stringify(docData).toLowerCase();
+        const cleanStr = str.replace(/\s+/g, '');
 
-      const allKeywords = Array.from(new Set(rawNames.flatMap(n => getKeywords(n))));
-
-      const matchCustomer = (data: any) => {
-        if (!data) return false;
-        const dataJson = JSON.stringify(data).toLowerCase();
-        const cleanDataJson = dataJson.replace(/\s+/g, '');
-
-        // 1. Exact or Substring token match
-        for (const token of searchTokens) {
-          if (token.length >= 3 && (cleanDataJson.includes(token) || token.includes(cleanDataJson))) {
-            return true;
-          }
+        // 1. Direct Token Containment
+        for (const tok of cleanTokens) {
+          if (cleanStr.includes(tok) || tok.includes(cleanStr)) return true;
         }
 
-        // 2. Keyword match (e.g. "bassam", "international")
-        if (allKeywords.length > 0) {
-          const matchedKws = allKeywords.filter(kw => dataJson.includes(kw));
-          if (matchedKws.length >= 1 && allKeywords.some(kw => kw.length >= 4 && dataJson.includes(kw))) {
-            return true;
-          }
-          if (matchedKws.length >= 2) {
-            return true;
-          }
+        // 2. Word Keyword Match (e.g. "bassam", "international")
+        for (const w of words) {
+          if (str.includes(w)) return true;
         }
 
         return false;
@@ -244,7 +230,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         allOrderDocs.forEach(d => {
           if (seenIds.has(d.id)) return;
           const data = d.data();
-          if (matchCustomer(data)) {
+          if (isOrderMatched(data)) {
             seenIds.add(d.id);
             const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
             const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
@@ -275,7 +261,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         allImportDocs.forEach(d => {
           if (seenIds.has(d.id)) return;
           const data = d.data();
-          if (matchCustomer(data)) {
+          if (isOrderMatched(data)) {
             seenIds.add(d.id);
             const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
             const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
@@ -306,7 +292,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         allDomDocs.forEach(d => {
           if (seenIds.has(d.id)) return;
           const data = d.data();
-          if (matchCustomer(data)) {
+          if (isOrderMatched(data)) {
             seenIds.add(d.id);
             const totAmt = Number(data.totalAmount || data.totalPrice || 0);
             const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
