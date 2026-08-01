@@ -13076,16 +13076,51 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         <CustomerSearchModal
           customers={customers}
           onClose={() => setIsCustomerSearchOpen(false)}
-          onSelect={(customer) => {
+          onSelect={async (customer) => {
+            const custName = customer.name || '';
+            const custCode = customer.customerCode || basicForm.customerCode;
+            const custId = customer.id || customer.customerCode || basicForm.customerId;
+            const inco = customer.preferredIncoterms ? customer.preferredIncoterms : basicForm.incoterms;
+            const pay = customer.paymentTerms || basicForm.paymentTerms;
+            const dest = customer.shippingPort || basicForm.destinationPort || basicForm.portOfDischarge;
+
             setBasicForm(prev => ({
               ...prev,
-              customer: customer.name || '',
-              customerCode: customer.customerCode || prev.customerCode,
-              customerId: customer.id || customer.customerCode || prev.customerId,
-              incoterms: customer.preferredIncoterms ? (customer.preferredIncoterms as any) : prev.incoterms,
-              paymentTerms: customer.paymentTerms || prev.paymentTerms,
-              destinationPort: customer.shippingPort || prev.destinationPort
+              customer: custName,
+              customerCode: custCode,
+              customerId: custId,
+              incoterms: inco as any,
+              paymentTerms: pay,
+              destinationPort: dest,
+              portOfDischarge: dest || prev.portOfDischarge
             }));
+
+            if (order?.id) {
+              try {
+                const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+                await updateDoc(orderRef, {
+                  customer: custName,
+                  customerCode: custCode,
+                  customerId: custId,
+                  incoterms: inco,
+                  paymentTerms: pay,
+                  destinationPort: dest,
+                  portOfDischarge: dest
+                });
+                setOrder(prev => prev ? ({
+                  ...prev,
+                  customer: custName,
+                  customerCode: custCode,
+                  customerId: custId,
+                  incoterms: inco,
+                  paymentTerms: pay,
+                  destinationPort: dest,
+                  portOfDischarge: dest
+                } as any) : prev);
+              } catch (err) {
+                console.error("Failed to save selected customer to order:", err);
+              }
+            }
             setIsCustomerSearchOpen(false);
           }}
         />
