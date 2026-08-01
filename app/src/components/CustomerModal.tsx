@@ -181,14 +181,11 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
     fetchCrmTasks();
 
-    console.log('[CRM DEBUG] useEffect 시작 | activeTab:', activeTab, '| formData.name:', formData.name, '| initialCustomer.name:', initialCustomer?.name);
     // Real-time Sales & Payment History Subscription
     const targetId = String(initialCustomer?.id || formData.customerCode || '').trim();
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
-
-    console.log('[CRM DEBUG] targetId:', targetId, '| targetCode:', targetCode, '| targetName:', targetName, '| targetNameKo:', targetNameKo);
 
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
       setSalesHistory([]);
@@ -214,7 +211,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       });
       const list = Array.from(combinedMap.values());
       list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-      console.log('[CRM DEBUG] updateCombinedSales | 총합 건수:', list.length);
       setSalesHistory(list);
       setIsLoadingSales(false);
     };
@@ -239,7 +235,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       const totAmt = Number(data.totalAmount || data.totalPrice || 0);
       const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
       const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
-      return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmount: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
+      return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmt: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
     };
 
     const ordersRef  = collection(doc(db, 'companies', COMPANY_ID), 'orders');
@@ -248,27 +244,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
     const unsubs: (() => void)[] = [];
 
-    // A. Export Orders – query by every possible customer identifier
-    const orderQueries: any[] = [];
-    if (targetCode) {
-      orderQueries.push(query(ordersRef, where('customerId',   '==', targetCode)));
-      orderQueries.push(query(ordersRef, where('customerCode', '==', targetCode)));
-    }
-    if (targetId && targetId !== targetCode) {
-      orderQueries.push(query(ordersRef, where('customerId', '==', targetId)));
-    }
-    if (exactName)   orderQueries.push(query(ordersRef, where('customer',     '==', exactName)));
-    if (exactNameKo) orderQueries.push(query(ordersRef, where('customer',     '==', exactNameKo)));
-    if (exactName)   orderQueries.push(query(ordersRef, where('customerName', '==', exactName)));
-    if (exactNameKo) orderQueries.push(query(ordersRef, where('customerName', '==', exactNameKo)));
-    if (targetCode && exactName) orderQueries.push(query(ordersRef, where('customer', '==', `[${targetCode}] ${exactName}`)));
-    if (targetCode && exactNameKo) orderQueries.push(query(ordersRef, where('customer', '==', `[${targetCode}] ${exactNameKo}`)));
-
     const orderResults = new Map<string, any>();
     
     // Subscribe to all orders as fallback/broad match to guarantee 100% precision
     const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
-      console.log('[CRM DEBUG] snap.docs 수:', snap.docs.length);
       const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
       const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
 
@@ -291,15 +270,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
         }
 
-        if (d.id.includes('YS(AB)') || rawCVal.includes('BASSAM')) {
-          console.log('[CRM DEBUG 오더 확인]', d.id, '| customer:', rawCVal, '| clean:', cValClean, '| matchCode:', matchCode, '| matchId:', matchId, '| matchName:', matchName);
-        }
-
         if (matchCode || matchId || matchName || matchNameKo) {
           orderResults.set(d.id, toExportRecord(d));
         }
       });
-      console.log('[CRM DEBUG] 최종 orderResults 크기:', orderResults.size);
       exportRecords = [...orderResults.values()];
       updateCombinedSales();
     }, (err: any) => {
@@ -374,7 +348,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     }
 
     return () => { unsubs.forEach(u => u()); };
-  }, [formData.name, formData.customerCode, initialCustomer, activeTab]);
+  }, [formData.name, formData.customerCode, initialCustomer]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
@@ -565,7 +539,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
               transition: 'all 0.15s'
             }}
           >
-            📝 CRM 및 업무 이력 연동 ({salesHistory.length > 0 ? `매출 ${salesHistory.length}건` : crmTasks.length})
+            📝 CRM 및 업무 이력 연동 ({isLoadingSales ? '...' : salesHistory.length > 0 ? `매출 ${salesHistory.length}건` : crmTasks.length})
           </button>
         </div>
 
