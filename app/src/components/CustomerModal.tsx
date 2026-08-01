@@ -260,18 +260,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
-        // 즉시 중단하고 결과만 출력
-        if (!cancelled) {
-          setSalesHistory([{
-            id: 'DEBUG_ORDERS',
-            type: `수출오더 getDocs: ${orderSnap.size}건`,
-            date: '-', year: '-',
-            ciNumber: `경로: companies/${COMPANY_ID}/orders`,
-            totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: ''
-          }]);
-          setIsLoadingSales(false);
-          return;
-        }
+        throw new Error(`getDocs완료=${orderSnap.size}건`);
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
