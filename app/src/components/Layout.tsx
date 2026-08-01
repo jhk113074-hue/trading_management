@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
 import { Button, Card } from './ui';
-import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 import { BUILD_FULL_TEXT, APP_VERSION } from '../version';
@@ -95,7 +95,7 @@ export const Layout: React.FC = () => {
     return window.innerWidth <= 1028;
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [notifFilterTab, setNotifFilterTab] = useState<'all' | 'unread'>('all');
+  const [notifFilterTab, setNotifFilterTab] = useState<'all' | 'unread' | 'tasks' | 'approvals' | 'system'>('all');
   const [latestToast, setLatestToast] = useState<any | null>(null);
 
   const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
@@ -405,6 +405,45 @@ export const Layout: React.FC = () => {
       await batch.commit();
     } catch (e) {
       console.error("Failed to mark all as read:", e);
+    }
+  };
+
+  const handleDeleteNotification = async (notifId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteDoc(doc(db, 'mails', notifId));
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  const handleClearReadNotifications = async () => {
+    const readMails = notifications.filter(n => n.isRead);
+    if (readMails.length === 0) {
+      alert('정리할 읽은 알림이 없습니다.');
+      return;
+    }
+    if (!window.confirm(`읽은 알림 ${readMails.length}건을 정리(삭제)하시겠습니까?`)) return;
+    try {
+      const batch = writeBatch(db);
+      readMails.forEach(n => batch.delete(doc(db, 'mails', n.id)));
+      await batch.commit();
+    } catch (e) {
+      console.error(e);
+      alert('알림 정리에 실패했습니다.');
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    if (notifications.length === 0) return;
+    if (!window.confirm(`전체 알림 ${notifications.length}건을 모두 삭제하시겠습니까?`)) return;
+    try {
+      const batch = writeBatch(db);
+      notifications.forEach(n => batch.delete(doc(db, 'mails', n.id)));
+      await batch.commit();
+    } catch (e) {
+      console.error(e);
+      alert('알림 일괄 삭제에 실패했습니다.');
     }
   };
 
@@ -796,21 +835,20 @@ export const Layout: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 필터 탭 & 모두 읽음 서브 바 */}
-                  <div style={{ padding: '12px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
-                    <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '3px', borderRadius: '6px' }}>
+                  {/* 필터 탭 & 알림 관리 서브 바 */}
+                  <div style={{ padding: '12px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: '#ffffff' }}>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => setNotifFilterTab('all')}
                         style={{
-                          padding: '4px 12px',
+                          padding: '4px 10px',
                           borderRadius: '4px',
-                          border: 'none',
-                          background: notifFilterTab === 'all' ? '#ffffff' : 'transparent',
-                          color: notifFilterTab === 'all' ? '#0f172a' : '#64748b',
-                          fontSize: '12px',
+                          border: '1px solid #cbd5e1',
+                          background: notifFilterTab === 'all' ? '#1e293b' : '#ffffff',
+                          color: notifFilterTab === 'all' ? '#ffffff' : '#475569',
+                          fontSize: '11.5px',
                           fontWeight: 750,
-                          cursor: 'pointer',
-                          boxShadow: notifFilterTab === 'all' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                          cursor: 'pointer'
                         }}
                       >
                         전체 ({notifications.length})
@@ -818,40 +856,95 @@ export const Layout: React.FC = () => {
                       <button
                         onClick={() => setNotifFilterTab('unread')}
                         style={{
-                          padding: '4px 12px',
+                          padding: '4px 10px',
                           borderRadius: '4px',
-                          border: 'none',
-                          background: notifFilterTab === 'unread' ? '#ffffff' : 'transparent',
-                          color: notifFilterTab === 'unread' ? '#0f172a' : '#64748b',
-                          fontSize: '12px',
+                          border: '1px solid #cbd5e1',
+                          background: notifFilterTab === 'unread' ? '#3b82f6' : '#ffffff',
+                          color: notifFilterTab === 'unread' ? '#ffffff' : '#475569',
+                          fontSize: '11.5px',
                           fontWeight: 750,
-                          cursor: 'pointer',
-                          boxShadow: notifFilterTab === 'unread' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                          cursor: 'pointer'
                         }}
                       >
                         안 읽음 ({notifications.filter(n => !n.isRead).length})
                       </button>
+                      <button
+                        onClick={() => setNotifFilterTab('tasks')}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          background: notifFilterTab === 'tasks' ? '#2563eb' : '#ffffff',
+                          color: notifFilterTab === 'tasks' ? '#ffffff' : '#475569',
+                          fontSize: '11.5px',
+                          fontWeight: 750,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🤝 업무·보고
+                      </button>
+                      <button
+                        onClick={() => setNotifFilterTab('approvals')}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          background: notifFilterTab === 'approvals' ? '#7c3aed' : '#ffffff',
+                          color: notifFilterTab === 'approvals' ? '#ffffff' : '#475569',
+                          fontSize: '11.5px',
+                          fontWeight: 750,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        📄 결재
+                      </button>
                     </div>
 
-                    {notifications.filter(n => !n.isRead).length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px dashed #e2e8f0' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {notifications.filter(n => !n.isRead).length > 0 && (
+                          <button
+                            onClick={handleMarkAllAsRead}
+                            style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11.5px', fontWeight: 750, cursor: 'pointer', padding: 0 }}
+                          >
+                            ✓ 모두 읽음
+                          </button>
+                        )}
+                        <button
+                          onClick={handleClearReadNotifications}
+                          style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                        >
+                          🧹 읽은 알림 정리
+                        </button>
+                      </div>
                       <button
-                        onClick={handleMarkAllAsRead}
-                        style={{ background: 'transparent', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                        onClick={handleClearAllNotifications}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', padding: 0 }}
                       >
-                        ✓ 모두 읽음
+                        🗑️ 전체 비우기
                       </button>
-                    )}
+                    </div>
                   </div>
 
                   {/* 알림 목록 피드 */}
                   <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
                     {(() => {
-                      const list = notifFilterTab === 'unread' ? notifications.filter(n => !n.isRead) : notifications;
+                      let list = notifications;
+                      if (notifFilterTab === 'unread') {
+                        list = notifications.filter(n => !n.isRead);
+                      } else if (notifFilterTab === 'tasks') {
+                        list = notifications.filter(n => n.type === 'TASK_DELEGATED' || n.type === 'TASK_COMPLETED');
+                      } else if (notifFilterTab === 'approvals') {
+                        list = notifications.filter(n => n.type === 'APPROVAL_REQUEST');
+                      } else if (notifFilterTab === 'system') {
+                        list = notifications.filter(n => !n.type || (n.type !== 'TASK_DELEGATED' && n.type !== 'TASK_COMPLETED' && n.type !== 'APPROVAL_REQUEST'));
+                      }
+
                       if (list.length === 0) {
                         return (
                           <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
                             <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔕</div>
-                            {notifFilterTab === 'unread' ? '안 읽은 알림이 없습니다.' : '새로운 알림이 없습니다.'}
+                            {notifFilterTab === 'unread' ? '안 읽은 알림이 없습니다.' : '해당 카테고리의 알림이 없습니다.'}
                           </div>
                         );
                       }
@@ -878,7 +971,8 @@ export const Layout: React.FC = () => {
                               display: 'flex',
                               flexDirection: 'column',
                               gap: '8px',
-                              boxShadow: n.isRead ? 'none' : '0 2px 8px rgba(56, 189, 248, 0.12)'
+                              boxShadow: n.isRead ? 'none' : '0 2px 8px rgba(56, 189, 248, 0.12)',
+                              position: 'relative'
                             }}
                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = n.isRead ? '#ffffff' : '#f0f9ff'; }}
@@ -890,9 +984,29 @@ export const Layout: React.FC = () => {
                                   {n.senderName && n.senderName.toUpperCase() !== 'SYSTEM' ? n.senderName : '시스템'}
                                 </span>
                               </div>
-                              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
-                                {formatRelativeTime(n.createdAt)}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                                  {formatRelativeTime(n.createdAt)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteNotification(n.id, e)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#94a3b8',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    padding: '2px 4px',
+                                    borderRadius: '4px'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                                  onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                                  title="알림 삭제"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
                             </div>
 
                             <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: n.isRead ? 600 : 800, lineHeight: 1.35 }}>
