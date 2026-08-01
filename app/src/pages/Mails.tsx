@@ -173,7 +173,7 @@ export const Mails: React.FC = () => {
         const taskDoc = {
           title: `[쪽지 업무] ${title}`,
           description: `${plainTextBody}\n\n------------------------------------\n✉️ 발송 쪽지 연동 업무 (발신자: ${userProfile.name})`,
-          status: 'IN_PROGRESS',
+          status: 'PENDING',
           type: taskType || 'DAILY',
           scheduleType: 'SELF',
           importance: taskImportance || 'B',
