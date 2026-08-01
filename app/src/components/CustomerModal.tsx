@@ -29,7 +29,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
   const [selectedSalesYear, setSelectedSalesYear] = useState<string>('ALL');
-  const [debugInfo, setDebugInfo] = useState<string>('초기화 전');
 
   const availableYears = useMemo<string[]>(() => {
     return Array.from(new Set(salesHistory.map((s: any) => s.year).filter((y: any) => y && y !== '-'))).sort().reverse();
@@ -49,6 +48,15 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     bankName: '', bankAccount: '', swiftCode: '', iban: '', bankHolder: '',
     contacts: [], remarks: ''
   });
+
+  const customerId = initialCustomer?.id || '';
+  const customerCode = formData.customerCode || initialCustomer?.customerCode || '';
+  const customerName = formData.name || initialCustomer?.name || '';
+
+  const stableCustomerKey = useMemo(
+    () => `${customerId}|${customerCode}|${customerName}`,
+    [customerId, customerCode, customerName]
+  );
 
   // 겸업(공급사 연결) 검색용
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
@@ -198,17 +206,11 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
-
-    const debugMsg = `targetId="${targetId}" | targetCode="${targetCode}" | targetName="${targetName}" | targetNameKo="${targetNameKo}"`;
-
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
-      setDebugInfo(`${debugMsg}\n→ EARLY RETURN 발동!`);
       setSalesHistory([]);
       setIsLoadingSales(false);
       return;
     }
-
-    setDebugInfo(`${debugMsg}\n→ early return 통과, 구독 시작 중...`);
 
     // ── Real-time listeners using server-side WHERE queries (no client-side name matching) ──
     // Build the set of exact values to query against for the customer field
@@ -265,10 +267,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     
     // Subscribe to all orders as fallback/broad match to guarantee 100% precision
     const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
-      const totalDocs = snap.docs.length;
       const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
       const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
-      const customerValues: string[] = [];
 
       snap.docs.forEach((d: any) => {
         const data = d.data();
@@ -276,8 +276,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
         const cId = String(data.customerId || '').trim().toLowerCase();
         const cCode = String(data.customerCode || '').trim().toLowerCase();
-
-        customerValues.push(`${d.id}:${rawCVal}`);
 
         const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
         const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
@@ -295,13 +293,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           orderResults.set(d.id, toExportRecord(d));
         }
       });
-      
-      setDebugInfo(`onSnapshot 성공 | 전체:${totalDocs} | 매칭:${orderResults.size}\n오더목록: ${customerValues.slice(0,5).join(' / ')}`);
 
       exportRecords = [...orderResults.values()];
       updateCombinedSales();
     }, (err: any) => {
-      setDebugInfo(`onSnapshot 에러: ${err?.code || '-'} | ${err?.message || '-'}`);
       console.error('[CRM] all orders query error:', err);
       updateCombinedSales();
     });
@@ -373,7 +368,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     }
 
     return () => { unsubs.forEach(u => u()); };
-  }, [formData.name, formData.customerCode, initialCustomer]);
+  }, [stableCustomerKey]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
@@ -687,20 +682,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                       </span>
                     </div>
 
-                    {/* ===== 임시 디버그 박스 (확인 후 제거) ===== */}
-                    <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', padding: '8px', margin: '8px 0', fontSize: '11px', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                      DEBUG:{'\n'}
-                      isLoadingSales = {String(isLoadingSales)}{'\n'}
-                      salesHistory.length = {salesHistory.length}{'\n'}
-                      selectedSalesYear = {selectedSalesYear}{'\n'}
-                      formData.name = {formData?.name || '(없음)'}{'\n'}
-                      formData.customerCode = {formData?.customerCode || '(없음)'}{'\n'}
-                      initialCustomer.id = {initialCustomer?.id || '(없음)'}{'\n'}
-                      COMPANY_ID = {String(COMPANY_ID)}{'\n'}
-                      salesHistory 첫 항목 = {salesHistory[0] ? JSON.stringify(salesHistory[0]).substring(0, 100) : '(비어있음)'}{'\n'}
-                      onSnapshot 상태 = {debugInfo}
-                    </div>
-                    {/* ===== 임시 디버그 박스 끝 ===== */}
+
 
                     {/* Financial Summary Badges */}
                     {filteredList.length > 0 && (
