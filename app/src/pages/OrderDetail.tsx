@@ -12437,27 +12437,82 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 </div>
                 {(order as any).history_logs && (order as any).history_logs.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {(order as any).history_logs.map((log: any, index: number) => (
-                      <div key={index} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '15.5px', color: '#334155' }}>
-                            {log.actionType === 'create' ? '✨ 신규 생성' : 
-                             log.actionType === 'update' ? '✏️ 기본정보 수정' :
-                             log.actionType === 'po_issue' ? '📄 발주서 발행' :
-                             log.actionType === 'po_delete' ? '🗑️ 발주서 취소' : '🔔 액션 수행'}
-                          </span>
-                          <span style={{ fontSize: '15.5px', color: 'var(--text-muted)' }}>
-                            {new Date(log.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                          {log.description}
-                        </div>
-                        <div style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          수행자: {log.user || 'System'}
-                        </div>
-                      </div>
-                    ))}
+                    {(() => {
+                      const getUserDisplayName = (userStr?: string) => {
+                        if (!userStr) return '시스템 (System)';
+                        const val = userStr.trim();
+                        if (val === 'jhkim1130' || val.includes('jhkim1130') || val.includes('jhk01')) return '김주한 대표이사';
+                        if (val === 'jhk010624' || val.includes('jhk010624')) return '김하은 대리';
+                        if (val === 'alexpark' || val.includes('alexpark')) return '박현 이사';
+                        if (val.includes('@')) return val.split('@')[0];
+                        return val;
+                      };
+
+                      const logs = (order as any).history_logs || [];
+                      // Filter out redundant consecutive logs within 60 seconds by same user
+                      const processedLogs: any[] = [];
+                      let lastLogKey = '';
+                      let lastLogTime = 0;
+
+                      logs.forEach((log: any) => {
+                        const curTime = new Date(log.timestamp || 0).getTime();
+                        const key = `${log.user}_${log.description}`;
+                        if (key === lastLogKey && Math.abs(curTime - lastLogTime) < 60000) {
+                          return; // skip duplicate log within 1 min
+                        }
+                        processedLogs.push(log);
+                        lastLogKey = key;
+                        lastLogTime = curTime;
+                      });
+
+                      if (processedLogs.length === 0) {
+                        return (
+                          <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '13.5px', border: '1px solid var(--border-color)' }}>
+                            기록된 활동 로그가 없습니다. 변경 사항이 생기면 이력이 자동 기록됩니다.
+                          </div>
+                        );
+                      }
+
+                      return processedLogs.map((log: any, index: number) => {
+                        const displayName = getUserDisplayName(log.user);
+                        const lines = (log.description || '').split('\n').filter((l: string) => l.trim().length > 0);
+
+                        return (
+                          <div key={index} style={{ borderLeft: '3px solid #3b82f6', paddingLeft: '16px', paddingBottom: '16px', marginBottom: '8px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '-7px', top: '2px', width: '11px', height: '11px', borderRadius: '50%', background: '#3b82f6', border: '2px solid #fff' }} />
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e293b', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>
+                                  {log.actionType === 'create' ? '✨ 신규 생성' : 
+                                   log.actionType === 'update' ? '✏️ 데이터 수정' :
+                                   log.actionType === 'po_issue' ? '📄 발주서 발행' :
+                                   log.actionType === 'po_delete' ? '🗑️ 발주서 취소' : '🔔 상태 변경'}
+                                </span>
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#2563eb' }}>
+                                  👤 {displayName}
+                                </span>
+                              </div>
+                              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                                🕒 {new Date(log.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              {lines.map((line: string, lIdx: number) => {
+                                const isStage = line.includes('진행단계 변경');
+                                return (
+                                  <div key={lIdx} style={{ fontSize: '12.5px', color: isStage ? '#1e40af' : '#334155', fontWeight: isStage ? 750 : 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>{isStage ? '📌' : '•'}</span>
+                                    <span>{line}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 ) : (
                   <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '13.5px', border: '1px solid var(--border-color)' }}>
