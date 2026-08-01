@@ -243,24 +243,22 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
         </div>
 
         {/* List Table */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', whiteSpace: 'nowrap' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 24px 24px 24px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', tableLayout: 'auto' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border-color)', color: '#475569', backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객코드</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750, width: '100px' }}>고객코드</th>
                 <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(영문)</th>
                 <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(한글)</th>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>약자</th>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>국가</th>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>담당자</th>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>이메일</th>
-                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 750 }}>선택 / 관리</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750, width: '140px' }}>약자</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750, width: '120px' }}>국가</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 750, width: '140px' }}>선택 / 관리</th>
               </tr>
             </thead>
             <tbody>
               {sortedAndFilteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     검색 결과가 없습니다.
                   </td>
                 </tr>
@@ -298,12 +296,6 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                     </td>
                     <td style={{ padding: '8px' }}>
                       📍 {cust.countryName || '-'}
-                    </td>
-                    <td style={{ padding: '8px', fontWeight: 600 }}>
-                      👤 {cust.contactPerson || cust.representative || '-'}
-                    </td>
-                    <td style={{ padding: '8px', color: '#475569' }}>
-                      ✉️ {cust.email || '-'}
                     </td>
                     <td style={{ padding: '8px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
