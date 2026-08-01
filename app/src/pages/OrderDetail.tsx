@@ -1794,15 +1794,32 @@ export const OrderDetail: React.FC = () => {
             hsCode: it.hsCode || custSpecificHs || matchedProd?.hsCode || ''
           };
         });
-        const alignedSourcing = (data.sourcingItems || data.items || []).map((sIt: any, sIdx: number) => {
-          const matchItem = itemsWithHs[sIdx];
-          if (matchItem && matchItem.name === sIt.name && matchItem.supplier !== sIt.supplier) {
-            return { ...sIt, supplier: matchItem.supplier, supplierContact: matchItem.supplierContact };
-          }
-          return sIt;
+
+        const rawSourcing = (data.sourcingItems && data.sourcingItems.length > 0) ? data.sourcingItems : (data.items || []);
+
+        const restoredOrderItems = itemsWithHs.map((it: any, idx: number) => {
+          const sIt = rawSourcing.find((s: any) => s.itemId === it.itemId) || rawSourcing[idx];
+          const activeSupplier = it.supplier?.trim() || sIt?.supplier?.trim() || '';
+          const activeContact = it.supplierContact?.trim() || sIt?.supplierContact?.trim() || '';
+          return {
+            ...it,
+            supplier: activeSupplier,
+            supplierContact: activeContact
+          };
         });
 
-        setOrderItems(itemsWithHs);
+        const alignedSourcing = rawSourcing.map((sIt: any, idx: number) => {
+          const rIt = restoredOrderItems.find((r: any) => r.itemId === sIt.itemId) || restoredOrderItems[idx];
+          const activeSupplier = sIt.supplier?.trim() || rIt?.supplier?.trim() || '';
+          const activeContact = sIt.supplierContact?.trim() || rIt?.supplierContact?.trim() || '';
+          return {
+            ...sIt,
+            supplier: activeSupplier,
+            supplierContact: activeContact
+          };
+        });
+
+        setOrderItems(restoredOrderItems);
         setSourcingItems(alignedSourcing);
         setForwardersList(data.forwarders || []);
 
@@ -2236,39 +2253,47 @@ export const OrderDetail: React.FC = () => {
         blNumbers: basicForm.blNumbers || [],
         blNumber: basicForm.blNumber || '',
         
-        items: orderItems.map(it => ({
-          itemId: it.itemId || '',
-          name: it.name || '',
-          supplier: it.supplier || '',
-          supplierContact: it.supplierContact || '',
-          grade: it.grade || '',
-          qty: parseFloat(it.qty as any) || 0,
-          unit: (it.unit || 'kg') as any,
-          unitPrice: parseFloat(it.unitPrice as any) || 0,
-          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-          purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-          originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-          originalPurchaseCurrency: it.originalPurchaseCurrency || null,
-          amount: it.amount || 0,
-          currency: (it.currency || 'USD') as any,
-          hsCode: (it as any).hsCode || ''
-        })),
-        sourcingItems: sourcingItems.map(it => ({
-          itemId: it.itemId || '',
-          name: it.name || '',
-          supplier: it.supplier || '',
-          supplierContact: it.supplierContact || '',
-          grade: it.grade || '',
-          qty: parseFloat(it.qty as any) || 0,
-          unit: (it.unit || 'kg') as any,
-          unitPrice: parseFloat(it.unitPrice as any) || 0,
-          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-          purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-          originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-          originalPurchaseCurrency: it.originalPurchaseCurrency || null,
-          amount: it.amount || 0,
-          currency: (it.currency || 'USD') as any
-        })),
+        items: orderItems.map((it, idx) => {
+          const matchingSourcing = sourcingItems.find(s => s.itemId === it.itemId) || sourcingItems[idx];
+          const activeSupplier = it.supplier?.trim() || matchingSourcing?.supplier?.trim() || '';
+          return {
+            itemId: it.itemId || '',
+            name: it.name || '',
+            supplier: activeSupplier,
+            supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
+            grade: it.grade || '',
+            qty: parseFloat(it.qty as any) || 0,
+            unit: (it.unit || 'kg') as any,
+            unitPrice: parseFloat(it.unitPrice as any) || 0,
+            purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
+            purchaseUnitCurrency: it.purchaseUnitCurrency || null,
+            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+            originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+            amount: it.amount || 0,
+            currency: (it.currency || 'USD') as any,
+            hsCode: (it as any).hsCode || ''
+          };
+        }),
+        sourcingItems: sourcingItems.map((it, idx) => {
+          const matchingOrderItem = orderItems.find(r => r.itemId === it.itemId) || orderItems[idx];
+          const activeSupplier = it.supplier?.trim() || matchingOrderItem?.supplier?.trim() || '';
+          return {
+            itemId: it.itemId || '',
+            name: it.name || '',
+            supplier: activeSupplier,
+            supplierContact: it.supplierContact || matchingOrderItem?.supplierContact || '',
+            grade: it.grade || '',
+            qty: parseFloat(it.qty as any) || 0,
+            unit: (it.unit || 'kg') as any,
+            unitPrice: parseFloat(it.unitPrice as any) || 0,
+            purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
+            purchaseUnitCurrency: it.purchaseUnitCurrency || null,
+            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+            originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+            amount: it.amount || 0,
+            currency: (it.currency || 'USD') as any
+          };
+        }),
         totalAmount,
         currency: orderCurrency,
         forwarders: forwardersList.map(fw => {
@@ -2375,10 +2400,13 @@ export const OrderDetail: React.FC = () => {
               supName = defLink.supplierName;
             }
           }
+
+          // Fallback to existing supplier if master DB has no supplier assigned
+          const finalSupplier = supName || it.supplier || '';
           
-          const priceObj = getPriceForSupplier(prod, supName);
-          let buyPrice = priceObj.price;
-          let itemCurrency = priceObj.currency;
+          const priceObj = getPriceForSupplier(prod, finalSupplier);
+          let buyPrice = priceObj.price > 0 ? priceObj.price : (it.unitPrice || 0);
+          let itemCurrency = priceObj.currency || it.currency || 'USD';
 
           const qty = it.qty || 0;
           const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
@@ -2386,12 +2414,12 @@ export const OrderDetail: React.FC = () => {
           it = {
             ...it,
             name: `[${prod.productCode}] ${displayName}`,
-            supplier: supName,
-            supplierContact: contactInfo || '',
-            grade: prod.spec || '',
-            unit: (prod.unit || 'kg') as any,
+            supplier: finalSupplier,
+            supplierContact: contactInfo || it.supplierContact || '',
+            grade: prod.spec || it.grade || '',
+            unit: (prod.unit || it.unit || 'kg') as any,
             unitPrice: buyPrice,
-            currency: itemCurrency,
+            currency: itemCurrency as any,
             amount: amt,
             purchaseUnitPrice: buyPrice,
             purchaseUnitCurrency: itemCurrency
@@ -2404,14 +2432,26 @@ export const OrderDetail: React.FC = () => {
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
         if (prod) {
           const priceObj = getPriceForSupplier(prod, value);
-          it.unitPrice = priceObj.price;
-          it.currency = priceObj.currency;
-          it.purchaseUnitPrice = priceObj.price;
-          it.purchaseUnitCurrency = priceObj.currency;
-          if (it.qty) {
-            it.amount = priceObj.currency === 'KRW' ? Math.round(it.qty * priceObj.price) : parseFloat((it.qty * priceObj.price).toFixed(2));
+          if (priceObj.price > 0) {
+            it.unitPrice = priceObj.price;
+            it.currency = priceObj.currency as any;
+            it.purchaseUnitPrice = priceObj.price;
+            it.purchaseUnitCurrency = priceObj.currency;
+            if (it.qty) {
+              it.amount = priceObj.currency === 'KRW' ? Math.round(it.qty * priceObj.price) : parseFloat((it.qty * priceObj.price).toFixed(2));
+            }
           }
         }
+        
+        // Sync supplier to sourcingItems in real-time!
+        setSourcingItems(prevSourcing => {
+          return prevSourcing.map((sIt, sIdx) => {
+            if (sIt.itemId === it.itemId || sIdx === index) {
+              return { ...sIt, supplier: value };
+            }
+            return sIt;
+          });
+        });
       }
 
       if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
