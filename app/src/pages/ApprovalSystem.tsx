@@ -29,6 +29,7 @@ interface ApprovalDoc {
   requesterName: string;
   approverId: string;
   approverName: string;
+  isUrgent?: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   rejectReason?: string;
   createdAt: string;
@@ -56,6 +57,7 @@ export const ApprovalSystem: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
   const [currency, setCurrency] = useState('USD');
   const [selectedApproverId, setSelectedApproverId] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -157,7 +159,7 @@ export const ApprovalSystem: React.FC = () => {
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'approvals'), {
-        title,
+        title: isUrgent ? `[🚨 긴급] ${title}` : title,
         docType,
         content: draftBody,
         amount: docType === 'EXPENSE' ? Number(amount) : null,
@@ -166,6 +168,7 @@ export const ApprovalSystem: React.FC = () => {
         requesterName: userProfile.name,
         approverId: selectedApproverId,
         approverName: targetApprover.name,
+        isUrgent,
         status: 'PENDING',
         attachments,
         comments: [],
@@ -177,8 +180,8 @@ export const ApprovalSystem: React.FC = () => {
         senderName: userProfile.name,
         receiverId: selectedApproverId,
         receiverName: targetApprover.name,
-        title: `[알림] 결재 기안서가 상신되었습니다: ${title}`,
-        content: `${userProfile.name}님이 결재 기안서 "${title}"를 상신했습니다.\n\n구분: ${docType === 'EXPENSE' ? `지출결의서 (${currency})` : '일반기안서'}\n\n전자결재 메뉴에서 결재해 주시기 바랍니다.`,
+        title: `[알림${isUrgent ? ' - 🚨 긴급' : ''}] 결재 기안서가 상신되었습니다: ${title}`,
+        content: `${userProfile.name}님이 ${isUrgent ? '🚨 긴급 ' : ''}결재 기안서 "${title}"를 상신했습니다.\n\n구분: ${docType === 'EXPENSE' ? `지출결의서 (${currency})` : '일반기안서'}\n\n전자결재 메뉴에서 결재해 주시기 바랍니다.`,
         isRead: false,
         createdAt: new Date().toISOString()
       });
@@ -1206,15 +1209,26 @@ export const ApprovalSystem: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                  결재선 지정 (결재권자) <span style={{ color: '#ef4444' }}>*</span>
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    결재선 지정 (최종 결재권자) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 750, color: isUrgent ? '#dc2626' : '#64748b' }}>
+                    <input
+                      type="checkbox"
+                      checked={isUrgent}
+                      onChange={e => setIsUrgent(e.target.checked)}
+                      style={{ accentColor: '#dc2626', width: '15px', height: '15px', cursor: 'pointer' }}
+                    />
+                    <span>🚨 긴급 결재 상신</span>
+                  </label>
+                </div>
                 <select
                   required
                   value={selectedApproverId}
                   onChange={e => setSelectedApproverId(e.target.value)}
-                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', backgroundColor: 'white', color: '#1e293b', cursor: 'pointer', boxSizing: 'border-box' }}
+                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', backgroundColor: 'white', color: '#1e293b', cursor: 'pointer', boxSizing: 'border-box', width: '100%' }}
                 >
                   <option value="">결재권자를 선택해 주세요</option>
                   {potentialApprovers.map(approver => (
