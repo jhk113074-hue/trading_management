@@ -1264,9 +1264,14 @@ export const MeetingMinutes: React.FC = () => {
             style={{ 
               background: '#fff', 
               borderRadius: '8px', 
-              width: '100%', 
-              maxWidth: '900px', 
-              boxShadow: '0 10px 30px rgba(0,0,0,0.15)', 
+              width: '900px', 
+              minWidth: '650px',
+              maxWidth: '95vw',
+              height: 'auto',
+              minHeight: '450px',
+              maxHeight: '88vh',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.18)', 
+              resize: 'both',
               overflow: 'hidden', 
               display: 'flex', 
               flexDirection: 'column', 
@@ -1325,7 +1330,7 @@ export const MeetingMinutes: React.FC = () => {
             </div>
 
             {!isMinuteWindowMinimized && (
-            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
+            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto' }}>
               
               {/* AI prompt draft generator */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
