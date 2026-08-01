@@ -356,7 +356,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       unsubImports();
       unsubDomestic();
     };
-  }, [formData.name, formData.customerCode, initialCustomer]);
+  }, [formData.name, formData.customerCode, initialCustomer, activeTab]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
