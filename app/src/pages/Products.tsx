@@ -85,12 +85,14 @@ export const Products: React.FC = () => {
   // Column resize: [코드, 상품명/규격, 분류, 단가, 공급업체/제조사, 원산지, 관리]
   const { thStyle, resizerProps } = useColumnResize([85, 320, 120, 110, 180, 70, 160]);
   
-  // Filtering
+  // Filtering & Pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [catLargeFilter, setCatLargeFilter] = useState('');
   const [catMediumFilter, setCatMediumFilter] = useState('');
   const [currFilter, setCurrFilter] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
+  const [pageSize, setPageSize] = useState<number>(30);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   
   // Sorting
   const [sortKey, setSortKey] = useState<keyof Product>('productCode');
@@ -309,6 +311,19 @@ export const Products: React.FC = () => {
     return filtered;
   }, [products, searchQuery, catLargeFilter, catMediumFilter, currFilter, supplierFilter, sortKey, sortDir]);
 
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, catLargeFilter, catMediumFilter, currFilter, supplierFilter, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / pageSize));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (validCurrentPage - 1) * pageSize;
+    return filteredAndSorted.slice(start, start + pageSize);
+  }, [filteredAndSorted, validCurrentPage, pageSize]);
+
   const handleSort = (key: keyof Product) => {
     if (sortKey === key) {
       setSortDir(sortDir === 1 ? -1 : 1);
@@ -420,6 +435,16 @@ export const Products: React.FC = () => {
             style={{ padding: '0 10px', border: '1px solid #fecaca', borderRadius: '4px', background: '#fef2f2', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}
           >✕ 초기화</button>
         )}
+        <select
+          value={pageSize}
+          onChange={(e) => setPageSize(Number(e.target.value))}
+          style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontWeight: 700, outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box', backgroundColor: '#fff' }}
+        >
+          <option value={30}>30개씩 보기</option>
+          <option value={50}>50개씩 보기</option>
+          <option value={100}>100개씩 보기</option>
+        </select>
+
         <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '5px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
           총 {filteredAndSorted.length}건
           {filteredAndSorted.length !== products.length && <span style={{ color: '#94a3b8', fontWeight: 400 }}> / 전체 {products.length}건</span>}
@@ -446,7 +471,7 @@ export const Products: React.FC = () => {
             ) : filteredAndSorted.length === 0 ? (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 상품이 없습니다.</td></tr>
             ) : (
-              filteredAndSorted.map(p => {
+              paginatedProducts.map(p => {
                 const priceFormatted = p.purchasePrice 
                   ? (p.currency === 'KRW' 
                       ? Math.round(Number(p.purchasePrice)).toLocaleString('ko-KR')
@@ -572,6 +597,88 @@ export const Products: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Bar */}
+      {filteredAndSorted.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '12px 16px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+          <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+            {filteredAndSorted.length > 0 ? (
+              <span>
+                총 <strong style={{ color: '#1e293b' }}>{filteredAndSorted.length}</strong>개 항목 중{' '}
+                <strong style={{ color: '#3b82f6' }}>{(validCurrentPage - 1) * pageSize + 1}</strong> -{' '}
+                <strong style={{ color: '#3b82f6' }}>{Math.min(validCurrentPage * pageSize, filteredAndSorted.length)}</strong> 표시 중
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={validCurrentPage === 1}
+              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', background: validCurrentPage === 1 ? '#f1f5f9' : '#fff', color: validCurrentPage === 1 ? '#94a3b8' : '#334155', fontSize: '12.5px', fontWeight: 700, cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              ⏮️ 처음
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={validCurrentPage === 1}
+              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', background: validCurrentPage === 1 ? '#f1f5f9' : '#fff', color: validCurrentPage === 1 ? '#94a3b8' : '#334155', fontSize: '12.5px', fontWeight: 700, cursor: validCurrentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              ◀ 이전
+            </button>
+
+            {/* Page numbers (up to 7 max range) */}
+            {(() => {
+              const pages = [];
+              const maxButtons = 7;
+              let startPage = Math.max(1, validCurrentPage - Math.floor(maxButtons / 2));
+              let endPage = startPage + maxButtons - 1;
+
+              if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxButtons + 1);
+              }
+
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    style={{
+                      padding: '6px 12px',
+                      border: i === validCurrentPage ? '1px solid #3b82f6' : '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      background: i === validCurrentPage ? '#3b82f6' : '#fff',
+                      color: i === validCurrentPage ? '#fff' : '#334155',
+                      fontSize: '12.5px',
+                      fontWeight: i === validCurrentPage ? 800 : 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={validCurrentPage === totalPages}
+              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', background: validCurrentPage === totalPages ? '#f1f5f9' : '#fff', color: validCurrentPage === totalPages ? '#94a3b8' : '#334155', fontSize: '12.5px', fontWeight: 700, cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              다음 ▶
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={validCurrentPage === totalPages}
+              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', background: validCurrentPage === totalPages ? '#f1f5f9' : '#fff', color: validCurrentPage === totalPages ? '#94a3b8' : '#334155', fontSize: '12.5px', fontWeight: 700, cursor: validCurrentPage === totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              끝 ⏭️
+            </button>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <ProductModal 
