@@ -260,7 +260,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
-        throw new Error(`getDocs완료=${orderSnap.size}건`);
+        // 첫 번째 문서의 모든 필드를 출력
+        const firstDoc = orderSnap.docs[0];
+        if (firstDoc) {
+          const d = firstDoc.data();
+          throw new Error(`첫문서ID=${firstDoc.id} | customer="${d.customer}" | customerCode="${d.customerCode}" | customerId="${d.customerId}"`);
+        }
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
