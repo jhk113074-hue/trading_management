@@ -107,10 +107,11 @@ export const LeaveManagement: React.FC = () => {
       totalAccrued = Math.min(25, 15 + additionalDays);
     }
 
-    // Calculate used leave (approved leave requests)
+    // Calculate used leave (approved leave requests) with floating point precision rounding
     const approvedRequests = requests.filter(r => r.userId === userId && r.status === 'APPROVED');
-    const used = approvedRequests.reduce((sum, r) => sum + r.totalDays, 0);
-    const remaining = totalAccrued - used;
+    const rawUsed = approvedRequests.reduce((sum, r) => sum + r.totalDays, 0);
+    const used = Math.round(rawUsed * 1000) / 1000;
+    const remaining = Math.round((totalAccrued - used) * 1000) / 1000;
 
     return {
       total: totalAccrued,
@@ -478,7 +479,15 @@ export const LeaveManagement: React.FC = () => {
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 'bold', color: '#1e293b' }}>{accruals.total}일</td>
                             <td style={{ padding: '10px 12px', textAlign: 'center', color: '#ef4444', fontWeight: 'bold' }}>{accruals.used}일</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#10b981', fontWeight: 900 }}>{accruals.remaining}일</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {accruals.remaining < 0 ? (
+                                <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  ⚠️ {accruals.remaining}일 (당겨쓰기)
+                                </span>
+                              ) : (
+                                <span style={{ color: '#10b981', fontWeight: 900 }}>{accruals.remaining}일</span>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
