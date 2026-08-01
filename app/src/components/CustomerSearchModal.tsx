@@ -249,7 +249,6 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
               <tr style={{ borderBottom: '2px solid var(--border-color)', color: '#475569', backgroundColor: '#f8fafc' }}>
                 <th style={{ padding: '10px 8px', fontWeight: 750, width: '100px' }}>고객코드</th>
                 <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(영문)</th>
-                <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(한글)</th>
                 <th style={{ padding: '10px 8px', fontWeight: 750, width: '140px' }}>약자</th>
                 <th style={{ padding: '10px 8px', fontWeight: 750, width: '120px' }}>국가</th>
                 <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 750, width: '140px' }}>선택 / 관리</th>
@@ -258,7 +257,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
             <tbody>
               {sortedAndFilteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     검색 결과가 없습니다.
                   </td>
                 </tr>
@@ -287,9 +286,6 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                     </td>
                     <td style={{ padding: '8px', fontWeight: 700, color: '#0f172a' }}>
                       {cust.name || '-'}
-                    </td>
-                    <td style={{ padding: '8px', color: '#334155', fontWeight: 600 }}>
-                      {cust.nameKo || '-'}
                     </td>
                     <td style={{ padding: '8px', color: '#475569', fontWeight: 600 }}>
                       {cust.nameKo ? cust.nameKo : (cust.name || '-')}
