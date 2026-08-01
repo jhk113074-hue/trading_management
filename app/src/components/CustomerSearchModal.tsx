@@ -104,6 +104,13 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
     });
   }, [customerList, searchTerm, selectedCountry]);
 
+  // Sort customer list by customer code (e.g. CU00001, CU00002)
+  const sortedAndFilteredCustomers = useMemo(() => {
+    const list = [...filteredCustomers];
+    list.sort((a, b) => (a.customerCode || '').localeCompare(b.customerCode || ''));
+    return list;
+  }, [filteredCustomers]);
+
   // Delete customer handler
   const handleDeleteCustomer = async (id: string, nameStr: string) => {
     if (!window.confirm(`'${nameStr}' 고객사를 정말로 삭제하시겠습니까?`)) return;
@@ -125,13 +132,13 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', width: '90%', maxWidth: '1000px',
+        background: '#fff', borderRadius: '16px', width: '95vw', maxWidth: '1200px',
         height: '80vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden', border: '1px solid var(--border-color)',
         pointerEvents: 'auto',
         resize: 'both',
-        minWidth: '600px', minHeight: '350px'
+        minWidth: '750px', minHeight: '350px'
       }}>
         {/* Header */}
         <div 
@@ -144,7 +151,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
             userSelect: 'none'
           }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
               🔍 고객사 검색 및 불러오기 (Subwindow)
             </h3>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -177,7 +184,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
             <div style={{ position: 'relative', flex: 1 }}>
               <input 
                 type="text" 
-                placeholder="고객사명(국문/영문), 코드, 담당자, 이메일, 국가, 도착항 검색..." 
+                placeholder="고객사명(영문/한글), 코드, 담당자, 이메일, 국가 검색..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 style={{
@@ -232,79 +239,73 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
 
         {/* Results Info */}
         <div style={{ padding: '8px 24px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-          검색 결과: <strong style={{ color: 'var(--primary-color)' }}>{filteredCustomers.length}</strong>개 고객사
+          검색 결과: <strong style={{ color: 'var(--primary-color)' }}>{sortedAndFilteredCustomers.length}</strong>개 고객사 (고객코드 순)
         </div>
 
         {/* List Table */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', whiteSpace: 'nowrap' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '12px 8px', width: '100px' }}>고객코드</th>
-                <th style={{ padding: '12px 8px' }}>고객사명 (영문/국문)</th>
-                <th style={{ padding: '12px 8px', width: '80px' }}>국가</th>
-                <th style={{ padding: '12px 8px' }}>담당자 / 이메일</th>
-                <th style={{ padding: '12px 8px' }}>도착항 / 인코텀즈 / 결제조건</th>
-                <th style={{ padding: '12px 8px', width: '130px', textAlign: 'center' }}>선택 / 관리</th>
+              <tr style={{ borderBottom: '2px solid var(--border-color)', color: '#475569', backgroundColor: '#f8fafc' }}>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객코드</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(영문)</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>고객사명(한글)</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>약자</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>국가</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>담당자</th>
+                <th style={{ padding: '10px 8px', fontWeight: 750 }}>이메일</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 750 }}>선택 / 관리</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.length === 0 ? (
+              {sortedAndFilteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     검색 결과가 없습니다.
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map(cust => (
+                sortedAndFilteredCustomers.map(cust => (
                   <tr 
                     key={cust.id}
                     onDoubleClick={() => onSelect(cust)}
                     style={{
-                      borderBottom: '1px solid var(--border-color)',
+                      borderBottom: '1px solid #cbd5e1',
                       transition: 'background 0.2s',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      height: '42px'
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <td style={{ padding: '12px 8px' }}>
+                    <td style={{ padding: '8px' }}>
                       <span style={{
                         padding: '2px 6px', borderRadius: '4px',
                         background: '#eff6ff', color: '#1d4ed8',
-                        fontWeight: 600, fontSize: '12px', border: '1px solid #bfdbfe'
+                        fontWeight: 750, fontSize: '12px', border: '1px solid #bfdbfe'
                       }}>
                         {cust.customerCode}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {cust.nameKo || cust.name}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        {cust.nameKo ? cust.name : '-'}
-                      </div>
+                    <td style={{ padding: '8px', fontWeight: 700, color: '#0f172a' }}>
+                      {cust.name || '-'}
                     </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        📍 {cust.countryName || '-'}
-                      </span>
+                    <td style={{ padding: '8px', color: '#334155', fontWeight: 600 }}>
+                      {cust.nameKo || '-'}
                     </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontWeight: 600 }}>
-                        👤 {cust.contactPerson || cust.representative || '-'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        ✉️ {cust.email || '-'}
-                      </div>
+                    <td style={{ padding: '8px', color: '#475569', fontWeight: 600 }}>
+                      {cust.nameKo ? cust.nameKo : (cust.name || '-')}
                     </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div>⚓ {cust.shippingPort || '-'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Incoterms: <strong>{cust.preferredIncoterms || '-'}</strong> | Pay: {cust.paymentTerms || '-'}
-                      </div>
+                    <td style={{ padding: '8px' }}>
+                      📍 {cust.countryName || '-'}
                     </td>
-                    <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                    <td style={{ padding: '8px', fontWeight: 600 }}>
+                      👤 {cust.contactPerson || cust.representative || '-'}
+                    </td>
+                    <td style={{ padding: '8px', color: '#475569' }}>
+                      ✉️ {cust.email || '-'}
+                    </td>
+                    <td style={{ padding: '8px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                         <button
                           onClick={() => onSelect(cust)}
@@ -333,8 +334,8 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                           onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(cust.id, cust.nameKo || cust.name); }}
                           style={{
                             padding: '4px 8px', borderRadius: '4px',
-                            background: '#fee2e2', color: '#dc2626',
-                            border: '1px solid #fca5a5', fontSize: '12px',
+                            background: '#fef2f2', color: '#ef4444',
+                            border: '1px solid #fecaca', fontSize: '12px',
                             cursor: 'pointer'
                           }}
                           title="고객사 삭제"
