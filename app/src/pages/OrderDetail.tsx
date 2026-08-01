@@ -6180,7 +6180,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </button>
                                 <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: sentEmailSuppliers[supplierName] ? '#dcfce7' : '#f0fdf4', border: sentEmailSuppliers[supplierName] ? '1px solid #16a34a' : '1px solid #86efac', color: sentEmailSuppliers[supplierName] ? '#15803d' : '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
+                                  style={{ padding: '5px 10px', background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#dcfce7' : '#f0fdf4', border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #16a34a' : '1px solid #86efac', color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#15803d' : '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
                                   title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
                                 >
                                   📧 메일 발송
@@ -12714,7 +12714,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           message={katalkModalMsg}
           supplierName={katalkModalSupplier}
           onClose={() => setKatalkModalMsg(null)}
-          onCopySuccess={() => setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }))}
+          onCopySuccess={async () => {
+            setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }));
+            if (order?.id && katalkModalSupplier) {
+              const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+              await updateDoc(orderRef, {
+                [`po_dispatch_status.${katalkModalSupplier}.katalkCopied`]: true,
+                [`po_dispatch_status.${katalkModalSupplier}.katalkCopiedAt`]: new Date().toISOString()
+              }).catch(err => console.error('Failed to update po_dispatch_status katalkCopied', err));
+            }
+          }}
         />
       )}
 
