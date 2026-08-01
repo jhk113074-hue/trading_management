@@ -4353,10 +4353,28 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       });
 
       if (res.ok) {
+        if (order?.id && poEmailModalData?.supplierName) {
+          const supplierName = poEmailModalData.supplierName;
+          const currentStatus = (order as any)?.po_dispatch_status || {};
+          const supplierStatus = currentStatus[supplierName] || {};
+          const updatedDispatchStatus = {
+            ...currentStatus,
+            [supplierName]: {
+              ...supplierStatus,
+              emailSent: true,
+              emailSentAt: new Date().toISOString()
+            }
+          };
+
+          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+          await updateDoc(orderRef, {
+            po_dispatch_status: updatedDispatchStatus
+          }).catch(err => console.error('Failed to update po_dispatch_status emailSent', err));
+
+          setOrder(prev => prev ? ({ ...prev, po_dispatch_status: updatedDispatchStatus }) : prev);
+        }
+
         alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
-        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
-        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
-        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
@@ -12721,22 +12739,26 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           message={katalkModalMsg}
           supplierName={katalkModalSupplier}
           onClose={() => setKatalkModalMsg(null)}
-        />
-      )}
-
-      {katalkModalMsg && (
-        <KatalkMessageModal
-          message={katalkModalMsg}
-          supplierName={katalkModalSupplier}
-          onClose={() => setKatalkModalMsg(null)}
           onCopySuccess={async () => {
             setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }));
             if (order?.id && katalkModalSupplier) {
+              const currentStatus = (order as any)?.po_dispatch_status || {};
+              const supplierStatus = currentStatus[katalkModalSupplier] || {};
+              const updatedDispatchStatus = {
+                ...currentStatus,
+                [katalkModalSupplier]: {
+                  ...supplierStatus,
+                  katalkCopied: true,
+                  katalkCopiedAt: new Date().toISOString()
+                }
+              };
+
               const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
               await updateDoc(orderRef, {
-                [`po_dispatch_status.${katalkModalSupplier}.katalkCopied`]: true,
-                [`po_dispatch_status.${katalkModalSupplier}.katalkCopiedAt`]: new Date().toISOString()
+                po_dispatch_status: updatedDispatchStatus
               }).catch(err => console.error('Failed to update po_dispatch_status katalkCopied', err));
+
+              setOrder(prev => prev ? ({ ...prev, po_dispatch_status: updatedDispatchStatus }) : prev);
             }
           }}
         />
