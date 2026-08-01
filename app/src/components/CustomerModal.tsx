@@ -29,6 +29,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
   const [selectedSalesYear, setSelectedSalesYear] = useState<string>('ALL');
+  const [debugInfo, setDebugInfo] = useState<string>('초기화 전');
 
   const availableYears = useMemo<string[]>(() => {
     return Array.from(new Set(salesHistory.map((s: any) => s.year).filter((y: any) => y && y !== '-'))).sort().reverse();
@@ -259,8 +260,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     
     // Subscribe to all orders as fallback/broad match to guarantee 100% precision
     const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
+      const totalDocs = snap.docs.length;
       const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
       const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
+      const customerValues: string[] = [];
 
       snap.docs.forEach((d: any) => {
         const data = d.data();
@@ -268,6 +271,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
         const cId = String(data.customerId || '').trim().toLowerCase();
         const cCode = String(data.customerCode || '').trim().toLowerCase();
+
+        customerValues.push(`${d.id}:${rawCVal}`);
 
         const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
         const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
@@ -285,9 +290,13 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           orderResults.set(d.id, toExportRecord(d));
         }
       });
+      
+      setDebugInfo(`onSnapshot 성공 | 전체:${totalDocs} | 매칭:${orderResults.size}\n오더목록: ${customerValues.slice(0,5).join(' / ')}`);
+
       exportRecords = [...orderResults.values()];
       updateCombinedSales();
     }, (err: any) => {
+      setDebugInfo(`onSnapshot 에러: ${err?.code || '-'} | ${err?.message || '-'}`);
       console.error('[CRM] all orders query error:', err);
       updateCombinedSales();
     });
@@ -683,7 +692,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                       formData.customerCode = {formData?.customerCode || '(없음)'}{'\n'}
                       initialCustomer.id = {initialCustomer?.id || '(없음)'}{'\n'}
                       COMPANY_ID = {String(COMPANY_ID)}{'\n'}
-                      salesHistory 첫 항목 = {salesHistory[0] ? JSON.stringify(salesHistory[0]).substring(0, 100) : '(비어있음)'}
+                      salesHistory 첫 항목 = {salesHistory[0] ? JSON.stringify(salesHistory[0]).substring(0, 100) : '(비어있음)'}{'\n'}
+                      onSnapshot 상태 = {debugInfo}
                     </div>
                     {/* ===== 임시 디버그 박스 끝 ===== */}
 
