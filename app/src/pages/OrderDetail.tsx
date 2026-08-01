@@ -1058,6 +1058,9 @@ export const OrderDetail: React.FC = () => {
   const [basicForm, setBasicForm] = useState({
     piNumber: '',
     customer: '',
+    customerId: '',
+    customerCode: '',
+    destinationPort: '',
     custPo: '',
     incoterms: 'FOB' as any,
     paymentTerms: '',
@@ -1667,6 +1670,9 @@ export const OrderDetail: React.FC = () => {
         setBasicForm({
           piNumber: data.piNumber || data.quotationId || '',
           customer: data.customer || '',
+          customerId: (data as any).customerId || '',
+          customerCode: (data as any).customerCode || '',
+          destinationPort: (data as any).destinationPort || data.portOfDischarge || '',
           custPo: data.custPo || '',
           incoterms: data.incoterms || 'FOB',
           paymentTerms: data.paymentTerms || '',
@@ -13065,7 +13071,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           customers={customers}
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={(customer) => {
-            setBasicForm(prev => ({ ...prev, customer: customer.name || '' }));
+            setBasicForm(prev => ({
+              ...prev,
+              customer: customer.name || '',
+              customerCode: customer.customerCode || prev.customerCode,
+              customerId: customer.id || customer.customerCode || prev.customerId,
+              incoterms: customer.preferredIncoterms ? (customer.preferredIncoterms as any) : prev.incoterms,
+              paymentTerms: customer.paymentTerms || prev.paymentTerms,
+              destinationPort: customer.shippingPort || prev.destinationPort
+            }));
             setIsCustomerSearchOpen(false);
           }}
         />
