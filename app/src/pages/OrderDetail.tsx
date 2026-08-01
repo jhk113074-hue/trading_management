@@ -18,6 +18,7 @@ import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
+import { PoEmailSendModal } from '../components/PoEmailSendModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
@@ -228,6 +229,15 @@ export const OrderDetail: React.FC = () => {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [katalkModalMsg, setKatalkModalMsg] = useState<string | null>(null);
   const [katalkModalSupplier, setKatalkModalSupplier] = useState<string>('');
+  const [poEmailModalData, setPoEmailModalData] = useState<{
+    supplierName: string;
+    items: OrderItem[];
+    defaultToEmail: string;
+    defaultCcEmails: string;
+    defaultSubject: string;
+    defaultContent: string;
+    pdfUrl: string;
+  } | null>(null);
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
   type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
@@ -4265,16 +4275,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const targetSupplier = suppliersList.find(s => s.name === supplierName);
     const supplierEmail = targetSupplier?.purchaseEmail || '';
 
-    const confirmedEmail = window.prompt(
-      `[${supplierName}] 발주서 이메일 발송\n\n수신자(TO) 이메일 주소를 확인하세요.\n(변경이 필요하면 직접 수정 후 확인을 누르세요)`,
-      supplierEmail
-    );
-    if (confirmedEmail === null) return;
-    if (!confirmedEmail.trim()) {
-      alert('⚠️ 이메일 주소를 입력해 주세요.\n거래처 관리에서 해당 공급사의 구매담당이메일을 먼저 등록해 주세요.');
-      return;
-    }
-
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
@@ -4293,39 +4293,68 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     }, 0);
     const formattedAmt = totalAmt > 0 ? `₩${Math.round(totalAmt).toLocaleString()} (VAT포함)` : '₩0 (VAT포함)';
 
+    const senderName = userProfile?.name || '김주한';
+    const senderRank = userProfile?.role === 'admin' ? '대표이사' : (userProfile?.role || '담당');
+    const senderPhone = userProfile?.phone || '010-7361-1130';
+    const senderInfo = `${senderName} ${senderRank} (${senderPhone})`;
+
     const now = new Date();
     const dateFormatted = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
       + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
 
-    const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
     const subject = `[YSACC 발주서 발행 알림] ${poNum} - ${supplierName}`;
-    const textContent = `[YSACC 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: 김 주 한 대표이사 (010-7361-1130)\n▪ 수신(TO): ${confirmedEmail}\n▪ 참조(CC): ${ccEmails.join(', ')}\n▪ 발행일시: ${dateFormatted}\n------------------------------------\n📄 발주서 PDF 원본 다운로드:\n${pdfUrl || '(발행된 발주서가 없습니다. 먼저 발주서를 발행해 주세요.)'}`;
-    const htmlContent = `<div style="font-family: sans-serif; max-width: 640px; padding: 24px; border: 1px solid #cbd5e1; border-radius: 8px;"><h3 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0;">📋 YSACC 발주서 발행 알림</h3><table style="width:100%; border-collapse: collapse; margin-bottom: 16px;"><tr><td style="padding: 5px 0; color: #64748b; width: 120px; font-size: 13px;">발주번호</td><td style="padding: 5px 0; font-weight: bold; font-size: 13px;">${poNum}</td></tr><tr><td style="padding: 5px 0; color: #64748b; font-size: 13px;">공급업체</td><td style="padding: 5px 0; font-size: 13px;">${supplierName}</td></tr><tr><td style="padding: 5px 0; color: #64748b; font-size: 13px;">발주금액</td><td style="padding: 5px 0; font-weight: bold; color: #dc2626; font-size: 13px;">${formattedAmt}</td></tr><tr><td style="padding: 5px 0; color: #64748b; font-size: 13px;">발신담당</td><td style="padding: 5px 0; font-size: 13px;">김 주 한 대표이사 (010-7361-1130)</td></tr><tr><td style="padding: 5px 0; color: #64748b; font-size: 13px;">발행일시</td><td style="padding: 5px 0; font-size: 13px;">${dateFormatted}</td></tr></table>${pdfUrl ? '<div style=\"margin-top: 12px; padding: 12px; background: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;\"><p style=\"margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 13px;\">📄 발주서 PDF 원본 다운로드</p><a href=\"' + pdfUrl + '\" style=\"color: #2563eb; word-break: break-all; font-size: 12px;\">' + pdfUrl + '</a></div>' : ''}</div>`;
+    const textContent = `[YSACC 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}\n------------------------------------\n📄 발주서 PDF 원본 다운로드:\n${pdfUrl || '(발행된 발주서가 없습니다. 먼저 발주서를 발행해 주세요.)'}`;
 
+    setPoEmailModalData({
+      supplierName,
+      items,
+      defaultToEmail: supplierEmail,
+      defaultCcEmails: defaultCc,
+      defaultSubject: subject,
+      defaultContent: textContent,
+      pdfUrl: pdfUrl
+    });
+  };
+
+  const handleExecuteSendPoEmail = async (emailData: { to: string; cc: string; subject: string; content: string }) => {
+    if (!poEmailModalData) return;
     const BREVO_KEY = (import.meta as any).env?.VITE_BREVO_API_KEY || localStorage.getItem('BREVO_API_KEY') || '';
     if (!BREVO_KEY) {
-      alert('⚠️ Brevo API Key가 설정되지 않았습니다. 관리자에게 문의하세요.');
+      alert('⚠️ Brevo API Key가 설정되지 않았습니다.');
       return;
     }
 
     try {
-      const brevoPayload = {
-        sender: { name: 'YSACC 무역관리', email: 'jhkim1130@ysacc.co.kr' },
-        to: [{ email: confirmedEmail.trim() }],
-        cc: ccEmails.map(e => ({ email: e })),
-        subject,
-        textContent,
-        htmlContent
+      const ccList = emailData.cc.split(',').map(e => e.trim()).filter(Boolean).map(e => ({ email: e }));
+      const pdfUrl = poEmailModalData.pdfUrl;
+
+      const htmlContent = `<div style="font-family: sans-serif; max-width: 640px; padding: 24px; border: 1px solid #cbd5e1; border-radius: 8px;"><h3 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0;">📋 YSACC 발주서 발행 알림</h3><pre style="font-family: sans-serif; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${emailData.content}</pre>${pdfUrl ? '<div style="margin-top: 12px; padding: 12px; background: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;"><p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 13px;">📄 발주서 PDF 원본 다운로드</p><a href="' + pdfUrl + '" style="color: #2563eb; word-break: break-all; font-size: 12px;">' + pdfUrl + '</a></div>' : ''}</div>`;
+
+      const payload: any = {
+        sender: { name: 'YSACC (와이에스에이씨)', email: 'jhk113074@gmail.com' },
+        to: [{ email: emailData.to, name: poEmailModalData.supplierName }],
+        cc: ccList.length > 0 ? ccList : undefined,
+        subject: emailData.subject,
+        htmlContent: htmlContent,
+        textContent: emailData.content
       };
+
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
-        headers: { 'api-key': BREVO_KEY, 'accept': 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify(brevoPayload)
+        headers: {
+          'accept': 'application/json',
+          'api-key': BREVO_KEY,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
-      if (res.status >= 200 && res.status < 300) {
-        alert(`✅ 발주서 이메일이 성공적으로 발송되었습니다!\n\n수신: ${confirmedEmail}\n참조: ${ccEmails.join(', ')}`);
+
+      if (res.ok) {
+        alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
+        setPoEmailModalData(null);
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         alert(`❌ 메일 발송 실패: ${errData.message || '알 수 없는 오류'}`);
       }
     } catch (e: any) {
@@ -12642,6 +12671,19 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               };
             })
           }}
+        />
+      )}
+
+      {poEmailModalData && (
+        <PoEmailSendModal
+          supplierName={poEmailModalData.supplierName}
+          defaultToEmail={poEmailModalData.defaultToEmail}
+          defaultCcEmails={poEmailModalData.defaultCcEmails}
+          defaultSubject={poEmailModalData.defaultSubject}
+          defaultContent={poEmailModalData.defaultContent}
+          pdfUrl={poEmailModalData.pdfUrl}
+          onSend={handleExecuteSendPoEmail}
+          onClose={() => setPoEmailModalData(null)}
         />
       )}
 
