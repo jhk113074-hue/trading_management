@@ -180,21 +180,50 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     };
 
     const fetchSalesHistory = async () => {
-      const searchTokens = Array.from(new Set([
-        initialCustomer?.id, initialCustomer?.customerCode, initialCustomer?.name, initialCustomer?.nameKo,
-        formData.customerCode, formData.name, formData.nameKo
-      ].filter(Boolean).map(s => String(s).toLowerCase().replace(/\s+/g, ''))));
+      const rawNames = [
+        initialCustomer?.name, initialCustomer?.nameKo, initialCustomer?.customerCode, initialCustomer?.id,
+        formData.name, formData.nameKo, formData.customerCode
+      ].filter(Boolean).map(s => String(s).trim());
 
-      if (searchTokens.length === 0) {
+      if (rawNames.length === 0) {
         setSalesHistory([]);
         setIsLoadingSales(false);
         return;
       }
 
+      const searchTokens = Array.from(new Set(rawNames.map(s => s.toLowerCase().replace(/\s+/g, ''))));
+
+      const getKeywords = (text: string) => {
+        const clean = text.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ');
+        return clean.split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'corp', 'ab', 'l.l.c'].includes(w));
+      };
+
+      const allKeywords = Array.from(new Set(rawNames.flatMap(n => getKeywords(n))));
+
       const matchCustomer = (data: any) => {
         if (!data) return false;
-        const dataJson = JSON.stringify(data).toLowerCase().replace(/\s+/g, '');
-        return searchTokens.some(token => token.length >= 2 && dataJson.includes(token));
+        const dataJson = JSON.stringify(data).toLowerCase();
+        const cleanDataJson = dataJson.replace(/\s+/g, '');
+
+        // 1. Exact or Substring token match
+        for (const token of searchTokens) {
+          if (token.length >= 3 && (cleanDataJson.includes(token) || token.includes(cleanDataJson))) {
+            return true;
+          }
+        }
+
+        // 2. Keyword match (e.g. "bassam", "international")
+        if (allKeywords.length > 0) {
+          const matchedKws = allKeywords.filter(kw => dataJson.includes(kw));
+          if (matchedKws.length >= 1 && allKeywords.some(kw => kw.length >= 4 && dataJson.includes(kw))) {
+            return true;
+          }
+          if (matchedKws.length >= 2) {
+            return true;
+          }
+        }
+
+        return false;
       };
 
       setIsLoadingSales(true);
