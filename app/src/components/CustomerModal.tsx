@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
 import type { Supplier } from '../types/supplier';
@@ -212,162 +212,146 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       return;
     }
 
-    // ── Real-time listeners using server-side WHERE queries (no client-side name matching) ──
-    // Build the set of exact values to query against for the customer field
-    const exactName   = String(formData.name      || initialCustomer?.name      || '').trim();
-    const exactNameKo = String(formData.nameKo    || initialCustomer?.nameKo    || '').trim();
+    // 1회 비동기 조회 방식 (getDocs) — 구독/해제 타이밍 이슈 원천 해결
+    let cancelled = false;
 
-    setIsLoadingSales(true);
+    const fetchSalesHistory = async () => {
+      const exactName   = String(formData.name      || initialCustomer?.name      || '').trim();
+      const exactNameKo = String(formData.nameKo    || initialCustomer?.nameKo    || '').trim();
 
-    let exportRecords: any[] = [];
-    let importRecords: any[] = [];
-    let domesticRecords: any[] = [];
+      setIsLoadingSales(true);
 
-    const updateCombinedSales = () => {
-      const combinedMap = new Map<string, any>();
-      [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
-        combinedMap.set(r.id, r);
-      });
-      const list = Array.from(combinedMap.values());
-      list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-      setSalesHistory(list);
-      setIsLoadingSales(false);
-    };
+      try {
+        const ordersRef  = collection(doc(db, 'companies', COMPANY_ID), 'orders');
+        const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
+        const domRef     = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
 
-    // Helper: convert a Firestore snapshot doc to an export record
-    const toExportRecord = (d: any) => {
-      const data = d.data();
-      const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
-      const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
-      const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
-      return { id: d.id, type: '수출', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID') };
-    };
-    const toImportRecord = (d: any) => {
-      const data = d.data();
-      const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
-      const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
-      const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
-      return { id: d.id, type: '수입', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING') };
-    };
-    const toDomesticRecord = (d: any) => {
-      const data = d.data();
-      const totAmt = Number(data.totalAmount || data.totalPrice || 0);
-      const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
-      const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
-      return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmt: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
-    };
+        // Helper: convert a Firestore doc to record
+        const toExportRecord = (d: any) => {
+          const data = d.data();
+          const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
+          const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
+          const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
+          return { id: d.id, type: '수출', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID') };
+        };
+        const toImportRecord = (d: any) => {
+          const data = d.data();
+          const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
+          const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
+          const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
+          return { id: d.id, type: '수입', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING') };
+        };
+        const toDomesticRecord = (d: any) => {
+          const data = d.data();
+          const totAmt = Number(data.totalAmount || data.totalPrice || 0);
+          const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
+          const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
+          return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmt: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
+        };
 
-    const ordersRef  = collection(doc(db, 'companies', COMPANY_ID), 'orders');
-    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
-    const domRef     = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
+        const exportRecords: any[] = [];
+        const importRecords: any[] = [];
+        const domesticRecords: any[] = [];
 
-    const unsubs: (() => void)[] = [];
+        // A. Export Orders (getDocs)
+        const orderSnap = await getDocs(ordersRef);
+        const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
+        const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
+        const orderResults = new Map<string, any>();
 
-    const orderResults = new Map<string, any>();
-    
-    // Subscribe to all orders as fallback/broad match to guarantee 100% precision
-    const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
-      const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
-      const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
+        orderSnap.docs.forEach((d: any) => {
+          const data = d.data();
+          const rawCVal = String(data.customer || data.customerName || '').trim();
+          const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+          const cId = String(data.customerId || '').trim().toLowerCase();
+          const cCode = String(data.customerCode || '').trim().toLowerCase();
 
-      snap.docs.forEach((d: any) => {
-        const data = d.data();
-        const rawCVal = String(data.customer || data.customerName || '').trim();
-        const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-        const cId = String(data.customerId || '').trim().toLowerCase();
-        const cCode = String(data.customerCode || '').trim().toLowerCase();
+          const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
+          const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
 
-        const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
-        const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
-        
-        let matchName = false;
-        if (cleanTargetName && cleanTargetName.length >= 2) {
-          matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
-        }
-        let matchNameKo = false;
-        if (cleanTargetNameKo && cleanTargetNameKo.length >= 2) {
-          matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
-        }
+          let matchName = false;
+          if (cleanTargetName && cleanTargetName.length >= 2) {
+            matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
+          }
+          let matchNameKo = false;
+          if (cleanTargetNameKo && cleanTargetNameKo.length >= 2) {
+            matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
+          }
 
-        if (matchCode || matchId || matchName || matchNameKo) {
-          orderResults.set(d.id, toExportRecord(d));
-        }
-      });
-
-      exportRecords = [...orderResults.values()];
-      updateCombinedSales();
-    }, (err: any) => {
-      console.error('[CRM] all orders query error:', err);
-      updateCombinedSales();
-    });
-    unsubs.push(allOrdersUnsub);
-
-    // B. Imports – query by every possible customer identifier
-    const importQueries: any[] = [];
-    if (targetCode) {
-      importQueries.push(query(importsRef, where('customerId',   '==', targetCode)));
-      importQueries.push(query(importsRef, where('customerCode', '==', targetCode)));
-    }
-    if (targetId && targetId !== targetCode) {
-      importQueries.push(query(importsRef, where('customerId', '==', targetId)));
-    }
-    if (exactName)   importQueries.push(query(importsRef, where('finalCustomer', '==', exactName)));
-    if (exactNameKo) importQueries.push(query(importsRef, where('finalCustomer', '==', exactNameKo)));
-    if (exactName)   importQueries.push(query(importsRef, where('customerName',  '==', exactName)));
-    if (exactNameKo) importQueries.push(query(importsRef, where('customerName',  '==', exactNameKo)));
-
-    const importResults = new Map<string, any>();
-    if (importQueries.length === 0) {
-      importRecords = [];
-      updateCombinedSales();
-    } else {
-      importQueries.forEach(q => {
-        const unsub = onSnapshot(q, (snap: any) => {
-          snap.docs.forEach((d: any) => { importResults.set(d.id, toImportRecord(d)); });
-          importRecords = [...importResults.values()];
-          updateCombinedSales();
-        }, (err: any) => {
-          console.error('[CRM] imports query error:', err);
-          updateCombinedSales();
+          if (matchCode || matchId || matchName || matchNameKo) {
+            orderResults.set(d.id, toExportRecord(d));
+          }
         });
-        unsubs.push(unsub);
-      });
-    }
+        exportRecords.push(...orderResults.values());
 
-    // C. Domestic Trades – query by every possible customer identifier
-    const domQueries: any[] = [];
-    if (targetCode) {
-      domQueries.push(query(domRef, where('customerId',   '==', targetCode)));
-      domQueries.push(query(domRef, where('customerCode', '==', targetCode)));
-    }
-    if (targetId && targetId !== targetCode) {
-      domQueries.push(query(domRef, where('customerId', '==', targetId)));
-    }
-    if (exactName)   domQueries.push(query(domRef, where('customer',     '==', exactName)));
-    if (exactNameKo) domQueries.push(query(domRef, where('customer',     '==', exactNameKo)));
-    if (exactName)   domQueries.push(query(domRef, where('customerName', '==', exactName)));
-    if (exactNameKo) domQueries.push(query(domRef, where('customerName', '==', exactNameKo)));
-    if (exactName)   domQueries.push(query(domRef, where('buyer',        '==', exactName)));
+        // B. Imports (getDocs)
+        const importQueries: any[] = [];
+        if (targetCode) {
+          importQueries.push(query(importsRef, where('customerId',   '==', targetCode)));
+          importQueries.push(query(importsRef, where('customerCode', '==', targetCode)));
+        }
+        if (targetId && targetId !== targetCode) {
+          importQueries.push(query(importsRef, where('customerId', '==', targetId)));
+        }
+        if (exactName)   importQueries.push(query(importsRef, where('finalCustomer', '==', exactName)));
+        if (exactNameKo) importQueries.push(query(importsRef, where('finalCustomer', '==', exactNameKo)));
+        if (exactName)   importQueries.push(query(importsRef, where('customerName',  '==', exactName)));
+        if (exactNameKo) importQueries.push(query(importsRef, where('customerName',  '==', exactNameKo)));
 
-    const domResults = new Map<string, any>();
-    if (domQueries.length === 0) {
-      domesticRecords = [];
-      updateCombinedSales();
-    } else {
-      domQueries.forEach(q => {
-        const unsub = onSnapshot(q, (snap: any) => {
-          snap.docs.forEach((d: any) => { domResults.set(d.id, toDomesticRecord(d)); });
-          domesticRecords = [...domResults.values()];
-          updateCombinedSales();
-        }, (err: any) => {
-          console.error('[CRM] domestic query error:', err);
-          updateCombinedSales();
-        });
-        unsubs.push(unsub);
-      });
-    }
+        const importResults = new Map<string, any>();
+        if (importQueries.length > 0) {
+          const importSnaps = await Promise.all(importQueries.map(q => getDocs(q)));
+          importSnaps.forEach(snap => {
+            snap.docs.forEach((d: any) => { importResults.set(d.id, toImportRecord(d)); });
+          });
+        }
+        importRecords.push(...importResults.values());
 
-    return () => { unsubs.forEach(u => u()); };
+        // C. Domestic Trades (getDocs)
+        const domQueries: any[] = [];
+        if (targetCode) {
+          domQueries.push(query(domRef, where('customerId',   '==', targetCode)));
+          domQueries.push(query(domRef, where('customerCode', '==', targetCode)));
+        }
+        if (targetId && targetId !== targetCode) {
+          domQueries.push(query(domRef, where('customerId', '==', targetId)));
+        }
+        if (exactName)   domQueries.push(query(domRef, where('customer',     '==', exactName)));
+        if (exactNameKo) domQueries.push(query(domRef, where('customer',     '==', exactNameKo)));
+        if (exactName)   domQueries.push(query(domRef, where('customerName', '==', exactName)));
+        if (exactNameKo) domQueries.push(query(domRef, where('customerName', '==', exactNameKo)));
+        if (exactName)   domQueries.push(query(domRef, where('buyer',        '==', exactName)));
+
+        const domResults = new Map<string, any>();
+        if (domQueries.length > 0) {
+          const domSnaps = await Promise.all(domQueries.map(q => getDocs(q)));
+          domSnaps.forEach(snap => {
+            snap.docs.forEach((d: any) => { domResults.set(d.id, toDomesticRecord(d)); });
+          });
+        }
+        domesticRecords.push(...domResults.values());
+
+        // Combined Sales History List
+        if (!cancelled) {
+          const combinedMap = new Map<string, any>();
+          [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
+            combinedMap.set(r.id, r);
+          });
+          const list = Array.from(combinedMap.values());
+          list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+          setSalesHistory(list);
+        }
+      } catch (err) {
+        console.error('[CRM] fetchSalesHistory error:', err);
+        if (!cancelled) setSalesHistory([]);
+      } finally {
+        if (!cancelled) setIsLoadingSales(false);
+      }
+    };
+
+    fetchSalesHistory();
+
+    return () => { cancelled = true; };
   }, [stableCustomerKey]);
 
   const handleChange = (field: keyof Customer, value: any) => {
