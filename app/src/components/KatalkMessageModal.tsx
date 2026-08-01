@@ -49,10 +49,8 @@ export const KatalkMessageModal: React.FC<KatalkMessageModalProps> = ({
         justifyContent: 'center',
         padding: '20px'
       }}
-      onClick={onClose}
     >
       <div 
-        onClick={e => e.stopPropagation()}
         style={{
           background: '#ffffff',
           borderRadius: '12px',

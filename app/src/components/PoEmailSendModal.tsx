@@ -64,10 +64,8 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
         justifyContent: 'center',
         padding: '20px'
       }}
-      onClick={onClose}
     >
       <div 
-        onClick={e => e.stopPropagation()}
         style={{
           background: '#ffffff',
           borderRadius: '6px',
