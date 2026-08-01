@@ -58,10 +58,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     [customerId, customerCode, customerName]
   );
 
-  useEffect(() => {
-    console.log('stableCustomerKey 변경됨:', stableCustomerKey, new Date().toISOString());
-  }, [stableCustomerKey]);
-
   // 겸업(공급사 연결) 검색용
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -229,25 +225,37 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const domRef     = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
 
         // Helper: convert a Firestore doc to record
+        const parseDateStr = (rawDate: any) => {
+          if (!rawDate) return '-';
+          if (typeof rawDate === 'string') return rawDate.substring(0, 10);
+          if (rawDate?.toDate && typeof rawDate.toDate === 'function') {
+            return rawDate.toDate().toISOString().substring(0, 10);
+          }
+          return '-';
+        };
+
         const toExportRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
           const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
-          const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
+          const rawDate = data.orderDate || data.piDate || data.createdAt;
+          const dateStr = parseDateStr(rawDate);
           return { id: d.id, type: '수출', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID') };
         };
         const toImportRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
           const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
-          const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
+          const rawDate = data.importDate || data.blDate || data.createdAt;
+          const dateStr = parseDateStr(rawDate);
           return { id: d.id, type: '수입', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING') };
         };
         const toDomesticRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.totalPrice || 0);
           const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
-          const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
+          const rawDate = data.tradeDate || data.invoiceDate || data.createdAt;
+          const dateStr = parseDateStr(rawDate);
           return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmt: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
         };
 
@@ -257,7 +265,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
-        console.log('[STEP1] getDocs완료:', orderSnap.size);
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
@@ -286,7 +293,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           }
         });
         exportRecords.push(...orderResults.values());
-        console.log('[STEP2] 매칭완료:', exportRecords.length);
 
         // B. Imports (getDocs)
         const importQueries: any[] = [];
@@ -342,18 +348,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         });
         const list = Array.from(combinedMap.values());
         list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-        console.log('[STEP3] setSalesHistory:', list.length);
         setSalesHistory(list);
       } catch (err: any) {
-        console.error('[CRM] fetchSalesHistory error:', err.message, err.code, err.stack?.substring(0, 200));
-        setSalesHistory([{ 
-          id: 'CATCH_ERROR', 
-          type: `에러: ${err.message}`, 
-          date: '-', year: '-', 
-          ciNumber: `code: ${err.code}`, 
-          totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: '' 
-        }]);
-        setIsLoadingSales(false);
+        console.error('[CRM] fetchSalesHistory error:', err);
+        setSalesHistory([]);
       } finally {
         setIsLoadingSales(false);
       }
