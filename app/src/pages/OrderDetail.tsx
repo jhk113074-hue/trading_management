@@ -4356,6 +4356,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
+        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -6180,22 +6181,35 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </button>
                                 <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#dcfce7' : '#f0fdf4', border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #16a34a' : '1px solid #86efac', color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#15803d' : '#166534', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
+                                  style={{ 
+                                    padding: '5px 10px', 
+                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#dcfce7' : '#f0fdf4', 
+                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #16a34a' : '1px solid #86efac', 
+                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#15803d' : '#166534', 
+                                    borderRadius: '4px', 
+                                    cursor: 'pointer', 
+                                    fontWeight: 750, 
+                                    fontSize: '14.5px' 
+                                  }}
                                   title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
                                 >
-                                  📧 메일 발송
+                                  {((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '☑️ 메일 발송' : '📧 메일 발송'}
                                 </button>
-                                {sentEmailSuppliers[supplierName] && (
-                                  <span style={{ padding: '3px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #86efac', display: 'inline-flex', alignItems: 'center' }}>
-                                    ✅ 발송완료
-                                  </span>
-                                )}
                                 <button 
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#FEE500', border: '1px solid #eab308', color: '#191919', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
+                                  style={{ 
+                                    padding: '5px 10px', 
+                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '#FEF01B' : '#FEE500', 
+                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '1px solid #ca8a04' : '1px solid #eab308', 
+                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '#15803d' : '#191919', 
+                                    borderRadius: '4px', 
+                                    cursor: 'pointer', 
+                                    fontWeight: 750, 
+                                    fontSize: '14.5px' 
+                                  }}
                                   title="카카오톡 단체방 공유용 텍스트 메시지 복사"
                                 >
-                                  💬 카톡 메시지 복사
+                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '☑️ 카톡 메시지 복사' : '💬 카톡 메시지 복사'}
                                 </button>
                                 {copiedKatalkSuppliers[supplierName] && (
                                   <span style={{ padding: '3px 8px', background: '#fef9c3', color: '#854d0e', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #fde047', display: 'inline-flex', alignItems: 'center' }}>
@@ -12724,6 +12738,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               }).catch(err => console.error('Failed to update po_dispatch_status katalkCopied', err));
             }
           }}
+        />
+      )}
+
+      {katalkModalMsg && (
+        <KatalkMessageModal
+          message={katalkModalMsg}
+          supplierName={katalkModalSupplier}
+          onClose={() => setKatalkModalMsg(null)}
+          onCopySuccess={() => setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }))}
         />
       )}
 
