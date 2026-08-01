@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
 import type { Supplier } from '../types/supplier';
@@ -179,150 +179,150 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       }
     };
 
-    const fetchSalesHistory = async () => {
-      const currentName = String(formData.name || initialCustomer?.name || '').trim();
-      const currentCode = String(formData.customerCode || initialCustomer?.customerCode || initialCustomer?.id || '').trim();
-      const currentNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim();
+    fetchCrmTasks();
 
-      const rawTargets = [currentName, currentCode, currentNameKo].filter(Boolean);
-      if (rawTargets.length === 0) {
-        setSalesHistory([]);
-        setIsLoadingSales(false);
-        return;
+    // Real-time Sales & Payment History Subscription
+    const currentName = String(formData.name || initialCustomer?.name || '').trim();
+    const currentCode = String(formData.customerCode || initialCustomer?.customerCode || initialCustomer?.id || '').trim();
+    const currentNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim();
+
+    const rawTargets = [currentName, currentCode, currentNameKo].filter(Boolean);
+    if (rawTargets.length === 0) {
+      setSalesHistory([]);
+      setIsLoadingSales(false);
+      return;
+    }
+
+    const cleanTokens = rawTargets.map(t => t.toLowerCase().replace(/\s+/g, '')).filter(t => t.length >= 2);
+    const words = currentName.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'ab', 'l.l.c'].includes(w));
+
+    const isOrderMatched = (docData: any) => {
+      if (!docData) return false;
+      const str = JSON.stringify(docData).toLowerCase();
+      const cleanStr = str.replace(/\s+/g, '');
+
+      // 1. Direct Token Containment
+      for (const tok of cleanTokens) {
+        if (cleanStr.includes(tok) || tok.includes(cleanStr)) return true;
       }
 
-      const cleanTokens = rawTargets.map(t => t.toLowerCase().replace(/\s+/g, '')).filter(t => t.length >= 2);
-      const words = currentName.toLowerCase().replace(/[^a-z0-9가-힣\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !['co', 'ltd', 'inc', 'llc', 'ab', 'l.l.c'].includes(w));
-
-      const isOrderMatched = (docData: any) => {
-        if (!docData) return false;
-        const str = JSON.stringify(docData).toLowerCase();
-        const cleanStr = str.replace(/\s+/g, '');
-
-        // 1. Direct Token Containment
-        for (const tok of cleanTokens) {
-          if (cleanStr.includes(tok) || tok.includes(cleanStr)) return true;
-        }
-
-        // 2. Word Keyword Match (e.g. "bassam", "international")
-        for (const w of words) {
-          if (str.includes(w)) return true;
-        }
-
-        return false;
-      };
-
-      setIsLoadingSales(true);
-      try {
-        let records: any[] = [];
-        const seenIds = new Set<string>();
-
-        // A. Fetch Export Orders (orders - Subcollection & Root Collection fallback)
-        const subOrdersRef = collection(db, 'companies', COMPANY_ID, 'orders');
-        const rootOrdersRef = collection(db, 'orders');
-        
-        const [snapSubOrders, snapRootOrders] = await Promise.all([
-          getDocs(subOrdersRef).catch(() => ({ docs: [] })),
-          getDocs(rootOrdersRef).catch(() => ({ docs: [] }))
-        ]);
-
-        const allOrderDocs = [...snapSubOrders.docs, ...snapRootOrders.docs];
-        allOrderDocs.forEach(d => {
-          if (seenIds.has(d.id)) return;
-          const data = d.data();
-          if (isOrderMatched(data)) {
-            seenIds.add(d.id);
-            const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
-            const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
-            const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
-            records.push({
-              id: d.id,
-              type: '수출',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
-              totalAmount: totAmt,
-              currency: data.currency || 'USD',
-              paidAmount: paidAmt,
-              paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID')
-            });
-          }
-        });
-
-        // B. Fetch Imports (imports)
-        const subImportsRef = collection(db, 'companies', COMPANY_ID, 'imports');
-        const rootImportsRef = collection(db, 'imports');
-        const [snapSubImports, snapRootImports] = await Promise.all([
-          getDocs(subImportsRef).catch(() => ({ docs: [] })),
-          getDocs(rootImportsRef).catch(() => ({ docs: [] }))
-        ]);
-
-        const allImportDocs = [...snapSubImports.docs, ...snapRootImports.docs];
-        allImportDocs.forEach(d => {
-          if (seenIds.has(d.id)) return;
-          const data = d.data();
-          if (isOrderMatched(data)) {
-            seenIds.add(d.id);
-            const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
-            const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
-            const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
-            records.push({
-              id: d.id,
-              type: '수입',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
-              totalAmount: totAmt,
-              currency: data.currency || 'USD',
-              paidAmount: paidAmt,
-              paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING')
-            });
-          }
-        });
-
-        // C. Fetch Domestic Trades (domesticTrades)
-        const subDomRef = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
-        const rootDomRef = collection(db, 'domesticTrades');
-        const [snapSubDom, snapRootDom] = await Promise.all([
-          getDocs(subDomRef).catch(() => ({ docs: [] })),
-          getDocs(rootDomRef).catch(() => ({ docs: [] }))
-        ]);
-
-        const allDomDocs = [...snapSubDom.docs, ...snapRootDom.docs];
-        allDomDocs.forEach(d => {
-          if (seenIds.has(d.id)) return;
-          const data = d.data();
-          if (isOrderMatched(data)) {
-            seenIds.add(d.id);
-            const totAmt = Number(data.totalAmount || data.totalPrice || 0);
-            const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
-            const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
-            records.push({
-              id: d.id,
-              type: '국내',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.tradeNo || data.statementNo || d.id,
-              totalAmount: totAmt,
-              currency: data.currency || 'KRW',
-              paidAmount: paidAmt,
-              paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금')
-            });
-          }
-        });
-
-        // Sort by date desc
-        records.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-        setSalesHistory(records);
-      } catch (err) {
-        console.error("Error fetching sales history:", err);
-      } finally {
-        setIsLoadingSales(false);
+      // 2. Word Keyword Match (e.g. "bassam", "international")
+      for (const w of words) {
+        if (str.includes(w)) return true;
       }
+
+      return false;
     };
 
-    fetchCrmTasks();
-    fetchSalesHistory();
+    setIsLoadingSales(true);
+
+    let exportRecords: any[] = [];
+    let importRecords: any[] = [];
+    let domesticRecords: any[] = [];
+
+    const updateCombinedSales = () => {
+      const combinedMap = new Map<string, any>();
+
+      [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
+        combinedMap.set(r.id, r);
+      });
+
+      const list = Array.from(combinedMap.values());
+      list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      setSalesHistory(list);
+      setIsLoadingSales(false);
+    };
+
+    // A. Export Orders Real-time Listener (Orders.tsx exact doc collection syntax)
+    const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
+    const unsubOrders = onSnapshot(ordersRef, (snap) => {
+      exportRecords = [];
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (isOrderMatched(data)) {
+          const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
+          const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
+          const dateStr = data.orderDate || data.piDate || data.createdAt?.substring(0, 10) || '-';
+          exportRecords.push({
+            id: d.id,
+            type: '수출',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'USD',
+            paidAmount: paidAmt,
+            paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID')
+          });
+        }
+      });
+      updateCombinedSales();
+    }, (err) => {
+      console.error("Error in orders onSnapshot:", err);
+      setIsLoadingSales(false);
+    });
+
+    // B. Imports Real-time Listener
+    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
+    const unsubImports = onSnapshot(importsRef, (snap) => {
+      importRecords = [];
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (isOrderMatched(data)) {
+          const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
+          const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
+          const dateStr = data.importDate || data.blDate || data.createdAt?.substring(0, 10) || '-';
+          importRecords.push({
+            id: d.id,
+            type: '수입',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'USD',
+            paidAmount: paidAmt,
+            paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING')
+          });
+        }
+      });
+      updateCombinedSales();
+    }, (err) => {
+      console.error("Error in imports onSnapshot:", err);
+    });
+
+    // C. Domestic Trades Real-time Listener
+    const domesticRef = collection(doc(db, 'companies', COMPANY_ID), 'domesticTrades');
+    const unsubDomestic = onSnapshot(domesticRef, (snap) => {
+      domesticRecords = [];
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (isOrderMatched(data)) {
+          const totAmt = Number(data.totalAmount || data.totalPrice || 0);
+          const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
+          const dateStr = data.tradeDate || data.invoiceDate || data.createdAt?.substring(0, 10) || '-';
+          domesticRecords.push({
+            id: d.id,
+            type: '국내',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.tradeNo || data.statementNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'KRW',
+            paidAmount: paidAmt,
+            paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금')
+          });
+        }
+      });
+      updateCombinedSales();
+    }, (err) => {
+      console.error("Error in domesticTrades onSnapshot:", err);
+    });
+
+    return () => {
+      unsubOrders();
+      unsubImports();
+      unsubDomestic();
+    };
   }, [formData.name, formData.customerCode, initialCustomer]);
 
   const handleChange = (field: keyof Customer, value: any) => {
