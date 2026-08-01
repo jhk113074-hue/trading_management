@@ -12463,14 +12463,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         });
 
                         if (matched && matched.name) {
-                          const pos = matched.position?.trim() ? ` ${matched.position.trim()}` : '';
+                          const posVal = matched.position || matched.role || matched.title || '';
+                          const pos = posVal.trim() ? ` ${posVal.trim()}` : '';
                           return `${matched.name}${pos}`;
                         }
 
-                        // 2. Exact email/ID fallback parsing if not yet loaded in DB
-                        if (valLower.includes('jhk010624')) return '김하은 대리';
+                        // 2. Exact email/ID fallback parsing if not yet loaded in DB (Team management exact titles)
+                        if (valLower.includes('jhk010624')) return '김하은 사원';
+                        if (valLower.includes('alexpark')) return '박현 차장';
                         if (valLower.includes('jhkim1130')) return '김주한 대표이사';
-                        if (valLower.includes('alexpark')) return '박현 이사';
                         if (val.includes('@')) return val.split('@')[0];
                         return val;
                       };
