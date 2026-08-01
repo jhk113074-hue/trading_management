@@ -58,6 +58,10 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [assigneeName] = useState(initialTask?.assigneeName || '');
   const [assigneeId, setAssigneeId] = useState(initialTask?.assigneeId || '');
 
+  // Report Note Dispatch Modal states
+  const [reportModalType, setReportModalType] = useState<'IN_PROGRESS' | 'DONE' | null>(null);
+  const [reportMessage, setReportMessage] = useState('');
+
   const [repeatCycle, setRepeatCycle] = useState(initialTask?.recurrence || '매주');
   const [startDate, setStartDate] = useState(initialTask?.startDate || '');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(initialTask?.recurrenceEndDate || '');
@@ -639,8 +643,17 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     }
   };
 
-  const handleSendReportMail = async (reportType: 'IN_PROGRESS' | 'DONE') => {
-    if (!initialTask?.id || !userProfile) return;
+  const openReportModal = (type: 'IN_PROGRESS' | 'DONE') => {
+    setReportModalType(type);
+    if (type === 'IN_PROGRESS') {
+      setReportMessage('금일 업무에 착수하였으며, 진행에 차질 없이 마감 기한 내 완료하겠습니다.');
+    } else {
+      setReportMessage('요청하신 업무 처리가 최종 완료되었으니 검토 및 확인 부탁드립니다.');
+    }
+  };
+
+  const submitReportMail = async () => {
+    if (!initialTask?.id || !userProfile || !reportModalType) return;
     
     const recipientId = initialTask.createdBy && initialTask.createdBy !== userProfile.id 
       ? initialTask.createdBy 
@@ -648,14 +661,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     const recipientUser = users.find(u => u.id === recipientId || u.name === initialTask.createdBy);
     const recipientName = recipientUser?.name || initialTask.createdBy || '담당자';
 
-    let commentPrompt = '';
-    if (reportType === 'DONE') {
-      commentPrompt = prompt('✅ 업무 완료 보고 코멘트를 입력해주세요 (선택):') || '';
-    }
-
     try {
       setIsSaving(true);
-      const isProgress = reportType === 'IN_PROGRESS';
+      const isProgress = reportModalType === 'IN_PROGRESS';
       const mailTitle = isProgress 
         ? `[착수보고] "${title}" 업무 착수 및 진행 알림` 
         : `[완료보고] "${title}" 업무 최종 처리 완료 알림`;
@@ -665,7 +673,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           <h3 style="margin: 0 0 6px 0; color: ${isProgress ? '#1e40af' : '#166534'}; font-size: 14px; font-weight: 800;">
             ${isProgress ? '🏃 업무 착수 (진행중) 보고' : '✅ 업무 처리 완료 보고'}
           </h3>
-          <p style="margin: 0; font-size: 13px; color: #1e293b;">
+          <p style="margin: 0; font-size: 13px; color: #1e293b; line-height: 1.5;">
             담당자 <strong>${userProfile.name}</strong>님이 해당 업무의 상태를 <strong>${isProgress ? '진행중 (IN_PROGRESS)' : '완료 (DONE)'}</strong>(으)로 갱신하고 보고합니다.
           </p>
         </div>
@@ -674,7 +682,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; width: 100px; border: 1px solid #cbd5e1;">업무명</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${title}</td></tr>
             <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">지시자/위임자</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${initialTask.createdBy || '미지정'}</td></tr>
             <tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">보고자/수행자</td><td style="padding: 6px; border: 1px solid #cbd5e1;">${userProfile.name}</td></tr>
-            ${commentPrompt ? `<tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">완료 코멘트</td><td style="padding: 6px; border: 1px solid #cbd5e1; color: #166534; font-weight: 700;">${commentPrompt}</td></tr>` : ''}
+            ${reportMessage ? `<tr><td style="padding: 6px; background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">보고/완료 코멘트</td><td style="padding: 6px; border: 1px solid #cbd5e1; color: ${isProgress ? '#1e40af' : '#166534'}; font-weight: 700;">${reportMessage}</td></tr>` : ''}
           </tbody>
         </table>
       `;
@@ -699,13 +707,15 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       };
       if (newStatus === 'DONE') {
         taskUpdatePayload.completedAt = new Date().toISOString();
-        if (commentPrompt) {
-          taskUpdatePayload.completionComment = commentPrompt;
+        if (reportMessage) {
+          taskUpdatePayload.completionComment = reportMessage;
         }
       }
       await updateDoc(doc(db, 'tasks', initialTask.id), taskUpdatePayload);
 
       setStatus(newStatus);
+      setReportModalType(null);
+      setReportMessage('');
       alert(isProgress ? '🏃 업무 착수 보고 쪽지가 정상 발송되었습니다.' : '✅ 업무 완료 보고 쪽지가 정상 발송되었습니다.');
       onClose();
     } catch (e: any) {
@@ -1572,7 +1582,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               <>
                 <button
                   type="button"
-                  onClick={() => handleSendReportMail('IN_PROGRESS')}
+                  onClick={() => openReportModal('IN_PROGRESS')}
                   disabled={isSaving}
                   style={{
                     padding: '8px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px',
@@ -1585,7 +1595,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSendReportMail('DONE')}
+                  onClick={() => openReportModal('DONE')}
                   disabled={isSaving}
                   style={{
                     padding: '8px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px',
@@ -1668,6 +1678,86 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── YSACC 업무 보고 전용 합리적 팝업 모달 ─── */}
+      {reportModalType && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', zIndex: 100001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', width: '520px', maxWidth: '95vw', boxShadow: '0 20px 40px rgba(15,23,42,0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '14px 20px', background: reportModalType === 'IN_PROGRESS' ? '#eff6ff' : '#f0fdf4', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>{reportModalType === 'IN_PROGRESS' ? '🏃' : '✅'}</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: reportModalType === 'IN_PROGRESS' ? '#1e40af' : '#166534' }}>
+                  {reportModalType === 'IN_PROGRESS' ? '업무 착수(진행중) 보고 메시지 발송' : '업무 처리 완료 보고 메시지 발송'}
+                </span>
+              </div>
+              <button type="button" onClick={() => setReportModalType(null)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>✕</button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              {/* Task Title preview */}
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>대상 업무</span>
+                <strong style={{ color: '#1e293b' }}>{title}</strong>
+              </div>
+
+              {/* Quick Template buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>⚡ 빠른 추천 문구 선택</label>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {reportModalType === 'IN_PROGRESS' ? (
+                    <>
+                      <button type="button" onClick={() => setReportMessage('금일 업무에 착수하였으며, 진행에 차질 없이 마감 기한 내 완료하겠습니다.')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>🏃 기한 내 완료 예정</button>
+                      <button type="button" onClick={() => setReportMessage('관련 서류 및 바이어 요구 조건을 확인하였으며 긴급 착수 진행 중입니다.')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>⚡ 긴급 착수 중</button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => setReportMessage('요청하신 업무 처리가 최종 완료되었으니 검토 및 확인 부탁드립니다.')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>✅ 처리 완료 및 검토요청</button>
+                      <button type="button" onClick={() => setReportMessage('모든 관련 서류 발송 및 등록 처리가 완료되었습니다.')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>📄 서류 등록 완료</button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>보고 메시지 및 코멘트</label>
+                <textarea
+                  rows={4}
+                  value={reportMessage}
+                  onChange={e => setReportMessage(e.target.value)}
+                  placeholder="보고 메시지나 완료 코멘트를 자유롭게 적어주세요..."
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }}
+                />
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '12px 20px', background: '#fafafa', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setReportModalType(null)}
+                style={{ padding: '6px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={submitReportMail}
+                disabled={isSaving}
+                style={{ padding: '6px 18px', background: reportModalType === 'IN_PROGRESS' ? '#3b82f6' : '#16a34a', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+              >
+                {isSaving ? '전송 중...' : (reportModalType === 'IN_PROGRESS' ? '🏃 착수보고 쪽지 발송' : '✅ 완료보고 쪽지 발송')}
+              </button>
+            </div>
+
           </div>
         </div>
       )}

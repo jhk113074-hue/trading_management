@@ -23,6 +23,16 @@ const formatRelativeTime = (val?: string) => {
   }
 };
 
+const stripHtml = (html: string) => {
+  if (!html) return '';
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return (doc.body.textContent || doc.body.innerText || '').trim();
+  } catch {
+    return html.replace(/<[^>]*>?/gm, '').trim();
+  }
+};
+
 const renderNotifBadge = (type?: string) => {
   switch (type) {
     case 'TASK_DELEGATED':
@@ -904,7 +914,7 @@ export const Layout: React.FC = () => {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
                               }}>
-                                {displayContent}
+                                {stripHtml(displayContent)}
                               </div>
                             )}
                           </div>
