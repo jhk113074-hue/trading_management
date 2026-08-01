@@ -104,23 +104,52 @@ export const Orders: React.FC = () => {
   // 뷰 모드: 'list' | 'kanban' | 'todo'
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'todo'>('list');
 
-  // Filters
-  const [issuingCompanyFilter, setIssuingCompanyFilter] = useState('All');
-  const [managerFilter, setManagerFilter] = useState('All');
-  const [customerFilter, setCustomerFilter] = useState('All');
-  const [stepFilter, setStepFilter] = useState('All');
-  const [viewFilter, setViewFilter] = useState('All');
-  const [completedFilter, setCollapsedFilter] = useState('Hide'); // 'All' | 'Hide'
+  // Filters (sessionStorage 연동으로 다른 메뉴 이동 후 복귀 시에도 필터 상태 유지)
+  const getSavedFilter = (key: string, defaultVal: string) => {
+    try {
+      return sessionStorage.getItem(`orders_filter_${key}`) || defaultVal;
+    } catch {
+      return defaultVal;
+    }
+  };
 
-  const [dateFilterType, setDateFilterType] = useState<string>('Last3Months');
-  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
-  const [selectedHalf, setSelectedHalf] = useState<number>(new Date().getMonth() < 6 ? 1 : 2);
-  const [rangeStart, setRangeStart] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [rangeEnd, setRangeEnd] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [issuingCompanyFilter, setIssuingCompanyFilter] = useState(() => getSavedFilter('issuingCompany', 'All'));
+  const [managerFilter, setManagerFilter] = useState(() => getSavedFilter('manager', 'All'));
+  const [customerFilter, setCustomerFilter] = useState(() => getSavedFilter('customer', 'All'));
+  const [stepFilter, setStepFilter] = useState(() => getSavedFilter('step', 'All'));
+  const [viewFilter, setViewFilter] = useState(() => getSavedFilter('view', 'All'));
+  const [completedFilter, setCollapsedFilter] = useState(() => getSavedFilter('completed', 'Hide')); // 'All' | 'Hide'
+
+  const [dateFilterType, setDateFilterType] = useState<string>(() => getSavedFilter('dateFilterType', 'Last3Months'));
+  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>(() => getSavedFilter('dateFilterTarget', 'date') as any);
+  const [selectedYear, setSelectedYear] = useState<number>(() => Number(getSavedFilter('selectedYear', String(new Date().getFullYear()))));
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => Number(getSavedFilter('selectedMonth', String(new Date().getMonth() + 1))));
+  const [selectedQuarter, setSelectedQuarter] = useState<number>(() => Number(getSavedFilter('selectedQuarter', String(Math.floor(new Date().getMonth() / 3) + 1))));
+  const [selectedHalf, setSelectedHalf] = useState<number>(() => Number(getSavedFilter('selectedHalf', String(new Date().getMonth() < 6 ? 1 : 2))));
+  const [rangeStart, setRangeStart] = useState<string>(() => getSavedFilter('rangeStart', new Date().toISOString().split('T')[0]));
+  const [rangeEnd, setRangeEnd] = useState<string>(() => getSavedFilter('rangeEnd', new Date().toISOString().split('T')[0]));
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('orders_filter_issuingCompany', issuingCompanyFilter);
+      sessionStorage.setItem('orders_filter_manager', managerFilter);
+      sessionStorage.setItem('orders_filter_customer', customerFilter);
+      sessionStorage.setItem('orders_filter_step', stepFilter);
+      sessionStorage.setItem('orders_filter_view', viewFilter);
+      sessionStorage.setItem('orders_filter_completed', completedFilter);
+      sessionStorage.setItem('orders_filter_dateFilterType', dateFilterType);
+      sessionStorage.setItem('orders_filter_dateFilterTarget', dateFilterTarget);
+      sessionStorage.setItem('orders_filter_selectedYear', String(selectedYear));
+      sessionStorage.setItem('orders_filter_selectedMonth', String(selectedMonth));
+      sessionStorage.setItem('orders_filter_selectedQuarter', String(selectedQuarter));
+      sessionStorage.setItem('orders_filter_selectedHalf', String(selectedHalf));
+      sessionStorage.setItem('orders_filter_rangeStart', rangeStart);
+      sessionStorage.setItem('orders_filter_rangeEnd', rangeEnd);
+    } catch (e) {
+      console.error('Failed to save orders filter state', e);
+    }
+  }, [issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
 
   useEffect(() => {
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
