@@ -5553,7 +5553,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <input
                     type="text"
-                    value={basicForm.customer}
+                    value={
+                      basicForm.customerCode
+                        ? `[${basicForm.customerCode}] ${basicForm.customer}`
+                        : ((order as any)?.customerCode || (order as any)?.customerId)
+                          ? `[${(order as any)?.customerCode || (order as any)?.customerId}] ${basicForm.customer}`
+                          : basicForm.customer
+                    }
                     readOnly
                     onClick={() => isEditing && setIsCustomerSearchOpen(true)}
                     disabled={!isEditing}
