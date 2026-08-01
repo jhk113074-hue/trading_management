@@ -255,6 +255,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
+        setSalesHistory([{ id: 'DEBUG', type: `getDocs결과: ${orderSnap.size}건 | COMPANY_ID: ${COMPANY_ID}`, date: '-', year: '-', ciNumber: `ordersRef경로: companies/${COMPANY_ID}/orders`, totalAmount: 0, currency: '', paidAmount: 0, paymentStatus: '' }]);
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
