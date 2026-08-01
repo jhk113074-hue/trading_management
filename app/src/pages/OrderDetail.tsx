@@ -12445,21 +12445,26 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   이 오더에 대해 시스템에서 수행된 발행, 수정, 삭제 등의 중요 활동 로그를 기록하고 타임라인으로 조회합니다.
                 </div>
                 {(order as any).history_logs && (order as any).history_logs.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '520px', overflowY: 'auto', paddingRight: '6px' }}>
                     {(() => {
                       const getUserDisplayName = (userStr?: string) => {
                         if (!userStr) return '시스템 (System)';
                         const val = userStr.trim();
                         const valLower = val.toLowerCase();
+                        const userPrefix = valLower.split('@')[0];
 
-                        // 1. Dynamic 1:1 lookup from users DB (team management)
+                        // 100% Dynamic 1:1 lookup from users DB (team/account management)
                         const matched = usersList.find(u => {
                           const uId = (u.id || '').toLowerCase();
                           const uEmail = (u.email || '').toLowerCase();
+                          const uEmailPrefix = uEmail.split('@')[0];
                           const uName = (u.name || '').toLowerCase();
-                          return uId === valLower || uEmail === valLower || uName === valLower ||
-                                 (uEmail && valLower.includes(uEmail)) ||
-                                 (uId && valLower.includes(uId));
+
+                          return uId === valLower || 
+                                 uEmail === valLower || 
+                                 uName === valLower ||
+                                 (uEmailPrefix && uEmailPrefix === userPrefix) ||
+                                 (uId && uId === userPrefix);
                         });
 
                         if (matched && matched.name) {
@@ -12468,11 +12473,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           return `${matched.name}${pos}`;
                         }
 
-                        // 2. Exact email/ID fallback parsing if not yet loaded in DB (Team management exact titles)
-                        if (valLower.includes('jhk010624')) return '김하은 사원';
-                        if (valLower.includes('alexpark')) return '박현 차장';
-                        if (valLower.includes('jhkim1130')) return '김주한 대표이사';
-                        if (val.includes('@')) return val.split('@')[0];
+                        // Generic email prefix fallback when DB is loading
+                        if (val.includes('@')) {
+                          return val.split('@')[0];
+                        }
                         return val;
                       };
 
