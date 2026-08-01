@@ -257,6 +257,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
+        console.log('[STEP1] getDocs완료:', orderSnap.size);
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
@@ -285,6 +286,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           }
         });
         exportRecords.push(...orderResults.values());
+        console.log('[STEP2] 매칭완료:', exportRecords.length);
 
         // B. Imports (getDocs)
         const importQueries: any[] = [];
@@ -340,7 +342,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         });
         const list = Array.from(combinedMap.values());
         list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-        console.log('setSalesHistory 호출, 건수:', list.length);
+        console.log('[STEP3] setSalesHistory:', list.length);
         setSalesHistory(list);
       } catch (err: any) {
         console.error('[CRM] fetchSalesHistory error:', err.message, err.code, err.stack?.substring(0, 200));
