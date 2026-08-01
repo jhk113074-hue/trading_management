@@ -258,16 +258,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     if (exactName)   orderQueries.push(query(ordersRef, where('customerName', '==', exactName)));
     if (exactNameKo) orderQueries.push(query(ordersRef, where('customerName', '==', exactNameKo)));
 
-    let orderListenerCount = orderQueries.length || 1;
     const orderResults = new Map<string, any>();
-    const onOrderQueryDone = () => {
-      orderListenerCount--;
-      if (orderListenerCount <= 0) {
-        exportRecords = [...orderResults.values()];
-        updateCombinedSales();
-      }
-    };
-
     if (orderQueries.length === 0) {
       exportRecords = [];
       updateCombinedSales();
@@ -275,8 +266,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       orderQueries.forEach(q => {
         const unsub = onSnapshot(q, (snap: any) => {
           snap.docs.forEach((d: any) => { orderResults.set(d.id, toExportRecord(d)); });
-          onOrderQueryDone();
-        }, (err: any) => { console.error('[CRM] orders query error:', err); onOrderQueryDone(); });
+          exportRecords = [...orderResults.values()];
+          updateCombinedSales();
+        }, (err: any) => {
+          console.error('[CRM] orders query error:', err);
+          updateCombinedSales();
+        });
         unsubs.push(unsub);
       });
     }
@@ -295,16 +290,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     if (exactName)   importQueries.push(query(importsRef, where('customerName',  '==', exactName)));
     if (exactNameKo) importQueries.push(query(importsRef, where('customerName',  '==', exactNameKo)));
 
-    let importListenerCount = importQueries.length || 1;
     const importResults = new Map<string, any>();
-    const onImportQueryDone = () => {
-      importListenerCount--;
-      if (importListenerCount <= 0) {
-        importRecords = [...importResults.values()];
-        updateCombinedSales();
-      }
-    };
-
     if (importQueries.length === 0) {
       importRecords = [];
       updateCombinedSales();
@@ -312,8 +298,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       importQueries.forEach(q => {
         const unsub = onSnapshot(q, (snap: any) => {
           snap.docs.forEach((d: any) => { importResults.set(d.id, toImportRecord(d)); });
-          onImportQueryDone();
-        }, (err: any) => { console.error('[CRM] imports query error:', err); onImportQueryDone(); });
+          importRecords = [...importResults.values()];
+          updateCombinedSales();
+        }, (err: any) => {
+          console.error('[CRM] imports query error:', err);
+          updateCombinedSales();
+        });
         unsubs.push(unsub);
       });
     }
@@ -333,16 +323,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     if (exactNameKo) domQueries.push(query(domRef, where('customerName', '==', exactNameKo)));
     if (exactName)   domQueries.push(query(domRef, where('buyer',        '==', exactName)));
 
-    let domListenerCount = domQueries.length || 1;
     const domResults = new Map<string, any>();
-    const onDomQueryDone = () => {
-      domListenerCount--;
-      if (domListenerCount <= 0) {
-        domesticRecords = [...domResults.values()];
-        updateCombinedSales();
-      }
-    };
-
     if (domQueries.length === 0) {
       domesticRecords = [];
       updateCombinedSales();
@@ -350,8 +331,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       domQueries.forEach(q => {
         const unsub = onSnapshot(q, (snap: any) => {
           snap.docs.forEach((d: any) => { domResults.set(d.id, toDomesticRecord(d)); });
-          onDomQueryDone();
-        }, (err: any) => { console.error('[CRM] domestic query error:', err); onDomQueryDone(); });
+          domesticRecords = [...domResults.values()];
+          updateCombinedSales();
+        }, (err: any) => {
+          console.error('[CRM] domestic query error:', err);
+          updateCombinedSales();
+        });
         unsubs.push(unsub);
       });
     }
