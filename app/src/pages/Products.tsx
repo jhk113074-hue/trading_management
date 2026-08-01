@@ -83,7 +83,7 @@ export const Products: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   // Column resize: [코드, 품명(한글), 품명(영어), 규격, 분류, 제조사, 공급업체, 단가, 원산지, TDS, MSDS, 관리]
-  const { thStyle, resizerProps } = useColumnResize([85, 150, 160, 160, 140, 130, 130, 110, 75, 75, 75, 110]);
+  const { thStyle, resizerProps } = useColumnResize([80, 135, 140, 150, 120, 115, 115, 105, 55, 55, 55, 95]);
   
   // Filtering & Pagination
   const [searchQuery, setSearchQuery] = useState('');
@@ -452,8 +452,8 @@ export const Products: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+      <div style={{ overflowX: 'hidden', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', fontSize: '11px' }}>
             <tr>
               <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
