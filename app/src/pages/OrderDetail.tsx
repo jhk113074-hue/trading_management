@@ -4357,6 +4357,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
+        setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -6209,7 +6210,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   }}
                                   title="카카오톡 단체방 공유용 텍스트 메시지 복사"
                                 >
-                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '☑️ 카톡 메시지 복사' : '💬 카톡 메시지 복사'}
+                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '☑️ 카톡 발송' : '💬 카톡 발송'}
                                 </button>
                                 {copiedKatalkSuppliers[supplierName] && (
                                   <span style={{ padding: '3px 8px', background: '#fef9c3', color: '#854d0e', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', border: '1px solid #fde047', display: 'inline-flex', alignItems: 'center' }}>
