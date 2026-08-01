@@ -45,6 +45,8 @@ interface MeetingMinute {
   isDraft?: boolean;
   companies?: MeetingCompany[];
   attachments?: Attachment[];
+  videoMeetingUrl?: string;
+  videoPlatform?: 'MEET' | 'TEAMS' | 'ZOOM' | 'OTHER';
 }
 
 interface PresenceUser {
@@ -89,6 +91,8 @@ export const MeetingMinutes: React.FC = () => {
   const [companies, setCompanies] = useState<MeetingCompany[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [contentHTML, setContentHTML] = useState('');
+  const [videoMeetingUrl, setVideoMeetingUrl] = useState('');
+  const [videoPlatform, setVideoPlatform] = useState<'MEET' | 'TEAMS' | 'ZOOM' | 'OTHER'>('MEET');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [customerId, setCustomerId] = useState('');
@@ -824,6 +828,8 @@ export const MeetingMinutes: React.FC = () => {
     setCompanies(m.companies || []);
     setAttachments(m.attachments || []);
     setContentHTML(m.content);
+    setVideoMeetingUrl(m.videoMeetingUrl || '');
+    setVideoPlatform(m.videoPlatform || 'MEET');
     setIsFormOpen(true);
     setTimeout(() => {
       if (editorRef.current) {
@@ -860,6 +866,8 @@ export const MeetingMinutes: React.FC = () => {
           attendees: aggregatedAttendees,
           companies,
           attachments,
+          videoMeetingUrl,
+          videoPlatform,
           content: currentEditorContent,
           isDraft: false,
           updatedAt: new Date().toISOString()
@@ -1342,6 +1350,75 @@ export const MeetingMinutes: React.FC = () => {
                   >
                     🪄 초안 생성
                   </button>
+                </div>
+              </div>
+
+              {/* Video Meeting Integration Toolbar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#eff6ff', padding: '14px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📹 원클릭 화상회의 개설 및 링크 연동 (Google Meet / MS Teams / Zoom)
+                  </span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open('https://meet.google.com/new', '_blank');
+                        setVideoPlatform('MEET');
+                      }}
+                      style={{ padding: '4px 10px', background: '#047857', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      🟢 Google Meet 개설
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open('https://teams.microsoft.com/', '_blank');
+                        setVideoPlatform('TEAMS');
+                      }}
+                      style={{ padding: '4px 10px', background: '#4338ca', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      🟣 MS Teams 개설
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open('https://zoom.us/start/videomeeting', '_blank');
+                        setVideoPlatform('ZOOM');
+                      }}
+                      style={{ padding: '4px 10px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      🔵 Zoom 개설
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    value={videoPlatform}
+                    onChange={e => setVideoPlatform(e.target.value as any)}
+                    style={{ padding: '0 8px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 750 }}
+                  >
+                    <option value="MEET">🟢 Google Meet</option>
+                    <option value="TEAMS">🟣 MS Teams</option>
+                    <option value="ZOOM">🔵 Zoom Meeting</option>
+                    <option value="OTHER">🌐 기타 화상회의</option>
+                  </select>
+                  <input
+                    type="url"
+                    placeholder="생성된 화상회의 참여 링크 URL을 입력/붙여넣기 하세요 (예: https://meet.google.com/abc-defg-hij)"
+                    value={videoMeetingUrl}
+                    onChange={e => setVideoMeetingUrl(e.target.value)}
+                    style={{ flex: 1, padding: '0 12px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }}
+                  />
+                  {videoMeetingUrl && (
+                    <button
+                      type="button"
+                      onClick={() => window.open(videoMeetingUrl, '_blank')}
+                      style={{ padding: '0 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', height: '34px' }}
+                    >
+                      🔗 회의 입장 테스트
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -1926,6 +2003,21 @@ export const MeetingMinutes: React.FC = () => {
               
               {/* Metadata area */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                {selectedMeeting.videoMeetingUrl && (
+                  <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📹 화상회의 참여 링크: <span style={{ textDecoration: 'underline', wordBreak: 'break-all' }}>{selectedMeeting.videoMeetingUrl}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => window.open(selectedMeeting.videoMeetingUrl, '_blank')}
+                      style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      🔗 화상회의 즉시 입장
+                    </button>
+                  </div>
+                )}
+
                 {selectedMeeting.projectName && (
                   <div style={{ fontSize: '12.5px', color: '#334155' }}>
                     <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
