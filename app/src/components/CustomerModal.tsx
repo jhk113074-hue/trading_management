@@ -264,16 +264,27 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     
     // Subscribe to all orders as fallback/broad match to guarantee 100% precision
     const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
+      const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
+      const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
+
       snap.docs.forEach((d: any) => {
         const data = d.data();
-        const cVal = String(data.customer || data.customerName || '').trim().toLowerCase();
+        const rawCVal = String(data.customer || data.customerName || '').trim();
+        const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
         const cId = String(data.customerId || '').trim().toLowerCase();
         const cCode = String(data.customerCode || '').trim().toLowerCase();
 
         const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
         const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
-        const matchName = targetName && (cVal.includes(targetName) || targetName.includes(cVal.replace(/[^a-z0-9]/g, '')));
-        const matchNameKo = targetNameKo && (cVal.includes(targetNameKo) || targetNameKo.includes(cVal.replace(/[^a-z0-9가-힣]/g, '')));
+        
+        let matchName = false;
+        if (cleanTargetName && cleanTargetName.length >= 2) {
+          matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
+        }
+        let matchNameKo = false;
+        if (cleanTargetNameKo && cleanTargetNameKo.length >= 2) {
+          matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
+        }
 
         if (matchCode || matchId || matchName || matchNameKo) {
           orderResults.set(d.id, toExportRecord(d));
