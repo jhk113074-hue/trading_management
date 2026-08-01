@@ -497,9 +497,23 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           onMouseDown={handleMouseDown}
           style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', cursor: 'move', userSelect: 'none' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🌐</span>
-              {initialCustomer ? '고객사 정보 수정 (Edit Customer Master)' : '신규 고객사 등록 (Register Customer Master)'}
+              <span>{initialCustomer ? '고객사 정보 수정' : '신규 고객사 등록'}</span>
+              {(formData.customerCode || formData.name) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
+                  {formData.customerCode && (
+                    <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                      {formData.customerCode}
+                    </span>
+                  )}
+                  {formData.name && (
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
+                      {formData.name}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>✕</button>
