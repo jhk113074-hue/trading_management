@@ -196,31 +196,35 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     const isOrderMatched = (docData: any) => {
       if (!docData) return false;
 
-      // 1. Direct ID/Code Match
+      // 1. Direct ID/Code Match (most reliable)
       const docCustId = String(docData.customerId || docData.customerCode || '').trim();
       if ((targetId && docCustId && docCustId === targetId) || (targetCode && docCustId && docCustId === targetCode)) {
         return true;
       }
 
-      // 2. Customer Name Field Match (strictly inspect customer name property, not whole JSON string)
-      let docCustName = '';
-      if (typeof docData.customer === 'string') docCustName = docData.customer;
-      else if (docData.customer?.name) docCustName = docData.customer.name;
-      else if (docData.customerName) docCustName = docData.customerName;
-      else if (docData.buyerName) docCustName = docData.buyerName;
-      else if (docData.buyer) docCustName = typeof docData.buyer === 'string' ? docData.buyer : docData.buyer.name;
-      else if (docData.importerName) docCustName = docData.importerName;
-      else if (docData.supplierName) docCustName = docData.supplierName;
+      // 2. Collect candidate customer name fields from the document
+      // - Export orders: data.customer (string)
+      // - Import orders: data.finalCustomer (최종 고객사)
+      // - Domestic trades: data.customerName / data.buyer
+      const candidateNames: string[] = [];
+      if (typeof docData.customer === 'string' && docData.customer) candidateNames.push(docData.customer);
+      else if (docData.customer?.name) candidateNames.push(docData.customer.name);
+      if (docData.finalCustomer) candidateNames.push(docData.finalCustomer);
+      if (docData.customerName) candidateNames.push(docData.customerName);
+      if (docData.buyerName) candidateNames.push(docData.buyerName);
+      if (docData.buyer && typeof docData.buyer === 'string') candidateNames.push(docData.buyer);
+      else if (docData.buyer?.name) candidateNames.push(docData.buyer.name);
 
-      if (!docCustName) return false;
+      for (const rawName of candidateNames) {
+        if (!rawName) continue;
+        const cleanDocName = String(rawName).toLowerCase().replace(/\s+/g, '');
+        if (!cleanDocName || cleanDocName.length < 2) continue;
 
-      const cleanDocName = String(docCustName).toLowerCase().replace(/\s+/g, '');
-
-      if (targetName && cleanDocName) {
-        if (cleanDocName.includes(targetName) || targetName.includes(cleanDocName)) return true;
-      }
-      if (targetNameKo && cleanDocName) {
-        if (cleanDocName.includes(targetNameKo) || targetNameKo.includes(cleanDocName)) return true;
+        // Forward containment only (avoid short-string reverse false positives)
+        if (targetName && cleanDocName.includes(targetName)) return true;
+        if (targetName && targetName.includes(cleanDocName) && cleanDocName.length >= 8) return true;
+        if (targetNameKo && cleanDocName.includes(targetNameKo)) return true;
+        if (targetNameKo && targetNameKo.includes(cleanDocName) && cleanDocName.length >= 4) return true;
       }
 
       return false;
