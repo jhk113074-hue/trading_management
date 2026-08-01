@@ -181,11 +181,14 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
     fetchCrmTasks();
 
+    console.log('[CRM DEBUG] useEffect 시작 | activeTab:', activeTab, '| formData.name:', formData.name, '| initialCustomer.name:', initialCustomer?.name);
     // Real-time Sales & Payment History Subscription
     const targetId = String(initialCustomer?.id || formData.customerCode || '').trim();
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
     const targetName = String(formData.name || initialCustomer?.name || '').trim().toLowerCase().replace(/\s+/g, '');
     const targetNameKo = String(formData.nameKo || initialCustomer?.nameKo || '').trim().toLowerCase().replace(/\s+/g, '');
+
+    console.log('[CRM DEBUG] targetId:', targetId, '| targetCode:', targetCode, '| targetName:', targetName, '| targetNameKo:', targetNameKo);
 
     if (!targetId && !targetCode && !targetName && !targetNameKo) {
       setSalesHistory([]);
@@ -211,6 +214,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       });
       const list = Array.from(combinedMap.values());
       list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      console.log('[CRM DEBUG] updateCombinedSales | 총합 건수:', list.length);
       setSalesHistory(list);
       setIsLoadingSales(false);
     };
@@ -264,6 +268,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     
     // Subscribe to all orders as fallback/broad match to guarantee 100% precision
     const allOrdersUnsub = onSnapshot(ordersRef, (snap: any) => {
+      console.log('[CRM DEBUG] snap.docs 수:', snap.docs.length);
       const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
       const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
 
@@ -286,10 +291,15 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
         }
 
+        if (d.id.includes('YS(AB)') || rawCVal.includes('BASSAM')) {
+          console.log('[CRM DEBUG 오더 확인]', d.id, '| customer:', rawCVal, '| clean:', cValClean, '| matchCode:', matchCode, '| matchId:', matchId, '| matchName:', matchName);
+        }
+
         if (matchCode || matchId || matchName || matchNameKo) {
           orderResults.set(d.id, toExportRecord(d));
         }
       });
+      console.log('[CRM DEBUG] 최종 orderResults 크기:', orderResults.size);
       exportRecords = [...orderResults.values()];
       updateCombinedSales();
     }, (err: any) => {
