@@ -4292,13 +4292,16 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       const senderPhone = userProfile?.phone || '010-7361-1130';
       const senderInfo = `${senderName} ${senderRank} (${senderPhone})`;
 
+      const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
+      const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
+
       const now = new Date();
       const dateFormatted = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
         + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
 
       const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
 
-      const msg = `[YSACC 발주서 발행 및 메일전송 알림]
+      const msg = `[${companyTitleName} 발주서 발행 및 메일전송 알림]
 ------------------------------------
 ▪ 발주번호: ${poNum}
 ▪ 공급업체: ${supplierName}
@@ -4324,6 +4327,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
   const handleSendPoEmail = async (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
+
+    const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
+    const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
 
     const targetSupplier = suppliersList.find(s => s.name === supplierName);
     const supplierEmail = targetSupplier?.purchaseEmail || '';
@@ -4356,8 +4362,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
 
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
-    const subject = `[YSACC 발주서 발행 알림] ${poNum} - ${supplierName}`;
-    const textContent = `[YSACC 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}\n------------------------------------\n📄 발주서 PDF 원본 다운로드:\n${pdfUrl || '(발행된 발주서가 없습니다. 먼저 발주서를 발행해 주세요.)'}`;
+    const subject = `[${companyTitleName} 발주서 발행 알림] ${poNum} - ${supplierName}`;
+    const textContent = `[${companyTitleName} 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}\n------------------------------------\n📄 발주서 PDF 원본 다운로드:\n${pdfUrl || '(발행된 발주서가 없습니다. 먼저 발주서를 발행해 주세요.)'}`;
 
     setPoEmailModalData({
       supplierName,
@@ -4457,18 +4463,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const shippingPdfUrl = shippingDoc?.fileUrl || '';
 
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
+    const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
+    const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
+
     const items = groupedSupplierItems[supplierName] || [];
     const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '';
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
 
-    let contentStr = `[YSACC 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}`;
+    let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}`;
 
     setPoEmailModalData({
       supplierName: `${supplierName}_arrival`,
       items,
       defaultToEmail: toEmail,
       defaultCcEmails: defaultCc,
-      defaultSubject: `[YSACC] ${supplierName} 도착보고서 및 쉬핑마크 라벨 발행 알림 (${poNum})`,
+      defaultSubject: `[${companyTitleName}] ${supplierName} 도착보고서 및 쉬핑마크 라벨 발행 알림 (${poNum})`,
       defaultContent: contentStr,
       pdfUrl: arrivalPdfUrl || shippingPdfUrl
     });
@@ -4476,6 +4485,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
   const handleCopyArrivalShippingKatalkMessage = (supplierName: string) => {
     if (!order) return;
+
+    const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
+    const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
+
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
@@ -4494,7 +4507,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
 
-    const msg = `[YSACC 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (도착보고서 발행 버튼을 먼저 클릭해주세요)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (쉬핑마크 라벨 발행 버튼을 먼저 클릭해주세요)'}`;
+    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (도착보고서 발행 버튼을 먼저 클릭해주세요)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (쉬핑마크 라벨 발행 버튼을 먼저 클릭해주세요)'}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).catch(() => {});
