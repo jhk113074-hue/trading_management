@@ -58,6 +58,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     [customerId, customerCode, customerName]
   );
 
+  useEffect(() => {
+    console.log('stableCustomerKey 변경됨:', stableCustomerKey, new Date().toISOString());
+  }, [stableCustomerKey]);
+
   // 겸업(공급사 연결) 검색용
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
