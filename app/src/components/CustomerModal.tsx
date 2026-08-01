@@ -805,7 +805,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                 <Input label="고객코드 (자동지정)" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={true} placeholder="생성 중..." />
-                <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL BASSAM FACTORIES" labelColor="#2563eb" />
+                <Input label="고객사명 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL BASSAM FACTORIES" labelColor="#2563eb" />
                 <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: AL-BASSAM" />
                 <Input label="대표자 (Representative)" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="CEO / President Name" />
                 
