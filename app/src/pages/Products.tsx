@@ -82,8 +82,8 @@ export const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Column resize: [코드, 상품명/규격, 분류, 단가, 공급업체/제조사, 원산지, 관리]
-  const { thStyle, resizerProps } = useColumnResize([85, 320, 120, 110, 180, 70, 160]);
+  // Column resize: [코드, 품명(한글), 품명(영어), 규격, 분류, 제조사, 공급업체, 단가, 원산지, TDS, MSDS, 관리]
+  const { thStyle, resizerProps } = useColumnResize([85, 150, 160, 160, 140, 130, 130, 110, 75, 75, 75, 110]);
   
   // Filtering & Pagination
   const [searchQuery, setSearchQuery] = useState('');
@@ -457,19 +457,24 @@ export const Products: React.FC = () => {
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', fontSize: '11px' }}>
             <tr>
               <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
-              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '9px 10px', cursor: 'pointer', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '9px 10px', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(한글) {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('nameEn')} style={thStyle(2, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(영어) {getSortIcon('nameEn')}<span {...resizerProps(2)} /></th>
+              <th onClick={() => handleSort('spec')} style={thStyle(3, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>규격(SPEC) {getSortIcon('spec')}<span {...resizerProps(3)} /></th>
+              <th onClick={() => handleSort('categoryLarge')} style={thStyle(4, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('manufacturerName')} style={thStyle(5, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>제조사 {getSortIcon('manufacturerName')}<span {...resizerProps(5)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(6, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('purchasePrice')} style={thStyle(7, { padding: '9px 10px', cursor: 'pointer', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>단가 {getSortIcon('purchasePrice')}<span {...resizerProps(7)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(8, { padding: '9px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(8)} /></th>
+              <th style={thStyle(9, { padding: '9px 10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>TDS<span {...resizerProps(9)} /></th>
+              <th style={thStyle(10, { padding: '9px 10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>MSDS<span {...resizerProps(10)} /></th>
+              <th style={thStyle(11, { padding: '9px 10px', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(11)} /></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 상품이 없습니다.</td></tr>
+              <tr><td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 상품이 없습니다.</td></tr>
             ) : (
               paginatedProducts.map(p => {
                 const priceFormatted = p.purchasePrice 
@@ -478,114 +483,101 @@ export const Products: React.FC = () => {
                       : Number(p.purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
                   : (p.currency === 'KRW' ? "0" : "0.00");
                 
-                const unitW = p.unitWidth ?? p.specWidth ?? 0;
-                const unitL = p.unitLength ?? p.specLength ?? 0;
-                const unitH = p.unitHeight ?? p.specHeight ?? 0;
-                const unitWt = p.unitWeight ?? p.weight ?? 0;
-                
-                const palletW = p.palletWidth ?? (p.packageType === 'Pallet' ? p.specWidth : 0);
-                const palletL = p.palletLength ?? (p.packageType === 'Pallet' ? p.specLength : 0);
-                const palletH = p.palletHeight ?? (p.packageType === 'Pallet' ? p.specHeight : 0);
+                const tdsCount = (p.technicalDocuments || []).filter(d => d.category === 'TDS').length;
+                const msdsCount = (p.technicalDocuments || []).filter(d => d.category === 'MSDS').length;
 
                 return (
                   <tr
                     key={p.id}
                     onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                    style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13px', transition: 'background 0.1s', cursor: 'pointer', height: '64px' }}
+                    style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13px', transition: 'background 0.1s', cursor: 'pointer', height: '44px', whiteSpace: 'nowrap' }}
                     onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                     onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                   >
                     {/* 상품코드 */}
-                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</div>
-                      {p.hsCode && (
-                        <div style={{ fontSize: '11px', color: '#64748b', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
-                          HS {p.hsCode}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>{p.id}</div>
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</span>
                     </td>
 
-                    {/* 상품명 / 규격 — 핵심 정보 2줄로 압축 */}
-                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      {/* 1줄: 한글명(굵게) + 영문명(연하게) */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>{p.nameKo || '-'}</span>
-                        {p.nameEn && p.nameEn !== p.nameKo && (
-                          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{p.nameEn}</span>
-                        )}
-                      </div>
-                      {/* 2줄: 스펙 + UNIT/PLT/적재 뱃지 */}
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
-                        {p.spec && (
-                          <span style={{ fontSize: '12px', color: '#64748b' }}>{p.spec}</span>
-                        )}
-                        {(unitW || unitL || unitH || unitWt) ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>UNIT</span>
-                            <span style={{ fontSize: '11.5px', color: '#64748b' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
-                          </span>
-                        ) : null}
-                        {(palletW || palletL || palletH) ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#ecfeff', color: '#0891b2', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>PLT</span>
-                            <span style={{ fontSize: '11.5px', color: '#64748b' }}>{palletW}x{palletL}x{palletH}</span>
-                          </span>
-                        ) : null}
-                        {p.qtyPerPallet ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#fffbeb', color: '#d97706', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>적재</span>
-                            <span style={{ fontSize: '12px', color: '#1e293b', fontWeight: 700 }}>{p.qtyPerPallet} EA</span>
-                          </span>
-                        ) : null}
-                      </div>
+                    {/* 품명 (한글) */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.nameKo || ''}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>{p.nameKo || '-'}</span>
+                    </td>
+
+                    {/* 품명 (영어) */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.nameEn || ''}>
+                      <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 500 }}>{p.nameEn || '-'}</span>
+                    </td>
+
+                    {/* 규격 (SPEC) */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.spec || ''}>
+                      <span style={{ fontSize: '12.5px', color: '#475569' }}>{p.spec || '-'}</span>
                     </td>
 
                     {/* 분류 */}
-                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '11.5px', color: '#475569', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: '4px' }}>
                         {p.categoryLarge || '-'}
                         {p.categoryMedium && <span style={{ color: '#94a3b8' }}> &gt; {p.categoryMedium}</span>}
-                      </div>
+                      </span>
+                    </td>
+
+                    {/* 제조사 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.manufacturerName || p.supplierName || ''}>
+                      <span style={{ fontSize: '12.5px', color: '#475569' }}>{p.manufacturerName || p.supplierName || '-'}</span>
+                    </td>
+
+                    {/* 공급업체 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.supplierName || ''}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>{p.supplierName || '-'}</span>
                     </td>
 
                     {/* 단가 */}
-                    <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#16a34a' }}>
                         {p.currency || 'KRW'} {priceFormatted}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>/ {p.unit || 'KG'}</div>
-                      {(p.minOrderQty || 0) > 0 && (
-                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
-                      )}
-                    </td>
-
-                    {/* 공급업체 / 제조사 */}
-                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>{p.supplierName || '-'}</div>
-                      {p.manufacturerName && p.manufacturerName !== p.supplierName && (
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>제조: </span>{p.manufacturerName}
-                        </div>
-                      )}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '3px' }}>/ {p.unit || 'KG'}</span>
                     </td>
 
                     {/* 원산지 */}
-                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: '12px', color: '#64748b' }}>{p.origin || '-'}</span>
                     </td>
 
-                    {/* 관리 — 삭제는 수정 모달 안에서만, 목록에서는 숨김 */}
+                    {/* TDS */}
+                    <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      {tdsCount > 0 ? (
+                        <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 750 }}>
+                          📄 TDS ({tdsCount})
+                        </span>
+                      ) : (
+                        <span style={{ color: '#cbd5e1', fontSize: '12px' }}>-</span>
+                      )}
+                    </td>
+
+                    {/* MSDS */}
+                    <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                      {msdsCount > 0 ? (
+                        <span style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 750 }}>
+                          🧪 MSDS ({msdsCount})
+                        </span>
+                      ) : (
+                        <span style={{ color: '#cbd5e1', fontSize: '12px' }}>-</span>
+                      )}
+                    </td>
+
+                    {/* 관리 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'background 0.2s' }}
+                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'background 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                       >수정</button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
-                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', color: '#475569', fontWeight: 600, transition: 'background 0.2s' }}
+                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', color: '#475569', fontWeight: 600, transition: 'background 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                       >복사</button>
