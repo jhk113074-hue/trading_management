@@ -58,6 +58,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     [customerId, customerCode, customerName]
   );
 
+  useEffect(() => {
+    console.log('stableCustomerKey 변경됨:', stableCustomerKey, new Date().toISOString());
+  }, [stableCustomerKey]);
+
   // 겸업(공급사 연결) 검색용
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -213,8 +217,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     }
 
     // 1회 비동기 조회 방식 (getDocs) — 구독/해제 타이밍 이슈 원천 해결
-    let cancelled = false;
-
     const fetchSalesHistory = async () => {
       const exactName   = String(formData.name      || initialCustomer?.name      || '').trim();
       const exactNameKo = String(formData.nameKo    || initialCustomer?.nameKo    || '').trim();
@@ -255,22 +257,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
-        const abDoc = orderSnap.docs.find(d => d.id === 'YS(AB)-26-01');
-        if (abDoc) {
-          const data = abDoc.data();
-          const rawCVal = String(data.customer || data.customerName || '').trim();
-          const cValClean = rawCVal.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-          const cId = String(data.customerId || '').trim().toLowerCase();
-          const cCode = String(data.customerCode || '').trim().toLowerCase();
-          const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
-          const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
-          const cleanTargetName = targetName.replace(/[^a-z0-9]/g, '');
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
-          }
-          throw new Error(`cCode="${cCode}" cId="${cId}" matchCode=${matchCode} matchId=${matchId} matchName=${matchName} | targetCode="${targetCode}" targetId="${targetId}" cleanTargetName="${cleanTargetName}" cValClean="${cValClean}"`);
-        }
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
@@ -348,26 +334,23 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         domesticRecords.push(...domResults.values());
 
         // Combined Sales History List
-        if (!cancelled) {
-          const combinedMap = new Map<string, any>();
-          [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
-            combinedMap.set(r.id, r);
-          });
-          const list = Array.from(combinedMap.values());
-          list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
-          setSalesHistory(list);
-        }
+        const combinedMap = new Map<string, any>();
+        [...exportRecords, ...importRecords, ...domesticRecords].forEach(r => {
+          combinedMap.set(r.id, r);
+        });
+        const list = Array.from(combinedMap.values());
+        list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+        console.log('setSalesHistory 호출, 건수:', list.length);
+        setSalesHistory(list);
       } catch (err) {
         console.error('[CRM] fetchSalesHistory error:', err);
-        if (!cancelled) setSalesHistory([]);
+        setSalesHistory([]);
       } finally {
-        if (!cancelled) setIsLoadingSales(false);
+        setIsLoadingSales(false);
       }
     };
 
     fetchSalesHistory();
-
-    return () => { cancelled = true; };
   }, [stableCustomerKey]);
 
   const handleChange = (field: keyof Customer, value: any) => {
