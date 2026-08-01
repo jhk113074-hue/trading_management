@@ -154,6 +154,7 @@ export const Orders: React.FC = () => {
   useEffect(() => {
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
     const unsubscribe = onSnapshot(ordersRef, (snap) => {
+      console.log('전체 오더 IDs:', snap.docs.map(d => d.id));
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
       setOrders(list);
       setLoading(false);
