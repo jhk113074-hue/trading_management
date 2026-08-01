@@ -222,7 +222,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
       setIsLoadingSales(true);
 
       try {
-        const ordersRef  = collection(db, 'companies', '영성ACC', 'orders');
+        const ordersRef  = collection(db, 'companies', COMPANY_ID, 'orders');
         const importsRef = collection(db, 'companies', COMPANY_ID, 'imports');
         const domRef     = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
 
@@ -255,6 +255,13 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         // A. Export Orders (getDocs)
         const orderSnap = await getDocs(ordersRef);
+        const abDoc = orderSnap.docs.find(d => d.id === 'YS(AB)-26-01');
+        if (abDoc) {
+          const d = abDoc.data();
+          throw new Error(`AB오더 customerCode="${d.customerCode}" customerId="${d.customerId}" customer="${d.customer}"`);
+        } else {
+          throw new Error(`YS(AB)-26-01 문서를 getDocs에서 찾을 수 없음. 전체 ${orderSnap.size}건`);
+        }
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
         const orderResults = new Map<string, any>();
