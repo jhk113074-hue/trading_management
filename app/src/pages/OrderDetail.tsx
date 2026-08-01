@@ -4195,6 +4195,71 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
   };
 
   // 발주서 이메일 수동 발송 (Brevo Direct REST API)
+  
+  const handleCopyKatalkPoMessage = (supplierName: string, items: OrderItem[]) => {
+    if (!order) return;
+
+    try {
+      const cleanSupplierName = supplierName.replace(/\s+/g, '');
+      const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+      const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+
+      const targetSupplier = suppliersList.find(s => s.name === supplierName);
+      const supplierEmail = targetSupplier?.purchaseEmail || '미지정';
+
+      const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
+      const pdfUrl = latestDoc?.fileUrl || '';
+
+      const itemsText = items.map(it => {
+        const spec = (it as any).grade ? ` ${(it as any).grade}` : '';
+        return `• [${it.name}${spec}] ${it.name || ''} (${(it.qty || 0).toLocaleString()}${it.unit || 'EA'})`;
+      }).join('\n');
+
+      const totalAmt = items.reduce((sum, it) => {
+        const price = (it as any).purchaseUnitPrice != null ? (it as any).purchaseUnitPrice : it.unitPrice;
+        return sum + (price || 0) * (it.qty || 0);
+      }, 0);
+      const formattedAmt = totalAmt > 0 ? `₩${Math.round(totalAmt).toLocaleString()} (VAT포함)` : '₩0 (VAT포함)';
+
+      const senderName = userProfile?.name || '김주한';
+      const senderRank = userProfile?.role === 'admin' ? '대표이사' : (userProfile?.role || '담당');
+      const senderPhone = userProfile?.phone || '010-7361-1130';
+      const senderInfo = `${senderName} ${senderRank} (${senderPhone})`;
+
+      const now = new Date();
+      const dateFormatted = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
+        + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
+
+      const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+
+      const msg = `[YSACC 발주서 발행 및 메일전송 알림]
+------------------------------------
+▪ 발주번호: ${poNum}
+▪ 공급업체: ${supplierName}
+▪ 발주품목:
+${itemsText}
+▪ 발주금액: ${formattedAmt}
+------------------------------------
+▪ 발신담당: ${senderInfo}
+▪ 수신(TO): ${supplierEmail}
+▪ 참조(CC): ${ccEmails.join(', ')}
+▪ 발행일시: ${dateFormatted}
+------------------------------------
+📄 발주서 PDF 원본 다운로드:
+${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발행 및 저장해 주세요.)'}`;
+
+      navigator.clipboard.writeText(msg).then(() => {
+        alert(`📋 [카카오톡 공유 메시지 복사 완료]\n\n카카오톡 대화창에서 Ctrl+V 키를 누르시면 완벽히 붙여넣어집니다!`);
+      }).catch(err => {
+        console.error(err);
+        alert('❌ 클립보드 복사 실패');
+      });
+    } catch (e) {
+      console.error(e);
+      alert('오류가 발생했습니다.');
+    }
+  };
+
   const handleSendPoEmail = async (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
 
@@ -6087,6 +6152,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
                                 >
                                   📧 메일 발송
+                                </button>
+                                <button 
+                                  onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#FEE500', border: '1px solid #eab308', color: '#191919', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '14.5px' }}
+                                  title="카카오톡 단체방 공유용 텍스트 메시지 복사"
+                                >
+                                  💬 카톡 메시지 복사
                                 </button>
                                 
                                 
