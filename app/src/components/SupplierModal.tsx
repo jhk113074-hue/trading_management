@@ -553,9 +553,22 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           onMouseDown={handleMouseDown}
           style={{ padding: '16px 24px 0 24px', borderBottom: '1px solid #cbd5e1', background: '#fafafa', cursor: 'move', userSelect: 'none' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span>🏭</span>
-              {initialSupplier ? '공급업체 정보 수정 (Edit Supplier Master)' : '신규 공급업체 등록 (Register Supplier Master)'}
+              <span>{initialSupplier ? '공급업체 정보 수정 (Edit Supplier Master)' : '신규 공급업체 등록 (Register Supplier Master)'}</span>
+              {(formData.name || formData.supplierCode) && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
+                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>|</span>
+                  <span style={{ fontSize: '13.5px', color: '#1e3a8a', fontWeight: 800, background: '#eff6ff', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px' }}>
+                    {formData.name || '미입력'}
+                  </span>
+                  {formData.supplierCode && (
+                    <span style={{ fontSize: '12px', color: '#475569', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: '4px' }}>
+                      코드: {formData.supplierCode}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>✕</button>
           </div>
