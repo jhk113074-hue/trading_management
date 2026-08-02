@@ -276,19 +276,18 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           const supplierPaymentInstallments = basicForm.supplierPaymentInstallments || {};
           const supplierPayments = basicForm.supplierPayments || {};
 
-          // 이 오더에서 해당 공급사에 해당하는 품목만 필터링 (정확한 이름 매칭)
+          // 이 오더에서 해당 공급사에 해당하는 품목만 필터링 (정확 일치 매칭)
           const matchedItems = items.filter((item: any) => {
             const iSupp = String(item.supplier || item.supplierName || '').trim();
             if (!iSupp) return false;
             const iSuppClean = iSupp.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-            // 1. 공급사 코드/ID로 매칭
             const iCode = String(item.supplierCode || '').trim().toLowerCase();
+            
+            // 1순위: 공급사 코드로 정확 매칭
             if (targetCode && iCode === targetCode.toLowerCase()) return true;
-            // 2. 이름 정확 매칭 (포함 관계 — 단 2자 이상)
-            if (supplierNameClean && supplierNameClean.length >= 2) {
-              return iSuppClean.includes(supplierNameClean) || supplierNameClean.includes(iSuppClean);
-            }
-            return false;
+            if (targetId && iCode === targetId.toLowerCase()) return true;
+            // 2순위: 이름 정확 일치만 (포함 관계 제거)
+            return iSuppClean === supplierNameClean;
           });
 
           if (matchedItems.length === 0) return; // 이 오더는 이 공급사와 무관 — 스킵
