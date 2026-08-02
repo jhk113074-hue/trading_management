@@ -279,8 +279,8 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           const data = d.data();
           const items: any[] = data.items || [];
           const basicForm = data.basicForm || {};
-          const supplierPaymentInstallments = basicForm.supplierPaymentInstallments || {};
-          const supplierPayments = basicForm.supplierPayments || {};
+          const supplierPaymentInstallments = data.supplierPaymentInstallments || basicForm.supplierPaymentInstallments || {};
+          const supplierPayments = data.supplierPayments || basicForm.supplierPayments || {};
 
           // 이 오더에서 해당 공급사에 해당하는 품목만 필터링 (정확 일치 매칭)
           const matchedItems = items.filter((item: any) => {
