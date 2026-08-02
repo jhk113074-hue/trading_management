@@ -291,7 +291,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           const dateStr = parseDateStr(data.orderDate || data.piDate || data.createdAt);
           orderRecords.push({
             id: d.id,
-            type: '소싱',
+            type: '수출소싱',
             date: dateStr,
             year: dateStr.substring(0, 4),
             ciNumber: data.ciNumber || data.orderNo || d.id,
@@ -300,9 +300,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             paidAmount: paidAmtKrw,
             paymentStatus: paymentStatusStr,
           });
-          console.log('[Supplier] 매칭된 오더:', d.id, '매칭품목수:', matchedItems.length);
         });
-        console.log('[Supplier] orderRecords 총 건수:', orderRecords.length);
 
         if (!cancelled) {
           const list = [...orderRecords];
