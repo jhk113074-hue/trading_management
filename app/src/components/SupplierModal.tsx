@@ -292,18 +292,26 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
           if (isDocMatch || matchedItems.length > 0) {
             let totAmtUsd = 0;
+            let totAmtKrw = 0;
+            const exRate = Number(data.exchangeRate || data.appliedExchangeRate || 1380);
+
             if (matchedItems.length > 0) {
               matchedItems.forEach((item: any) => {
                 const qty = Number(item.qty || item.quantity || 1);
                 const price = Number(item.purchaseUnitPrice || item.unitPrice || 0);
-                totAmtUsd += qty * price;
+                if (item.purchaseUnitCurrency === 'KRW') {
+                  totAmtKrw += qty * price;
+                } else {
+                  totAmtUsd += qty * price;
+                }
               });
             } else {
               totAmtUsd = Number(data.sourcingAmountUsd || data.buyingPriceUsd || data.supplierQuoteAmount || 0);
             }
 
+            const finalAmtKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
             const isPaid = data.payoutStatus === 'PAID' || data.supplierPaymentStatus === 'PAID';
-            const paidAmtUsd = isPaid ? totAmtUsd : Number(data.paidAmountUsd || 0);
+            const paidAmtKrw = isPaid ? finalAmtKrw : Number(data.paidAmountKrw || data.paidAmount || 0);
             const dateStr = parseDateStr(data.orderDate || data.piDate || data.createdAt);
 
             orderRecords.push({
@@ -312,10 +320,10 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
               date: dateStr,
               year: dateStr.substring(0, 4),
               ciNumber: data.ciNumber || data.piNumber || data.custPo || d.id,
-              totalAmount: totAmtUsd,
-              currency: 'USD',
-              paidAmount: paidAmtUsd,
-              paymentStatus: isPaid ? '지급완료' : (paidAmtUsd >= totAmtUsd && totAmtUsd > 0 ? '지급완료' : '미지급')
+              totalAmount: finalAmtKrw,
+              currency: 'KRW',
+              paidAmount: paidAmtKrw,
+              paymentStatus: isPaid ? '지급완료' : (paidAmtKrw >= finalAmtKrw && finalAmtKrw > 0 ? '지급완료' : '미지급')
             });
           }
         });
