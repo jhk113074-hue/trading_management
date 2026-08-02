@@ -298,9 +298,11 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
           if (matchedItems.length === 0) return; // 이 오더는 이 공급사와 무관 — 스킵
 
-          // 발주 금액 계산 (발주서 표 getSupplierPurchaseInfo 알고리즘과 동일)
+          // 발주 금액 계산 (공급가액, 부가세, 합계)
           let totAmtKrw = 0;
           let totAmtUsd = 0;
+          let vatKrw = 0;
+          let vatUsd = 0;
           const exRate = Number(data.exchangeRate || data.appliedExchangeRate || basicForm.exchangeRate || 1380);
 
           matchedItems.forEach((item: any) => {
@@ -313,14 +315,46 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
               totAmtKrw += qty * purchasePrice;
             }
           });
-          const finalAmtKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
 
-          // 지급 내역: basicForm.supplierPaymentInstallments[공급사명] 에서 가져옴
-          // 공급사명 키가 정확히 일치하는 것을 찾음
+          // 부가세(VAT) 계산 (기본 과세 10%, 영세인 경우 0)
+          const supplierTaxTypes = data.supplierTaxTypes || basicForm.supplierTaxTypes || {};
+          const matchedTaxTypeKey = Object.keys(supplierTaxTypes).find(key => {
+            const keyClean = key.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+            return supplierNameClean && keyClean.includes(supplierNameClean);
+          });
+          const taxType = matchedTaxTypeKey ? supplierTaxTypes[matchedTaxTypeKey] : '과세';
+
+          if (taxType !== '영세') {
+            vatKrw = Math.round(totAmtKrw * 0.1);
+            vatUsd = parseFloat((totAmtUsd * 0.1).toFixed(2));
+          }
+
+          let finalSupplyKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
+          let finalVatKrw = Math.round(vatKrw + (vatUsd * exRate));
+          let finalAmtKrw = finalSupplyKrw + finalVatKrw;
+
+          // 1. 세금계산서 증빙 등록이 되어 있는 경우, 세금계산서 발행 금액을 최종 계약/매입 금액으로 최우선 적용
+          const supplierTaxInvoiceDetails = data.supplierTaxInvoiceDetails || basicForm.supplierTaxInvoiceDetails || {};
+          const matchedTaxKey = Object.keys(supplierTaxInvoiceDetails).find(key => {
+            const keyClean = key.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+            return supplierNameClean && keyClean.includes(supplierNameClean);
+          });
+
+          if (matchedTaxKey && supplierTaxInvoiceDetails[matchedTaxKey]?.length > 0) {
+            const taxInvoices: any[] = supplierTaxInvoiceDetails[matchedTaxKey];
+            const sumSupply = taxInvoices.reduce((sum, inv) => sum + Number(inv.supplyAmount || 0), 0);
+            const sumVat = taxInvoices.reduce((sum, inv) => sum + Number(inv.vatAmount || 0), 0);
+            if (sumSupply > 0) {
+              finalSupplyKrw = sumSupply;
+              finalVatKrw = sumVat;
+              finalAmtKrw = sumSupply + sumVat;
+            }
+          }
+
+          // 2. 대금 지급 내역: supplierPaymentInstallments에서 송금 완료액 가져옴
           let paidAmtKrw = 0;
           let paymentStatusStr = '미지급';
 
-          // supplierPaymentInstallments 키 중 이 공급사와 매칭되는 것 찾기
           const matchedSupplierKey = Object.keys(supplierPaymentInstallments).find(key => {
             const keyClean = key.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
             return supplierNameClean && keyClean.includes(supplierNameClean);
@@ -332,6 +366,8 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             const payStatus = supplierPayments[matchedSupplierKey]?.status || '';
             if (payStatus === '입금완료' || payStatus === 'PAID' || (paidAmtKrw >= finalAmtKrw && finalAmtKrw > 0)) {
               paymentStatusStr = '지급완료';
+            } else if (paidAmtKrw > 0) {
+              paymentStatusStr = '부분지급';
             }
           }
 
@@ -342,6 +378,8 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             date: dateStr,
             year: dateStr.substring(0, 4),
             ciNumber: data.ciNumber || data.orderNo || d.id,
+            supplyAmount: finalSupplyKrw,
+            vatAmount: finalVatKrw,
             totalAmount: finalAmtKrw,
             currency: 'KRW',
             paidAmount: paidAmtKrw,
@@ -824,12 +862,14 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                         )}
                         {totalAmtKRW > 0 && (
                           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 800, color: '#166534' }}>KRW 총 매입:</span>
+                            <span style={{ fontWeight: 800, color: '#166534' }}>KRW 매입 총액 (세금계산서/합계):</span>
                             <span style={{ fontWeight: 800, color: '#16a34a' }}>₩{Math.round(totalAmtKRW).toLocaleString()}</span>
                             <span style={{ color: '#94a3b8' }}>|</span>
                             <span style={{ fontWeight: 800, color: '#2563eb' }}>지급 완료: ₩{Math.round(totalPaidKRW).toLocaleString()}</span>
-                            {totalAmtKRW - totalPaidKRW > 0 && (
-                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미지급: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})</span>
+                            {totalAmtKRW - totalPaidKRW > 0 ? (
+                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미지급 잔액: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})</span>
+                            ) : (
+                              <span style={{ fontWeight: 800, color: '#16a34a' }}>(전액 지급완료)</span>
                             )}
                           </div>
                         )}
@@ -853,14 +893,23 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>년월일 (Date)</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>구분</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>CI / 문서 번호</th>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>매입/계약 금액</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>공급가액 / 부가세</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>최종 매입/계약 (합계)</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>지급/결제 금액</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center' }}>지급 상태</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredList.map((s: any) => {
-                              const amtFormatted = s.currency === 'KRW'
+                              const supplyFormatted = s.currency === 'KRW'
+                                ? `₩${Math.round(s.supplyAmount || s.totalAmount).toLocaleString()}`
+                                : `$${(s.supplyAmount || s.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+                              
+                              const vatFormatted = s.currency === 'KRW'
+                                ? `₩${Math.round(s.vatAmount || 0).toLocaleString()}`
+                                : `$${(s.vatAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+                              const totalFormatted = s.currency === 'KRW'
                                 ? `₩${Math.round(s.totalAmount).toLocaleString()}`
                                 : `$${s.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                               
@@ -869,6 +918,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                                 : `$${s.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                               const isPaidFull = s.paidAmount >= s.totalAmount && s.totalAmount > 0;
+                              const isPartial = s.paidAmount > 0 && !isPaidFull;
 
                               return (
                                 <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
@@ -884,15 +934,19 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                                     </span>
                                   </td>
                                   <td style={{ padding: '8px 10px', fontWeight: 700, color: '#1e293b' }}>{s.ciNumber}</td>
-                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{amtFormatted}</td>
+                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontSize: '11.5px', color: '#475569' }}>
+                                    <div>공급가: {supplyFormatted}</div>
+                                    {s.vatAmount > 0 && <div style={{ fontSize: '11px', color: '#64748b' }}>VAT: {vatFormatted}</div>}
+                                  </td>
+                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{totalFormatted}</td>
                                   <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#2563eb' }}>{paidFormatted}</td>
                                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                     <span style={{
                                       padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700,
-                                      background: isPaidFull ? '#dcfce7' : '#fee2e2',
-                                      color: isPaidFull ? '#166534' : '#991b1b'
+                                      background: isPaidFull ? '#dcfce7' : isPartial ? '#fef9c3' : '#fee2e2',
+                                      color: isPaidFull ? '#166534' : isPartial ? '#854d0e' : '#991b1b'
                                     }}>
-                                      {isPaidFull ? '● 지급완료' : '● 미지급'}
+                                      {isPaidFull ? '● 지급완료' : isPartial ? '◐ 부분지급' : '● 미지급'}
                                     </span>
                                   </td>
                                 </tr>
@@ -901,7 +955,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                           </tbody>
                           <tfoot style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
                             <tr>
-                              <td colSpan={3} style={{ padding: '10px', color: '#1e293b' }}>
+                              <td colSpan={4} style={{ padding: '10px', color: '#1e293b' }}>
                                 📊 합계 (TOTAL - 전체 총 {filteredList.length}건)
                               </td>
                               <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
