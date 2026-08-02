@@ -258,8 +258,8 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
           matchedItems.forEach((item: any) => {
             const qty = Number(item.qty || item.quantity || 1);
-            const price = Number(item.purchaseUnitPrice || 0);
-            const currency = String(item.purchaseUnitCurrency || 'KRW').toUpperCase();
+            const price = Number(item.purchaseUnitPrice ?? item.originalPurchasePrice ?? 0);
+            const currency = String(item.purchaseUnitCurrency || item.originalPurchaseCurrency || (price > 1000 ? 'KRW' : 'USD')).toUpperCase();
             if (currency === 'USD') {
               totAmtUsd += qty * price;
             } else {
