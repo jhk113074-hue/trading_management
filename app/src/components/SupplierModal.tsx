@@ -262,70 +262,86 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           }
         });
 
-        // 2. Export Orders Collection (수출소싱/구매 매입)
+        // 2. Export Orders Collection — 소싱/발주 탭의 공급사별 발주 내역
         const orderSnap = await getDocs(ordersRef);
         const orderRecords: any[] = [];
+
+        const supplierNameForMatch = String(formData.name || initialSupplier?.name || '').trim();
+        const supplierNameClean = supplierNameForMatch.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+
         orderSnap.docs.forEach((d: any) => {
           const data = d.data();
-          const docSupplierCode = String(data.supplierCode || '').trim().toLowerCase();
-          const docSupplierId = String(data.supplierId || '').trim().toLowerCase();
-          const docSupplierName = String(data.supplierName || data.sourcingSupplier || '').trim();
-          const docSNameClean = docSupplierName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+          const items: any[] = [...(data.items || []), ...(data.sourcingItems || [])];
+          const basicForm = data.basicForm || {};
+          const supplierPaymentInstallments = basicForm.supplierPaymentInstallments || {};
+          const supplierPayments = basicForm.supplierPayments || {};
 
-          // Check Order document level matching
-          let isDocMatch = false;
-          if (targetCode && (docSupplierCode === targetCode.toLowerCase() || docSupplierId === targetCode.toLowerCase())) isDocMatch = true;
-          if (targetId && (docSupplierId === targetId.toLowerCase() || docSupplierCode === targetId.toLowerCase())) isDocMatch = true;
-          if (cleanTargetName && cleanTargetName.length >= 2 && (docSNameClean.includes(cleanTargetName) || cleanTargetName.includes(docSNameClean))) isDocMatch = true;
-
-          // Check line items matching
-          const allItems = [...(data.items || []), ...(data.sourcingItems || [])];
-          const matchedItems = allItems.filter((item: any) => {
+          // 이 오더에서 해당 공급사에 해당하는 품목만 필터링 (정확한 이름 매칭)
+          const matchedItems = items.filter((item: any) => {
             const iSupp = String(item.supplier || item.supplierName || '').trim();
+            if (!iSupp) return false;
             const iSuppClean = iSupp.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-            if (!iSuppClean) return false;
-            if (cleanTargetName && cleanTargetName.length >= 2) {
-              return iSuppClean.includes(cleanTargetName) || cleanTargetName.includes(iSuppClean);
+            // 1. 공급사 코드/ID로 매칭
+            const iCode = String(item.supplierCode || '').trim().toLowerCase();
+            if (targetCode && iCode === targetCode.toLowerCase()) return true;
+            // 2. 이름 정확 매칭 (포함 관계 — 단 2자 이상)
+            if (supplierNameClean && supplierNameClean.length >= 2) {
+              return iSuppClean.includes(supplierNameClean) || supplierNameClean.includes(iSuppClean);
             }
             return false;
           });
 
-          if (isDocMatch || matchedItems.length > 0) {
-            let totAmtUsd = 0;
-            let totAmtKrw = 0;
-            const exRate = Number(data.exchangeRate || data.appliedExchangeRate || 1380);
+          if (matchedItems.length === 0) return; // 이 오더는 이 공급사와 무관 — 스킵
 
-            if (matchedItems.length > 0) {
-              matchedItems.forEach((item: any) => {
-                const qty = Number(item.qty || item.quantity || 1);
-                const price = Number(item.purchaseUnitPrice || item.unitPrice || 0);
-                if (item.purchaseUnitCurrency === 'KRW') {
-                  totAmtKrw += qty * price;
-                } else {
-                  totAmtUsd += qty * price;
-                }
-              });
+          // 발주 금액 계산 (품목별 단가 * 수량)
+          let totAmtKrw = 0;
+          let totAmtUsd = 0;
+          const exRate = Number(data.exchangeRate || data.appliedExchangeRate || basicForm.exchangeRate || 1380);
+
+          matchedItems.forEach((item: any) => {
+            const qty = Number(item.qty || item.quantity || 1);
+            const price = Number(item.purchaseUnitPrice || 0);
+            const currency = String(item.purchaseUnitCurrency || 'KRW').toUpperCase();
+            if (currency === 'USD') {
+              totAmtUsd += qty * price;
             } else {
-              totAmtUsd = Number(data.sourcingAmountUsd || data.buyingPriceUsd || data.supplierQuoteAmount || 0);
+              totAmtKrw += qty * price;
             }
+          });
+          const finalAmtKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
 
-            const finalAmtKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
-            const isPaid = data.payoutStatus === 'PAID' || data.supplierPaymentStatus === 'PAID';
-            const paidAmtKrw = isPaid ? finalAmtKrw : Number(data.paidAmountKrw || data.paidAmount || 0);
-            const dateStr = parseDateStr(data.orderDate || data.piDate || data.createdAt);
+          // 지급 내역: basicForm.supplierPaymentInstallments[공급사명] 에서 가져옴
+          // 공급사명 키가 정확히 일치하는 것을 찾음
+          let paidAmtKrw = 0;
+          let paymentStatusStr = '미지급';
 
-            orderRecords.push({
-              id: d.id,
-              type: '수출소싱',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.ciNumber || data.piNumber || data.custPo || d.id,
-              totalAmount: finalAmtKrw,
-              currency: 'KRW',
-              paidAmount: paidAmtKrw,
-              paymentStatus: isPaid ? '지급완료' : (paidAmtKrw >= finalAmtKrw && finalAmtKrw > 0 ? '지급완료' : '미지급')
-            });
+          // supplierPaymentInstallments 키 중 이 공급사와 매칭되는 것 찾기
+          const matchedSupplierKey = Object.keys(supplierPaymentInstallments).find(key => {
+            const keyClean = key.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+            return supplierNameClean && keyClean.includes(supplierNameClean);
+          });
+
+          if (matchedSupplierKey) {
+            const installments: any[] = supplierPaymentInstallments[matchedSupplierKey] || [];
+            paidAmtKrw = installments.reduce((sum: number, inst: any) => sum + Number(inst.amount || 0), 0);
+            const payStatus = supplierPayments[matchedSupplierKey]?.status || '';
+            if (payStatus === '입금완료' || payStatus === 'PAID' || (paidAmtKrw >= finalAmtKrw && finalAmtKrw > 0)) {
+              paymentStatusStr = '지급완료';
+            }
           }
+
+          const dateStr = parseDateStr(data.orderDate || data.piDate || data.createdAt);
+          orderRecords.push({
+            id: d.id,
+            type: '소싱',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.piNumber || data.ciNumber || data.orderNo || d.id,
+            totalAmount: finalAmtKrw,
+            currency: 'KRW',
+            paidAmount: paidAmtKrw,
+            paymentStatus: paymentStatusStr,
+          });
         });
 
         // 3. Domestic Trades Collection (국내 매입)
