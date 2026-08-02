@@ -289,7 +289,11 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           }
 
           if (matchCode || matchId || matchName) {
-            const totAmtUsd = Number(data.costBreakdown?.buyingPriceUsd || data.totalAmount || data.totalAmountUsd || data.invoiceAmount || 0);
+            const piItemsTotal = (data.piItems || []).reduce((sum: number, item: any) => {
+              return sum + Number(item.totalAmount || (Number(item.unitPrice || 0) * Number(item.qty || item.quantity || 1)));
+            }, 0);
+            const totAmtUsd = piItemsTotal > 0 ? piItemsTotal
+              : Number(data.costBreakdown?.buyingPriceUsd || data.totalAmount || data.totalAmountUsd || data.invoiceAmount || 0);
             
             // 대금지급액 계산 (payments 배열의 송금 완료 금액 총합)
             let paidAmtUsd = 0;
