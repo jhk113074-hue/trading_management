@@ -210,9 +210,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
       setIsLoadingPurchase(true);
 
       try {
-        const importsRef = collection(db, 'companies', COMPANY_ID, 'imports');
-        const ordersRef  = collection(db, 'companies', COMPANY_ID, 'orders');
-        const domRef     = collection(db, 'companies', COMPANY_ID, 'domesticTrades');
+        const ordersRef = collection(db, 'companies', COMPANY_ID, 'orders');
 
         const parseDateStr = (rawDate: any) => {
           if (!rawDate) return '-';
@@ -222,45 +220,6 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           }
           return '-';
         };
-
-        const cleanTargetName = targetName.replace(/[^a-z0-9가-힣]/g, '');
-
-        // 1. Imports Collection (수입 매입)
-        const importSnap = await getDocs(importsRef);
-        const importRecords: any[] = [];
-        importSnap.docs.forEach((d: any) => {
-          const data = d.data();
-          const sCode = String(data.supplierCode || data.sellerCode || '').trim().toLowerCase();
-          const sId = String(data.supplierId || '').trim().toLowerCase();
-          const rawSName = String(data.importerName || data.sellerName || data.supplierName || '').trim();
-          const sNameClean = rawSName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-
-          const matchCode = targetCode && (sCode === targetCode.toLowerCase() || sId === targetCode.toLowerCase());
-          const matchId = targetId && (sId === targetId.toLowerCase() || sCode === targetId.toLowerCase());
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = sNameClean.includes(cleanTargetName) || cleanTargetName.includes(sNameClean);
-          }
-
-          if (matchCode || matchId || matchName) {
-            const totAmtUsd = Number(data.costBreakdown?.buyingPriceUsd || data.totalAmount || data.invoiceAmount || 0);
-            const isPaid = data.payoutStatus === 'PAID' || data.paymentStatus === 'COMPLETED' || data.status === '완료';
-            const paidAmtUsd = isPaid ? totAmtUsd : Number(data.paidAmountUsd || data.paidAmount || 0);
-            const dateStr = parseDateStr(data.importDate || data.blDate || data.createdAt);
-
-            importRecords.push({
-              id: d.id,
-              type: '수입',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
-              totalAmount: totAmtUsd,
-              currency: 'USD',
-              paidAmount: paidAmtUsd,
-              paymentStatus: isPaid ? '지급완료' : (paidAmtUsd >= totAmtUsd && totAmtUsd > 0 ? '지급완료' : '미지급')
-            });
-          }
-        });
 
         // 2. Export Orders Collection — 소싱/발주 탭의 공급사별 발주 내역
         const orderSnap = await getDocs(ordersRef);
@@ -341,52 +300,12 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             paidAmount: paidAmtKrw,
             paymentStatus: paymentStatusStr,
           });
+          console.log('[Supplier] 매칭된 오더:', d.id, '매칭품목수:', matchedItems.length);
         });
-        console.log('[Supplier] orderRecords:', orderRecords.length);
-
-        // 3. Domestic Trades Collection (국내 매입)
-        const domSnap = await getDocs(domRef);
-        const domRecords: any[] = [];
-        domSnap.docs.forEach((d: any) => {
-          const data = d.data();
-          const sCode = String(data.supplierCode || '').trim().toLowerCase();
-          const sId = String(data.supplierId || '').trim().toLowerCase();
-          const rawSName = String(data.supplierName || data.seller || data.supplier || '').trim();
-          const sNameClean = rawSName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-
-          const matchCode = targetCode && (sCode === targetCode.toLowerCase() || sId === targetCode.toLowerCase());
-          const matchId = targetId && (sId === targetId.toLowerCase() || sCode === targetId.toLowerCase());
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = sNameClean.includes(cleanTargetName) || cleanTargetName.includes(sNameClean);
-          }
-
-          if (matchCode || matchId || matchName) {
-            const totAmtKrw = Number(data.buyingTotal || data.buyingAmount || data.totalAmount || 0);
-            const isPaid = data.paymentStatus === '지급완료' || data.status === '완료';
-            const paidAmtKrw = isPaid ? totAmtKrw : Number(data.payoutAmount || data.paidAmount || 0);
-            const dateStr = parseDateStr(data.tradeDate || data.invoiceDate || data.createdAt);
-
-            domRecords.push({
-              id: d.id,
-              type: '국내',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.statementNo || data.tradeNo || d.id,
-              totalAmount: totAmtKrw,
-              currency: 'KRW',
-              paidAmount: paidAmtKrw,
-              paymentStatus: isPaid ? '지급완료' : (paidAmtKrw >= totAmtKrw && totAmtKrw > 0 ? '지급완료' : '미지급')
-            });
-          }
-        });
+        console.log('[Supplier] orderRecords 총 건수:', orderRecords.length);
 
         if (!cancelled) {
-          const combinedMap = new Map<string, any>();
-          [...importRecords, ...orderRecords, ...domRecords].forEach(r => {
-            combinedMap.set(r.id, r);
-          });
-          const list = Array.from(combinedMap.values());
+          const list = [...orderRecords];
           list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
           setPurchaseHistory(list);
         }
