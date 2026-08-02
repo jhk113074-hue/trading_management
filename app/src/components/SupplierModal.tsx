@@ -342,6 +342,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             paymentStatus: paymentStatusStr,
           });
         });
+        console.log('[Supplier] orderRecords:', orderRecords.length);
 
         // 3. Domestic Trades Collection (국내 매입)
         const domSnap = await getDocs(domRef);
