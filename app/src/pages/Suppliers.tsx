@@ -30,6 +30,8 @@ export const Suppliers: React.FC = () => {
   
   // Filtering
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | '공급사' | '포워딩사'>('ALL');
+  const [countryTypeFilter, setCountryTypeFilter] = useState<'ALL' | '국내' | '해외'>('ALL');
   
   // Sorting
   const [sortKey, setSortKey] = useState<keyof Supplier>('supplierCode');
@@ -111,7 +113,19 @@ export const Suppliers: React.FC = () => {
 
   const filteredAndSorted = useMemo(() => {
     let filtered = suppliers.filter(s => {
+      // Category filter
+      if (categoryFilter !== 'ALL') {
+        const itemCat = s.category || '공급사';
+        if (itemCat !== categoryFilter) return false;
+      }
+      // Country type filter
+      if (countryTypeFilter !== 'ALL') {
+        const itemCountry = s.countryType || '국내';
+        if (itemCountry !== countryTypeFilter) return false;
+      }
+      // Keyword Search
       const q = searchQuery.toLowerCase();
+      if (!q) return true;
       return (
         String(s.name || "").toLowerCase().includes(q) ||
         String(s.supplierCode || "").toLowerCase().includes(q) ||
@@ -127,7 +141,7 @@ export const Suppliers: React.FC = () => {
     });
 
     return filtered;
-  }, [suppliers, searchQuery, sortKey, sortDir]);
+  }, [suppliers, searchQuery, categoryFilter, countryTypeFilter, sortKey, sortDir]);
 
   const handleSort = (key: keyof Supplier) => {
     if (sortKey === key) {
@@ -197,18 +211,36 @@ export const Suppliers: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', flexWrap: 'wrap', alignItems: 'center' }}>
         <input 
           type="text" 
           placeholder="공급업체명, 코드, 사업자번호, 담당자 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', maxWidth: '400px', fontSize: '13px', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+          style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '240px', maxWidth: '380px', fontSize: '13px', outline: 'none', height: '34px', boxSizing: 'border-box' }}
         />
+        <select
+          value={categoryFilter}
+          onChange={(e: any) => setCategoryFilter(e.target.value)}
+          style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', outline: 'none' }}
+        >
+          <option value="ALL">🏢 전체 업체구분 (공급사/포워딩사)</option>
+          <option value="공급사">🏭 공급사 (제조/소싱)</option>
+          <option value="포워딩사">✈️ 포워딩사 (물류/운송)</option>
+        </select>
+        <select
+          value={countryTypeFilter}
+          onChange={(e: any) => setCountryTypeFilter(e.target.value)}
+          style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', outline: 'none' }}
+        >
+          <option value="ALL">🌏 전체 지역 (국내/해외)</option>
+          <option value="국내">🇰🇷 국내 업체</option>
+          <option value="해외">🌐 해외 업체</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
-        총 {filteredAndSorted.length}건
+        총 {filteredAndSorted.length}건 {(categoryFilter !== 'ALL' || countryTypeFilter !== 'ALL' || searchQuery) && `(전체 ${suppliers.length}건 중 필터링됨)`}
       </div>
 
       {/* Table */}
@@ -240,10 +272,15 @@ export const Suppliers: React.FC = () => {
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <td style={{ padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <strong style={{ color: '#0891b2' }}>{s.supplierCode || '-'}</strong>
-                      {s.category === '포워딩사' && (
+                      {s.category === '포워딩사' ? (
                         <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, backgroundColor: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', whiteSpace: 'nowrap' }}>포워더</span>
+                      ) : (
+                        <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', whiteSpace: 'nowrap' }}>공급사</span>
+                      )}
+                      {s.countryType === '해외' && (
+                        <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, backgroundColor: '#fefce8', color: '#a16207', border: '1px solid #fef08a', whiteSpace: 'nowrap' }}>해외</span>
                       )}
                     </div>
                   </td>
