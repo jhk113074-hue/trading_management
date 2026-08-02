@@ -516,6 +516,46 @@ export const ImportDetail: React.FC = () => {
   const activeTab = (currentTabParam && validTabs.includes(currentTabParam))
     ? currentTabParam
     : (viewMode === 'quote' ? '수입품 견적요청' : '수입내역');
+
+  const tabBadges = React.useMemo(() => {
+    if (!request) return {} as Record<string, 'done' | 'partial' | 'empty' | null>;
+
+    const piDone = (request.piItems || []).length >= 1;
+
+    const totalPaid = (request.payments || []).reduce((sum, p) => sum + Number(p.amountUsd || 0), 0);
+    const piItemsTotal = (request.piItems || []).reduce((sum, item) => {
+      return sum + Number((item as any).totalAmount || item.amount || (Number(item.unitPrice || 0) * Number(item.qty || 1)));
+    }, 0);
+    const totalCost = piItemsTotal > 0 ? piItemsTotal : Number(request.costBreakdown?.buyingPriceUsd || 0);
+
+    const payDone = totalCost > 0 && totalPaid >= totalCost;
+    const payStarted = totalPaid > 0;
+
+    const logisticsDone = !!(request.blAwb && request.blAwb !== '-' && request.blAwb.trim() !== '');
+
+    const settleDone = request.status === '정산완료' || !!(request.dealStatementSentDate && request.dealStatementSentDate.trim() !== '') || !!(request.taxInvoiceIssuedDate && request.taxInvoiceIssuedDate.trim() !== '');
+
+    const marginDone = request.marginRate !== undefined && request.marginRate !== null && request.marginRate !== 0;
+
+    // 견적 모드 (quote) 배지
+    const quoteReqDone = !!(request.requestDate && request.requestedBy && (request.piItems || []).length >= 1);
+    const quoteReceivedDone = (request.supplierQuotes || []).some(q => q.status === '확정');
+    const costCalcDone = !!(request.costBreakdown?.appliedExchangeRate || request.costBreakdown?.buyingPriceUsd);
+    const quoteMakeDone = (Number(request.customerQuoteAmount) || 0) > 0 || request.customerDecision === '승인';
+
+    return {
+      '수입품 견적요청':   quoteReqDone ? 'done' : 'empty',
+      '견적수령/네고':     quoteReceivedDone ? 'done' : 'empty',
+      '수입원가계산':       costCalcDone ? 'done' : 'empty',
+      '견적서작성':         quoteMakeDone ? 'done' : 'empty',
+      '수입내역':           piDone ? 'done' : 'empty',
+      '대금결제':           payDone ? 'done' : payStarted ? 'partial' : 'empty',
+      '운송사/관세사 선정': logisticsDone ? 'done' : 'empty',
+      '정산':               settleDone ? 'done' : 'empty',
+      '손익검토':           marginDone ? 'done' : 'empty',
+      '로그':               null,
+    };
+  }, [request]);
   const [profitCurrency, setProfitCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
@@ -1455,6 +1495,20 @@ export const ImportDetail: React.FC = () => {
               }}
             >
               {tab.label}
+              {(() => {
+                const badge = tabBadges[tab.key];
+                const isCurrent = activeTab === tab.key;
+                if (!badge) return null;
+                if (badge === 'done') return (
+                  <span style={{ marginLeft: 5, fontSize: 12, fontWeight: 800, color: isCurrent ? '#6ee7b7' : '#10b981' }}>✓</span>
+                );
+                if (badge === 'partial') return (
+                  <span style={{ marginLeft: 5, fontSize: 11, fontWeight: 700, color: isCurrent ? '#93c5fd' : '#2563eb', background: isCurrent ? 'rgba(255,255,255,0.2)' : '#eff6ff', padding: '1px 5px', borderRadius: 8 }}>일부</span>
+                );
+                return (
+                  <span style={{ marginLeft: 5, fontSize: 12, color: isCurrent ? '#cbd5e1' : '#94a3b8' }}>○</span>
+                );
+              })()}
             </button>
           ))}
         </div>
