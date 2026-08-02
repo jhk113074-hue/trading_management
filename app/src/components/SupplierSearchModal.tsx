@@ -7,9 +7,10 @@ interface Props {
   onSelect: (supplier: Supplier) => void;
   suppliers: Supplier[];
   onRefreshSuppliers?: () => void;
+  initialSearchTerm?: string;
 }
 
-export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppliers, onRefreshSuppliers }) => {
+export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppliers, onRefreshSuppliers, initialSearchTerm }) => {
   // Modeless Drag-to-move state
   const [position, setPosition] = useState({ x: 120, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
@@ -45,7 +46,7 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
     };
   }, [isDragging]);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
 
   // Filtered suppliers list
   const filteredSuppliers = useMemo(() => {

@@ -1983,6 +1983,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       {showSupplierSearch && (
         <SupplierSearchModal
           suppliers={suppliers}
+          initialSearchTerm={editingRequest?.importerName || ''}
           onClose={() => setShowSupplierSearch(false)}
           onRefreshSuppliers={loadSuppliers}
           onSelect={(sup) => {

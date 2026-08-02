@@ -5431,6 +5431,7 @@ customsDuty,
       {showSupplierSearchModal && (
         <SupplierSearchModal
           suppliers={allSuppliers}
+          initialSearchTerm={request?.importerName || ''}
           onClose={() => setShowSupplierSearchModal(false)}
           onSelect={(sup) => {
             const { bankName: parsedBankName, accountNo: parsedBankAccount, holder: parsedBankHolder, swift: parsedSwift } = parseBankUsdString(sup.bankUsd || '');
