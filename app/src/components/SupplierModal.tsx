@@ -223,7 +223,53 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           return '-';
         };
 
-        const cleanTargetName = targetName.replace(/[^a-z0-9가-힣]/g, '');
+        // 1. Imports Collection (수입 매입건)
+        const importSnap = await getDocs(importsRef);
+        const importRecords: any[] = [];
+        importSnap.docs.forEach((d: any) => {
+          const data = d.data();
+          const sCode = String(data.supplierCode || data.sellerCode || '').trim().toLowerCase();
+          const sId = String(data.supplierId || '').trim().toLowerCase();
+
+          const matchCode = targetCode && (sCode === targetCode.toLowerCase() || sId === targetCode.toLowerCase());
+          const matchId = targetId && (sId === targetId.toLowerCase() || sCode === targetId.toLowerCase());
+
+          if (matchCode || matchId) {
+            const piItemsTotal = (data.piItems || []).reduce((sum: number, item: any) => {
+              return sum + Number(item.totalAmount || (Number(item.unitPrice || 0) * Number(item.qty || item.quantity || 1)));
+            }, 0);
+            const totAmtUsd = piItemsTotal > 0 ? piItemsTotal
+              : Number(data.costBreakdown?.buyingPriceUsd || data.totalAmount || data.totalAmountUsd || data.invoiceAmount || 0);
+            
+            // 대금지급액 계산 (payments 배열의 송금 완료 금액 총합)
+            let paidAmtUsd = 0;
+            if (Array.isArray(data.payments) && data.payments.length > 0) {
+              paidAmtUsd = data.payments.reduce((sum: number, p: any) => sum + Number(p.amountUsd || p.amount || 0), 0);
+            } else if (data.payoutStatus === 'PAID' || data.paymentStatus === 'COMPLETED' || data.status === '완료') {
+              paidAmtUsd = totAmtUsd;
+            } else {
+              paidAmtUsd = Number(data.paidAmountUsd || data.paidAmount || 0);
+            }
+
+            const isPaidFull = paidAmtUsd >= totAmtUsd && totAmtUsd > 0;
+            const isPartial = paidAmtUsd > 0 && !isPaidFull;
+            const dateStr = parseDateStr(data.importDate || data.requestDate || data.blDate || data.createdAt);
+
+            importRecords.push({
+              id: d.id,
+              type: '수입',
+              date: dateStr,
+              year: dateStr.substring(0, 4),
+              ciNumber: data.piNumber || data.poNumber || data.blAwb || data.invoiceNo || data.importNo || d.id,
+              supplyAmount: totAmtUsd,
+              vatAmount: 0,
+              totalAmount: totAmtUsd,
+              currency: 'USD',
+              paidAmount: paidAmtUsd,
+              paymentStatus: isPaidFull ? '지급완료' : isPartial ? '부분지급' : '미지급'
+            });
+          }
+        });
 
         // 상품 마스터 DB 조회 (발주서 표 단가 계산 알고리즘과 동일)
         const productsSnap = await getDocs(productsRef);
@@ -270,60 +316,6 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
           }
           return { purchasePrice, purchaseCurrency };
         };
-
-        // 1. Imports Collection (수입 매입건)
-        const importSnap = await getDocs(importsRef);
-        const importRecords: any[] = [];
-        importSnap.docs.forEach((d: any) => {
-          const data = d.data();
-          const sCode = String(data.supplierCode || data.sellerCode || '').trim().toLowerCase();
-          const sId = String(data.supplierId || '').trim().toLowerCase();
-          const rawSName = String(data.importerName || data.sellerName || data.supplierName || '').trim();
-          const sNameClean = rawSName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-
-          const matchCode = targetCode && (sCode === targetCode.toLowerCase() || sId === targetCode.toLowerCase());
-          const matchId = targetId && (sId === targetId.toLowerCase() || sCode === targetId.toLowerCase());
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = sNameClean.includes(cleanTargetName) || cleanTargetName.includes(sNameClean);
-          }
-
-          if (matchCode || matchId || matchName) {
-            const piItemsTotal = (data.piItems || []).reduce((sum: number, item: any) => {
-              return sum + Number(item.totalAmount || (Number(item.unitPrice || 0) * Number(item.qty || item.quantity || 1)));
-            }, 0);
-            const totAmtUsd = piItemsTotal > 0 ? piItemsTotal
-              : Number(data.costBreakdown?.buyingPriceUsd || data.totalAmount || data.totalAmountUsd || data.invoiceAmount || 0);
-            
-            // 대금지급액 계산 (payments 배열의 송금 완료 금액 총합)
-            let paidAmtUsd = 0;
-            if (Array.isArray(data.payments) && data.payments.length > 0) {
-              paidAmtUsd = data.payments.reduce((sum: number, p: any) => sum + Number(p.amountUsd || p.amount || 0), 0);
-            } else if (data.payoutStatus === 'PAID' || data.paymentStatus === 'COMPLETED' || data.status === '완료') {
-              paidAmtUsd = totAmtUsd;
-            } else {
-              paidAmtUsd = Number(data.paidAmountUsd || data.paidAmount || 0);
-            }
-
-            const isPaidFull = paidAmtUsd >= totAmtUsd && totAmtUsd > 0;
-            const isPartial = paidAmtUsd > 0 && !isPaidFull;
-            const dateStr = parseDateStr(data.importDate || data.requestDate || data.blDate || data.createdAt);
-
-            importRecords.push({
-              id: d.id,
-              type: '수입',
-              date: dateStr,
-              year: dateStr.substring(0, 4),
-              ciNumber: data.piNumber || data.poNumber || data.blAwb || data.invoiceNo || data.importNo || d.id,
-              supplyAmount: totAmtUsd,
-              vatAmount: 0,
-              totalAmount: totAmtUsd,
-              currency: 'USD',
-              paidAmount: paidAmtUsd,
-              paymentStatus: isPaidFull ? '지급완료' : isPartial ? '부분지급' : '미지급'
-            });
-          }
-        });
 
         // 2. Export Orders Collection — 소싱/발주 탭의 공급사별 발주 내역
         const orderSnap = await getDocs(ordersRef);
