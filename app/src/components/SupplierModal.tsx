@@ -230,7 +230,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
         orderSnap.docs.forEach((d: any) => {
           const data = d.data();
-          const items: any[] = [...(data.items || []), ...(data.sourcingItems || [])];
+          const items: any[] = data.items || [];
           const basicForm = data.basicForm || {};
           const supplierPaymentInstallments = basicForm.supplierPaymentInstallments || {};
           const supplierPayments = basicForm.supplierPayments || {};
@@ -294,7 +294,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             type: '소싱',
             date: dateStr,
             year: dateStr.substring(0, 4),
-            ciNumber: data.piNumber || data.ciNumber || data.orderNo || d.id,
+            ciNumber: data.ciNumber || data.orderNo || d.id,
             totalAmount: finalAmtKrw,
             currency: 'KRW',
             paidAmount: paidAmtKrw,
