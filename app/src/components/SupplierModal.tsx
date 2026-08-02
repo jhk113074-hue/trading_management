@@ -211,6 +211,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
       try {
         const ordersRef = collection(db, 'companies', COMPANY_ID, 'orders');
+        const productsRef = collection(db, 'companies', COMPANY_ID, 'products');
 
         const parseDateStr = (rawDate: any) => {
           if (!rawDate) return '-';
@@ -219,6 +220,52 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             return rawDate.toDate().toISOString().substring(0, 10);
           }
           return '-';
+        };
+
+        // 상품 마스터 DB 조회 (발주서 표 단가 계산 알고리즘과 동일)
+        const productsSnap = await getDocs(productsRef);
+        const productsList: any[] = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const getSupplierPurchaseInfo = (it: any) => {
+          const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+          const itemCode = match ? match[1] : '-';
+          const matchedProd = productsList.find(p => p.productCode === itemCode || p.id === itemCode);
+
+          let defaultPrice = matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0);
+          let defaultCurrency = matchedProd ? (matchedProd.currency || 'USD') : 'USD';
+
+          if (matchedProd && matchedProd.purchasePrices && matchedProd.purchasePrices.length > 0) {
+            const activeSup = (it.supplier || '').trim();
+            let matchedHists = matchedProd.purchasePrices.filter((p: any) => (p.supplierName || '').trim() === activeSup || p.supplierCode === activeSup);
+            if (matchedHists.length === 0 && matchedProd.suppliers && matchedProd.suppliers.length > 0) {
+              const def = matchedProd.suppliers.find((s: any) => s.isDefault) || matchedProd.suppliers[0];
+              matchedHists = matchedProd.purchasePrices.filter((p: any) => p.supplierCode === def.supplierCode || p.supplierName === def.supplierName);
+            }
+            if (matchedHists.length > 0) {
+              matchedHists.sort((a: any, b: any) => (b.validFrom || '').localeCompare(a.validFrom || ''));
+              defaultPrice = matchedHists[0].price;
+              defaultCurrency = matchedHists[0].currency;
+            }
+          }
+
+          const originalPurchasePrice = it.originalPurchasePrice != null 
+            ? it.originalPurchasePrice 
+            : (it.purchaseUnitPrice != null ? it.purchaseUnitPrice : defaultPrice);
+          const purchasePrice = defaultPrice > 0 ? defaultPrice : (it.purchaseUnitPrice != null ? it.purchaseUnitPrice : originalPurchasePrice);
+
+          let purchaseCurrency = it.purchaseUnitCurrency;
+          if (!purchaseCurrency) {
+            if (it.originalPurchaseCurrency) {
+              purchaseCurrency = it.originalPurchaseCurrency;
+            } else if (purchasePrice > 1000) {
+              purchaseCurrency = 'KRW';
+            } else if (matchedProd) {
+              purchaseCurrency = defaultCurrency === 'KRW' ? 'KRW' : 'USD';
+            } else {
+              purchaseCurrency = 'USD';
+            }
+          }
+          return { purchasePrice, purchaseCurrency };
         };
 
         // 2. Export Orders Collection — 소싱/발주 탭의 공급사별 발주 내역
@@ -251,19 +298,19 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
           if (matchedItems.length === 0) return; // 이 오더는 이 공급사와 무관 — 스킵
 
-          // 발주 금액 계산 (품목별 단가 * 수량)
+          // 발주 금액 계산 (발주서 표 getSupplierPurchaseInfo 알고리즘과 동일)
           let totAmtKrw = 0;
           let totAmtUsd = 0;
           const exRate = Number(data.exchangeRate || data.appliedExchangeRate || basicForm.exchangeRate || 1380);
 
           matchedItems.forEach((item: any) => {
             const qty = Number(item.qty || item.quantity || 1);
-            const price = Number(item.purchaseUnitPrice ?? item.originalPurchasePrice ?? 0);
-            const currency = String(item.purchaseUnitCurrency || item.originalPurchaseCurrency || (price > 1000 ? 'KRW' : 'USD')).toUpperCase();
+            const { purchasePrice, purchaseCurrency } = getSupplierPurchaseInfo(item);
+            const currency = String(purchaseCurrency || 'KRW').toUpperCase();
             if (currency === 'USD') {
-              totAmtUsd += qty * price;
+              totAmtUsd += qty * purchasePrice;
             } else {
-              totAmtKrw += qty * price;
+              totAmtKrw += qty * purchasePrice;
             }
           });
           const finalAmtKrw = Math.round(totAmtKrw + (totAmtUsd * exRate));
