@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ImportRequest, TaxDocumentRow } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -342,8 +342,7 @@ export const ImportDetail: React.FC = () => {
 
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
@@ -508,7 +507,15 @@ export const ImportDetail: React.FC = () => {
   const displayBizType = myCompany.bizType || '도소매';
   const displayItemName = myCompany.itemName || '기자재';
   const displayBizItem = [displayBizType, displayItemName].filter(Boolean).join(' / ') || '도소매 / 기자재';
-  const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
+
+  const validTabs = viewMode === 'quote'
+    ? ['수입품 견적요청', '견적수령/네고', '수입원가계산', '견적서작성', '로그']
+    : ['수입내역', '대금결제', '운송사/관세사 선정', '정산', '손익검토', '로그'];
+
+  const currentTabParam = searchParams.get('tab');
+  const activeTab = (currentTabParam && validTabs.includes(currentTabParam))
+    ? currentTabParam
+    : (viewMode === 'quote' ? '수입품 견적요청' : '수입내역');
   const [profitCurrency, setProfitCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
@@ -581,13 +588,15 @@ export const ImportDetail: React.FC = () => {
 
   useEffect(() => {
     if (request && request.id === id) {
-      if (viewMode === 'quote') {
-        setActiveTab('수입품 견적요청');
-      } else {
-        setActiveTab('수입내역');
+      const tabParam = searchParams.get('tab');
+      if (!tabParam || !validTabs.includes(tabParam)) {
+        const defaultTab = viewMode === 'quote' ? '수입품 견적요청' : '수입내역';
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('tab', defaultTab);
+        setSearchParams(nextParams, { replace: true });
       }
     }
-  }, [request?.id, request?.customerDecision, id, viewMode]);
+  }, [request?.id, request?.customerDecision, id, viewMode, searchParams, validTabs]);
 
   // 🏦 기존 선택된 공급사의 송금 계좌 정보 자동 동기화 로드
   useEffect(() => {
@@ -1427,7 +1436,11 @@ export const ImportDetail: React.FC = () => {
           .map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.set('tab', tab.key);
+                setSearchParams(nextParams);
+              }}
               style={{
                 padding: '10px 4px',
                 border: 'none',
@@ -1777,7 +1790,11 @@ export const ImportDetail: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('견적수령/네고')}
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set('tab', '견적수령/네고');
+                  setSearchParams(nextParams);
+                }}
                 style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 다음 단계 (견적수령/네고) ➡️
@@ -1802,7 +1819,11 @@ export const ImportDetail: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('수입원가계산')}
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set('tab', '수입원가계산');
+                  setSearchParams(nextParams);
+                }}
                 style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 다음 단계 (수입원가계산) ➡️
@@ -2278,7 +2299,11 @@ customsDuty,
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('견적서작성')}
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set('tab', '견적서작성');
+                  setSearchParams(nextParams);
+                }}
                 style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 다음 단계 (견적서작성) ➡️
@@ -3799,7 +3824,11 @@ customsDuty,
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button 
-                onClick={() => setActiveTab('운송사/관세사 선정')}
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set('tab', '운송사/관세사 선정');
+                  setSearchParams(nextParams);
+                }}
                 style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 저장 후 다음단계로
@@ -4046,7 +4075,9 @@ customsDuty,
               <button 
                 onClick={() => {
                   alert('물류/통관 및 서류 정보가 성공적으로 반영되었습니다.');
-                  setActiveTab('정산');
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set('tab', '정산');
+                  setSearchParams(nextParams);
                 }}
                 style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
@@ -4869,7 +4900,9 @@ customsDuty,
                         onClick={() => {
                           const updated = importRequests.map(r => r.id === id ? { ...r, status: '손익검토 대기' } : r);
                           saveToStorage(updated);
-                          setActiveTab('손익검토');
+                          const nextParams = new URLSearchParams(searchParams);
+                          nextParams.set('tab', '손익검토');
+                          setSearchParams(nextParams);
                           alert('전액 수금이 완료되었습니다. 손익검토 탭으로 이동합니다.');
                         }}
                         style={{ width: '100%', padding: '8px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
