@@ -103,6 +103,7 @@ export const Orders: React.FC = () => {
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'todo'>('list');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Filters (sessionStorage 연동으로 다른 메뉴 이동 후 복귀 시에도 필터 상태 유지)
   const getSavedFilter = (key: string, defaultVal: string) => {
@@ -533,123 +534,187 @@ export const Orders: React.FC = () => {
   }, [processedOrders, quotations]);
 
   // ── 공통 필터 바 ──────────────────────────────────────────────────────────
-  const FilterBar = () => (
-    <div style={{ display: 'flex', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-      {/* 뷰 전환 탭 */}
-      <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '4px', padding: '2px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
-        {([
-          { mode: 'list',   label: '📋 목록 보기' },
-          { mode: 'kanban', label: '🗂 칸반 보기' },
-          { mode: 'todo',   label: '✅ 할 일 보기' },
-        ] as const).map(({ mode, label }) => (
+  const FilterBar = () => {
+    const advancedFilterCount = [
+      managerFilter !== 'All',
+      stepFilter !== 'All',
+      dateFilterTarget !== 'date',
+    ].filter(Boolean).length;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        {/* 상단 기본 필터 노출 라인 */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* 뷰 전환 탭 */}
+          <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '4px', padding: '2px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+            {([
+              { mode: 'list',   label: '📋 목록 보기' },
+              { mode: 'kanban', label: '🗂 칸반 보기' },
+              { mode: 'todo',   label: '✅ 할 일 보기' },
+            ] as const).map(({ mode, label }) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  padding: '6px 14px', border: 'none', borderRadius: '4px',
+                  background: viewMode === mode ? '#fff' : 'transparent',
+                  color: viewMode === mode ? '#1e293b' : '#64748b',
+                  fontWeight: viewMode === mode ? 700 : 500,
+                  fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s',
+                  boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {label}
+                {mode === 'todo' && stats.urgentCount > 0 && (
+                  <span style={{ marginLeft: '4px', background: '#ef4444', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '1px 4px', borderRadius: '8px' }}>
+                    {stats.urgentCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* 구분선 */}
+          <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
+
+          {/* 기본 노출 필터: 발주사, 보기, 완료건 */}
+          {[
+            { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
+            { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
+            { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
+          ].map(({ label, value, set, opts }) => (
+            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
+              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+          ))}
+
+          {/* 구분선 */}
+          <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
+
+          {/* 기본 노출 필터: 조회 기간 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+            <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</label>
+            <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+              <option value="Last3Months">최근 3개월</option>
+              <option value="All">전체 기간</option>
+              <option value="Monthly">월별</option>
+              <option value="Quarterly">분기별</option>
+              <option value="HalfYearly">반기별</option>
+              <option value="Yearly">연간</option>
+              <option value="Range">직접 입력</option>
+            </select>
+          </div>
+          {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>년도</label>
+              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
+              </select>
+            </div>
+          )}
+          {dateFilterType === 'Monthly' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>월</label>
+              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
+              </select>
+            </div>
+          )}
+          {dateFilterType === 'Quarterly' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>분기</label>
+              <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q}분기</option>)}
+              </select>
+            </div>
+          )}
+          {dateFilterType === 'HalfYearly' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반기</label>
+              <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                <option value={1}>상반기</option><option value={2}>하반기</option>
+              </select>
+            </div>
+          )}
+          {dateFilterType === 'Range' && (
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작일</label>
+                <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <span style={{ paddingBottom: '8px', color: '#94a3b8', fontWeight: 700, fontSize: '14px' }}>~</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
+                <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+          )}
+
+          {/* 상세 필터 펼침/접기 토글 버튼 */}
           <button
-            key={mode}
-            onClick={() => setViewMode(mode)}
+            type="button"
+            onClick={() => setShowAdvancedFilters(v => !v)}
             style={{
-              padding: '6px 14px', border: 'none', borderRadius: '4px',
-              background: viewMode === mode ? '#fff' : 'transparent',
-              color: viewMode === mode ? '#1e293b' : '#64748b',
-              fontWeight: viewMode === mode ? 700 : 500,
-              fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s',
-              boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-              whiteSpace: 'nowrap'
+              alignSelf: 'flex-end',
+              height: '34px',
+              padding: '0 12px',
+              background: showAdvancedFilters ? '#e2e8f0' : '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              color: '#475569',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: 'auto',
+              flexShrink: 0
             }}
           >
-            {label}
-            {mode === 'todo' && stats.urgentCount > 0 && (
-              <span style={{ marginLeft: '4px', background: '#ef4444', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '1px 4px', borderRadius: '8px' }}>
-                {stats.urgentCount}
+            ⚙ 상세 필터
+            {advancedFilterCount > 0 && (
+              <span style={{ background: '#3b82f6', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '10px', marginLeft: '2px' }}>
+                {advancedFilterCount}
               </span>
             )}
+            <span style={{ fontSize: '10px', marginLeft: '2px' }}>{showAdvancedFilters ? '▲' : '▼'}</span>
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* 구분선 */}
-      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 8px', flexShrink: 0 }} />
+        {/* 상세 필터 영역 (접힘/펼침 대상: 담당자, 단계, 조회 기준) */}
+        {showAdvancedFilters && (
+          <div style={{ display: 'flex', gap: '12px', paddingTop: '8px', borderTop: '1px dashed #cbd5e1', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당자</label>
+              <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                {[['All', '전체'], ...managers.map(m => [m, m])].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
 
-      {[
-        { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
-        { label: '담당자', value: managerFilter, set: setManagerFilter, opts: [['All', '전체'], ...managers.map(m => [m, m])] },
-        { label: '단계', value: stepFilter, set: setStepFilter, opts: [['All', '전체'], ['수주정보', '수주정보'], ['소싱/발주', '소싱/발주'], ['물류/선적', '물류/선적'], ['서류관리', '서류관리'], ['정산/결제', '정산/결제']] },
-        { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
-        { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
-      ].map(({ label, value, set, opts }) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>단계</label>
+              <select value={stepFilter} onChange={e => setStepFilter(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                {[['All', '전체'], ['수주정보', '수주정보'], ['소싱/발주', '소싱/발주'], ['물류/선적', '물류/선적'], ['서류관리', '서류관리'], ['정산/결제', '정산/결제']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
 
-        <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
-          <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-            {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-      ))}
-      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기준</label>
-        <select value={dateFilterTarget} onChange={e => setDateFilterTarget(e.target.value as 'date' | 'etd')} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box', fontWeight: 600 }}>
-          <option value="date">날짜 기준</option>
-          <option value="etd">ETD 기준</option>
-        </select>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-        <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</label>
-        <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-          <option value="Last3Months">최근 3개월</option>
-          <option value="All">전체 기간</option>
-          <option value="Monthly">월별</option>
-          <option value="Quarterly">분기별</option>
-          <option value="HalfYearly">반기별</option>
-          <option value="Yearly">연간</option>
-          <option value="Range">직접 입력</option>
-        </select>
-      </div>
-      {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>년도</label>
-          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-            {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
-          </select>
-        </div>
-      )}
-      {dateFilterType === 'Monthly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>월</label>
-          <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
-          </select>
-        </div>
-      )}
-      {dateFilterType === 'Quarterly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>분기</label>
-          <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-            {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q}분기</option>)}
-          </select>
-        </div>
-      )}
-      {dateFilterType === 'HalfYearly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반기</label>
-          <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-            <option value={1}>상반기</option><option value={2}>하반기</option>
-          </select>
-        </div>
-      )}
-      {dateFilterType === 'Range' && (
-        <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작일</label>
-            <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기준</label>
+              <select value={dateFilterTarget} onChange={e => setDateFilterTarget(e.target.value as 'date' | 'etd')} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box', fontWeight: 600 }}>
+                <option value="date">날짜 기준</option>
+                <option value="etd">ETD 기준</option>
+              </select>
+            </div>
           </div>
-          <span style={{ paddingBottom: '8px', color: '#94a3b8', fontWeight: 700, fontSize: '14px' }}>~</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
-            <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   // ── 오더 카드 (칸반/목록 공통 사용) ──────────────────────────────────────
   const OrderCard = ({ order, compact = false }: { order: Order & { nextAction: NextAction }; compact?: boolean }) => {
