@@ -267,20 +267,41 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
         const orderRecords: any[] = [];
         orderSnap.docs.forEach((d: any) => {
           const data = d.data();
-          const sCode = String(data.supplierCode || '').trim().toLowerCase();
-          const sId = String(data.supplierId || '').trim().toLowerCase();
-          const rawSName = String(data.supplierName || data.sourcingSupplier || '').trim();
-          const sNameClean = rawSName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+          const docSupplierCode = String(data.supplierCode || '').trim().toLowerCase();
+          const docSupplierId = String(data.supplierId || '').trim().toLowerCase();
+          const docSupplierName = String(data.supplierName || data.sourcingSupplier || '').trim();
+          const docSNameClean = docSupplierName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
 
-          const matchCode = targetCode && (sCode === targetCode.toLowerCase() || sId === targetCode.toLowerCase());
-          const matchId = targetId && (sId === targetId.toLowerCase() || sCode === targetId.toLowerCase());
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = sNameClean.includes(cleanTargetName) || cleanTargetName.includes(sNameClean);
-          }
+          // Check Order document level matching
+          let isDocMatch = false;
+          if (targetCode && (docSupplierCode === targetCode.toLowerCase() || docSupplierId === targetCode.toLowerCase())) isDocMatch = true;
+          if (targetId && (docSupplierId === targetId.toLowerCase() || docSupplierCode === targetId.toLowerCase())) isDocMatch = true;
+          if (cleanTargetName && cleanTargetName.length >= 2 && (docSNameClean.includes(cleanTargetName) || cleanTargetName.includes(docSNameClean))) isDocMatch = true;
 
-          if (matchCode || matchId || matchName) {
-            const totAmtUsd = Number(data.sourcingAmountUsd || data.buyingPriceUsd || data.supplierQuoteAmount || 0);
+          // Check line items matching
+          const allItems = [...(data.items || []), ...(data.sourcingItems || [])];
+          const matchedItems = allItems.filter((item: any) => {
+            const iSupp = String(item.supplier || item.supplierName || '').trim();
+            const iSuppClean = iSupp.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+            if (!iSuppClean) return false;
+            if (cleanTargetName && cleanTargetName.length >= 2) {
+              return iSuppClean.includes(cleanTargetName) || cleanTargetName.includes(iSuppClean);
+            }
+            return false;
+          });
+
+          if (isDocMatch || matchedItems.length > 0) {
+            let totAmtUsd = 0;
+            if (matchedItems.length > 0) {
+              matchedItems.forEach((item: any) => {
+                const qty = Number(item.qty || item.quantity || 1);
+                const price = Number(item.purchaseUnitPrice || item.unitPrice || 0);
+                totAmtUsd += qty * price;
+              });
+            } else {
+              totAmtUsd = Number(data.sourcingAmountUsd || data.buyingPriceUsd || data.supplierQuoteAmount || 0);
+            }
+
             const isPaid = data.payoutStatus === 'PAID' || data.supplierPaymentStatus === 'PAID';
             const paidAmtUsd = isPaid ? totAmtUsd : Number(data.paidAmountUsd || 0);
             const dateStr = parseDateStr(data.orderDate || data.piDate || data.createdAt);
