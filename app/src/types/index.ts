@@ -154,6 +154,8 @@ export interface ImportRequest {
   createdAt: string;
   importCompany?: 'YSACC' | 'YS' | ''; // 수입주체
   importerName?: string; // 수입처
+  supplierCode?: string; // 공급사 코드 (CRM 연동용)
+  supplierId?: string; // 공급사 문서 ID (CRM 연동용)
   finalCustomer?: string; // 최종고객
   origin?: string; // 원산지 (Origin)
   

@@ -5440,6 +5440,8 @@ customsDuty,
                 return {
                   ...r,
                   importerName: sup.name,
+                  supplierCode: sup.supplierCode || sup.id || '',
+                  supplierId: sup.id || sup.supplierCode || '',
                   supplierBankInfo: {
                     ...(r.supplierBankInfo || {}),
                     bankName: parsedBankName || r.supplierBankInfo?.bankName || '',

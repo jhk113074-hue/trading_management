@@ -1987,7 +1987,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           onRefreshSuppliers={loadSuppliers}
           onSelect={(sup) => {
             if (showEditModal) {
-              setEditingRequest(p => p ? { ...p, importerName: sup.name || '' } : null);
+              setEditingRequest(p => p ? {
+                ...p,
+                importerName: sup.name || '',
+                supplierCode: sup.supplierCode || sup.id || '',
+                supplierId: sup.id || sup.supplierCode || ''
+              } : null);
             }
             setShowSupplierSearch(false);
           }}
