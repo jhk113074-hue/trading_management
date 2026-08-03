@@ -17,6 +17,7 @@ export interface ForwarderEntry {
 
 export interface OrderItem {
   itemId: string;
+  lineNumber?: number | string;
   name: string;
   supplier: string;
   supplierContact: string;

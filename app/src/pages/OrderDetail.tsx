@@ -2624,6 +2624,56 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const step1DraggedIndexRef = useRef<number | null>(null);
+  const [step1DragOverIndex, setStep1DragOverIndex] = useState<number | null>(null);
+
+  const handleStep1NoChange = (index: number, val: string) => {
+    setOrderItems(prev => {
+      const list = [...prev];
+      list[index] = { ...list[index], lineNumber: val };
+      return list;
+    });
+  };
+
+  const handleStep1DragStart = (e: React.DragEvent, index: number) => {
+    step1DraggedIndexRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleStep1DragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (step1DragOverIndex !== index) setStep1DragOverIndex(index);
+  };
+
+  const handleStep1DragLeave = () => {
+    setStep1DragOverIndex(null);
+  };
+
+  const handleStep1Drop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setStep1DragOverIndex(null);
+    const sourceIndex = step1DraggedIndexRef.current;
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    let cleanedItems: any[] = [];
+    setOrderItems(prev => {
+      const newItems = [...prev];
+      const [movedItem] = newItems.splice(sourceIndex, 1);
+      newItems.splice(targetIndex, 0, movedItem);
+      cleanedItems = newItems.map((it, idx) => ({ ...it, lineNumber: idx + 1 }));
+      return cleanedItems;
+    });
+
+    if (order && cleanedItems.length > 0) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, { items: cleanedItems, updatedAt: serverTimestamp() }, { merge: true })
+        .catch(e => console.error("Failed to save orderItems order:", e));
+    }
+    step1DraggedIndexRef.current = null;
+  };
+
   const moveStep1Item = (index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === orderItems.length - 1) return;
@@ -5758,63 +5808,53 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '15.5px' }}>
                   <thead>
                     <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '70px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No / 순서</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '55px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No.</th>
                       <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드</th>
                       <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
                       <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '45px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>삭제</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '62px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>관리</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orderItems.map((item, idx) => {
                       if (item.isSourcingOnly) return null;
+                      const isDragOver = step1DragOverIndex === idx;
                       return (
-                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '4px 4px', textAlign: 'center', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
+                        <tr 
+                          key={`order-item-${item.lineNumber || (idx + 1)}-${item.name || idx}`}
+                          draggable={true}
+                          onDragStart={(e) => handleStep1DragStart(e, idx)}
+                          onDragOver={(e) => handleStep1DragOver(e, idx)}
+                          onDragLeave={handleStep1DragLeave}
+                          onDrop={(e) => handleStep1Drop(e, idx)}
+                          style={{ 
+                            borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #f1f5f9',
+                            backgroundColor: isDragOver ? '#dbeafe' : 'transparent'
+                          }}
+                        >
+                          <td style={{ padding: '4px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                              <span style={{ fontWeight: 600 }}>{idx + 1}</span>
-                              <div style={{ display: 'flex', gap: '1px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => moveStep1Item(idx, 'up')}
-                                  disabled={idx === 0}
-                                  style={{
-                                    border: '1px solid var(--border-default)',
-                                    background: '#f8fafc',
-                                    borderRadius: '3px',
-                                    padding: '1px 3px',
-                                    fontSize: '8px',
-                                    cursor: idx === 0 ? 'not-allowed' : 'pointer',
-                                    color: idx === 0 ? 'var(--border-default)' : 'var(--text-secondary)',
-                                    lineHeight: 1,
-                                    opacity: idx === 0 ? 0.3 : 1
-                                  }}
-                                  title="위로 이동"
-                                >
-                                  ▲
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveStep1Item(idx, 'down')}
-                                  disabled={idx === orderItems.length - 1}
-                                  style={{
-                                    border: '1px solid var(--border-default)',
-                                    background: '#f8fafc',
-                                    borderRadius: '3px',
-                                    padding: '1px 3px',
-                                    fontSize: '8px',
-                                    cursor: idx === orderItems.length - 1 ? 'not-allowed' : 'pointer',
-                                    color: idx === orderItems.length - 1 ? 'var(--border-default)' : 'var(--text-secondary)',
-                                    lineHeight: 1,
-                                    opacity: idx === orderItems.length - 1 ? 0.3 : 1
-                                  }}
-                                  title="아래로 이동"
-                                >
-                                  ▼
-                                </button>
-                              </div>
+                              <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                                ⋮⋮
+                              </span>
+                              <input
+                                type="text"
+                                value={item.lineNumber || (idx + 1).toString()}
+                                onChange={e => handleStep1NoChange(idx, e.target.value)}
+                                style={{
+                                  width: '32px',
+                                  textAlign: 'center',
+                                  padding: '2px',
+                                  fontWeight: 700,
+                                  color: '#1e293b',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '4px',
+                                  fontSize: '12px'
+                                }}
+                                title="순번 수동 입력"
+                              />
                             </div>
                           </td>
                         
