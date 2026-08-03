@@ -481,6 +481,32 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   };
 
   const [isUploading, setIsUploading] = useState(false);
+  const [dragOverCategory, setDragOverCategory] = useState<'TDS' | 'MSDS' | '기타' | null>(null);
+
+  const handleDragOverDoc = (e: React.DragEvent, category: 'TDS' | 'MSDS' | '기타') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverCategory !== category) {
+      setDragOverCategory(category);
+    }
+  };
+
+  const handleDragLeaveDoc = (e: React.DragEvent, category: 'TDS' | 'MSDS' | '기타') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverCategory === category) {
+      setDragOverCategory(null);
+    }
+  };
+
+  const handleDropDoc = async (e: React.DragEvent, category: 'TDS' | 'MSDS' | '기타') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(null);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleDocUpload(e.dataTransfer.files, category);
+    }
+  };
 
   const handleDocUpload = async (files: FileList | null, category: 'TDS' | 'MSDS' | '기타') => {
     if (!files || files.length === 0) return;
@@ -1653,9 +1679,26 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                   {(['TDS', 'MSDS', '기타'] as const).map(cat => {
                     const docsOfCat = (formData.technicalDocuments || []).filter(d => d.category === cat);
+                    const isDragOver = dragOverCategory === cat;
                     
                     return (
-                      <div key={cat} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+                      <div 
+                        key={cat} 
+                        onDragOver={(e) => handleDragOverDoc(e, cat)}
+                        onDragLeave={(e) => handleDragLeaveDoc(e, cat)}
+                        onDrop={(e) => handleDropDoc(e, cat)}
+                        style={{ 
+                          background: isDragOver ? '#f0f9ff' : '#fff', 
+                          border: isDragOver ? '2px dashed #3b82f6' : '1px solid var(--border-color)', 
+                          borderRadius: '10px', 
+                          padding: '16px', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          minHeight: '220px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: isDragOver ? '0 4px 14px rgba(59, 130, 246, 0.2)' : 'none'
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px' }}>
                           <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                             {cat === 'TDS' ? '📄 TDS (Technical Data Sheet)' : cat === 'MSDS' ? '🛢️ MSDS (Material Safety Data Sheet)' : '📎 기타 기술자료'}
@@ -1665,21 +1708,38 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           </span>
                         </div>
 
-                        {/* File Upload Button */}
+                        {/* File Upload Button / Drag & Drop Dropzone */}
                         <div style={{ marginBottom: '14px' }}>
                           <input 
                             type="file" 
                             id={`file-upload-${cat}`} 
                             style={{ display: 'none' }} 
+                            multiple
                             onChange={(e) => handleDocUpload(e.target.files, cat)}
                           />
                           <label 
                             htmlFor={`file-upload-${cat}`} 
-                            style={{ display: 'block', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '10px', textAlign: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'border-color 0.2s' }}
-                            onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                            onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-default)'}
+                            style={{ 
+                              display: 'block', 
+                              background: isDragOver ? '#e0f2fe' : '#f8fafc', 
+                              border: isDragOver ? '2px dashed #0284c7' : '1px dashed var(--border-default)', 
+                              borderRadius: '6px', 
+                              padding: '12px 10px', 
+                              textAlign: 'center', 
+                              cursor: 'pointer', 
+                              fontSize: '12px', 
+                              fontWeight: 700, 
+                              color: isDragOver ? '#0369a1' : 'var(--text-secondary)', 
+                              transition: 'all 0.2s' 
+                            }}
+                            onMouseOver={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#3b82f6'; }}
+                            onMouseOut={e => { if (!isDragOver) e.currentTarget.style.borderColor = 'var(--border-default)'; }}
                           >
-                            {isUploading ? '📤 업로드 중...' : '＋ 파일 추가하기'}
+                            {isUploading 
+                              ? '📤 업로드 중...' 
+                              : (isDragOver 
+                                  ? '📥 여기에 파일 내려놓기' 
+                                  : '＋ 파일 추가하기 (또는 끌어다 놓기)')}
                           </label>
                         </div>
 
