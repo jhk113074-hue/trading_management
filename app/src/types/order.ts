@@ -201,6 +201,8 @@ export interface Order {
   }>;
   supplierArrivalReportFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>;
   supplierPoDetails?: Record<string, {
+    poDate?: string;
+    requestDate?: string;
     deliveryRequestDate?: string;
     deliveryPlace?: string;
     specialRemarks?: string;

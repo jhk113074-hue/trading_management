@@ -1119,7 +1119,7 @@ export const OrderDetail: React.FC = () => {
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
     supplierTaxInvoiceDetails: {} as Record<string, any>,
-    supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
+    supplierPoDetails: {} as Record<string, { poDate?: string; requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; method?: '송금' | '카드'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
@@ -3180,6 +3180,7 @@ export const OrderDetail: React.FC = () => {
       const updatedPoDetails = {
         ...currentPoDetails,
         [supplierName]: {
+          poDate: supplierDetail.poDate ?? '',
           requestDate: supplierDetail.requestDate ?? '',
           deliveryPlace: supplierDetail.deliveryPlace ?? '',
           specialRemarks: supplierDetail.specialRemarks ?? '',
@@ -3573,8 +3574,8 @@ export const OrderDetail: React.FC = () => {
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
     const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
-
-
+    const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
+    const poDateFormatted = currentPoDateRaw.replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일');
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
@@ -3656,7 +3657,7 @@ export const OrderDetail: React.FC = () => {
           <div class="meta-grid">
             <div class="meta-left">
               <div><strong>발주번호 :</strong> ${poNum}</div>
-              <div><strong>발주일자 :</strong> ${new Date().toISOString().split('T')[0].replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일')}</div>
+              <div><strong>발주일자 :</strong> ${poDateFormatted}</div>
               <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
             </div>
             <div>
@@ -3851,6 +3852,7 @@ export const OrderDetail: React.FC = () => {
       const updatedPoDetails = {
         ...currentPoDetails,
         [supplierName]: {
+          poDate: supplierDetail.poDate ?? '',
           requestDate: supplierDetail.requestDate ?? '',
           deliveryPlace: supplierDetail.deliveryPlace ?? '',
           specialRemarks: supplierDetail.specialRemarks ?? '',
@@ -3975,8 +3977,8 @@ export const OrderDetail: React.FC = () => {
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
     const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
-
-
+    const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
+    const poDateFormatted = currentPoDateRaw.replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일');
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
@@ -4059,7 +4061,7 @@ export const OrderDetail: React.FC = () => {
           <div class="meta-grid">
             <div class="meta-left">
               <div><strong>발주번호 :</strong> ${poNum}</div>
-              <div><strong>발주일자 :</strong> ${new Date().toISOString().split('T')[0].replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일')}</div>
+              <div><strong>발주일자 :</strong> ${poDateFormatted}</div>
               <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
             </div>
             <div>
@@ -6559,9 +6561,29 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             </div>
                             {/* 1. 상호, 일자 및 품목 테이블 + 생산완료일 */}
                             <div style={{ padding: '12px 16px', background: '#fff', fontSize: '13.5px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
-                                <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontWeight: 'bold', color: '#1e293b' }}>일자:</span>
+                                  <DateInput 
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.poDate || order.poDate || new Date().toISOString().split('T')[0]}
+                                    disabled={!isEditing}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, poDate: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '2px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '135px', fontWeight: 600 }}
+                                  />
+                                </div>
                               </div>
                               <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '15.5px', marginTop: '5px' }}>
                                 <thead>
