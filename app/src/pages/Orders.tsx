@@ -94,11 +94,11 @@ export const Orders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const processedPiRef = useRef<string | null>(null);
 
-  // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([110, 150, 100, 240, 120, 140, 100, 100, 280, 260]);
+  // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
+  const { thStyle, resizerProps, colWidths } = useColumnResize([110, 160, 100, 240, 120, 140, 100, 100, 280, 240, 60]);
 
   // 오름차순/내림차순 정렬 상태
-  const [sortKey, setSortKey] = useState<'날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | null>(null);
+  const [sortKey, setSortKey] = useState<'날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
@@ -1025,10 +1025,10 @@ export const Orders: React.FC = () => {
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
                 <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
-                    {['날짜','주문번호','수주사','발주사','발주액','매출액','ETD','ETA','단계','다음단계'].map((h, hIdx) => (
+                    {['날짜','주문번호','수주사','발주사','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
                         key={h} 
-                        onClick={() => handleSort(h)}
+                        onClick={() => h !== '복사' && handleSort(h)}
                         style={thStyle(hIdx, { 
                           padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
                           fontWeight: 750, 
@@ -1037,7 +1037,7 @@ export const Orders: React.FC = () => {
                           letterSpacing: '0.02em', 
                           textAlign: 'center', 
                           whiteSpace: 'nowrap',
-                          cursor: 'pointer',
+                          cursor: h === '복사' ? 'default' : 'pointer',
                           userSelect: 'none',
                           background: sortKey === h ? '#eff6ff' : 'transparent',
                           transition: 'background-color 0.2s',
@@ -1053,6 +1053,8 @@ export const Orders: React.FC = () => {
                               ))}
                             </div>
                           </div>
+                        ) : h === '복사' ? (
+                          <span>복사</span>
                         ) : (
                           <span>{h}{renderSortIcon(h)}</span>
                         )}
@@ -1100,35 +1102,7 @@ export const Orders: React.FC = () => {
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
                       <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
-                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
-                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{order.ciNumber || order.id}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyOrder(order);
-                            }}
-                            style={{
-                              background: '#f1f5f9',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '4px',
-                              padding: '2px 6px',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              color: '#475569',
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap',
-                              transition: 'background 0.15s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                            title="PO 복사 (동일 내용으로 신규 PO 등록)"
-                          >
-                            📋 복사
-                          </button>
-                        </div>
-                      </td>
+                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
                       <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
@@ -1198,6 +1172,40 @@ export const Orders: React.FC = () => {
                            );
                         })()}
                       </td>
+                      {/* 복사 */}
+                      <td style={getTdStyle(10, { textAlign: 'center' })}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyOrder(order);
+                          }}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            width: '28px',
+                            height: '28px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '13.5px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.backgroundColor = '#dbeafe';
+                            e.currentTarget.style.borderColor = '#93c5fd';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9';
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                          }}
+                          title="📋 PO 복사 (동일 내용으로 신규 PO 등록)"
+                        >
+                          📋
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1229,6 +1237,7 @@ export const Orders: React.FC = () => {
                     <td style={{ width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[9], minWidth: colWidths[9], maxWidth: colWidths[9], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[10], minWidth: colWidths[10], maxWidth: colWidths[10], boxSizing: 'border-box' }} />
                   </tr>
                 )}
               </tbody>
