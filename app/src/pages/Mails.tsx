@@ -35,8 +35,12 @@ export const Mails: React.FC = () => {
   const { userProfile } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [mails, setMails] = useState<Mail[]>([]);
-  const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
   const [loading, setLoading] = useState(true);
+
+  // 3-Pane Groupware Folder & Multi-Select States
+  const [selectedFolder, setSelectedFolder] = useState<'all' | 'unread' | 'important' | 'sent' | 'system'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMailIds, setSelectedMailIds] = useState<string[]>([]);
 
   // Compose Form State (Inside Modal)
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
@@ -247,7 +251,7 @@ export const Mails: React.FC = () => {
       if (editorRef.current) editorRef.current.innerHTML = '';
       setSelectedReceiverId('');
       setIsComposeModalOpen(false);
-      setActiveTab('sent');
+      setSelectedFolder('sent');
       fetchMailsData();
       alert(createTaskOption ? "✅ 쪽지 발송 및 신규 업무 할당이 완료되었습니다." : "쪽지가 발송되었습니다.");
     } catch (err) {
@@ -366,6 +370,74 @@ export const Mails: React.FC = () => {
         editorRef.current.innerHTML = replyIntro;
       }
     }, 100);
+  };
+
+  const handleForwardMail = (mail: Mail) => {
+    setSelectedReceiverId('');
+    setTitle(`FW: ${mail.title.replace(/^(RE|FW):\s*/i, '')}`);
+    const forwardIntro = `<br><br><p>----- Forwarded Message -----</p><p><b>From:</b> ${mail.senderName}</p><p><b>To:</b> ${mail.receiverName}</p><p><b>Date:</b> ${new Date(mail.createdAt).toLocaleString()}</p><br>${mail.content}`;
+    setContentHTML(forwardIntro);
+    setAttachments(mail.attachments || []);
+    setIsComposeModalOpen(true);
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.innerHTML = forwardIntro;
+      }
+    }, 100);
+  };
+
+  const handleToggleImportant = async (mail: Mail) => {
+    const updatedStatus = !mail.isImportant;
+    try {
+      await updateDoc(doc(db, 'mails', mail.id), { isImportant: updatedStatus });
+      setMails(prev => prev.map(m => m.id === mail.id ? { ...m, isImportant: updatedStatus } : m));
+      if (selectedMail?.id === mail.id) {
+        setSelectedMail(prev => prev ? { ...prev, isImportant: updatedStatus } : null);
+      }
+    } catch (e) {
+      console.error("Failed to update importance:", e);
+    }
+  };
+
+  const handleToggleSelectMail = (mailId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedMailIds(prev =>
+      prev.includes(mailId) ? prev.filter(id => id !== mailId) : [...prev, mailId]
+    );
+  };
+
+  const handleBulkMarkRead = async () => {
+    if (selectedMailIds.length === 0) return;
+    try {
+      await Promise.all(
+        selectedMailIds.map(id => updateDoc(doc(db, 'mails', id), { isRead: true }))
+      );
+      setMails(prev => prev.map(m => selectedMailIds.includes(m.id) ? { ...m, isRead: true } : m));
+      if (selectedMail && selectedMailIds.includes(selectedMail.id)) {
+        setSelectedMail(prev => prev ? { ...prev, isRead: true } : null);
+      }
+      setSelectedMailIds([]);
+    } catch (e) {
+      console.error("Bulk mark read error:", e);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedMailIds.length === 0) return;
+    if (!window.confirm(`선택한 ${selectedMailIds.length}개의 메일을 삭제하시겠습니까?`)) return;
+    try {
+      await Promise.all(
+        selectedMailIds.map(id => deleteDoc(doc(db, 'mails', id)))
+      );
+      alert(`${selectedMailIds.length}개의 메일이 삭제되었습니다.`);
+      setMails(prev => prev.filter(m => !selectedMailIds.includes(m.id)));
+      if (selectedMail && selectedMailIds.includes(selectedMail.id)) {
+        setSelectedMail(null);
+      }
+      setSelectedMailIds([]);
+    } catch (e) {
+      console.error("Bulk delete error:", e);
+    }
   };
 
   const format = (command: string) => {
@@ -659,307 +731,415 @@ export const Mails: React.FC = () => {
   // Filter inbox: Hide future scheduled mails from recipients (support both receiverId and recipientId)
   const inboxMails = mails.filter(m => (m.receiverId === userProfile?.id || (m as any).recipientId === userProfile?.id) && (!m.scheduledAt || m.scheduledAt <= nowStr));
   const sentMails = mails.filter(m => m.senderId === userProfile?.id);
-  const activeList = activeTab === 'inbox' ? inboxMails : sentMails;
+  const unreadMails = inboxMails.filter(m => !m.isRead);
+  const importantMails = mails.filter(m => m.isImportant && (m.receiverId === userProfile?.id || m.senderId === userProfile?.id));
+  const systemMails = inboxMails.filter(m => m.senderName === '시스템 알림' || m.senderId === 'SYSTEM');
+
+  let currentCategoryMails: Mail[] = [];
+  if (selectedFolder === 'all') currentCategoryMails = inboxMails;
+  else if (selectedFolder === 'unread') currentCategoryMails = unreadMails;
+  else if (selectedFolder === 'important') currentCategoryMails = importantMails;
+  else if (selectedFolder === 'sent') currentCategoryMails = sentMails;
+  else if (selectedFolder === 'system') currentCategoryMails = systemMails;
+
+  const filteredMails = currentCategoryMails.filter(m => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      m.title.toLowerCase().includes(q) ||
+      m.senderName.toLowerCase().includes(q) ||
+      m.receiverName.toLowerCase().includes(q)
+    );
+  });
+
+  const isAllSelected = filteredMails.length > 0 && filteredMails.every(m => selectedMailIds.includes(m.id));
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedMailIds([]);
+    } else {
+      setSelectedMailIds(filteredMails.map(m => m.id));
+    }
+  };
+
   const addressableUsers = users.filter(u => u.id !== userProfile?.id && isOperationalUser(u));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
       
-      {/* Header with Compose Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>✉️ 사내 메일 및 알림</h2>
-          <p style={{ fontSize: '14.5px', color: '#64748b', margin: '6px 0 0 0' }}>동료 직원들과 쪽지를 주고받고, 시스템 업무 알림을 일괄 모니터링하는 소통 창구입니다.</p>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 850, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            ✉️ 사내 메일 및 업무 알림
+          </h2>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>동료 직원과의 업무 메일 및 시스템 자동 알림을 3-Pane 표준 그룹웨어 스타일로 편리하게 통합 관리합니다.</p>
         </div>
-        <button
-          onClick={() => {
-            setAttachments([]);
-            setTitle('');
-            setContentHTML('');
-            setSelectedReceiverId('');
-            setIsScheduled(false);
-            setScheduledAt('');
-            setIsComposeModalOpen(true);
-          }}
-          style={{
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '0 16px',
-            height: '36px',
-            fontSize: '14.5px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'background 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            boxSizing: 'border-box'
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
-          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
-        >
-          ✍️ 새 쪽지 보내기
-        </button>
       </div>
 
-      {/* Navigation Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', gap: '8px' }}>
-        <button
-          onClick={() => { setActiveTab('inbox'); setSelectedMail(null); }}
-          style={{
-            padding: '10px 16px',
-            border: 'none',
-            background: 'none',
-            fontSize: '15px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'inbox' ? '#3b82f6' : '#64748b',
-            borderBottom: activeTab === 'inbox' ? '2.5px solid #3b82f6' : 'none'
-          }}
-        >
-          📥 받은 쪽지함 ({inboxMails.filter(m => !m.isRead).length} 안읽음 / {inboxMails.length} 전체)
-        </button>
-        <button
-          onClick={() => { setActiveTab('sent'); setSelectedMail(null); }}
-          style={{
-            padding: '10px 16px',
-            border: 'none',
-            background: 'none',
-            fontSize: '15px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            color: activeTab === 'sent' ? '#3b82f6' : '#64748b',
-            borderBottom: activeTab === 'sent' ? '2.5px solid #3b82f6' : 'none'
-          }}
-        >
-          📤 보낸 쪽지함 ({sentMails.length})
-        </button>
-      </div>
-
-      {/* Mail List Area */}
-      <div style={{ display: 'grid', gridTemplateColumns: selectedMail ? '1.2fr 1.8fr' : '1fr', gap: '20px', minHeight: '400px' }}>
+      {/* Main 3-Pane Layout Container */}
+      <div style={{ flex: 1, display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden', minHeight: 0 }}>
         
-        {/* Mails Table Panel */}
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', height: 'fit-content' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '15px' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontWeight: 700 }}>
-                <th style={{ padding: '12px', width: '140px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{activeTab === 'inbox' ? '보낸 사람' : '받는 사람'}</th>
-                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>쪽지 제목</th>
-                <th style={{ padding: '12px', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발송 일시</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
-                <th style={{ padding: '12px', width: '60px', textAlign: 'center', fontSize: '13px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeList.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
-                    주고받은 쪽지가 존재하지 않습니다.
-                  </td>
-                </tr>
-              ) : (
-                activeList.map(mail => {
-                  const isUnread = activeTab === 'inbox' && !mail.isRead;
-                  const isFuture = mail.scheduledAt && mail.scheduledAt > nowStr;
-                  return (
-                    <tr
-                      key={mail.id}
-                      onClick={() => handleReadMail(mail)}
-                      style={{
-                        borderBottom: '1px solid #f1f5f9',
-                        cursor: 'pointer',
-                        backgroundColor: selectedMail?.id === mail.id ? '#f0f2ff' : isUnread ? '#f8fafc' : 'transparent',
-                        fontWeight: isUnread ? 'bold' : 'normal'
-                      }}
-                      onMouseEnter={e => {
-                        if (selectedMail?.id !== mail.id) {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        if (selectedMail?.id !== mail.id) {
-                          e.currentTarget.style.backgroundColor = isUnread ? '#f8fafc' : 'transparent';
-                        }
-                      }}
-                    >
-                      <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
-                        {activeTab === 'inbox' ? (
-                          mail.senderName === '시스템 알림' ? (
-                            <span style={{ color: '#dc2626', fontWeight: 800 }}>🤖 {mail.senderName}</span>
-                          ) : mail.senderName
-                        ) : mail.receiverName}
-                      </td>
-                      <td style={{ padding: '12px', color: isUnread ? '#0f172a' : 'var(--text-secondary)' }}>
-                        {mail.title}
-                      </td>
-                      <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '14px' }}>
-                        {new Date(mail.createdAt).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        {activeTab === 'inbox' ? (
-                          <span style={{
-                            fontSize: '13px',
-                            fontWeight: 800,
-                            padding: '2px 6px',
-                            borderRadius: '12px',
-                            background: isUnread ? '#fee2e2' : '#f1f5f9',
-                            color: isUnread ? '#dc2626' : 'var(--text-secondary)'
-                          }}>
-                            {isUnread ? '안읽음' : '읽음'}
-                          </span>
-                        ) : (
-                          isFuture ? (
-                            <span style={{
-                              fontSize: '13px',
-                              fontWeight: 800,
-                              padding: '2px 6px',
-                              borderRadius: '12px',
-                              background: '#e0f2fe',
-                              color: '#0369a1'
-                            }}>
-                              예약대기
-                            </span>
-                          ) : (
-                            <span style={{
-                              fontSize: '13px',
-                              fontWeight: 800,
-                              padding: '2px 6px',
-                              borderRadius: '12px',
-                              background: mail.isRead ? '#d1fae5' : '#fef3c7',
-                              color: mail.isRead ? '#065f46' : '#d97706'
-                            }}>
-                              {mail.isRead ? '상대방읽음' : '읽지않음'}
-                            </span>
-                          )
-                        )}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteMail(mail.id, e)}
-                          title="이 쪽지 삭제"
-                          style={{
-                            background: '#fef2f2',
-                            color: '#ef4444',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            padding: '4px 6px',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            lineHeight: 1
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+        {/* 1. Left Sidebar Navigation (220px) */}
+        <div style={{ width: '220px', minWidth: '220px', background: '#f8fafc', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', padding: '16px 12px', gap: '12px', boxSizing: 'border-box' }}>
+          
+          {/* Compose Button */}
+          <button
+            onClick={() => {
+              setAttachments([]);
+              setTitle('');
+              setContentHTML('');
+              setSelectedReceiverId('');
+              setIsScheduled(false);
+              setScheduledAt('');
+              setIsComposeModalOpen(true);
+            }}
+            style={{
+              width: '100%',
+              height: '40px',
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s',
+              flexShrink: 0
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+          >
+            ✏️ 메일 쓰기
+          </button>
+
+          {/* Folder Tree List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+            <button
+              onClick={() => { setSelectedFolder('all'); setSelectedMail(null); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                background: selectedFolder === 'all' ? '#e0f2fe' : 'transparent',
+                color: selectedFolder === 'all' ? '#0369a1' : '#334155',
+                fontWeight: selectedFolder === 'all' ? 800 : 600,
+                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+              }}
+            >
+              <span>📥 전체 메일함</span>
+              <span style={{ fontSize: '11px', background: selectedFolder === 'all' ? '#bae6fd' : '#e2e8f0', color: '#334155', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+                {inboxMails.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setSelectedFolder('unread'); setSelectedMail(null); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                background: selectedFolder === 'unread' ? '#fef2f2' : 'transparent',
+                color: selectedFolder === 'unread' ? '#dc2626' : '#334155',
+                fontWeight: selectedFolder === 'unread' ? 800 : 600,
+                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+              }}
+            >
+              <span>🔴 안읽은 메일함</span>
+              <span style={{ fontSize: '11px', background: unreadMails.length > 0 ? '#ef4444' : '#e2e8f0', color: unreadMails.length > 0 ? '#fff' : '#334155', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+                {unreadMails.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setSelectedFolder('important'); setSelectedMail(null); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                background: selectedFolder === 'important' ? '#fefce8' : 'transparent',
+                color: selectedFolder === 'important' ? '#a16207' : '#334155',
+                fontWeight: selectedFolder === 'important' ? 800 : 600,
+                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+              }}
+            >
+              <span>⭐ 중요 메일함</span>
+              <span style={{ fontSize: '11px', background: selectedFolder === 'important' ? '#fef08a' : '#e2e8f0', color: '#854d0e', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+                {importantMails.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setSelectedFolder('sent'); setSelectedMail(null); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                background: selectedFolder === 'sent' ? '#f0fdf4' : 'transparent',
+                color: selectedFolder === 'sent' ? '#15803d' : '#334155',
+                fontWeight: selectedFolder === 'sent' ? 800 : 600,
+                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+              }}
+            >
+              <span>📤 보낸 메일함</span>
+              <span style={{ fontSize: '11px', background: selectedFolder === 'sent' ? '#dcfce7' : '#e2e8f0', color: '#166534', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+                {sentMails.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setSelectedFolder('system'); setSelectedMail(null); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                background: selectedFolder === 'system' ? '#faf5ff' : 'transparent',
+                color: selectedFolder === 'system' ? '#7e22ce' : '#334155',
+                fontWeight: selectedFolder === 'system' ? 800 : 600,
+                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+              }}
+            >
+              <span>🤖 업무/시스템 알림</span>
+              <span style={{ fontSize: '11px', background: selectedFolder === 'system' ? '#f3e8ff' : '#e2e8f0', color: '#6b21a8', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+                {systemMails.length}
+              </span>
+            </button>
+          </div>
+
         </div>
 
-        {/* Mail Content Reader View */}
-        {selectedMail && (
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: 'fit-content' }}>
-            <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(selectedMail.createdAt).toLocaleString()}</span>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: 'var(--text-primary)' }}>{selectedMail.title}</h3>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                  <span><b>보낸이:</b> {selectedMail.senderName}</span>
-                  <span style={{ marginLeft: '12px' }}><b>받는이:</b> {selectedMail.receiverName}</span>
-                  {selectedMail.ccNames && selectedMail.ccNames.length > 0 && (
-                    <span style={{ marginLeft: '12px', color: '#475569' }}>
-                      <b>참조:</b> {selectedMail.ccNames.join(', ')}
-                    </span>
-                  )}
-                  {selectedMail.scheduledAt && (
-                    <span style={{ marginLeft: '12px', color: '#0369a1', fontWeight: 'bold' }}>
-                      ⏰ 예약발송 일시: {new Date(selectedMail.scheduledAt).toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </div>
+        {/* 2. Middle Mail List Panel (380px ~ 420px) */}
+        <div style={{ width: '380px', minWidth: '380px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', background: '#fff', boxSizing: 'border-box' }}>
+          
+          {/* Top Search & Toolbar */}
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+            <input
+              type="text"
+              placeholder="제목, 보낸이/받는이 검색..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ width: '100%', height: '32px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }}
+            />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>
+                <input type="checkbox" checked={isAllSelected} onChange={handleToggleSelectAll} style={{ cursor: 'pointer' }} />
+                <span>전체선택 ({selectedMailIds.length})</span>
+              </label>
+
               <div style={{ display: 'flex', gap: '6px' }}>
-                {activeTab === 'inbox' && (
-                  <button
-                    onClick={() => handleReplyMail(selectedMail)}
-                    style={{ padding: '6px 12px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    답장 쓰기
-                  </button>
-                )}
                 <button
-                  onClick={() => setSelectedMail(null)}
-                  style={{ padding: '6px 12px', background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  onClick={handleBulkMarkRead}
+                  disabled={selectedMailIds.length === 0}
+                  style={{
+                    padding: '3px 8px', background: selectedMailIds.length > 0 ? '#f1f5f9' : '#fafafa',
+                    border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600,
+                    color: selectedMailIds.length > 0 ? '#334155' : '#cbd5e1', cursor: selectedMailIds.length > 0 ? 'pointer' : 'default'
+                  }}
                 >
-                  닫기
+                  읽음
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedMailIds.length === 0}
+                  style={{
+                    padding: '3px 8px', background: selectedMailIds.length > 0 ? '#fef2f2' : '#fafafa',
+                    border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600,
+                    color: selectedMailIds.length > 0 ? '#dc2626' : '#cbd5e1', cursor: selectedMailIds.length > 0 ? 'pointer' : 'default'
+                  }}
+                >
+                  삭제
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Note Body */}
-            <div
-              dangerouslySetInnerHTML={{ __html: selectedMail.content }}
-              style={{
-                fontSize: '13.5px',
-                lineHeight: 1.7,
-                color: '#334155',
-                minHeight: '180px',
-                padding: '12px',
-                border: '1px solid #f1f5f9',
-                borderRadius: '6px',
-                background: '#fafafa'
-              }}
-            />
-
-            {/* Attachments inside Read Panel */}
-            {selectedMail.attachments && selectedMail.attachments.length > 0 && (
-              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>📎 첨부파일 ({selectedMail.attachments.length})</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                  {selectedMail.attachments.map((file, fIdx) => (
-                    <div key={fIdx} style={{ border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100px' }}>
-                      {file.type.startsWith('image/') ? (
-                        <img
-                          src={file.data}
-                          alt={file.name}
-                          onClick={() => previewFile(file.data, file.name)}
-                          style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => previewFile(file.data, file.name)}
-                          style={{ width: '100%', height: '60px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', outline: 'none' }}
-                        >
-                          📄
-                        </button>
-                      )}
-                      <span
-                        onClick={() => previewFile(file.data, file.name)}
-                        style={{ fontSize: '9px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center', cursor: 'pointer' }}
-                        title={file.name}
-                      >
-                        {file.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+          {/* Mail Items Card List */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {filteredMails.length === 0 ? (
+              <div style={{ padding: '40px 16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                등록된 메일이 없습니다.
               </div>
+            ) : (
+              filteredMails.map(mail => {
+                const isUnread = !mail.isRead && mail.receiverId === userProfile?.id;
+                const isSelected = selectedMail?.id === mail.id;
+                const isChecked = selectedMailIds.includes(mail.id);
+
+                return (
+                  <div
+                    key={mail.id}
+                    onClick={() => handleReadMail(mail)}
+                    style={{
+                      padding: '12px 14px',
+                      borderBottom: '1px solid #f1f5f9',
+                      background: isSelected ? '#eff6ff' : isUnread ? '#f8fafc' : '#fff',
+                      borderLeft: isSelected ? '4px solid #3b82f6' : isUnread ? '4px solid #ef4444' : '4px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'flex-start'
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#f1f5f9'; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isUnread ? '#f8fafc' : '#fff'; }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => handleToggleSelectMail(mail.id, e as any)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ marginTop: '3px', cursor: 'pointer' }}
+                    />
+
+                    {/* Avatar Icon */}
+                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: mail.senderName === '시스템 알림' ? '#fef2f2' : '#eff6ff', color: mail.senderName === '시스템 알림' ? '#dc2626' : '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0, border: '1px solid #e2e8f0' }}>
+                      {mail.senderName === '시스템 알림' ? '🤖' : mail.senderName.slice(0, 2)}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: isUnread ? 800 : 600, color: isUnread ? '#0f172a' : '#475569', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {selectedFolder === 'sent' ? `To: ${mail.receiverName}` : mail.senderName}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#94a3b8', flexShrink: 0 }}>
+                          {new Date(mail.createdAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '13px', fontWeight: isUnread ? 800 : 500, color: isUnread ? '#1e293b' : '#334155', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {mail.isImportant && <span style={{ color: '#eab308' }}>⭐</span>}
+                        <span>{mail.title}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
-        )}
+
+        </div>
+
+        {/* 3. Right Mail Reading Detail Panel (Flex 1) */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden', boxSizing: 'border-box' }}>
+          {selectedMail ? (
+            <>
+              {/* Top Action Bar */}
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleReplyMail(selectedMail)}
+                    style={{ padding: '6px 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    ↩️ 답장
+                  </button>
+                  <button
+                    onClick={() => handleForwardMail(selectedMail)}
+                    style={{ padding: '6px 14px', background: '#fff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    🔁 전달
+                  </button>
+                  <button
+                    onClick={() => handleToggleImportant(selectedMail)}
+                    style={{ padding: '6px 14px', background: '#fff', color: selectedMail.isImportant ? '#a16207' : '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {selectedMail.isImportant ? '⭐ 중요 해제' : '⭐ 중요 표시'}
+                  </button>
+                </div>
+
+                <button
+                  onClick={(e) => handleDeleteMail(selectedMail.id, e)}
+                  style={{ padding: '6px 12px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  🗑️ 삭제
+                </button>
+              </div>
+
+              {/* Mail Title & Sender Info Header */}
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', background: '#fff', flexShrink: 0 }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 14px 0', lineHeight: 1.4 }}>
+                  {selectedMail.title}
+                </h2>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: selectedMail.senderName === '시스템 알림' ? '#fef2f2' : '#eff6ff', color: selectedMail.senderName === '시스템 알림' ? '#dc2626' : '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+                    {selectedMail.senderName === '시스템 알림' ? '🤖' : selectedMail.senderName.slice(0, 2)}
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
+                      {selectedMail.senderName}
+                      <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#64748b', marginLeft: '8px' }}>
+                        ➔ 수신: <strong>{selectedMail.receiverName}</strong>
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <span>발송일시: {new Date(selectedMail.createdAt).toLocaleString('ko-KR')}</span>
+                      {selectedMail.ccNames && selectedMail.ccNames.length > 0 && (
+                        <span>참조: {selectedMail.ccNames.join(', ')}</span>
+                      )}
+                      {selectedMail.scheduledAt && (
+                        <span style={{ color: '#0369a1', fontWeight: 700 }}>⏰ 예약발송: {new Date(selectedMail.scheduledAt).toLocaleString('ko-KR')}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attachments Card Bar */}
+              {selectedMail.attachments && selectedMail.attachments.length > 0 && (
+                <div style={{ padding: '12px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                    📎 첨부파일 ({selectedMail.attachments.length}개)
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                    {selectedMail.attachments.map((file, fIdx) => (
+                      <div key={fIdx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100px' }}>
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={file.data}
+                            alt={file.name}
+                            onClick={() => previewFile(file.data, file.name)}
+                            style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => previewFile(file.data, file.name)}
+                            style={{ width: '100%', height: '60px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer' }}
+                          >
+                            📄
+                          </button>
+                        )}
+                        <span
+                          onClick={() => previewFile(file.data, file.name)}
+                          style={{ fontSize: '10px', color: '#334155', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center', cursor: 'pointer', fontWeight: 600 }}
+                          title={file.name}
+                        >
+                          {file.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mail Body HTML Reader */}
+              <div style={{ flex: 1, padding: '24px', overflowY: 'auto', background: '#fff' }}>
+                <div
+                  dangerouslySetInnerHTML={{ __html: selectedMail.content }}
+                  style={{ fontSize: '14.5px', lineHeight: 1.7, color: '#334155' }}
+                />
+              </div>
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', gap: '12px' }}>
+              <span style={{ fontSize: '48px' }}>📬</span>
+              <span style={{ fontSize: '15px', fontWeight: 600 }}>읽을 메일을 목록에서 선택해 주세요.</span>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Compose Mail Popup Modal */}
