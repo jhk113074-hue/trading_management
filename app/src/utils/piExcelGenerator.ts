@@ -1,14 +1,37 @@
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
 
-export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: PIItem[]) => {
+const getRawProductCode = (code: string) => {
+  if (!code) return '';
+  if (code.startsWith('[') && code.includes(']')) {
+    return code.substring(1, code.indexOf(']')).trim();
+  }
+  return code.trim();
+};
+
+export const generatePIExcel = async (
+  piData: Partial<ProformaInvoice>, 
+  items: PIItem[], 
+  products?: any[]
+) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Proforma Invoice');
 
-  // Page setup
+  // Fetch products if not passed
+  let productsList = products;
+  if (!productsList || productsList.length === 0) {
+    try {
+      const snap = await getDocs(collection(db, "companies", "YSACC", "products"));
+      productsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // Page setup - Print Area A1:H for Official PI printing
   worksheet.pageSetup.paperSize = 9; // A4
   worksheet.pageSetup.orientation = 'portrait';
   worksheet.pageSetup.fitToPage = true;
@@ -20,18 +43,32 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     header: 0.0, footer: 0.0
   };
 
-  // Columns: A(No), B(Product), C(Spec), D(Qty), E(Unit), F(Unit Price), G(Total), H(Remarks), I(Purchase Cost), J(Expected Profit)
+  // Columns: 
+  // A(1): NO
+  // B(2): PRODUCT
+  // C(3): SPEC
+  // D(4): QTY
+  // E(5): UNIT
+  // F(6): UNIT PRICE  <-- Excel formula =ROUNDUP(I23/J23/(1-K23),1)
+  // G(7): TOTAL (USD) <-- Excel formula =D23*F23
+  // H(8): REMARKS
+  // I(9): 매입가       <-- Purchase Price (KRW)
+  // J(10): 환율       <-- Exchange Rate (e.g. 1400)
+  // K(11): 이익율     <-- Profit Margin Rate (e.g. 7%)
+  // L(12): 매입처     <-- Supplier / Vendor Name
   worksheet.columns = [
-    { width: 5 },   // A
-    { width: 18 },  // B (Product)
-    { width: 22 },  // C (Spec)
-    { width: 10 },  // D (Qty)
-    { width: 8 },   // E (Unit)
-    { width: 14 },  // F (Unit Price)
-    { width: 16 },  // G (Total)
-    { width: 20 },  // H (Remarks)
-    { width: 16 },  // I (Purchase Cost)
-    { width: 20 },  // J (Expected Profit)
+    { width: 5 },   // A: NO
+    { width: 18 },  // B: PRODUCT
+    { width: 22 },  // C: SPEC
+    { width: 10 },  // D: QTY
+    { width: 8 },   // E: UNIT
+    { width: 14 },  // F: UNIT PRICE
+    { width: 16 },  // G: TOTAL (USD)
+    { width: 22 },  // H: REMARKS
+    { width: 14 },  // I: 매입가 (Purchase Cost)
+    { width: 10 },  // J: 환율 (Exchange Rate)
+    { width: 10 },  // K: 이익율 (Margin Rate)
+    { width: 14 },  // L: 매입처 (Supplier Name)
   ];
 
   let currentRow = 1;
@@ -49,8 +86,8 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       extension: 'png',
     });
     
-    // Add image spanning rows 1 to 4 (columns A to J)
-    worksheet.addImage(imageId, 'A1:J4');
+    // Add image spanning rows 1 to 4 (columns A to L)
+    worksheet.addImage(imageId, 'A1:L4');
     
     // Set heights for the rows to make space for the image
     worksheet.getRow(1).height = 20;
@@ -59,7 +96,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     worksheet.getRow(4).height = 25;
     
     // Add red border line at the bottom of the letterhead area
-    worksheet.mergeCells(`A4:J4`);
+    worksheet.mergeCells(`A4:L4`);
     worksheet.getCell('A4').border = { bottom: { style: 'thick', color: { argb: 'FFB91C1C' } } };
     
   } catch (e) {
@@ -69,19 +106,19 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     const issuerAddress = "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea";
     const issuerContact = "Tel: +82-50-7081-1130   Fax: +82-503-0464-1130   www.ysacc.co.kr";
 
-    worksheet.mergeCells(`A1:J1`);
+    worksheet.mergeCells(`A1:L1`);
     const titleRow = worksheet.getRow(1);
     titleRow.getCell(1).value = issuerName;
     titleRow.getCell(1).font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF1F4E78' } };
     titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'bottom' };
     titleRow.height = 25;
 
-    worksheet.mergeCells(`A2:J2`);
+    worksheet.mergeCells(`A2:L2`);
     const addrRow = worksheet.getRow(2);
     addrRow.getCell(1).value = issuerAddress;
     addrRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
 
-    worksheet.mergeCells(`A3:J3`);
+    worksheet.mergeCells(`A3:L3`);
     const contactRow = worksheet.getRow(3);
     contactRow.getCell(1).value = issuerContact;
     contactRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
@@ -198,7 +235,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   currentRow += 2;
 
   // 4. TRADE TERMS
-  worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = piData.type === 'consulting' ? "CONTRACT TERMS" : "TRADE TERMS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } };
   currentRow++;
@@ -262,21 +299,34 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   currentRow += 2;
 
   // 5. LINE ITEMS
-  worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = "LINE ITEMS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   currentRow++;
 
-  const headers = ['NO', piData.type === 'consulting' ? 'SERVICE ITEM' : 'PRODUCT', 'SPEC', 'QTY', 'UNIT', 'UNIT PRICE', 'TOTAL (USD)', 'REMARKS', 'PURCHASE COST', 'EXPECTED PROFIT'];
+  const headers = [
+    'NO', 
+    piData.type === 'consulting' ? 'SERVICE ITEM' : 'PRODUCT', 
+    'SPEC', 
+    'QTY', 
+    'UNIT', 
+    'UNIT PRICE', 
+    'TOTAL (USD)', 
+    'REMARKS', 
+    '매입가', 
+    '환율', 
+    '이익율', 
+    '매입처'
+  ];
   const headerRow = worksheet.getRow(currentRow);
   headers.forEach((h, i) => {
     const cell = headerRow.getCell(i + 1);
     cell.value = h;
-    cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: i >= 8 ? 'FF0F172A' : 'FFFFFFFF' } };
     cell.fill = { 
       type: 'pattern', 
       pattern: 'solid', 
-      fgColor: { argb: i === 8 ? 'FF1E40AF' : i === 9 ? 'FF15803D' : 'FF1F4E78' } 
+      fgColor: { argb: i >= 8 ? 'FFCBD5E1' : 'FF1F4E78' } 
     };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
@@ -289,12 +339,12 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   let totalProfitSum = 0;
 
   if (!items || items.length === 0) {
-    worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
     const row = worksheet.getRow(currentRow);
     row.getCell(1).value = "No items";
     row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     row.getCell(1).font = { color: { argb: 'FF9CA3AF' } };
-    for(let i=1; i<=10; i++) {
+    for(let i=1; i<=12; i++) {
       row.getCell(i).border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
     }
     currentRow++;
@@ -326,13 +376,30 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       
       row.getCell(5).value = item.unit || '';
       row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
-      
-      row.getCell(6).value = item.salePriceUsd || 0;
+
+      const exRate = item.exchangeRate || piData.exchangeRate || 1400;
+      const costKrw = item.purchasePriceKrw > 0 
+        ? item.purchasePriceKrw 
+        : Math.round((item.purchasePriceUsd || 0) * exRate);
+      const marginVal = (item.marginRate !== undefined && item.marginRate !== null && item.marginRate !== 0)
+        ? (item.marginRate / 100) 
+        : 0.07;
+
+      // Excel Formula for Col 6 (UNIT PRICE): ROUNDUP(I{row}/J{row}/(1-K{row}),1)
+      const salePriceUsd = item.salePriceUsd || (exRate && (1 - marginVal) > 0 ? Math.ceil((costKrw / exRate / (1 - marginVal)) * 10) / 10 : 0);
+      row.getCell(6).value = {
+        formula: `ROUNDUP(I${currentRow}/J${currentRow}/(1-K${currentRow}),1)`,
+        result: salePriceUsd
+      };
       row.getCell(6).numFmt = '"$"#,##0.00';
       row.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
       
-      const lineTotal = item.lineTotalUsd || ((item.salePriceUsd || 0) * (item.quantity || 0));
-      row.getCell(7).value = lineTotal;
+      // Excel Formula for Col 7 (TOTAL USD): D{row}*F{row}
+      const lineTotal = item.lineTotalUsd || (salePriceUsd * (item.quantity || 0));
+      row.getCell(7).value = {
+        formula: `D${currentRow}*F${currentRow}`,
+        result: lineTotal
+      };
       row.getCell(7).numFmt = '"$"#,##0.00';
       row.getCell(7).font = { bold: true };
       row.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -341,31 +408,37 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       row.getCell(8).font = { size: 9, color: { argb: 'FF64748B' } };
       row.getCell(8).alignment = { vertical: 'middle', wrapText: true };
 
-      // Calculate Item Cost & Profit
-      const exRate = item.exchangeRate || piData.exchangeRate || 1400;
-      const costUsd = item.purchasePriceUsd > 0 
-        ? item.purchasePriceUsd 
-        : ((item.purchasePriceKrw || 0) / exRate);
-      const totalCostUsd = costUsd * (item.quantity || 0);
-      const profitUsd = lineTotal - totalCostUsd;
-      const marginPct = lineTotal > 0 ? (profitUsd / lineTotal) * 100 : 0;
-
-      totalCostUsdSum += totalCostUsd;
-      totalProfitSum += profitUsd;
-
-      // Col 9: PURCHASE COST
-      row.getCell(9).value = costUsd;
-      row.getCell(9).numFmt = '"$"#,##0.00';
-      row.getCell(9).font = { color: { argb: 'FF1E40AF' } };
+      // Col 9 (I): 매입가 (Red text in user screenshot)
+      row.getCell(9).value = costKrw;
+      row.getCell(9).numFmt = '#,##0';
+      row.getCell(9).font = { bold: true, color: { argb: 'FFB91C1C' } };
+      row.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
       row.getCell(9).alignment = { horizontal: 'right', vertical: 'middle' };
 
-      // Col 10: EXPECTED PROFIT
-      row.getCell(10).value = `${profitUsd >= 0 ? '$' : '-$'}${Math.abs(profitUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPct.toFixed(1)}%)`;
-      row.getCell(10).font = { bold: true, color: { argb: profitUsd >= 0 ? 'FF15803D' : 'FFDC2626' } };
+      // Col 10 (J): 환율
+      row.getCell(10).value = exRate;
+      row.getCell(10).numFmt = '#,##0';
+      row.getCell(10).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
       row.getCell(10).alignment = { horizontal: 'right', vertical: 'middle' };
 
+      // Col 11 (K): 이익율
+      row.getCell(11).value = marginVal;
+      row.getCell(11).numFmt = '0%';
+      row.getCell(11).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      row.getCell(11).alignment = { horizontal: 'right', vertical: 'middle' };
+
+      // Col 12 (L): 매입처
+      const rawCode = getRawProductCode(item.productCode);
+      const matchedProd = (productsList || []).find((p: any) => p.productCode === rawCode || p.id === rawCode);
+      const supplierName = item.supplierName || matchedProd?.supplierName || matchedProd?.supplier || '';
+
+      row.getCell(12).value = supplierName;
+      row.getCell(12).font = { size: 9, bold: true, color: { argb: 'FF334155' } };
+      row.getCell(12).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      row.getCell(12).alignment = { horizontal: 'center', vertical: 'middle' };
+
       // Apply borders
-      for(let i=1; i<=10; i++) {
+      for(let i=1; i<=12; i++) {
         row.getCell(i).border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
       }
       
@@ -376,6 +449,9 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       row.height = maxLines > 1 ? (maxLines * 15 + 8) : 22;
 
       subtotal += lineTotal;
+      const itemCostUsd = (costKrw / exRate) * (item.quantity || 0);
+      totalCostUsdSum += itemCostUsd;
+      totalProfitSum += (lineTotal - itemCostUsd);
       currentRow++;
     });
   }
@@ -385,7 +461,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   // 6. FREIGHT CHARGES
   let freightTotal = 0;
   if (piData.type !== 'consulting' && piData.freightCharges && piData.freightCharges.length > 0) {
-    worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = "FREIGHT CHARGES";
     worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
     currentRow++;
@@ -393,7 +469,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     // Freight Headers
     worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
     worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
-    worksheet.mergeCells(`H${currentRow}:J${currentRow}`);
+    worksheet.mergeCells(`H${currentRow}:L${currentRow}`);
     const fHeaderRow = worksheet.getRow(currentRow);
     
     const fCols = [
@@ -406,7 +482,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     
     const thinBorderDark = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FF1F4E78' } };
     const borderDark = { top: thinBorderDark, left: thinBorderDark, bottom: thinBorderDark, right: thinBorderDark };
-    for(let i=1; i<=10; i++) {
+    for(let i=1; i<=12; i++) {
       const cell = fHeaderRow.getCell(i);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
       cell.border = borderDark;
@@ -426,7 +502,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     piData.freightCharges.forEach(fc => {
       worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
       worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
-      worksheet.mergeCells(`H${currentRow}:J${currentRow}`);
+      worksheet.mergeCells(`H${currentRow}:L${currentRow}`);
       const row = worksheet.getRow(currentRow);
       
       row.getCell(1).value = fc.type;
@@ -450,7 +526,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       row.getCell(8).font = { size: 9, color: { argb: 'FF64748B' } };
       row.getCell(8).alignment = { vertical: 'middle', wrapText: true };
 
-      for(let i=1; i<=10; i++) {
+      for(let i=1; i<=12; i++) {
         row.getCell(i).border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
       }
       row.height = 20;
@@ -502,7 +578,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`E${currentRow}`).value = "Expected Operating Profit:";
   worksheet.getCell(`E${currentRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
   worksheet.getCell(`E${currentRow}`).font = { color: { argb: 'FF15803D' }, size: 9, bold: true };
-  worksheet.mergeCells(`G${currentRow}:J${currentRow}`);
+  worksheet.mergeCells(`G${currentRow}:L${currentRow}`);
   worksheet.getCell(`G${currentRow}`).value = `$${totalProfitSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${overallMargin.toFixed(1)}%)`;
   worksheet.getCell(`G${currentRow}`).font = { bold: true, color: { argb: 'FF15803D' }, size: 11 };
   worksheet.getCell(`G${currentRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -514,7 +590,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`E${currentRow}`).font = { size: 11, bold: true, color: { argb: 'FF000000' } };
   worksheet.getCell(`E${currentRow}`).border = { top: { style: 'medium', color: { argb: 'FFCBD5E1' } }, bottom: { style: 'medium', color: { argb: 'FFCBD5E1' } } };
   
-  worksheet.mergeCells(`G${currentRow}:J${currentRow}`);
+  worksheet.mergeCells(`G${currentRow}:L${currentRow}`);
   worksheet.getCell(`G${currentRow}`).value = grandTotal;
   worksheet.getCell(`G${currentRow}`).numFmt = '"$"#,##0.00';
   worksheet.getCell(`G${currentRow}`).font = { size: 12, bold: true, color: { argb: 'FFB91C1C' } };
@@ -523,8 +599,11 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getRow(currentRow).height = 25;
   currentRow += 2;
 
+  // Set official PI print area (Columns A to H only)
+  worksheet.pageSetup.printArea = `A1:H${currentRow}`;
+
   // 8. REMARKS (Red border box)
-  worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = "REMARKS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   currentRow++;
@@ -536,7 +615,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   const remarksStartRow = currentRow;
   remarkLines.forEach(line => {
-    worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = line;
     worksheet.getCell(`A${currentRow}`).font = { size: 9, color: { argb: 'FF334155' } };
     currentRow++;
@@ -550,12 +629,12 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     const leftBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFFCA5A5' } };
     const rightBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFFCA5A5' } };
 
-    for(let c=1; c<=10; c++) {
+    for(let c=1; c<=12; c++) {
       worksheet.getCell(r, c).border = {
         top: topBorder,
         bottom: bottomBorder,
         left: c === 1 ? leftBorder : undefined,
-        right: c === 10 ? rightBorder : undefined
+        right: c === 12 ? rightBorder : undefined
       };
     }
   }
@@ -568,8 +647,8 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`A${currentRow}`).value = "BANK DETAILS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } };
   
-  // Right: SIGNATURES (F to J)
-  worksheet.mergeCells(`F${currentRow}:J${currentRow}`);
+  // Right: SIGNATURES (F to L)
+  worksheet.mergeCells(`F${currentRow}:L${currentRow}`);
   worksheet.getCell(`F${currentRow}`).value = "SIGNATURES";
   worksheet.getCell(`F${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   worksheet.getCell(`F${currentRow}`).alignment = { horizontal: 'right' };
@@ -658,8 +737,8 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   buyerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
   buyerBox.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8F8' } };
 
-  // Seller Signature Box (I to J)
-  worksheet.mergeCells(`I${sigStartRow}:J${sigStartRow+5}`);
+  // Seller Signature Box (I to L)
+  worksheet.mergeCells(`I${sigStartRow}:L${sigStartRow+5}`);
   const sellerBox = worksheet.getCell(`I${sigStartRow}`);
   sellerBox.value = sellerSignature;
   sellerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
@@ -681,13 +760,13 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       right: borderLight
     };
 
-    // Seller (I to J)
+    // Seller (I to L)
     worksheet.getCell(`I${r}`).border = {
       top: r === sigStartRow ? borderLight : undefined,
       bottom: r === sigStartRow + 5 ? borderLight : undefined,
       left: borderLight
     };
-    worksheet.getCell(`J${r}`).border = {
+    worksheet.getCell(`L${r}`).border = {
       top: r === sigStartRow ? borderLight : undefined,
       bottom: r === sigStartRow + 5 ? borderLight : undefined,
       right: borderLight
@@ -703,7 +782,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       extension: 'png'
     });
     worksheet.addImage(sigImageId, {
-      tl: { col: 8.15, row: sigStartRow + 1.2 },
+      tl: { col: 8.5, row: sigStartRow + 1.2 },
       ext: { width: 110, height: 50 },
       editAs: 'absolute'
     });
@@ -725,10 +804,11 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     { width: 16 },  // I: 총 매출금액($)
     { width: 16 },  // J: 영업이익($)
     { width: 12 },  // K: 마진율(%)
+    { width: 16 },  // L: 매입처
   ];
 
   // Title Banner
-  ws2.mergeCells('A1:K1');
+  ws2.mergeCells('A1:L1');
   const tCell = ws2.getCell('A1');
   tCell.value = "📊 PROFORMA INVOICE 내부 손익 및 정산 분석표";
   tCell.font = { name: '맑은 고딕', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -747,7 +827,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   ws2.getCell('J3').font = { name: '맑은 고딕', bold: true, size: 10, color: { argb: 'FF1E293B' } };
 
   // Table headers
-  const s2Headers = ['NO', '품목명 (PRODUCT)', '규격 (SPEC)', '수량', '단위', '매입단가', '총 매입금액($)', '판매단가($)', '총 매출금액($)', '영업이익($)', '마진율(%)'];
+  const s2Headers = ['NO', '품목명 (PRODUCT)', '규격 (SPEC)', '수량', '단위', '매입단가', '총 매입금액($)', '판매단가($)', '총 매출금액($)', '영업이익($)', '마진율(%)', '매입처'];
   const s2HeaderRow = ws2.getRow(5);
   s2Headers.forEach((h, i) => {
     const cell = s2HeaderRow.getCell(i + 1);
@@ -771,6 +851,10 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       const totalSaleUsd = item.lineTotalUsd || (salePriceUsd * (item.quantity || 0));
       const profitUsd = totalSaleUsd - totalCostUsd;
       const marginPct = totalSaleUsd > 0 ? (profitUsd / totalSaleUsd) * 100 : 0;
+
+      const rawCode = getRawProductCode(item.productCode);
+      const matchedProd = (productsList || []).find((p: any) => p.productCode === rawCode || p.id === rawCode);
+      const supplierName = item.supplierName || matchedProd?.supplierName || matchedProd?.supplier || '';
 
       const row = ws2.getRow(rIdx);
       row.getCell(1).value = idx + 1;
@@ -817,7 +901,10 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
       row.getCell(11).alignment = { horizontal: 'right', vertical: 'middle' };
       row.getCell(11).font = { bold: true, color: { argb: profitUsd >= 0 ? 'FF15803D' : 'FFDC2626' } };
 
-      for(let c=1; c<=11; c++) {
+      row.getCell(12).value = supplierName;
+      row.getCell(12).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      for(let c=1; c<=12; c++) {
         row.getCell(c).border = { top: {style:'thin', color:{argb:'FFCBD5E1'}}, left: {style:'thin', color:{argb:'FFCBD5E1'}}, bottom: {style:'thin', color:{argb:'FFCBD5E1'}}, right: {style:'thin', color:{argb:'FFCBD5E1'}} };
       }
       row.height = 22;
