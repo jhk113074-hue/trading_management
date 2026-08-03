@@ -86,8 +86,8 @@ export const generatePIExcel = async (
       extension: 'png',
     });
     
-    // Add image spanning rows 1 to 4 (columns A to L)
-    worksheet.addImage(imageId, 'A1:L4');
+    // Add image spanning rows 1 to 4 (columns A to H)
+    worksheet.addImage(imageId, 'A1:H4');
     
     // Set heights for the rows to make space for the image
     worksheet.getRow(1).height = 20;
@@ -96,7 +96,7 @@ export const generatePIExcel = async (
     worksheet.getRow(4).height = 25;
     
     // Add red border line at the bottom of the letterhead area
-    worksheet.mergeCells(`A4:L4`);
+    worksheet.mergeCells(`A4:H4`);
     worksheet.getCell('A4').border = { bottom: { style: 'thick', color: { argb: 'FFB91C1C' } } };
     
   } catch (e) {
@@ -106,19 +106,19 @@ export const generatePIExcel = async (
     const issuerAddress = "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea";
     const issuerContact = "Tel: +82-50-7081-1130   Fax: +82-503-0464-1130   www.ysacc.co.kr";
 
-    worksheet.mergeCells(`A1:L1`);
+    worksheet.mergeCells(`A1:H1`);
     const titleRow = worksheet.getRow(1);
     titleRow.getCell(1).value = issuerName;
     titleRow.getCell(1).font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF1F4E78' } };
     titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'bottom' };
     titleRow.height = 25;
 
-    worksheet.mergeCells(`A2:L2`);
+    worksheet.mergeCells(`A2:H2`);
     const addrRow = worksheet.getRow(2);
     addrRow.getCell(1).value = issuerAddress;
     addrRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
 
-    worksheet.mergeCells(`A3:L3`);
+    worksheet.mergeCells(`A3:H3`);
     const contactRow = worksheet.getRow(3);
     contactRow.getCell(1).value = issuerContact;
     contactRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
@@ -235,7 +235,7 @@ export const generatePIExcel = async (
   currentRow += 2;
 
   // 4. TRADE TERMS
-  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = piData.type === 'consulting' ? "CONTRACT TERMS" : "TRADE TERMS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } };
   currentRow++;
@@ -299,7 +299,7 @@ export const generatePIExcel = async (
   currentRow += 2;
 
   // 5. LINE ITEMS
-  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = "LINE ITEMS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   currentRow++;
@@ -339,12 +339,12 @@ export const generatePIExcel = async (
   let totalProfitSum = 0;
 
   if (!items || items.length === 0) {
-    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
     const row = worksheet.getRow(currentRow);
     row.getCell(1).value = "No items";
     row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     row.getCell(1).font = { color: { argb: 'FF9CA3AF' } };
-    for(let i=1; i<=12; i++) {
+    for(let i=1; i<=8; i++) {
       row.getCell(i).border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
     }
     currentRow++;
@@ -461,15 +461,14 @@ export const generatePIExcel = async (
   // 6. FREIGHT CHARGES
   let freightTotal = 0;
   if (piData.type !== 'consulting' && piData.freightCharges && piData.freightCharges.length > 0) {
-    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = "FREIGHT CHARGES";
     worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
     currentRow++;
 
-    // Freight Headers
+    // Freight Headers (A:C Container Type, D Qty, E:F Unit Price, G Total USD, H Remarks)
     worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
     worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
-    worksheet.mergeCells(`H${currentRow}:L${currentRow}`);
     const fHeaderRow = worksheet.getRow(currentRow);
     
     const fCols = [
@@ -482,7 +481,7 @@ export const generatePIExcel = async (
     
     const thinBorderDark = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FF1F4E78' } };
     const borderDark = { top: thinBorderDark, left: thinBorderDark, bottom: thinBorderDark, right: thinBorderDark };
-    for(let i=1; i<=12; i++) {
+    for(let i=1; i<=8; i++) {
       const cell = fHeaderRow.getCell(i);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
       cell.border = borderDark;
@@ -502,7 +501,6 @@ export const generatePIExcel = async (
     piData.freightCharges.forEach(fc => {
       worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
       worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
-      worksheet.mergeCells(`H${currentRow}:L${currentRow}`);
       const row = worksheet.getRow(currentRow);
       
       row.getCell(1).value = fc.type;
@@ -526,7 +524,7 @@ export const generatePIExcel = async (
       row.getCell(8).font = { size: 9, color: { argb: 'FF64748B' } };
       row.getCell(8).alignment = { vertical: 'middle', wrapText: true };
 
-      for(let i=1; i<=12; i++) {
+      for(let i=1; i<=8; i++) {
         row.getCell(i).border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
       }
       row.height = 20;
@@ -578,7 +576,7 @@ export const generatePIExcel = async (
   worksheet.getCell(`E${currentRow}`).value = "Expected Operating Profit:";
   worksheet.getCell(`E${currentRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
   worksheet.getCell(`E${currentRow}`).font = { color: { argb: 'FF15803D' }, size: 9, bold: true };
-  worksheet.mergeCells(`G${currentRow}:L${currentRow}`);
+  worksheet.mergeCells(`G${currentRow}:H${currentRow}`);
   worksheet.getCell(`G${currentRow}`).value = `$${totalProfitSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${overallMargin.toFixed(1)}%)`;
   worksheet.getCell(`G${currentRow}`).font = { bold: true, color: { argb: 'FF15803D' }, size: 11 };
   worksheet.getCell(`G${currentRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -590,7 +588,7 @@ export const generatePIExcel = async (
   worksheet.getCell(`E${currentRow}`).font = { size: 11, bold: true, color: { argb: 'FF000000' } };
   worksheet.getCell(`E${currentRow}`).border = { top: { style: 'medium', color: { argb: 'FFCBD5E1' } }, bottom: { style: 'medium', color: { argb: 'FFCBD5E1' } } };
   
-  worksheet.mergeCells(`G${currentRow}:L${currentRow}`);
+  worksheet.mergeCells(`G${currentRow}:H${currentRow}`);
   worksheet.getCell(`G${currentRow}`).value = grandTotal;
   worksheet.getCell(`G${currentRow}`).numFmt = '"$"#,##0.00';
   worksheet.getCell(`G${currentRow}`).font = { size: 12, bold: true, color: { argb: 'FFB91C1C' } };
@@ -603,7 +601,7 @@ export const generatePIExcel = async (
   worksheet.pageSetup.printArea = `A1:H${currentRow}`;
 
   // 8. REMARKS (Red border box)
-  worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+  worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = "REMARKS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   currentRow++;
@@ -615,7 +613,7 @@ export const generatePIExcel = async (
 
   const remarksStartRow = currentRow;
   remarkLines.forEach(line => {
-    worksheet.mergeCells(`A${currentRow}:L${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = line;
     worksheet.getCell(`A${currentRow}`).font = { size: 9, color: { argb: 'FF334155' } };
     currentRow++;
@@ -629,12 +627,12 @@ export const generatePIExcel = async (
     const leftBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFFCA5A5' } };
     const rightBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFFCA5A5' } };
 
-    for(let c=1; c<=12; c++) {
+    for(let c=1; c<=8; c++) {
       worksheet.getCell(r, c).border = {
         top: topBorder,
         bottom: bottomBorder,
         left: c === 1 ? leftBorder : undefined,
-        right: c === 12 ? rightBorder : undefined
+        right: c === 8 ? rightBorder : undefined
       };
     }
   }
@@ -647,8 +645,8 @@ export const generatePIExcel = async (
   worksheet.getCell(`A${currentRow}`).value = "BANK DETAILS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } };
   
-  // Right: SIGNATURES (F to L)
-  worksheet.mergeCells(`F${currentRow}:L${currentRow}`);
+  // Right: SIGNATURES (F to H)
+  worksheet.mergeCells(`F${currentRow}:H${currentRow}`);
   worksheet.getCell(`F${currentRow}`).value = "SIGNATURES";
   worksheet.getCell(`F${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   worksheet.getCell(`F${currentRow}`).alignment = { horizontal: 'right' };
@@ -726,20 +724,20 @@ export const generatePIExcel = async (
   writeBank("SWIFT Code", swiftCode, currentRow); 
   worksheet.getRow(currentRow).height = 18;
 
-  // Add Signatures on the right side of the bank details
+  // Add Signatures on the right side of the bank details (F to H)
   const sigStartRow = startBankRow;
   
-  // Buyer Signature Box (F to H)
-  worksheet.mergeCells(`F${sigStartRow}:H${sigStartRow+5}`);
+  // Buyer Signature Box (Col F)
+  worksheet.mergeCells(`F${sigStartRow}:F${sigStartRow+5}`);
   const buyerBox = worksheet.getCell(`F${sigStartRow}`);
-  buyerBox.value = "CONSIGNEE (BUYER)\n\n\n\n\nAuthorized Signature";
+  buyerBox.value = "BUYER\n\n\n\n\nAuthorized Signature";
   buyerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
   buyerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
   buyerBox.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8F8' } };
 
-  // Seller Signature Box (I to L)
-  worksheet.mergeCells(`I${sigStartRow}:L${sigStartRow+5}`);
-  const sellerBox = worksheet.getCell(`I${sigStartRow}`);
+  // Seller Signature Box (Cols G:H)
+  worksheet.mergeCells(`G${sigStartRow}:H${sigStartRow+5}`);
+  const sellerBox = worksheet.getCell(`G${sigStartRow}`);
   sellerBox.value = sellerSignature;
   sellerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
   sellerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
@@ -748,25 +746,21 @@ export const generatePIExcel = async (
   // Apply borders around signature boxes
   const borderLight = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFCBD5E1' } };
   for (let r = sigStartRow; r <= sigStartRow + 5; r++) {
-    // Buyer (F to H)
+    // Buyer (F)
     worksheet.getCell(`F${r}`).border = {
+      top: r === sigStartRow ? borderLight : undefined,
+      bottom: r === sigStartRow + 5 ? borderLight : undefined,
+      left: borderLight,
+      right: borderLight
+    };
+
+    // Seller (G:H)
+    worksheet.getCell(`G${r}`).border = {
       top: r === sigStartRow ? borderLight : undefined,
       bottom: r === sigStartRow + 5 ? borderLight : undefined,
       left: borderLight
     };
     worksheet.getCell(`H${r}`).border = {
-      top: r === sigStartRow ? borderLight : undefined,
-      bottom: r === sigStartRow + 5 ? borderLight : undefined,
-      right: borderLight
-    };
-
-    // Seller (I to L)
-    worksheet.getCell(`I${r}`).border = {
-      top: r === sigStartRow ? borderLight : undefined,
-      bottom: r === sigStartRow + 5 ? borderLight : undefined,
-      left: borderLight
-    };
-    worksheet.getCell(`L${r}`).border = {
       top: r === sigStartRow ? borderLight : undefined,
       bottom: r === sigStartRow + 5 ? borderLight : undefined,
       right: borderLight
@@ -782,7 +776,7 @@ export const generatePIExcel = async (
       extension: 'png'
     });
     worksheet.addImage(sigImageId, {
-      tl: { col: 8.5, row: sigStartRow + 1.2 },
+      tl: { col: 6.3, row: sigStartRow + 1.2 },
       ext: { width: 110, height: 50 },
       editAs: 'absolute'
     });
