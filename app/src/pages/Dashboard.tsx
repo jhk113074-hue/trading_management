@@ -928,7 +928,7 @@ export const Dashboard: React.FC = () => {
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
 
   const unassignedTasks = useMemo(() => {
-    return tasks.filter(t => t.status === 'TODO' && (!t.assigneeId || !users.some(u => u.id === t.assigneeId)));
+    return tasks.filter(t => (t.status === 'TODO' || t.status === 'PENDING') && (!t.assigneeId || !users.some(u => u.id === t.assigneeId)));
   }, [tasks, users]);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -1202,7 +1202,7 @@ export const Dashboard: React.FC = () => {
     });
 
     return {
-      todo: uTasks.filter(t => t.status === 'TODO').length,
+      todo: uTasks.filter(t => (t.status as string) === 'TODO' || (t.status as string) === 'PENDING' || (t.status as string) === '대기').length,
       doing: uTasks.filter(t => t.status === 'IN_PROGRESS').length,
       done: uTasks.filter(t => t.status === 'DONE').length,
       holding: uTasks.filter(t => t.status === 'HOLDING').length,
@@ -2838,7 +2838,7 @@ export const Dashboard: React.FC = () => {
                   }}>
                     {filteredTasks.filter(t => {
                       const s = t.status?.toUpperCase();
-                      if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                      if (basket.id === 'TODO') return s === 'TODO' || s === 'PENDING' || s === '대기';
                       if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
                       if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
                       return s === 'HOLDING' || s === '보류';
@@ -2850,7 +2850,7 @@ export const Dashboard: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
                     {filteredTasks.filter(t => {
                       const s = t.status?.toUpperCase();
-                      if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                      if (basket.id === 'TODO') return s === 'TODO' || s === 'PENDING' || s === '대기';
                       if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
                       if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
                       return s === 'HOLDING' || s === '보류';
