@@ -1,6 +1,6 @@
 export interface PIItem {
   id?: string;
-  lineNumber: number;
+  lineNumber: number | string;
   productCode: string;
   productName?: string;
   supplierName?: string;

@@ -525,11 +525,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
               // Load line items for this latest revision
               const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
-              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
               
               // Fallback to items array if subcollection is empty
               if (loadedItems.length === 0 && Array.isArray(latestRevData.items)) {
-                loadedItems = (latestRevData.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+                loadedItems = (latestRevData.items as any[]).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
               }
               setItems(loadedItems);
 
@@ -751,9 +751,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             if (latestRevDoc) {
               // Load line items for this revision
               const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
-              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
               if (loadedItems.length === 0 && Array.isArray(latestRevData.items)) {
-                loadedItems = (latestRevData.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+                loadedItems = (latestRevData.items as any[]).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
               }
 
               // Update customer info & trade terms
@@ -1461,19 +1461,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const draggedItemIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  const handleNoChange = (index: number, newNoStr: string) => {
-    const rawVal = parseInt(newNoStr, 10);
-    if (isNaN(rawVal)) return;
-    const targetNo = Math.max(1, Math.min(items.length, rawVal));
-    const targetIndex = targetNo - 1;
-    if (targetIndex === index) return;
 
-    const newItems = [...items];
-    const [movedItem] = newItems.splice(index, 1);
-    newItems.splice(targetIndex, 0, movedItem);
-    newItems.forEach((it, i) => it.lineNumber = i + 1);
-    setItems(newItems);
-  };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     draggedItemIndexRef.current = index;
@@ -2138,9 +2126,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         // Load items for the new latest revision
         const newLiSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
-        let loadedItems = newLiSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+        let loadedItems = newLiSnap.docs.map(d => d.data() as PIItem).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
         if (loadedItems.length === 0 && Array.isArray(latestRevDoc.data().items)) {
-          loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+          loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
         }
         setItems(loadedItems);
         
@@ -2175,11 +2163,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         
         // Load line items from subcollection
         const liSnap = await getDocs(collection(revDocRef, "line_items"));
-        let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+        let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
         
         // Fallback to items array if subcollection is empty
         if (loadedItems.length === 0 && Array.isArray(data.items)) {
-          loadedItems = (data.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+          loadedItems = (data.items as any[]).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
         }
         
         setItems(loadedItems);
@@ -2555,20 +2543,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           ⋮⋮
                         </span>
                         <input
-                          type="number"
-                          min={1}
-                          max={items.length}
-                          value={it.lineNumber || idx + 1}
-                          onChange={(e) => handleNoChange(idx, e.target.value)}
+                          type="text"
+                          value={it.lineNumber !== undefined && it.lineNumber !== '' ? it.lineNumber : (idx + 1)}
+                          onChange={(e) => updateItem(idx, 'lineNumber', e.target.value)}
                           style={{
                             ...gridInputStyle,
-                            width: '32px',
+                            width: '38px',
                             textAlign: 'center',
-                            padding: '2px',
+                            padding: '2px 4px',
                             fontWeight: 700,
                             color: '#1e293b'
                           }}
-                          title="순번 직접 수정 (입력 시 해당 위치로 이동)"
+                          title="순번 자유 수동 입력 (원하는 번호/문자 입력 가능)"
                         />
                       </div>
                     </td>

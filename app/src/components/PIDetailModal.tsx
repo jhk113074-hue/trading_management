@@ -61,7 +61,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
         if (!revSnap.empty) {
           const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
           const liSnap = await getDocs(collection(latestRev.ref, "line_items"));
-          const loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+          const loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
           setItems(loadedItems);
         }
       } catch (e) {
