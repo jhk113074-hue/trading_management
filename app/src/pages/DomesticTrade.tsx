@@ -2089,10 +2089,39 @@ export const DomesticTrade: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
+                  onClick={() => {
+                    const element = document.getElementById('statement-print-area');
+                    if (!element) return alert('PDF 생성 대상을 찾을 수 없습니다.');
+                    const fileName = `거래명세표_${statementItem.tradeNo}_${statementItem.customerName || ''}.pdf`;
+                    const opt = {
+                      margin:       [8, 8, 8, 8],
+                      filename:     fileName,
+                      image:        { type: 'jpeg', quality: 0.98 },
+                      html2canvas:  { scale: 2.5, useCORS: true, letterRendering: true },
+                      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    const runHtml2Pdf = () => {
+                      (window as any).html2pdf().from(element).set(opt).save();
+                    };
+                    if (!(window as any).html2pdf) {
+                      const script = document.createElement('script');
+                      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                      script.onload = () => runHtml2Pdf();
+                      document.body.appendChild(script);
+                    } else {
+                      runHtml2Pdf();
+                    }
+                  }}
+                  style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 16px', height: '32px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="프린터 연결 없이 거래명세표를 PDF 파일로 직접 다운로드합니다"
+                >
+                  📄 PDF 생성 및 저장
+                </button>
+                <button
                   onClick={() => window.print()}
                   style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 16px', height: '32px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
                 >
-                  🖨️ 즉시 인쇄 / PDF 저장
+                  🖨️ 즉시 인쇄
                 </button>
                 <button
                   onClick={() => setStatementItem(null)}

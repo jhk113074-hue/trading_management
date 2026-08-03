@@ -6158,16 +6158,19 @@ customsDuty,
 
               {/* Right Column: Visual Excel Preview */}
               <div style={{ flex: 1, padding: '16px', background: '#f1f5f9', display: 'flex', flexDirection: 'column', overflowY: 'auto', alignItems: 'center' }}>
-                <div style={{
-                  width: '520px',
-                  background: '#ffffff',
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                  padding: '24px',
-                  boxSizing: 'border-box',
-                  border: '2px solid #059669',
-                  fontFamily: 'serif',
-                  color: '#000'
-                }}>
+                <div 
+                  id="deal-statement-visual-preview"
+                  style={{
+                    width: '520px',
+                    background: '#ffffff',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                    padding: '24px',
+                    boxSizing: 'border-box',
+                    border: '2px solid #059669',
+                    fontFamily: 'serif',
+                    color: '#000'
+                  }}
+                >
                   {/* Excel View content layout */}
                   <h2 style={{ textAlign: 'center', letterSpacing: '10px', fontSize: '22px', borderBottom: '2px double #059669', paddingBottom: '4px', margin: '0 0 16px 0', color: '#065f46' }}>거 래 명 세 표</h2>
                   
@@ -6265,6 +6268,56 @@ customsDuty,
                       })()}
                     </tbody>
                   </table>
+
+                  {/* Bottom Summary Totals & Receiver Info Table */}
+                  {(() => {
+                    const krwItems = dealStatementData.items.filter(i => !i.currency || i.currency === 'KRW');
+                    const usdItems = dealStatementData.items.filter(i => i.currency === 'USD');
+                    const krwSupply = krwItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                    const krwVat = krwItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+                    const usdSupply = usdItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                    const usdVat = usdItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+
+                    const sumSupplyText = [
+                      krwSupply > 0 ? `₩${krwSupply.toLocaleString()}` : '',
+                      usdSupply > 0 ? `$${usdSupply.toLocaleString()}` : ''
+                    ].filter(Boolean).join(' / ') || '₩0';
+
+                    const sumVatText = [
+                      krwVat > 0 ? `₩${krwVat.toLocaleString()}` : '',
+                      usdVat > 0 ? `$${usdVat.toLocaleString()}` : ''
+                    ].filter(Boolean).join(' / ') || '₩0';
+
+                    const grandTotalText = [
+                      krwSupply > 0 ? `₩${(krwSupply + krwVat).toLocaleString()}` : '',
+                      usdSupply > 0 ? `$${(usdSupply + usdVat).toLocaleString()}` : ''
+                    ].filter(Boolean).join(' / ') || '₩0';
+
+                    const receivableText = dealStatementData.currency === 'USD' 
+                      ? `$${dealStatementData.receivableAmount.toLocaleString()}` 
+                      : `₩${dealStatementData.receivableAmount.toLocaleString()}`;
+
+                    return (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', marginTop: '10px' }}>
+                        <tbody>
+                          <tr style={{ height: '24px', fontWeight: 'bold' }}>
+                            <td style={{ width: '20%', background: '#ecfdf5', border: '1px solid #059669', textAlign: 'center', color: '#065f46' }}>공급가액합계</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{sumSupplyText}</td>
+                            <td style={{ width: '20%', background: '#ecfdf5', border: '1px solid #059669', textAlign: 'center', color: '#065f46' }}>세액합계</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{sumVatText}</td>
+                            <td style={{ width: '20%', background: '#ecfdf5', border: '1px solid #059669', textAlign: 'center', color: '#065f46' }}>총합계금액</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px', fontSize: '10.5px', color: '#1e3a8a' }}>{grandTotalText}</td>
+                          </tr>
+                          <tr style={{ height: '24px', fontWeight: 'bold' }}>
+                            <td style={{ background: '#ecfdf5', border: '1px solid #059669', textAlign: 'center', color: '#065f46' }}>미수금</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px', color: '#ef4444' }}>{receivableText}</td>
+                            <td style={{ background: '#ecfdf5', border: '1px solid #059669', textAlign: 'center', color: '#065f46' }}>인수자</td>
+                            <td colSpan={3} style={{ border: '1px solid #059669', paddingLeft: '4px' }}>{dealStatementData.receiverSign || dealStatementData.receiverCEO || dealStatementData.receiverName || ''} (인/서명)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -6276,6 +6329,57 @@ customsDuty,
                 style={{ padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 닫기
+              </button>
+              <button 
+                onClick={() => {
+                  // Save edits to Firestore first
+                  const updated = importRequests.map(r => r.id === id ? {
+                    ...r,
+                    dealStatementItems: dealStatementData.items,
+                    dealStatementBizNo: dealStatementData.receiverBizNo,
+                    dealStatementName: dealStatementData.receiverName,
+                    dealStatementCEO: dealStatementData.receiverCEO,
+                    dealStatementAddr: dealStatementData.receiverAddr,
+                    dealStatementType: dealStatementData.receiverType,
+                    dealStatementItem: dealStatementData.receiverItem,
+                    dealStatementSentDate: dealStatementData.date,
+                    dealStatementReceivable: dealStatementData.receivableAmount,
+                    dealStatementCurrency: dealStatementData.currency
+                  } : r);
+                  setImportRequests(updated);
+                  saveToStorage(updated);
+
+                  // Target visible preview element directly
+                  const element = document.getElementById('deal-statement-visual-preview');
+                  if (!element) return alert('PDF 생성 대상을 찾을 수 없습니다.');
+
+                  const fileName = `거래명세표_${dealStatementData.receiverName || '고객사'}_${dealStatementData.date || ''}.pdf`;
+
+                  const opt = {
+                    margin:       [12, 36, 12, 36],
+                    filename:     fileName,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                  };
+
+                  const runHtml2Pdf = () => {
+                    (window as any).html2pdf().from(element).set(opt).save();
+                  };
+
+                  if (!(window as any).html2pdf) {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                    script.onload = () => runHtml2Pdf();
+                    document.body.appendChild(script);
+                  } else {
+                    runHtml2Pdf();
+                  }
+                }}
+                style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="프린터 연결 없이 거래명세표를 PDF 파일로 저장합니다"
+              >
+                📄 PDF 생성 및 저장
               </button>
               <button 
                 onClick={() => {

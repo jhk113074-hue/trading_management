@@ -2784,18 +2784,32 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           )}
 
           <div style={{ background: 'linear-gradient(135deg, #0f172a, var(--text-primary))', border: '1.5px solid #334155', padding: '14px 22px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
-              <span style={{ color: '#4ade80', fontSize: '20px', fontWeight: 800, textShadow: '0 0 10px rgba(74,222,128,0.2)' }}>{(() => {
-                const totalProfit = items.reduce((sum, it) => {
-                  const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
-                  const profit = (it.salePriceUsd || 0) - costUsd;
-                  return sum + (profit * (it.quantity || 0));
-                }, 0);
-                const totalSales = formData.totalUsd || formData.subtotalUsd || 0;
-                const marginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
-                return `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPercent.toFixed(1)}%)`;
-              })()}</span>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>총 매입금액 (Est. Cost)</span>
+                <span style={{ color: '#60a5fa', fontSize: '16px', fontWeight: 800 }}>
+                  {(() => {
+                    const totalCostUsd = items.reduce((sum, it) => {
+                      const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
+                      return sum + (costUsd * (it.quantity || 0));
+                    }, 0);
+                    return `$${totalCostUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                  })()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>예상 총 영업이익 (Profit)</span>
+                <span style={{ color: '#4ade80', fontSize: '18px', fontWeight: 800, textShadow: '0 0 10px rgba(74,222,128,0.2)' }}>{(() => {
+                  const totalProfit = items.reduce((sum, it) => {
+                    const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
+                    const profit = (it.salePriceUsd || 0) - costUsd;
+                    return sum + (profit * (it.quantity || 0));
+                  }, 0);
+                  const totalSales = formData.totalUsd || formData.subtotalUsd || 0;
+                  const marginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+                  return `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPercent.toFixed(1)}%)`;
+                })()}</span>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
               <div style={{ textAlign: 'right' }}>
@@ -3030,7 +3044,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             >
               📄 PDF
             </button>
-            <button type="button" onClick={() => generatePIExcel(formData as ProformaInvoice, items)}
+            <button type="button" onClick={async () => {
+              try {
+                await generatePIExcel(formData as ProformaInvoice, items);
+              } catch (err: any) {
+                console.error("Excel generation error:", err);
+                alert("❌ 엑셀 파일 생성 중 오류가 발생했습니다: " + (err?.message || err));
+              }
+            }}
               style={{ padding: '0 14px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, fontSize: '13px', color: '#16a34a', cursor: 'pointer', height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0fdf4'}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
