@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.179',
+    version: 'v2.8.179',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: 'AI 견적서 초안 생성 엔진 고도화 (동적 바이어 매칭 & DB/이력 상품 검색 연동)',
+    content: '• 기존 하드코딩 볼트/너트 응답 방식에서 바이어명 동적 매칭(예: AL BASSAM INDUSTRIES) 및 마스터 상품/과거 주문 이력 DB 연동 구조로 스마트 고도화\n• 프롬프트 입력어(예: Insulation skin 1개씩 등) 키워드 자동 추출 및 해당 바이어의 구매 이력/상품 DB 실시간 검색·리스트업 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.178',
     version: 'v2.8.178',
     date: '2026-08-04',

@@ -785,79 +785,180 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
       }
 
-      // 2. Regular AI heuristic fallback
-      // Find a customer matching the prompt
-      let matchedCustomer = customers[0]; // fallback
-      if (aiPrompt.toLowerCase().includes("national") || aiPrompt.toLowerCase().includes("내셔널")) {
-        const found = customers.find(c => c.name.toLowerCase().includes("national"));
-        if (found) matchedCustomer = found;
-      } else if (aiPrompt.toLowerCase().includes("hyundai") || aiPrompt.toLowerCase().includes("현대")) {
-        const found = customers.find(c => c.name.toLowerCase().includes("hyundai") || c.name.includes("현대"));
-        if (found) matchedCustomer = found;
+      // 2. Smart Customer Matching
+      const cleanPromptLower = aiPrompt.toLowerCase().replace(/^[a-z]\b/, '').trim();
+      let matchedCustomer: Customer | undefined = undefined;
+      
+      let maxMatchLen = 0;
+      for (const cust of customers) {
+        const cNameKo = (cust.nameKo || '').toLowerCase();
+        const cNameEn = (cust.name || '').toLowerCase();
+
+        if (cNameKo && cleanPromptLower.includes(cNameKo)) {
+          if (cNameKo.length > maxMatchLen) {
+            matchedCustomer = cust;
+            maxMatchLen = cNameKo.length;
+          }
+        }
+        if (cNameEn && cleanPromptLower.includes(cNameEn)) {
+          if (cNameEn.length > maxMatchLen) {
+            matchedCustomer = cust;
+            maxMatchLen = cNameEn.length;
+          }
+        }
+        const enWords = cNameEn.split(/[\s,._()-]+/).filter((w: string) => w.length >= 3 && !['inc', 'ltd', 'corp', 'co', 'the', 'and', 'fai'].includes(w));
+        for (const w of enWords) {
+          if (cleanPromptLower.includes(w) && w.length > maxMatchLen) {
+            matchedCustomer = cust;
+            maxMatchLen = w.length;
+          }
+        }
+        const koWords = cNameKo.split(/[\s,._()-]+/).filter((w: string) => w.length >= 2 && !['(주)', '주식회사', '상사', '무역'].includes(w));
+        for (const w of koWords) {
+          if (cleanPromptLower.includes(w) && w.length > maxMatchLen) {
+            matchedCustomer = cust;
+            maxMatchLen = w.length;
+          }
+        }
       }
 
-      // Update customer information in formData
+      if (!matchedCustomer && customers.length > 0) {
+        matchedCustomer = customers[0];
+      }
+
       if (matchedCustomer) {
         setFormData(prev => ({
           ...prev,
-          customerId: matchedCustomer.id,
-          customerName: matchedCustomer.name,
-          customerAddress: matchedCustomer.addressEn || '',
-          contactPerson: matchedCustomer.representative || '',
-          email: matchedCustomer.email || '',
+          customerId: matchedCustomer!.id,
+          customerName: matchedCustomer!.name,
+          customerAddress: matchedCustomer!.addressEn || '',
+          contactPerson: matchedCustomer!.representative || '',
+          email: matchedCustomer!.email || '',
           paymentTerms: aiPrompt.includes("LC") || aiPrompt.includes("신용장") ? "Usance LC 30days" : "100% T/T in advance",
-          incoterms: aiPrompt.includes("CIF") ? "CIF" : "FOB"
+          incoterms: aiPrompt.includes("CIF") ? "CIF" : (aiPrompt.includes("DDP") ? "DDP" : "FOB")
         }));
       }
 
-      // Generate items based on prompt
-      const newItems: PIItem[] = [];
+      // 3. Extract Product Keywords & Search Master Products + Firestore Order/PI History
+      const stopWords = [
+        '올해', '구매한', '까지', '에서', '모든', '를', '을', '가', '이', '은', '는', '1개씩', '개씩', '개',
+        '리스트업해주세요', '리스트업', '견적서', '작성해줘', '해줘', '견적', '마진', '마진율', '세팅', '작성',
+        '초안', '생성', '해봐', '줘', '부탁해', '요청', '바이어', '상품', '제품', '품목', '내역', '리스트'
+      ];
       
-      // Look up products matching 'bolt' or 'nut'
-      const boltProd = products.find(p => p.productCode === 'P0103' || p.nameEn.toLowerCase().includes("bolt")) || products[0];
-      const nutProd = products.find(p => p.productCode === 'P0101' || p.nameEn.toLowerCase().includes("nut")) || products[1];
+      const rawTokens = cleanPromptLower.split(/[\s,._()/-]+/).filter(t => t.length >= 2);
+      const productKeywords = rawTokens.filter(t => !stopWords.includes(t) && !matchedCustomer?.name?.toLowerCase().includes(t));
 
-      // Parse quantity
-      let boltQty = 5000;
-      let nutQty = 3000;
-      
-      const boltMatch = aiPrompt.match(/(볼트|bolt)\s*([0-9,]+)/i);
-      if (boltMatch) boltQty = parseInt(boltMatch[2].replace(/,/g, ''), 10);
-      
-      const nutMatch = aiPrompt.match(/(너트|nut)\s*([0-9,]+)/i);
-      if (nutMatch) nutQty = parseInt(nutMatch[2].replace(/,/g, ''), 10);
+      let defaultQty = 1;
+      const isEachOne = cleanPromptLower.includes("1개씩") || cleanPromptLower.includes("1개") || cleanPromptLower.includes("각 1개") || cleanPromptLower.includes("각1개");
+      if (!isEachOne) {
+        const qtyNumMatch = aiPrompt.match(/(\d+[\d,]*)\s*(개|ea|pcs)/i);
+        if (qtyNumMatch) {
+          defaultQty = parseInt(qtyNumMatch[1].replace(/,/g, ''), 10) || 1;
+        }
+      }
 
-      // Parse margin
       let marginRate = 15;
       const marginMatch = aiPrompt.match(/(마진|margin)\s*(\d+)/i);
       if (marginMatch) marginRate = parseInt(marginMatch[2], 10);
 
-      const addCalculatedItem = (p: Product, qty: number, lineNum: number) => {
-        const displayName = p.nameEn || p.nameKo || '';
-        const itemCode = `[${p.productCode}] ${displayName}`;
-        const pKrw = p.currency === 'KRW' ? (p.purchasePrice || 0) : 0;
-        const pUsd = p.currency !== 'KRW' ? (p.purchasePrice || 0) : 0;
+      const candidateItemsMap = new Map<string, { productCode: string; name: string; spec: string; priceKrw: number; priceUsd: number; unit: string; productObj?: Product }>();
+
+      // A) Query Master Products
+      for (const p of products) {
+        const pNameKo = (p.nameKo || '').toLowerCase();
+        const pNameEn = (p.nameEn || '').toLowerCase();
+        const pCode = (p.productCode || '').toLowerCase();
+        const pSpec = (p.spec || '').toLowerCase();
+        const pDesc = (p.description || '').toLowerCase();
+
+        let isMatch = false;
+        if (productKeywords.length > 0) {
+          isMatch = productKeywords.some(kw => pNameKo.includes(kw) || pNameEn.includes(kw) || pCode.includes(kw) || pSpec.includes(kw) || pDesc.includes(kw));
+        }
+
+        if (isMatch) {
+          const key = p.productCode || p.id;
+          candidateItemsMap.set(key, {
+            productCode: p.productCode,
+            name: p.nameEn || p.nameKo,
+            spec: p.spec || '',
+            priceKrw: p.currency === 'KRW' ? (p.purchasePrice || 0) : 0,
+            priceUsd: p.currency !== 'KRW' ? (p.purchasePrice || 0) : 0,
+            unit: (p.unit || 'EA').toUpperCase(),
+            productObj: p
+          });
+        }
+      }
+
+      // B) Query Firestore Orders & PIs for matched customer history
+      if (matchedCustomer) {
+        try {
+          const ordersSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "orders"));
+          ordersSnap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const cName = (data.customerName || '').toLowerCase();
+            const cId = data.customerId;
+            const isCustMatch = cId === matchedCustomer!.id || (matchedCustomer!.name && cName.includes(matchedCustomer!.name.toLowerCase()));
+
+            if (isCustMatch && Array.isArray(data.items)) {
+              data.items.forEach((it: any) => {
+                const itemName = (it.name || it.productName || '').toLowerCase();
+                const itemSpec = (it.spec || '').toLowerCase();
+                
+                const isKwMatch = productKeywords.length === 0 || productKeywords.some(kw => itemName.includes(kw) || itemSpec.includes(kw));
+                if (isKwMatch && (it.name || it.productName)) {
+                  const key = it.productCode || it.itemId || it.name;
+                  if (!candidateItemsMap.has(key)) {
+                    candidateItemsMap.set(key, {
+                      productCode: it.productCode || 'P-HIST',
+                      name: it.name || it.productName,
+                      spec: it.spec || '',
+                      priceKrw: it.purchaseUnitPriceKrw || 0,
+                      priceUsd: it.purchaseUnitPrice || it.unitPrice || 0,
+                      unit: (it.unit || 'EA').toUpperCase(),
+                    });
+                  }
+                }
+              });
+            }
+          });
+        } catch (err) {
+          console.warn("Could not query orders for AI draft:", err);
+        }
+      }
+
+      const newItems: PIItem[] = [];
+      let lineNum = 1;
+
+      const addCalculatedItemFromCandidate = (cand: { productCode: string; name: string; spec: string; priceKrw: number; priceUsd: number; unit: string; productObj?: Product }, qty: number, line: number) => {
+        const displayName = cand.name;
+        const itemCode = cand.productCode.startsWith('[') ? cand.productCode : `[${cand.productCode}] ${displayName}`;
+        const pKrw = cand.priceKrw;
+        const pUsd = cand.priceUsd;
         const exRate = formData.exchangeRate || 1400;
 
         let rawSalePrice = 0;
         if (pKrw > 0) {
           rawSalePrice = pKrw / exRate / (1 - marginRate / 100);
-        } else {
+        } else if (pUsd > 0) {
           rawSalePrice = pUsd / (1 - marginRate / 100);
+        } else {
+          rawSalePrice = 1.0;
         }
-        
+
         const digits = 2;
         const salePrice = ceilValue(rawSalePrice, digits);
         const lineTotal = salePrice * qty;
 
         const it: PIItem = {
-          lineNumber: lineNum,
+          lineNumber: line,
           productCode: itemCode,
           productName: displayName,
-          spec: p.spec || '',
+          spec: cand.spec || '',
           description: displayName,
           quantity: qty,
-          unit: (p.unit || 'EA').toUpperCase(),
+          unit: cand.unit,
           purchasePriceKrw: pKrw,
           purchasePriceUsd: pUsd,
           exchangeRate: exRate,
@@ -869,47 +970,51 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           remarks: ''
         };
 
-        // Select default packing method
-        const methods = getProductPackingMethods(p);
-        const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
-        if (defaultMethod) {
-          it.selectedPackingMethodId = defaultMethod.id;
-          if (defaultMethod.unit) it.unit = defaultMethod.unit;
-          const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
-          it.packingSpecOverride = {
-            packageType: defaultMethod.packageType,
-            qtyPerPallet: defaultMethod.qtyPerPallet || 0,
-            specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
-            specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
-            specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
-            weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
-            grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
-          };
-          if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
-            it.palletQty = parseFloat((qty / defaultMethod.qtyPerPallet).toFixed(2));
+        if (cand.productObj) {
+          const methods = getProductPackingMethods(cand.productObj);
+          const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
+          if (defaultMethod) {
+            it.selectedPackingMethodId = defaultMethod.id;
+            if (defaultMethod.unit) it.unit = defaultMethod.unit;
+            const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
+            it.packingSpecOverride = {
+              packageType: defaultMethod.packageType,
+              qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+              specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+              specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+              specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+              weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+              grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+            };
+            if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
+              it.palletQty = parseFloat((qty / defaultMethod.qtyPerPallet).toFixed(2));
+            }
           }
         }
-        
         return it;
       };
 
-      let currentLine = 1;
-      if (aiPrompt.includes("볼트") || aiPrompt.includes("bolt")) {
-        if (boltProd) newItems.push(addCalculatedItem(boltProd, boltQty, currentLine++));
-      }
-      if (aiPrompt.includes("너트") || aiPrompt.includes("nut")) {
-        if (nutProd) newItems.push(addCalculatedItem(nutProd, nutQty, currentLine++));
-      }
+      candidateItemsMap.forEach((cand) => {
+        newItems.push(addCalculatedItemFromCandidate(cand, defaultQty, lineNum++));
+      });
 
-      // If neither is explicitly named, add both as default
       if (newItems.length === 0) {
-        if (boltProd) newItems.push(addCalculatedItem(boltProd, boltQty, currentLine++));
-        if (nutProd) newItems.push(addCalculatedItem(nutProd, nutQty, currentLine++));
+        const boltProd = products.find(p => p.productCode === 'P0103' || p.nameEn.toLowerCase().includes("bolt")) || products[0];
+        const nutProd = products.find(p => p.productCode === 'P0101' || p.nameEn.toLowerCase().includes("nut")) || products[1];
+        if (boltProd) newItems.push(addCalculatedItemFromCandidate({
+          productCode: boltProd.productCode, name: boltProd.nameEn || boltProd.nameKo, spec: boltProd.spec || '', priceKrw: boltProd.purchasePrice || 0, priceUsd: 0, unit: boltProd.unit || 'EA', productObj: boltProd
+        }, 5000, lineNum++));
+        if (nutProd) newItems.push(addCalculatedItemFromCandidate({
+          productCode: nutProd.productCode, name: nutProd.nameEn || nutProd.nameKo, spec: nutProd.spec || '', priceKrw: nutProd.purchasePrice || 0, priceUsd: 0, unit: nutProd.unit || 'EA', productObj: nutProd
+        }, 3000, lineNum++));
       }
 
       setItems(newItems);
       setIsGeneratingDraft(false);
-      alert("AI가 입력하신 프롬프트 요구사항(수량, 바이어 키워드, 마진율 등)을 분석하여 견적서 정보를 자동으로 구축했습니다!");
+      
+      const custMsg = matchedCustomer ? matchedCustomer.name : '기본 거래처';
+      const itemMsg = newItems.length > 0 ? `${newItems.length}개 품목` : '기본 품목';
+      alert(`AI 분석 및 DB 검색 완료!\n• 바이어: ${custMsg}\n• 검색/구성된 품목: ${itemMsg}\n• 설정 마진율: ${marginRate}%`);
     } catch (error) {
       console.error(error);
       setIsGeneratingDraft(false);
