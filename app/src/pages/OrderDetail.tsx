@@ -2589,35 +2589,39 @@ export const OrderDetail: React.FC = () => {
     });
   };
 
-  const moveSourcingItem = (indexInMain: number, direction: 'up' | 'down') => {
+  const copySourcingItem = (indexInMain: number) => {
     setSourcingItems(prev => {
-      const targetItem = prev[indexInMain];
-      if (!targetItem) return prev;
-      
-      const supplierItems = prev.filter(x => x.supplier === targetItem.supplier);
-      const subIdx = supplierItems.indexOf(targetItem);
-      
-      if (direction === 'up' && subIdx === 0) return prev;
-      if (direction === 'down' && subIdx === supplierItems.length - 1) return prev;
-      
-      const siblingItem = supplierItems[direction === 'up' ? subIdx - 1 : subIdx + 1];
-      const siblingIndexInMain = prev.indexOf(siblingItem);
-      
-      if (siblingIndexInMain === -1) return prev;
-      
+      const target = prev[indexInMain];
+      if (!target) return prev;
+      const newItem = JSON.parse(JSON.stringify(target));
       const newItems = [...prev];
-      newItems[indexInMain] = siblingItem;
-      newItems[siblingIndexInMain] = targetItem;
-      
+      newItems.splice(indexInMain + 1, 0, newItem);
       const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
-      
       if (order) {
         const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
         setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
-          .catch(e => console.error("Failed to save sourcingItems order:", e));
+          .catch(e => console.error("Failed to save sourcingItems copy:", e));
       }
       return cleaned;
     });
+  };
+
+  const copyStep1Item = (index: number) => {
+    let cleanedItems: any[] = [];
+    setOrderItems(prev => {
+      const target = prev[index];
+      if (!target) return prev;
+      const newItem = JSON.parse(JSON.stringify(target));
+      const newItems = [...prev];
+      newItems.splice(index + 1, 0, newItem);
+      cleanedItems = newItems.map((x, idx) => ({ ...x, lineNumber: idx + 1 }));
+      return cleanedItems;
+    });
+    if (order && cleanedItems.length > 0) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, { items: cleanedItems, updatedAt: serverTimestamp() }, { merge: true })
+        .catch(e => console.error("Failed to save orderItems copy:", e));
+    }
   };
 
   const moveStep1Item = (index: number, direction: 'up' | 'down') => {
@@ -5985,22 +5989,38 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                         </td>
 
-                        {/* 삭제 */}
+                        {/* 관리 (복사/삭제) */}
                         <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          <button
-                            type="button"
-                            onClick={() => removeItemRow(idx)}
-                            disabled={orderItems.length === 1}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: orderItems.length === 1 ? '#cbd5e1' : '#ef4444',
-                              fontSize: '14.5px',
-                              cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer'
-                            }}
-                          >
-                            ✕
-                          </button>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => copyStep1Item(idx)}
+                              title="동일 품목 복사 추가"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#2563eb',
+                                fontSize: '13px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              📋
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeItemRow(idx)}
+                              disabled={orderItems.length === 1}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: orderItems.length === 1 ? '#cbd5e1' : '#ef4444',
+                                fontSize: '14.5px',
+                                cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       );
@@ -6679,27 +6699,17 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                               return `${purchaseCurrency === 'KRW' ? '₩' : '$'} ${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
-                                          {/* 9. 순서/관리 */}
+                                          {/* 9. 관리 (복사 / 삭제) */}
                                           <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                                              <div style={{ display: 'flex', gap: '2px' }}>
-                                                <button
-                                                  type="button"
-                                                  disabled={idx === 0}
-                                                  onClick={() => moveSourcingItem(itemIndexInMain, 'up')}
-                                                  style={{ width: '20px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '9px', cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}
-                                                >
-                                                  ▲
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  disabled={idx === items.length - 1}
-                                                  onClick={() => moveSourcingItem(itemIndexInMain, 'down')}
-                                                  style={{ width: '20px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '9px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', opacity: idx === items.length - 1 ? 0.3 : 1 }}
-                                                >
-                                                  ▼
-                                                </button>
-                                              </div>
+                                            <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                              <button
+                                                type="button"
+                                                onClick={() => copySourcingItem(itemIndexInMain)}
+                                                style={{ padding: '3px 6px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: '3px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 700 }}
+                                                title="동일 품목 복사 추가"
+                                              >
+                                                📋
+                                              </button>
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -6707,7 +6717,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     setSourcingItems(prev => prev.filter(x => x !== it));
                                                   }
                                                 }}
-                                                style={{ width: '42px', padding: '1px 0', background: '#f1f5f9', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '3px', fontSize: '9.5px', cursor: 'pointer', fontWeight: 600 }}
+                                                style={{ padding: '3px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '3px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 600 }}
+                                                title="품목 삭제"
                                               >
                                                 삭제
                                               </button>

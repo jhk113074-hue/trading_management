@@ -441,6 +441,48 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     ]);
   };
 
+  const draggedItemIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleItemNoChange = (index: number, val: string) => {
+    setItems(prev => {
+      const list = [...prev];
+      list[index] = { ...list[index], itemId: val };
+      return list;
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    draggedItemIndexRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    const sourceIndex = draggedItemIndexRef.current;
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    setItems(prev => {
+      const newItems = [...prev];
+      const [movedItem] = newItems.splice(sourceIndex, 1);
+      newItems.splice(targetIndex, 0, movedItem);
+      return newItems.map((it, idx) => ({ ...it, itemId: (idx + 1).toString() }));
+    });
+    draggedItemIndexRef.current = null;
+  };
+
   const copyItemRow = (index: number) => {
     const target = items[index];
     if (!target) return;
@@ -902,7 +944,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '40px', fontWeight: 700, borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px' }}>No</th>
+                  <th style={{ padding: '10px 4px', textAlign: 'center', width: '55px', fontWeight: 700, borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px' }}>No.</th>
                   <th style={{ padding: '10px 6px', textAlign: 'left', width: '220px', fontWeight: 700 }}>{formData.type === 'consulting' ? '수행 용역/컨설팅 항목' : '상품코드'}</th>
                   <th style={{ padding: '10px 6px', textAlign: 'left', width: '150px', fontWeight: 700 }}>스펙 (Spec)</th>
                   <th style={{ padding: '10px 6px', textAlign: 'left', width: '130px', fontWeight: 700 }}>공급사</th>
@@ -910,13 +952,48 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   <th style={{ padding: '10px 6px', textAlign: 'center', width: '130px', fontWeight: 700 }}>매출 통화 / 단가</th>
                   <th style={{ padding: '10px 6px', textAlign: 'center', width: '130px', fontWeight: 700 }}>매입 통화 / 단가</th>
                   <th style={{ padding: '10px 6px', textAlign: 'right', width: '110px', fontWeight: 700 }}>금액</th>
-                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '50px', fontWeight: 700, borderTopRightRadius: '4px', borderBottomRightRadius: '4px' }}>삭제</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '62px', fontWeight: 700, borderTopRightRadius: '4px', borderBottomRightRadius: '4px' }}>관리</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px 6px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle', fontWeight: 500 }}>{idx + 1}</td>
+                {items.map((item, idx) => {
+                  const isDragOver = dragOverIndex === idx;
+                  return (
+                  <tr 
+                    key={`po-item-${item.itemId || (idx + 1)}-${item.name || idx}`}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    style={{ 
+                      borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                      backgroundColor: isDragOver ? '#dbeafe' : 'transparent'
+                    }}
+                  >
+                    <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                        <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                          ⋮⋮
+                        </span>
+                        <input
+                          type="text"
+                          value={item.itemId || (idx + 1).toString()}
+                          onChange={e => handleItemNoChange(idx, e.target.value)}
+                          style={{
+                            width: '32px',
+                            textAlign: 'center',
+                            padding: '2px',
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}
+                          title="순번 수동 입력"
+                        />
+                      </div>
+                    </td>
                     
                     {/* 상품코드 */}
                     <td style={{ padding: '6px 6px' }}>
@@ -1172,7 +1249,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
