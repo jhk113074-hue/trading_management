@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.178',
+    version: 'v2.8.178',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '발행 완료된 공급사 발주서(PO) 수정 & 차수별(v2, v3) 재발행 및 DB 내역 저장 기능 적용',
+    content: '• 이미 발행완료(✅)된 발주서도 품목, 가격, 수량, 일반사항 수정 후 [✏️ 발주서 수정 & 재발행 (v2...)] 버튼을 눌러 새 차수 PDF로 재발행 가능\n• PDF 재발행 없이 변경 사항만 DB에 저장하는 [💾 발주 내역 저장] 버튼 추가',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.177',
     version: 'v2.8.177',
     date: '2026-08-04',

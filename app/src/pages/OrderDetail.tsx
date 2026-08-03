@@ -3170,8 +3170,7 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  /*
-const handleSaveSupplierPoDetails = async (supplierName: string) => {
+  const handleSaveSupplierPoDetails = async (supplierName: string) => {
     if (!order) return;
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
@@ -3249,12 +3248,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
       await setDoc(orderRef, payload, { merge: true });
 
-      alert(`✅ [${supplierName}]의 발주 조건이 클라우드에 성공적으로 저장되었습니다.`);
+      alert(`✅ [${supplierName}]의 수정한 발주 조건 및 내역이 성공적으로 저장되었습니다.`);
     } catch (err: any) {
       alert('❌ 발주조건 저장 실패: ' + err.message);
     }
   };
-*/
 
   const handleDeleteSupplierCertFile = async (supplierName: string, idx: number) => {
     if (!order) return;
@@ -6390,11 +6388,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '2px solid var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO ({poNum})</span>
-                                  {issuedDocs.some(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierName.replace(/\s+/g, '').substring(0,3).toUpperCase()))) && (
-                                    <span style={{ padding: '2px 6px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '15.5px', fontWeight: 'bold' }}>
-                                      ✅ 발행완료
+                                {(() => {
+                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
+                                  if (activeDoc) {
+                                    return (
+                                      <span style={{ padding: '2px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #86efac' }}>
+                                        ✅ 발행완료 (v{activeDoc.version})
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span style={{ padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #fde68a' }}>
+                                      📝 작성 / 수정 중
                                     </span>
-                                  )}
+                                  );
+                                })()}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14.5px' }}>
                                   <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
                                   <select
@@ -6417,6 +6425,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </div>
                               </div>
                               <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveSupplierPoDetails(supplierName)}
+                                  style={{ padding: '5px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  title="수정한 수량, 단가, 스펙, 일반사항을 PDF 발행 없이 DB에 먼저 저장합니다."
+                                >
+                                  💾 발주 내역 저장
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -6447,12 +6463,38 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 >
                                   미리보기 / 인쇄
                                 </button>
-                                <button 
-                                  onClick={() => issueAndSavePO(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
-                                >
-                                  📥 발주서 발행 및 저장
-                                </button>
+                                {(() => {
+                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
+                                  const isIssued = !!activeDoc;
+                                  const nextVersion = isIssued ? (activeDoc.version || 1) + 1 : 1;
+
+                                  return (
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        if (isIssued) {
+                                          if (!window.confirm(`이미 [v${activeDoc.version}] 발주서가 발행되어 있습니다.\n\n수정한 내용으로 [v${nextVersion}] 차수 발주서를 수정 및 재발행하시겠습니까?`)) {
+                                            return;
+                                          }
+                                        }
+                                        issueAndSavePO(supplierName, items);
+                                      }}
+                                      style={{ 
+                                        padding: '5px 12px', 
+                                        background: isIssued ? '#fef3c7' : '#eff6ff', 
+                                        border: isIssued ? '1px solid #f59e0b' : '1px solid #bfdbfe', 
+                                        color: isIssued ? '#b45309' : '#1e40af', 
+                                        borderRadius: '4px', 
+                                        cursor: 'pointer', 
+                                        fontWeight: 800, 
+                                        fontSize: '14.5px'
+                                      }}
+                                      title={isIssued ? `수정된 내용을 바탕으로 v${nextVersion} 차수 발주서 수정 및 재발행` : '발주서 PDF를 발행하고 클라우드에 저장합니다.'}
+                                    >
+                                      {isIssued ? `✏️ 발주서 수정 & 재발행 (v${nextVersion})` : '📥 발주서 발행 및 저장'}
+                                    </button>
+                                  );
+                                })()}
                                  <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
                                   style={{ 
