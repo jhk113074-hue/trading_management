@@ -1458,16 +1458,52 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     setItems(newItems);
   };
 
-  const moveItem = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === items.length - 1) return;
+  const draggedItemIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleNoChange = (index: number, newNoStr: string) => {
+    const rawVal = parseInt(newNoStr, 10);
+    if (isNaN(rawVal)) return;
+    const targetNo = Math.max(1, Math.min(items.length, rawVal));
+    const targetIndex = targetNo - 1;
+    if (targetIndex === index) return;
+
     const newItems = [...items];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const temp = newItems[index];
-    newItems[index] = newItems[targetIndex];
-    newItems[targetIndex] = temp;
+    const [movedItem] = newItems.splice(index, 1);
+    newItems.splice(targetIndex, 0, movedItem);
     newItems.forEach((it, i) => it.lineNumber = i + 1);
     setItems(newItems);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    draggedItemIndexRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    const sourceIndex = draggedItemIndexRef.current;
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    const newItems = [...items];
+    const [movedItem] = newItems.splice(sourceIndex, 1);
+    newItems.splice(targetIndex, 0, movedItem);
+    newItems.forEach((it, i) => it.lineNumber = i + 1);
+    setItems(newItems);
+    draggedItemIndexRef.current = null;
   };
 
   const addFreightCharge = () => {
@@ -2472,7 +2508,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <table style={{ width: '100%', minWidth: '1066px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                  <th style={{ padding: '10px 4px', width: '336px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '55px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
+                  <th style={{ padding: '10px 4px', width: '320px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
                   <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
@@ -2481,22 +2518,59 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
-                  <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #cbd5e1' }}></th>
+                  <th style={{ padding: '10px 4px', width: '35px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={formData.type === 'consulting' ? 9 : 10} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={formData.type === 'consulting' ? 10 : 11} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => {
                   const isColoredRow = idx % 2 === 1;
                   const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
+                  const isDragOver = dragOverIndex === idx;
                   return (
                   <tr 
                     key={idx} 
-                    style={{ borderBottom: '1px solid #cbd5e1', backgroundColor: rowBgColor, transition: 'background-color 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e0f2fe'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = rowBgColor}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    style={{ 
+                      borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #cbd5e1', 
+                      backgroundColor: isDragOver ? '#dbeafe' : rowBgColor, 
+                      transition: 'background-color 0.15s' 
+                    }}
+                    onMouseEnter={e => { if (dragOverIndex !== idx) e.currentTarget.style.backgroundColor = '#e0f2fe'; }}
+                    onMouseLeave={e => { if (dragOverIndex !== idx) e.currentTarget.style.backgroundColor = rowBgColor; }}
                   >
+                    {/* No. & Drag Handle */}
+                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                        <span 
+                          style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }}
+                          title="드래그하여 순서 변경"
+                        >
+                          ⋮⋮
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={items.length}
+                          value={it.lineNumber || idx + 1}
+                          onChange={(e) => handleNoChange(idx, e.target.value)}
+                          style={{
+                            ...gridInputStyle,
+                            width: '32px',
+                            textAlign: 'center',
+                            padding: '2px',
+                            fontWeight: 700,
+                            color: '#1e293b'
+                          }}
+                          title="순번 직접 수정 (입력 시 해당 위치로 이동)"
+                        />
+                      </div>
+                    </td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -2874,27 +2948,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '2px' }}>
-                          <button 
-                            type="button"
-                            disabled={idx === 0}
-                            onClick={() => moveItem(idx, 'up')} 
-                            style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
-                          >
-                            ▲
-                          </button>
-                          <button 
-                            type="button"
-                            disabled={idx === items.length - 1}
-                            onClick={() => moveItem(idx, 'down')} 
-                            style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 4px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === items.length - 1 ? 0.3 : 1 }}
-                          >
-                            ▼
-                          </button>
-                        </div>
-                        <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px', width: '100%' }}>✕</button>
-                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => removeItem(idx)} 
+                        style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 8px', cursor: 'pointer', fontSize: '12px', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="상품 삭제"
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 );
