@@ -23,6 +23,7 @@ import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES 
 import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
 import { useAuth } from '../contexts/AuthContext';
+import { isMonitoringUser } from '../utils/userUtils';
 
 const STEP_LABEL_TO_STAGE_KEY: Record<string, StageKey | undefined> = {
   '수주정보': '수주정보',
@@ -2019,6 +2020,10 @@ export const OrderDetail: React.FC = () => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
+      if (isMonitoringUser({ email: currentUser.email || '', name: currentUser.displayName || '' })) {
+        console.log('Skip autoRegisterOrderTask for monitoring user:', currentUser.email);
+        return;
+      }
       const userKey = currentUser.email?.split('@')[0] || '';
       let assigneeId = userKey;
       let assigneeName = '시스템';
@@ -2168,7 +2173,8 @@ export const OrderDetail: React.FC = () => {
       }
 
       let nextHistoryLogs = (order as any).history_logs || [];
-      if (changes.length > 0) {
+      const isMonitoring = isMonitoringUser({ email: auth.currentUser?.email || '', name: auth.currentUser?.displayName || '' });
+      if (changes.length > 0 && !isMonitoring) {
         const logEntry = {
           timestamp: new Date().toISOString(),
           actionType: 'update',
