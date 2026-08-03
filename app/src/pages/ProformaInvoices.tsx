@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
@@ -9,6 +9,7 @@ import { getAuth } from 'firebase/auth';
 
 export const ProformaInvoices: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pis, setPIs] = useState<ProformaInvoice[]>([]);
   const [customers, setCustomers] = useState<Record<string, Customer>>({});
   const [orders, setOrders] = useState<{id: string; quotationId?: string}[]>([]);
@@ -125,6 +126,41 @@ export const ProformaInvoices: React.FC = () => {
       unsubOrders();
     };
   }, []);
+
+  const handleOpenForm = (piId?: string | null) => {
+    setSelectedPiId(piId || null);
+    setIsFormOpen(true);
+    if (piId) {
+      const targetPi = pis.find(p => p.id === piId);
+      const urlId = targetPi?.piNumber || piId;
+      setSearchParams({ id: urlId }, { replace: true });
+    } else {
+      setSearchParams({ id: 'new' }, { replace: true });
+    }
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedPiId(null);
+    setSearchParams({}, { replace: true });
+  };
+
+  // 🔗 URL Query Sync for Proforma Invoice direct linking (?id=PI-YS-26-AB-05 or docId)
+  useEffect(() => {
+    const targetId = searchParams.get('id');
+    if (targetId && pis.length > 0 && !isFormOpen) {
+      if (targetId === 'new') {
+        setSelectedPiId(null);
+        setIsFormOpen(true);
+      } else {
+        const found = pis.find(p => p.id === targetId || p.piNumber === targetId);
+        if (found) {
+          setSelectedPiId(found.id);
+          setIsFormOpen(true);
+        }
+      }
+    }
+  }, [searchParams, pis]);
 
   const getPiStatus = (p: ProformaInvoice) => {
     const hasOrder = orders.some(o => o.quotationId === p.id);
@@ -385,7 +421,7 @@ export const ProformaInvoices: React.FC = () => {
           </select>
         </div>
         <button 
-          onClick={() => { setSelectedPiId(null); setIsFormOpen(true); }}
+          onClick={() => handleOpenForm(null)}
           style={{ 
             background: '#3b82f6', 
             color: 'white', 
@@ -617,7 +653,7 @@ export const ProformaInvoices: React.FC = () => {
                     key={p.id} 
                     style={{ borderBottom: '1px solid #cbd5e1', height: '56px', transition: 'background-color 0.2s' }} 
                     className="hover-row"
-                    onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
+                    onClick={() => handleOpenForm(p.id)}
                   >
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'left' }}>
@@ -726,7 +762,7 @@ export const ProformaInvoices: React.FC = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
+                          onClick={(e) => { e.stopPropagation(); handleOpenForm(p.id); }} 
                           style={{ 
                             background: 'none', 
                             border: 'none', 
@@ -803,7 +839,7 @@ export const ProformaInvoices: React.FC = () => {
       {isFormOpen && (
         <PIFormModal
           initialPI={selectedPiId ? pis.find(p => p.id === selectedPiId) : undefined}
-          onClose={() => setIsFormOpen(false)}
+          onClose={handleCloseForm}
           currentUser={currentUser}
         />
       )}
