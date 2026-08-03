@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.174',
+    version: 'v2.8.174',
+    date: '2026-08-04',
+    category: '신규기능',
+    title: '견적서(PI) 품목 행 단위 📋 복사 기능 추가',
+    content: '• 견적서 작성/수정 모달 품목 라인 테이블 우측에 📋 (복사) 아이콘 버튼 배치\n• 클릭 시 해당 품목의 코드, 규격, 마진율, 패킹방식 등 모든 세부 옵션이 그대로 복사되어 바로 아래 행에 추가됨\n• 유사한 제품을 반복 입력 시 신속하고 편리하게 작성 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.172',
     version: 'v2.8.172',
     date: '2026-08-04',

@@ -441,6 +441,17 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     ]);
   };
 
+  const copyItemRow = (index: number) => {
+    const target = items[index];
+    if (!target) return;
+    const newItem = { ...target };
+    setItems(prev => {
+      const newItems = [...prev];
+      newItems.splice(index + 1, 0, newItem);
+      return newItems.map((it, idx) => ({ ...it, itemId: (idx + 1).toString() }));
+    });
+  };
+
   const removeItemRow = (index: number) => {
     if (items.length === 1) return;
     setItems(prev => prev.filter((_, idx) => idx !== index).map((it, idx) => ({ ...it, itemId: (idx + 1).toString() })));
@@ -1124,25 +1135,41 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                     </td>
 
-                    {/* 삭제 */}
+                    {/* 관리 (복사 / 삭제) */}
                     <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <button
-                        type="button"
-                        onClick={() => removeItemRow(idx)}
-                        disabled={items.length === 1}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: items.length === 1 ? '#cbd5e1' : '#ef4444',
-                          fontSize: '15px',
-                          cursor: items.length === 1 ? 'not-allowed' : 'pointer',
-                          transition: 'color 0.2s'
-                        }}
-                        onMouseEnter={e => { if (items.length > 1) e.currentTarget.style.color = '#b91c1c'; }}
-                        onMouseLeave={e => { if (items.length > 1) e.currentTarget.style.color = '#ef4444'; }}
-                      >
-                        ✕
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => copyItemRow(idx)}
+                          title="동일 품목 복사 추가"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#2563eb',
+                            fontSize: '13px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📋
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeItemRow(idx)}
+                          disabled={items.length === 1}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: items.length === 1 ? '#cbd5e1' : '#ef4444',
+                            fontSize: '15px',
+                            cursor: items.length === 1 ? 'not-allowed' : 'pointer',
+                            transition: 'color 0.2s'
+                          }}
+                          onMouseEnter={e => { if (items.length > 1) e.currentTarget.style.color = '#b91c1c'; }}
+                          onMouseLeave={e => { if (items.length > 1) e.currentTarget.style.color = '#ef4444'; }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

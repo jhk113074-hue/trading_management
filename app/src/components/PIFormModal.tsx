@@ -1450,6 +1450,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
 
+  const copyItem = (index: number) => {
+    const targetItem = items[index];
+    if (!targetItem) return;
+    const newItem: PIItem = JSON.parse(JSON.stringify(targetItem));
+    const newItems = [...items];
+    newItems.splice(index + 1, 0, newItem);
+    newItems.forEach((it, i) => {
+      it.lineNumber = i + 1;
+    });
+    setItems(newItems);
+  };
+
   const removeItem = (index: number) => {
     const newItems = [...items];
     newItems.splice(index, 1);
@@ -2507,7 +2519,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
-                  <th style={{ padding: '10px 4px', width: '35px', borderBottom: '1px solid #cbd5e1' }}></th>
+                  <th style={{ padding: '10px 4px', width: '62px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -2935,14 +2947,24 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button 
-                        type="button"
-                        onClick={() => removeItem(idx)} 
-                        style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 8px', cursor: 'pointer', fontSize: '12px', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                        title="상품 삭제"
-                      >
-                        ✕
-                      </button>
+                      <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                        <button 
+                          type="button"
+                          onClick={() => copyItem(idx)} 
+                          style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '4px', cursor: 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="동일/비슷한 품목 복사 추가"
+                        >
+                          📋
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => removeItem(idx)} 
+                          style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', padding: '4px', cursor: 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="상품 삭제"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
