@@ -27,6 +27,8 @@ interface Mail {
   attachments?: Attachment[];
   scheduledAt?: string; // Future scheduled send date ISO string
   isImportant?: boolean;
+  ccUserIds?: string[];
+  ccNames?: string[];
 }
 
 export const Mails: React.FC = () => {
@@ -39,6 +41,7 @@ export const Mails: React.FC = () => {
   // Compose Form State (Inside Modal)
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [selectedReceiverId, setSelectedReceiverId] = useState('');
+  const [selectedCcUserIds, setSelectedCcUserIds] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [contentHTML, setContentHTML] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -172,13 +175,23 @@ export const Mails: React.FC = () => {
     const scheduledIso = isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : '';
     const finalTitle = isImportant ? `[⭐ 중요] ${title}` : title;
 
+    const ccUsers = users.filter(u => selectedCcUserIds.includes(u.id));
+    const ccUserIds = ccUsers.map(u => u.id);
+    const ccNames = ccUsers.map(u => u.name);
+
     setIsSending(true);
     try {
-      for (const receiver of targetReceivers) {
+      // Direct receivers + CC receivers combined for delivery list
+      const allDeliveryReceivers = [
+        ...targetReceivers,
+        ...ccUsers.filter(cc => !targetReceivers.some(r => r?.id === cc.id))
+      ];
+
+      for (const receiver of allDeliveryReceivers) {
         if (!receiver) continue;
         let createdTaskId = '';
 
-        if (createTaskOption) {
+        if (createTaskOption && targetReceivers.some(r => r?.id === receiver.id)) {
           const plainTextBody = editorRef.current ? (editorRef.current.innerText || '') : '';
           const taskDoc = {
             title: `[쪽지 업무] ${finalTitle}`,
@@ -205,6 +218,8 @@ export const Mails: React.FC = () => {
           senderName: userProfile.name,
           receiverId: receiver.id,
           receiverName: receiver.name,
+          ccUserIds,
+          ccNames,
           title: finalTitle,
           content: mailBody,
           isRead: false,
@@ -220,6 +235,7 @@ export const Mails: React.FC = () => {
       setTitle('');
       setContentHTML('');
       setAttachments([]);
+      setSelectedCcUserIds([]);
       setIsScheduled(false);
       setScheduledAt('');
       setIsImportant(false);
@@ -862,6 +878,11 @@ export const Mails: React.FC = () => {
                 <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '6px' }}>
                   <span><b>보낸이:</b> {selectedMail.senderName}</span>
                   <span style={{ marginLeft: '12px' }}><b>받는이:</b> {selectedMail.receiverName}</span>
+                  {selectedMail.ccNames && selectedMail.ccNames.length > 0 && (
+                    <span style={{ marginLeft: '12px', color: '#475569' }}>
+                      <b>참조:</b> {selectedMail.ccNames.join(', ')}
+                    </span>
+                  )}
                   {selectedMail.scheduledAt && (
                     <span style={{ marginLeft: '12px', color: '#0369a1', fontWeight: 'bold' }}>
                       ⏰ 예약발송 일시: {new Date(selectedMail.scheduledAt).toLocaleString()}
@@ -1072,6 +1093,47 @@ export const Mails: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* 참조 (CC) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>참조 (CC)</label>
+                <select
+                  value=""
+                  onChange={e => {
+                    const id = e.target.value;
+                    if (id && !selectedCcUserIds.includes(id)) {
+                      setSelectedCcUserIds(prev => [...prev, id]);
+                    }
+                  }}
+                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: 'white', height: '34px', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}
+                >
+                  <option value="">참조자를 선택하여 추가하세요</option>
+                  {addressableUsers.filter(u => u.id !== selectedReceiverId && !selectedCcUserIds.includes(u.id)).map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.department || '부서'} / {u.position || '직급'})
+                    </option>
+                  ))}
+                </select>
+                {selectedCcUserIds.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    {selectedCcUserIds.map(id => {
+                      const u = users.find(usr => usr.id === id);
+                      return (
+                        <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
+                          👤 {u?.name || id} ({u?.position || '팀원'})
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCcUserIds(prev => prev.filter(cId => cId !== id))}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, cursor: 'pointer', padding: '0 2px', marginLeft: '2px' }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
