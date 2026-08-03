@@ -47,6 +47,30 @@ const getProductPackingMethods = (product: any): any[] => {
   return list;
 };
 
+// 패킹방식 코드명 → 사람이 읽는 형태로 변환
+const formatPackingName = (name: string, qtyPerPallet?: number): string => {
+  if (!name || name === 'Default') return '단품';
+  if (/[가-힣]/.test(name)) return name;
+  const lower = name.toLowerCase();
+  if (lower.includes('plt') || lower.includes('pallet')) {
+    return qtyPerPallet && qtyPerPallet > 1 ? `팔레트 (${qtyPerPallet.toLocaleString()}개)` : '팔레트';
+  }
+  if (lower.includes('paper bag') || lower.includes('종이포대')) return '종이포대';
+  if (lower.includes('drum')) return '드럼';
+  if (lower.includes('pail')) return '페일';
+  if (lower.includes('bag')) return '백';
+  if (lower.includes('box')) return '박스';
+  return name;
+};
+
+// 렌더링 시 자동 계산값 준비
+const autoCalcPalletQty = (quantity: number, selectedMethodId: string | undefined, methods: any[]): number => {
+  const method = methods.find((m: any) => m.id === selectedMethodId);
+  const qpp = method?.qtyPerPallet || 1;
+  if (!quantity || quantity <= 0 || qpp <= 1) return quantity || 0;
+  return Math.ceil(quantity / qpp);
+};
+
 interface Props {
   initialPI?: ProformaInvoice;
   onClose: () => void;
@@ -60,6 +84,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   }, []);
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
+
+  // 행별 패킹 상세 펼침 토글 — idx를 key로 사용
+  const [expandedPackingRows, setExpandedPackingRows] = useState<Set<number>>(new Set());
+
+  const togglePackingRow = (idx: number) => {
+    setExpandedPackingRows(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
 
   // AI Prompt Draft Creator States
   const [aiPrompt, setAiPrompt] = useState('');
@@ -2583,46 +2619,115 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     {formData.type !== 'consulting' && (
                       <td style={{ padding: '4px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          {it.productCode ? (() => {
-                            const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
-                            const methods = getProductPackingMethods(prod);
-                            return (
-                              <select
-                                value={it.selectedPackingMethodId || 'default'}
-                                onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
-                                style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center' }}
-                              >
-                                {methods.map((m: any) => (
-                                  <option key={m.id} value={m.id}>
-                                    {m.name}
-                                  </option>
-                                ))}
-                              </select>
-                            );
-                          })() : (
-                            <select style={{ ...gridInputStyle }} disabled><option>--</option></select>
-                          )}
-                          {(() => {
-                            const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
-                            const methods = getProductPackingMethods(prod);
-                            const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
-                            const packUnit = selectedMethod?.packageType || '단품';
-                            return (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
-                                <input 
-                                  type="number" 
+                        {it.productCode ? (() => {
+                          const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                          const methods = getProductPackingMethods(prod);
+                          const selectedMethod = methods.find((m: any) => m.id === (it.selectedPackingMethodId || 'default_injected'))
+                            || methods[0];
+                          const isExpanded = expandedPackingRows.has(idx);
+
+                          const autoQty = autoCalcPalletQty(it.quantity || 0, selectedMethod?.id, methods);
+                          const packLabel = formatPackingName(selectedMethod?.name, selectedMethod?.qtyPerPallet);
+                          const packUnit = selectedMethod?.packageType || '단품';
+
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              {/* 메인 행: 수량 + 단위 + 📦 버튼 */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <input
+                                  type="number"
                                   step="0.1"
                                   placeholder="패킹수량"
-                                  value={it.palletQty || ''} 
-                                  onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                                  value={it.palletQty || ''}
+                                  onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)}
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '60px' }}
                                 />
-                                <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  {packUnit}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => togglePackingRow(idx)}
+                                  title={`패킹 설정: ${packLabel}`}
+                                  style={{
+                                    padding: '2px 5px',
+                                    fontSize: '13px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    background: isExpanded ? '#eff6ff' : '#f8fafc',
+                                    color: isExpanded ? '#2563eb' : '#64748b',
+                                    cursor: 'pointer',
+                                    lineHeight: 1,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  📦
+                                </button>
                               </div>
-                            );
-                          })()}
-                        </div>
+
+                              {/* 자동 계산값 힌트 (수동 입력 안 했을 때만 표시) */}
+                              {!it.palletQty && autoQty > 0 && (
+                                <div
+                                  style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', paddingLeft: '2px' }}
+                                  onClick={() => updateItem(idx, 'palletQty', autoQty)}
+                                  title="클릭하여 적용"
+                                >
+                                  ≈ {autoQty} {packUnit} (자동)
+                                </div>
+                              )}
+
+                              {/* 📦 클릭 시 인라인 펼침 — 패킹방식 선택 */}
+                              {isExpanded && (
+                                <div style={{
+                                  marginTop: '4px',
+                                  padding: '8px',
+                                  background: '#f0f9ff',
+                                  border: '1px solid #bae6fd',
+                                  borderRadius: '6px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '6px',
+                                }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1' }}>📦 패킹 방식 선택</div>
+                                  {methods.map((m: any) => (
+                                    <label
+                                      key={m.id}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        padding: '3px 4px',
+                                        borderRadius: '4px',
+                                        background: (it.selectedPackingMethodId || 'default_injected') === m.id ? '#dbeafe' : 'transparent',
+                                      }}
+                                    >
+                                      <input
+                                        type="radio"
+                                        name={`packing-${idx}`}
+                                        value={m.id}
+                                        checked={(it.selectedPackingMethodId || 'default_injected') === m.id}
+                                        onChange={() => {
+                                          updateItem(idx, 'selectedPackingMethodId', m.id);
+                                          const newAutoQty = autoCalcPalletQty(it.quantity || 0, m.id, methods);
+                                          if (newAutoQty > 0) updateItem(idx, 'palletQty', newAutoQty);
+                                          togglePackingRow(idx);
+                                        }}
+                                      />
+                                      <span style={{ fontWeight: 600 }}>{formatPackingName(m.name, m.qtyPerPallet)}</span>
+                                      {m.qtyPerPallet > 1 && (
+                                        <span style={{ color: '#64748b' }}>({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})</span>
+                                      )}
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })() : (
+                          <div style={{ color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>--</div>
+                        )}
                       </td>
                     )}
                     <td style={{ padding: '4px' }}>
