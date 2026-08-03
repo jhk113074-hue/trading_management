@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
-import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Product } from '../types/product';
@@ -571,6 +571,23 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   };
 
 
+
+  const handleDeleteProduct = async () => {
+    if (!initialProduct) return;
+    const codeName = initialProduct.productCode || initialProduct.nameKo || initialProduct.id;
+    if (!window.confirm(`[${codeName}] 상품을 정말로 삭제하시겠습니까?\n삭제된 상품은 복구할 수 없습니다.`)) return;
+
+    setIsSaving(true);
+    try {
+      await deleteDoc(doc(db, "companies", COMPANY_ID, "products", initialProduct.id));
+      alert(`✅ [${codeName}] 상품이 성공적으로 삭제되었습니다.`);
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to delete product:", err);
+      alert("❌ 상품 삭제 실패: " + err.message);
+      setIsSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.productCode?.trim()) { alert('상품코드는 필수 입력사항입니다.'); return; }
@@ -1794,13 +1811,27 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
         {/* Footer */}
         <div style={{ padding: '12px 24px', borderTop: '1px solid #cbd5e1', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderRadius: '0 0 4px 4px', height: '58px', boxSizing: 'border-box' }}>
+          {initialProduct && !isCopy && (
+            <button 
+              type="button"
+              onClick={handleDeleteProduct}
+              disabled={isSaving}
+              style={{ marginRight: 'auto', padding: '0 14px', borderRadius: '4px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+            >
+              🗑️ 상품 삭제
+            </button>
+          )}
           <button 
+            type="button"
             onClick={handleClose} 
             style={{ padding: '0 18px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
           >취소</button>
           <button 
+            type="button"
             onClick={handleSave} 
             disabled={isSaving} 
             style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}

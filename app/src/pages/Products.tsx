@@ -84,9 +84,12 @@ export const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Column resize: [코드, 품명(한글), 품명(영어), 규격, 분류, 제조사, 공급업체, 단가, 원산지, TDS, MSDS, 관리]
-  const { thStyle, resizerProps } = useColumnResize([80, 135, 140, 150, 120, 115, 115, 105, 55, 55, 55, 95]);
+  // Column resize: [선택, 코드, 품명(한글), 품명(영어), 규격, 분류, 제조사, 공급업체, 단가, 원산지, TDS, MSDS, 관리]
+  const { thStyle, resizerProps } = useColumnResize([38, 80, 135, 140, 150, 120, 115, 115, 105, 55, 55, 55, 110]);
   
+  // Selection state for bulk actions
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // Filtering & Pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [catLargeFilter, setCatLargeFilter] = useState('');
@@ -104,6 +107,52 @@ export const Products: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSingle = async (product: Product) => {
+    const codeName = product.productCode || product.nameKo || product.id;
+    if (!window.confirm(`[${codeName}] 상품을 정말로 삭제하시겠습니까?\n삭제된 상품은 복구할 수 없습니다.`)) return;
+
+    try {
+      await deleteDoc(doc(db, "companies", COMPANY_ID, "products", product.id));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+      alert(`✅ [${codeName}] 상품이 삭제되었습니다.`);
+    } catch (err: any) {
+      console.error("Failed to delete product:", err);
+      alert("❌ 상품 삭제 오류: " + err.message);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!window.confirm(`선택한 ${count}개 상품을 정말로 삭제하시겠습니까?\n이 작업은 취소할 수 없습니다.`)) return;
+
+    try {
+      setIsUploading(true);
+      const idsToDelete = Array.from(selectedIds);
+      await Promise.all(idsToDelete.map(id => deleteDoc(doc(db, "companies", COMPANY_ID, "products", id))));
+      setSelectedIds(new Set());
+      alert(`✅ 선택한 ${count}개 상품이 성공적으로 삭제되었습니다.`);
+    } catch (err: any) {
+      console.error("Failed to delete selected products:", err);
+      alert("❌ 선택 상품 삭제 오류: " + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleOpenModal = (id?: string | null, copyMode = false) => {
     setEditingProdId(id || null);
@@ -365,6 +414,24 @@ export const Products: React.FC = () => {
     return filteredAndSorted.slice(start, start + pageSize);
   }, [filteredAndSorted, validCurrentPage, pageSize]);
 
+  const isAllSelected = paginatedProducts.length > 0 && paginatedProducts.every(p => selectedIds.has(p.id));
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        paginatedProducts.forEach(p => next.delete(p.id));
+        return next;
+      });
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        paginatedProducts.forEach(p => next.add(p.id));
+        return next;
+      });
+    }
+  };
+
   const handleSort = (key: keyof Product) => {
     if (sortKey === key) {
       setSortDir(sortDir === 1 ? -1 : 1);
@@ -432,6 +499,16 @@ export const Products: React.FC = () => {
           >
             🔄 캐시 초기화
           </button>
+          {selectedIds.size > 0 && (
+            <button 
+              onClick={handleDeleteSelected}
+              style={{ backgroundColor: '#ef4444', color: 'white', padding: '0 14px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dc2626'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ef4444'}
+            >
+              🗑️ 선택 삭제 ({selectedIds.size})
+            </button>
+          )}
           <button 
             onClick={() => handleOpenModal(null, false)}
             style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
@@ -497,25 +574,35 @@ export const Products: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', fontSize: '12.5px' }}>
             <tr>
-              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(한글) {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('nameEn')} style={thStyle(2, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(영어) {getSortIcon('nameEn')}<span {...resizerProps(2)} /></th>
-              <th onClick={() => handleSort('spec')} style={thStyle(3, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>규격(SPEC) {getSortIcon('spec')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('categoryLarge')} style={thStyle(4, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('manufacturerName')} style={thStyle(5, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>제조사 {getSortIcon('manufacturerName')}<span {...resizerProps(5)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(6, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(6)} /></th>
-              <th onClick={() => handleSort('purchasePrice')} style={thStyle(7, { padding: '10px', cursor: 'pointer', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>단가 {getSortIcon('purchasePrice')}<span {...resizerProps(7)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(8, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(8)} /></th>
-              <th style={thStyle(9, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>TDS<span {...resizerProps(9)} /></th>
-              <th style={thStyle(10, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>MSDS<span {...resizerProps(10)} /></th>
-              <th style={thStyle(11, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(11)} /></th>
+              <th style={thStyle(0, { padding: '10px', textAlign: 'center' })} onClick={e => e.stopPropagation()}>
+                <input 
+                  type="checkbox" 
+                  checked={isAllSelected} 
+                  onChange={handleSelectAll} 
+                  style={{ cursor: 'pointer' }}
+                  title="전체 선택/해제"
+                />
+                <span {...resizerProps(0)} />
+              </th>
+              <th onClick={() => handleSort('productCode')} style={thStyle(1, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(2, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(한글) {getSortIcon('nameKo')}<span {...resizerProps(2)} /></th>
+              <th onClick={() => handleSort('nameEn')} style={thStyle(3, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>품명(영어) {getSortIcon('nameEn')}<span {...resizerProps(3)} /></th>
+              <th onClick={() => handleSort('spec')} style={thStyle(4, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>규격(SPEC) {getSortIcon('spec')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('categoryLarge')} style={thStyle(5, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(5)} /></th>
+              <th onClick={() => handleSort('manufacturerName')} style={thStyle(6, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>제조사 {getSortIcon('manufacturerName')}<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(7, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(7)} /></th>
+              <th onClick={() => handleSort('purchasePrice')} style={thStyle(8, { padding: '10px', cursor: 'pointer', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>단가 {getSortIcon('purchasePrice')}<span {...resizerProps(8)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(9, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(9)} /></th>
+              <th style={thStyle(10, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>TDS<span {...resizerProps(10)} /></th>
+              <th style={thStyle(11, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>MSDS<span {...resizerProps(11)} /></th>
+              <th style={thStyle(12, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(12)} /></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '14px' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={13} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '14px' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '14px' }}>조건에 부합하는 상품이 없습니다.</td></tr>
+              <tr><td colSpan={13} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '14px' }}>조건에 부합하는 상품이 없습니다.</td></tr>
             ) : (
               paginatedProducts.map(p => {
                 const priceFormatted = p.purchasePrice 
@@ -526,15 +613,26 @@ export const Products: React.FC = () => {
                 
                 const tdsCount = (p.technicalDocuments || []).filter(d => d.category === 'TDS').length;
                 const msdsCount = (p.technicalDocuments || []).filter(d => d.category === 'MSDS').length;
+                const isSelected = selectedIds.has(p.id);
 
                 return (
                   <tr
                     key={p.id}
                     onClick={() => handleOpenModal(p.id, false)}
-                    style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13.5px', transition: 'background 0.1s', cursor: 'pointer', height: '48px', whiteSpace: 'nowrap' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
-                    onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
+                    style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13.5px', transition: 'background 0.1s', cursor: 'pointer', height: '48px', whiteSpace: 'nowrap', backgroundColor: isSelected ? '#eff6ff' : undefined }}
+                    onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = isSelected ? '#dbeafe' : '#f8fafc'}
+                    onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = isSelected ? '#eff6ff' : ''}
                   >
+                    {/* 선택 체크박스 */}
+                    <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => handleToggleSelect(p.id)} 
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
+
                     {/* 상품코드 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: '14px', fontWeight: 750, color: '#2563eb' }}>{p.productCode || '-'}</span>
@@ -642,6 +740,23 @@ export const Products: React.FC = () => {
                           title="복사"
                         >
                           📋
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteSingle(p); }} 
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: '4px', 
+                            fontSize: '15px', 
+                            cursor: 'pointer', 
+                            transition: 'transform 0.15s',
+                            color: '#ef4444' 
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="삭제"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </td>
