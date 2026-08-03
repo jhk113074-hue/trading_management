@@ -597,9 +597,6 @@ export const generatePIExcel = async (
   worksheet.getRow(currentRow).height = 25;
   currentRow += 2;
 
-  // Set official PI print area (Columns A to H only)
-  worksheet.pageSetup.printArea = `A1:H${currentRow}`;
-
   // 8. REMARKS (Red border box)
   worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
   worksheet.getCell(`A${currentRow}`).value = "REMARKS";
@@ -766,7 +763,7 @@ export const generatePIExcel = async (
       right: borderLight
     };
   }
-  
+
   // Add signature image over seller signature box
   try {
     const sigResponse = await fetch('/signature.png');
@@ -783,6 +780,9 @@ export const generatePIExcel = async (
   } catch (e) {
     console.error("Failed to load signature image for Excel:", e);
   }
+
+  // Set official PI print area (Columns A to H, down to end of Signatures & Bank Details)
+  worksheet.pageSetup.printArea = `A1:H${sigStartRow + 5}`;
 
   // ── Sheet 2: Internal Profit Analysis Worksheet ──
   const ws2 = workbook.addWorksheet('내부 손익 및 정산 분석');
