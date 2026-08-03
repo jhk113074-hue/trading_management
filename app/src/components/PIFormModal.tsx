@@ -2640,7 +2640,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
                           return (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                              {/* 메인 행: 수량 + 단위 + 📦 버튼 */}
+                              {/* 1번째 줄: 수량 + 단위 */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <input
                                   type="number"
@@ -2648,28 +2648,38 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   placeholder="패킹수량"
                                   value={it.palletQty || ''}
                                   onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)}
-                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '60px' }}
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '55px' }}
                                 />
                                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                   {packUnit}
                                 </span>
+                              </div>
+
+                              {/* 2번째 줄: 📦 패킹 설정 아이콘 버튼 */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <button
                                   type="button"
                                   onClick={() => togglePackingRow(idx)}
                                   title={`패킹 설정: ${packLabel}`}
                                   style={{
-                                    padding: '2px 5px',
-                                    fontSize: '13px',
+                                    width: '100%',
+                                    padding: '2px 6px',
+                                    fontSize: '11.5px',
                                     border: '1px solid #cbd5e1',
                                     borderRadius: '4px',
                                     background: isExpanded ? '#eff6ff' : '#f8fafc',
-                                    color: isExpanded ? '#2563eb' : '#64748b',
+                                    color: isExpanded ? '#2563eb' : '#475569',
                                     cursor: 'pointer',
-                                    lineHeight: 1,
-                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '4px',
+                                    fontWeight: 600,
+                                    boxSizing: 'border-box'
                                   }}
                                 >
-                                  📦
+                                  <span>📦</span>
+                                  <span style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{packLabel}</span>
                                 </button>
                               </div>
 
