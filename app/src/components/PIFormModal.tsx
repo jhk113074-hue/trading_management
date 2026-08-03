@@ -12,6 +12,8 @@ import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 import { DateInput } from './ui/DateInput';
 
@@ -890,89 +892,169 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }]);
   };
 
-  const downloadLineItemsTemplate = () => {
-    let rowsToExport = [];
-    if (items.length > 0) {
-      rowsToExport = items.map(it => {
-        const rawCode = getRawProductCode(it.productCode);
-        const currency = it.purchasePriceKrw > 0 ? 'KRW' : (it.purchasePriceCurrency || 'KRW');
-        const price = it.purchasePriceKrw > 0 ? it.purchasePriceKrw : (it.purchasePriceUsd || 0);
-        const exRate = it.exchangeRate || formData.exchangeRate || 1400;
-        const matchedProd = products.find(p => p.productCode === rawCode || p.id === rawCode);
-        const prodName = it.productName || matchedProd?.nameEn || matchedProd?.nameKo || rawCode;
-        const spec = it.spec || it.description || matchedProd?.spec || '';
-        const supplierName = it.supplierName || matchedProd?.supplierName || (matchedProd as any)?.supplier || '';
+  const downloadLineItemsTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('LineItems');
 
-        const costUsd = currency === 'KRW' ? (price / exRate) : price;
-        const totalCostUsd = costUsd * (it.quantity || 0);
-        const salePriceUsd = it.salePriceUsd || 0;
-        const lineTotalUsd = it.lineTotalUsd || (salePriceUsd * (it.quantity || 0));
-        const profitUsd = lineTotalUsd - totalCostUsd;
+    // Page view setup
+    (worksheet.views as any) = [
+      { state: 'pageBreakPreview', style: 'pageBreakPreview', showGridLines: true }
+    ];
 
-        return {
-          '상품코드 (Product Code)': rawCode,
-          '품목명 (Product Name)': prodName,
-          '규격 (Spec)': spec,
-          '패킹방식 (Packing Method)': it.selectedPackingMethodId || 'Default',
-          '수량 (Quantity)': it.quantity || 0,
-          '단위 (Unit)': it.unit || 'EA',
-          '매입통화 (Currency)': currency,
-          '매입단가 (Purchase Price)': price || 0,
-          '환율 (Exchange Rate)': exRate,
-          '마진율 (%) (Margin Rate)': it.marginRate !== undefined ? it.marginRate : 15,
-          '올림자릿수 (Round Digits)': it.roundDigits !== undefined ? it.roundDigits : 2,
-          '판매단가 ($) (Sale Price USD)': salePriceUsd,
-          '총액 ($) (Total USD)': lineTotalUsd,
-          '예상이익 ($) (Profit USD)': parseFloat(profitUsd.toFixed(2)),
-          '매입처 (Supplier)': supplierName,
-          '비고 (Remarks)': it.remarks || ''
-        };
-      });
-    } else {
-      rowsToExport = [
+    // Define columns A to P (16 columns)
+    worksheet.columns = [
+      { header: '상품코드 (Product Code)', key: 'productCode', width: 14 },
+      { header: '품목명 (Product Name)', key: 'productName', width: 28 },
+      { header: '규격 (Spec)', key: 'spec', width: 28 },
+      { header: '패킹방식 (Packing Method)', key: 'packingMethod', width: 22 },
+      { header: '수량 (Quantity)', key: 'quantity', width: 12 },
+      { header: '단위 (Unit)', key: 'unit', width: 8 },
+      { header: '매입통화 (Currency)', key: 'currency', width: 12 },
+      { header: '매입단가 (Purchase Price)', key: 'purchasePrice', width: 14 },
+      { header: '환율 (Exchange Rate)', key: 'exchangeRate', width: 10 },
+      { header: '마진율 (%) (Margin Rate)', key: 'marginRate', width: 14 },
+      { header: '올림자릿수 (Round Digits)', key: 'roundDigits', width: 12 },
+      { header: '판매단가 ($) (Sale Price USD)', key: 'salePriceUsd', width: 16 },
+      { header: '총액 ($) (Total USD)', key: 'lineTotalUsd', width: 16 },
+      { header: '예상이익 ($) (Profit USD)', key: 'profitUsd', width: 16 },
+      { header: '매입처 (Supplier)', key: 'supplierName', width: 18 },
+      { header: '비고 (Remarks)', key: 'remarks', width: 18 },
+    ];
+
+    // Style Header Row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { name: '맑은 고딕', bold: true, size: 9.5, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 24;
+
+    let itemsToProcess = items;
+    if (!itemsToProcess || itemsToProcess.length === 0) {
+      itemsToProcess = [
         {
-          '상품코드 (Product Code)': 'P0053',
-          '품목명 (Product Name)': '25mm Insulation Skin Cover',
-          '규격 (Spec)': '(1x1m, Wall, 1.2T, ABS+ASA)',
-          '패킹방식 (Packing Method)': '1000_PLT',
-          '수량 (Quantity)': 2800,
-          '단위 (Unit)': 'EA',
-          '매입통화 (Currency)': 'KRW',
-          '매입단가 (Purchase Price)': 9320,
-          '환율 (Exchange Rate)': 1350,
-          '마진율 (%) (Margin Rate)': 10,
-          '올림자릿수 (Round Digits)': 1,
-          '판매단가 ($) (Sale Price USD)': 7.70,
-          '총액 ($) (Total USD)': 21560.00,
-          '예상이익 ($) (Profit USD)': 2229.63,
-          '매입처 (Supplier)': '주식회사 정도',
-          '비고 (Remarks)': ''
-        },
+          productCode: 'P0053',
+          productName: '25mm Insulation Skin Cover',
+          spec: '(1x1m, Wall, 1.2T, ABS+ASA)',
+          selectedPackingMethodId: 'PM-1780928086155',
+          quantity: 2800,
+          unit: 'EA',
+          purchasePriceKrw: 9320,
+          purchasePriceUsd: 0,
+          exchangeRate: 1350,
+          marginRate: 10,
+          roundDigits: 1,
+          salePriceUsd: 7.70,
+          lineTotalUsd: 21560.00,
+          supplierName: '주식회사 정도',
+          remarks: ''
+        } as any,
         {
-          '상품코드 (Product Code)': 'P0151',
-          '품목명 (Product Name)': '25mm Insulation Skin Cover',
-          '규격 (Spec)': '(1x0.5m, Wall, 1.2T, ABS+ASA)',
-          '패킹방식 (Packing Method)': 'Default',
-          '수량 (Quantity)': 3000,
-          '단위 (Unit)': 'EA',
-          '매입통화 (Currency)': 'KRW',
-          '매입단가 (Purchase Price)': 6220,
-          '환율 (Exchange Rate)': 1350,
-          '마진율 (%) (Margin Rate)': 10,
-          '올림자릿수 (Round Digits)': 1,
-          '판매단가 ($) (Sale Price USD)': 5.20,
-          '총액 ($) (Total USD)': 15600.00,
-          '예상이익 ($) (Profit USD)': 1777.78,
-          '매입처 (Supplier)': '주식회사 정도',
-          '비고 (Remarks)': ''
-        }
+          productCode: 'P0151',
+          productName: '25mm Insulation Skin Cover',
+          spec: '(1x0.5m, Wall, 1.2T, ABS+ASA)',
+          selectedPackingMethodId: 'default_7oxqk7ql4',
+          quantity: 3000,
+          unit: 'EA',
+          purchasePriceKrw: 6220,
+          purchasePriceUsd: 0,
+          exchangeRate: 1350,
+          marginRate: 10,
+          roundDigits: 1,
+          salePriceUsd: 5.20,
+          lineTotalUsd: 15600.00,
+          supplierName: '주식회사 정도',
+          remarks: ''
+        } as any
       ];
     }
 
-    const ws = XLSX.utils.json_to_sheet(rowsToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "LineItems");
-    XLSX.writeFile(wb, "견적서_상품라인_양식.xlsx");
+    itemsToProcess.forEach((it, idx) => {
+      const r = idx + 2; // Excel row index starting at row 2
+      const rawCode = getRawProductCode(it.productCode);
+      const currency = (it.purchasePriceKrw && it.purchasePriceKrw > 0) ? 'KRW' : (it.purchasePriceCurrency || 'KRW');
+      const price = (it.purchasePriceKrw && it.purchasePriceKrw > 0) ? it.purchasePriceKrw : (it.purchasePriceUsd || 0);
+      const exRate = it.exchangeRate || formData.exchangeRate || 1400;
+      const matchedProd = products.find(p => p.productCode === rawCode || p.id === rawCode);
+      const prodName = it.productName || matchedProd?.nameEn || matchedProd?.nameKo || rawCode;
+      const spec = it.spec || it.description || matchedProd?.spec || '';
+      const supplierName = it.supplierName || matchedProd?.supplierName || (matchedProd as any)?.supplier || '';
+
+      const costUsd = currency === 'KRW' ? (price / exRate) : price;
+      const totalCostUsd = costUsd * (it.quantity || 0);
+      const initialSalePrice = it.salePriceUsd || 0;
+      const initialLineTotal = it.lineTotalUsd || (initialSalePrice * (it.quantity || 0));
+      const initialProfit = initialLineTotal - totalCostUsd;
+
+      const row = worksheet.getRow(r);
+      row.getCell(1).value = rawCode; // A
+      row.getCell(2).value = prodName; // B
+      row.getCell(3).value = spec; // C
+      row.getCell(4).value = it.selectedPackingMethodId || 'Default'; // D
+      row.getCell(5).value = it.quantity || 0; // E (수량)
+      row.getCell(6).value = it.unit || 'EA'; // F
+      row.getCell(7).value = currency; // G
+      row.getCell(8).value = price; // H (매입단가)
+      row.getCell(9).value = exRate; // I (환율)
+      row.getCell(10).value = it.marginRate !== undefined ? it.marginRate : 10; // J (마진율 %)
+      row.getCell(11).value = it.roundDigits !== undefined ? it.roundDigits : 1; // K (올림자릿수)
+
+      // Col L: 판매단가 ($) = `=ROUNDUP(H2/I2/(1-J2%),K2)`
+      row.getCell(12).value = {
+        formula: `ROUNDUP(H${r}/I${r}/(1-J${r}%),K${r})`,
+        result: initialSalePrice
+      };
+      row.getCell(12).numFmt = '"$"#,##0.00';
+
+      // Col M: 총액 ($) = `=E2*L2`
+      row.getCell(13).value = {
+        formula: `E${r}*L${r}`,
+        result: initialLineTotal
+      };
+      row.getCell(13).numFmt = '"$"#,##0.00';
+
+      // Col N: 예상이익 ($) = `=M${r}-(H${r}/I${r}*E${r})`
+      row.getCell(14).value = {
+        formula: `M${r}-(H${r}/I${r}*E${r})`,
+        result: parseFloat(initialProfit.toFixed(2))
+      };
+      row.getCell(14).numFmt = '"$"#,##0.00';
+
+      row.getCell(15).value = supplierName; // O (매입처)
+      row.getCell(16).value = it.remarks || ''; // P (비고)
+
+      // Cell formatting
+      row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(5).numFmt = '#,##0';
+      row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(8).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(8).numFmt = '#,##0';
+      row.getCell(9).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(9).numFmt = '#,##0';
+      row.getCell(10).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(11).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(12).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(13).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(14).alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(15).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      for (let c = 1; c <= 16; c++) {
+        row.getCell(c).border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+        };
+      }
+
+      row.height = 20;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, "견적서_상품라인_양식.xlsx");
   };
 
   const importLineItemsExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
