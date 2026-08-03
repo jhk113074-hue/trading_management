@@ -2674,6 +2674,53 @@ export const OrderDetail: React.FC = () => {
     step1DraggedIndexRef.current = null;
   };
 
+  const sourcingDraggedIndexRef = useRef<number | null>(null);
+  const [sourcingDragOverIndex, setSourcingDragOverIndex] = useState<number | null>(null);
+
+  const handleSourcingDragStart = (e: React.DragEvent, itemIndexInMain: number) => {
+    sourcingDraggedIndexRef.current = itemIndexInMain;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(itemIndexInMain));
+  };
+
+  const handleSourcingDragOver = (e: React.DragEvent, itemIndexInMain: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (sourcingDragOverIndex !== itemIndexInMain) setSourcingDragOverIndex(itemIndexInMain);
+  };
+
+  const handleSourcingDragLeave = () => {
+    setSourcingDragOverIndex(null);
+  };
+
+  const handleSourcingDrop = (e: React.DragEvent, targetIndexInMain: number) => {
+    e.preventDefault();
+    setSourcingDragOverIndex(null);
+    const sourceIndexInMain = sourcingDraggedIndexRef.current;
+    if (sourceIndexInMain === null || sourceIndexInMain === targetIndexInMain) return;
+
+    let cleaned: any[] = [];
+    setSourcingItems(prev => {
+      const sourceItem = prev[sourceIndexInMain];
+      const targetItem = prev[targetIndexInMain];
+      if (!sourceItem || !targetItem) return prev;
+      if (sourceItem.supplier !== targetItem.supplier) return prev;
+
+      const newItems = [...prev];
+      const [movedItem] = newItems.splice(sourceIndexInMain, 1);
+      newItems.splice(targetIndexInMain, 0, movedItem);
+      cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      return cleaned;
+    });
+
+    if (order && cleaned.length > 0) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
+        .catch(e => console.error("Failed to save sourcingItems order:", e));
+    }
+    sourcingDraggedIndexRef.current = null;
+  };
+
   const moveStep1Item = (index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === orderItems.length - 1) return;
@@ -6503,11 +6550,26 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       const itemIndexInMain = sourcingItems.findIndex(x => x === it);
                                       
+                                      const isDragOver = sourcingDragOverIndex === itemIndexInMain;
                                       return (
-                                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <tr 
+                                          key={`sourcing-item-${it.itemId || idx}-${itemIndexInMain}`}
+                                          draggable={true}
+                                          onDragStart={(e) => handleSourcingDragStart(e, itemIndexInMain)}
+                                          onDragOver={(e) => handleSourcingDragOver(e, itemIndexInMain)}
+                                          onDragLeave={handleSourcingDragLeave}
+                                          onDrop={(e) => handleSourcingDrop(e, itemIndexInMain)}
+                                          style={{ 
+                                            borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #f1f5f9',
+                                            backgroundColor: isDragOver ? '#dbeafe' : 'transparent'
+                                          }}
+                                        >
                                           {/* 1. 상품코드 + 품목명 (병합 열) */}
                                           <td style={{ padding: '4px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                              <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                                                ⋮⋮
+                                              </span>
                                               <span style={{ fontSize: '15.5px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
                                               {isEditing ? (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>

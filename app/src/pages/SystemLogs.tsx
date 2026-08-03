@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.177',
+    version: 'v2.8.177',
+    date: '2026-08-04',
+    category: '버그수정',
+    title: '소싱/발주 탭 공급사별 PO 품목 테이블 Drag & Drop 순서 변경 핸들 및 이동 기능 완형 반영',
+    content: '• 주문 상세(OrderDetail) 페이지 소싱/발주 탭 내 공급사 카드별 PO 품목 목록 테이블에 Drag & Drop 순서 변경 핸들(⋮⋮) 및 드래그 반응 UI 적용\n• 마우스로 끌어서 공급사 내부 품목 순서를 자유롭게 재배치 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.176',
     version: 'v2.8.176',
     date: '2026-08-04',
