@@ -1119,7 +1119,7 @@ export const OrderDetail: React.FC = () => {
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
     supplierTaxInvoiceDetails: {} as Record<string, any>,
-    supplierPoDetails: {} as Record<string, { poDate?: string; requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
+    supplierPoDetails: {} as Record<string, { poNumber?: string; poDate?: string; requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; method?: '송금' | '카드'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
@@ -3180,6 +3180,7 @@ export const OrderDetail: React.FC = () => {
       const updatedPoDetails = {
         ...currentPoDetails,
         [supplierName]: {
+          poNumber: supplierDetail.poNumber ?? '',
           poDate: supplierDetail.poDate ?? '',
           requestDate: supplierDetail.requestDate ?? '',
           deliveryPlace: supplierDetail.deliveryPlace ?? '',
@@ -3522,7 +3523,7 @@ export const OrderDetail: React.FC = () => {
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
@@ -3852,6 +3853,7 @@ export const OrderDetail: React.FC = () => {
       const updatedPoDetails = {
         ...currentPoDetails,
         [supplierName]: {
+          poNumber: supplierDetail.poNumber ?? '',
           poDate: supplierDetail.poDate ?? '',
           requestDate: supplierDetail.requestDate ?? '',
           deliveryPlace: supplierDetail.deliveryPlace ?? '',
@@ -3925,7 +3927,7 @@ export const OrderDetail: React.FC = () => {
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
@@ -4381,7 +4383,7 @@ export const OrderDetail: React.FC = () => {
     try {
       const cleanSupplierName = supplierName.replace(/\s+/g, '');
       const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-      const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
       const targetSupplier = suppliersList.find(s => s.name === supplierName);
       const supplierEmail = targetSupplier?.purchaseEmail || '미지정';
@@ -4449,7 +4451,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
     const pdfUrl = latestDoc?.fileUrl || '';
@@ -4564,7 +4566,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     if (!order) return;
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
     const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
@@ -4604,7 +4606,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
     const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
@@ -6383,15 +6385,48 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         const items = groupedSupplierItems[supplierName] || [];
                         const cleanSupplierName = supplierName.replace(/\s+/g, '');
                         const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                        const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+                        const defaultPoNum = `${order.ciNumber || order.id}-${supplierCode}`;
+                        const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || defaultPoNum;
 
                         return (
                           <div key={supplierName} style={{ border: '2px solid var(--text-secondary)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '8px' }}>
                             <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '2px solid var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO ({poNum})</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO</span>
+                                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>NO:</span>
+                                  <input 
+                                    type="text"
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.poNumber !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.poNumber : defaultPoNum}
+                                    disabled={!isEditing}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, poNumber: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    placeholder="발주번호 입력"
+                                    style={{
+                                      padding: '2px 8px',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '4px',
+                                      fontSize: '13.5px',
+                                      fontWeight: 700,
+                                      color: '#1e3a8a',
+                                      background: isEditing ? '#ffffff' : '#f8fafc',
+                                      width: '185px'
+                                    }}
+                                  />
+                                </div>
                                 {(() => {
-                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
+                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number === poNum || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
                                   if (activeDoc) {
                                     return (
                                       <span style={{ padding: '2px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #86efac' }}>
@@ -9114,7 +9149,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       const items = groupedSupplierItems[supplierName] || [];
                       const cleanSupplierName = supplierName.replace(/\s+/g, '');
                       const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                      const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+                      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
                       // Fetch/Initialize arrival report state for this supplier in the order doc
                       const repData = (order.supplierArrivalReports || {})[supplierName] || {};
@@ -12851,7 +12886,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               const rep = reportData;
               const cleanSupplierName = activeArrivalReport.supplierName.replace(/\s+/g, '');
               const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-              const poNum = `${order.ciNumber || order.id}-${supplierCode}`;
+              const sName = activeArrivalReport.supplierName;
+              const poNum = basicForm.supplierPoDetails?.[sName]?.poNumber || order.supplierPoDetails?.[sName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
               const packingItemsList = rep.packingItems || [];
               const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
