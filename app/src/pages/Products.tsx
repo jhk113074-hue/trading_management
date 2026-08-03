@@ -508,7 +508,7 @@ export const Products: React.FC = () => {
               <th onClick={() => handleSort('origin')} style={thStyle(8, { padding: '10px', cursor: 'pointer', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(8)} /></th>
               <th style={thStyle(9, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>TDS<span {...resizerProps(9)} /></th>
               <th style={thStyle(10, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>MSDS<span {...resizerProps(10)} /></th>
-              <th style={thStyle(11, { padding: '10px', textAlign: 'right', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(11)} /></th>
+              <th style={thStyle(11, { padding: '10px', textAlign: 'center', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' })}>관리<span {...resizerProps(11)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -609,19 +609,41 @@ export const Products: React.FC = () => {
                     </td>
 
                     {/* 관리 */}
-                    <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, false); }}
-                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', color: '#334155', marginRight: '4px', fontWeight: 700, transition: 'background 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                      >수정</button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, true); }}
-                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', color: '#334155', fontWeight: 700, transition: 'background 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                      >복사</button>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, false); }} 
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: '4px', 
+                            fontSize: '15px', 
+                            cursor: 'pointer', 
+                            transition: 'transform 0.15s' 
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="수정"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, true); }} 
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: '4px', 
+                            fontSize: '15px', 
+                            cursor: 'pointer', 
+                            transition: 'transform 0.15s' 
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="복사"
+                        >
+                          📋
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
