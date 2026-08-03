@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
@@ -51,6 +52,7 @@ const excelMapping = [
 ];
 
 export const Customers: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,6 +72,41 @@ export const Customers: React.FC = () => {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustId, setEditingCustId] = useState<string | null>(null);
+
+  const handleOpenModal = (id?: string | null) => {
+    setEditingCustId(id || null);
+    setIsModalOpen(true);
+    if (id) {
+      const cust = customers.find(c => c.id === id);
+      const urlId = cust?.customerCode || id;
+      setSearchParams({ id: urlId }, { replace: true });
+    } else {
+      setSearchParams({ id: 'new' }, { replace: true });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingCustId(null);
+    setSearchParams({}, { replace: true });
+  };
+
+  // 🔗 URL Query Sync for Customer Master direct linking (?id=CU00001 or docId)
+  useEffect(() => {
+    const targetId = searchParams.get('id');
+    if (targetId && customers.length > 0 && !isModalOpen) {
+      if (targetId === 'new') {
+        setEditingCustId(null);
+        setIsModalOpen(true);
+      } else {
+        const found = customers.find(c => c.id === targetId || c.customerCode === targetId);
+        if (found) {
+          setEditingCustId(found.id);
+          setIsModalOpen(true);
+        }
+      }
+    }
+  }, [searchParams, customers]);
 
   const exportExcel = () => {
     const data = customers.map(c => {
@@ -229,7 +266,7 @@ export const Customers: React.FC = () => {
             onChange={importExcel} 
           />
           <button 
-            onClick={() => { setEditingCustId(null); setIsModalOpen(true); }}
+            onClick={() => handleOpenModal(null)}
             style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
@@ -299,7 +336,7 @@ export const Customers: React.FC = () => {
                 return (
                   <tr 
                     key={c.id} 
-                    onClick={() => { setEditingCustId(c.id); setIsModalOpen(true); }}
+                    onClick={() => handleOpenModal(c.id)}
                     style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13.5px', cursor: 'pointer', transition: 'background-color 0.1s', height: '48px', whiteSpace: 'nowrap' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -366,7 +403,7 @@ export const Customers: React.FC = () => {
                     {/* 작업 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); setEditingCustId(c.id); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); handleOpenModal(c.id); }}
                         style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 9px', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, marginRight: '4px', transition: 'background 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
@@ -390,7 +427,7 @@ export const Customers: React.FC = () => {
       {isModalOpen && (
         <CustomerModal 
           initialCustomer={editingCustId ? customers.find(c => c.id === editingCustId) : undefined}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
         />
       )}
     </div>

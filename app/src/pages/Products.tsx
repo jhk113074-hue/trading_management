@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, terminate, clearIndexedDbPersistence } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
@@ -74,6 +75,7 @@ const excelMapping = [
 ];
 
 export const Products: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
@@ -102,6 +104,45 @@ export const Products: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
+
+  const handleOpenModal = (id?: string | null, copyMode = false) => {
+    setEditingProdId(id || null);
+    setIsCopyMode(copyMode);
+    setIsModalOpen(true);
+    if (id) {
+      const prod = products.find(p => p.id === id);
+      const urlId = prod?.productCode || id;
+      setSearchParams({ id: urlId }, { replace: true });
+    } else {
+      setSearchParams({ id: 'new' }, { replace: true });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingProdId(null);
+    setIsCopyMode(false);
+    setSearchParams({}, { replace: true });
+  };
+
+  // 🔗 URL Query Sync for Product Master direct linking (?id=P0001 or docId)
+  useEffect(() => {
+    const targetId = searchParams.get('id');
+    if (targetId && products.length > 0 && !isModalOpen) {
+      if (targetId === 'new') {
+        setEditingProdId(null);
+        setIsCopyMode(false);
+        setIsModalOpen(true);
+      } else {
+        const found = products.find(p => p.id === targetId || p.productCode === targetId);
+        if (found) {
+          setEditingProdId(found.id);
+          setIsCopyMode(false);
+          setIsModalOpen(true);
+        }
+      }
+    }
+  }, [searchParams, products]);
 
   const exportExcel = () => {
     const data = products.map(p => {
@@ -392,7 +433,7 @@ export const Products: React.FC = () => {
             🔄 캐시 초기화
           </button>
           <button 
-            onClick={() => { setEditingProdId(null); setIsCopyMode(false); setIsModalOpen(true); }}
+            onClick={() => handleOpenModal(null, false)}
             style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
@@ -489,7 +530,7 @@ export const Products: React.FC = () => {
                 return (
                   <tr
                     key={p.id}
-                    onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
+                    onClick={() => handleOpenModal(p.id, false)}
                     style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13.5px', transition: 'background 0.1s', cursor: 'pointer', height: '48px', whiteSpace: 'nowrap' }}
                     onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                     onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
@@ -570,13 +611,13 @@ export const Products: React.FC = () => {
                     {/* 관리 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, false); }}
                         style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', color: '#334155', marginRight: '4px', fontWeight: 700, transition: 'background 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                       >수정</button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id, true); }}
                         style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', color: '#334155', fontWeight: 700, transition: 'background 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
@@ -675,7 +716,7 @@ export const Products: React.FC = () => {
       {isModalOpen && (
         <ProductModal 
           initialProduct={editingProdId ? products.find(p => p.id === editingProdId) : undefined}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
           products={products}
           isCopy={isCopyMode}
         />
