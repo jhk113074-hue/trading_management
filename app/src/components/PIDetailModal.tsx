@@ -167,17 +167,21 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
                 ) : items.length === 0 ? (
                   <tr><td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>등록된 아이템이 없습니다.</td></tr>
                 ) : (
-                  items.map(item => (
-                    <tr key={item.lineNumber} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={tdStyle}>{item.lineNumber}</td>
-                      <td style={tdStyle}>{item.description}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right' }}>{item.quantity}</td>
-                      <td style={tdStyle}>{item.unit}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right' }}>${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: '#059669' }}>${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      <td style={tdStyle}>{item.remarks}</td>
-                    </tr>
-                  ))
+                  items.map((item, idx) => {
+                    const isColoredRow = idx % 2 === 1;
+                    const rowBgColor = isColoredRow ? '#f8fafc' : '#ffffff';
+                    return (
+                      <tr key={item.lineNumber} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: rowBgColor }}>
+                        <td style={tdStyle}>{item.lineNumber}</td>
+                        <td style={tdStyle}>{item.description}</td>
+                        <td style={{ ...tdStyle, textAlign: 'right' }}>{item.quantity}</td>
+                        <td style={tdStyle}>{item.unit}</td>
+                        <td style={{ ...tdStyle, textAlign: 'right' }}>${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: '#059669' }}>${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        <td style={tdStyle}>{item.remarks}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

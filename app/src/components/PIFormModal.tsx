@@ -2487,8 +2487,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <tbody>
                 {items.length === 0 ? (
                   <tr><td colSpan={formData.type === 'consulting' ? 9 : 10} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
-                ) : items.map((it, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                ) : items.map((it, idx) => {
+                  const isColoredRow = idx % 2 === 1;
+                  const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
+                  return (
+                  <tr 
+                    key={idx} 
+                    style={{ borderBottom: '1px solid #cbd5e1', backgroundColor: rowBgColor, transition: 'background-color 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e0f2fe'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = rowBgColor}
+                  >
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -2879,7 +2887,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
