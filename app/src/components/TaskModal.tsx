@@ -4,6 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebas
 import { db, storage, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Task, Visibility, Quadrant, TaskType, ScheduleType, TaskStatus, User } from '../types';
+import { isOperationalUser } from '../utils/userUtils';
 import { validateTask } from '../utils/businessRules';
 import { CustomerSearchModal } from './CustomerSearchModal';
 import type { Customer } from '../types/customer';
@@ -841,14 +842,14 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>위임자</label>
               <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', backgroundColor: '#fff', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
                 <option value="">선택안함</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                {users.filter(isOperationalUser).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>수임자</label>
               <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', backgroundColor: '#fff', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
                 <option value="">지정안함</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                {users.filter(isOperationalUser).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1259,7 +1260,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                         }}
                       >
                         <option value="">(지정 안함)</option>
-                        {users.filter(u => u.id !== userProfile?.id).map(u => (
+                        {users.filter(u => u.id !== userProfile?.id && isOperationalUser(u)).map(u => (
                           <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
                         ))}
                       </select>

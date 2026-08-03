@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { User } from '../types';
+import { isOperationalUser } from '../utils/userUtils';
 import { previewFile } from '../components/FilePreviewModal';
 
 interface Attachment {
@@ -643,7 +644,7 @@ export const Mails: React.FC = () => {
   const inboxMails = mails.filter(m => m.receiverId === userProfile?.id && (!m.scheduledAt || m.scheduledAt <= nowStr));
   const sentMails = mails.filter(m => m.senderId === userProfile?.id);
   const activeList = activeTab === 'inbox' ? inboxMails : sentMails;
-  const addressableUsers = users.filter(u => u.id !== userProfile?.id);
+  const addressableUsers = users.filter(u => u.id !== userProfile?.id && isOperationalUser(u));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflowY: 'auto' }}>

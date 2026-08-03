@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { isOperationalUser } from '../utils/userUtils';
 
 interface LeaveRequest {
   id: string;
@@ -186,8 +187,8 @@ export const LeaveManagement: React.FC = () => {
       setStartTime('09:00');
       setEndTime('10:00');
 
-      // Send mail to all admins/managers
-      const admins = users.filter(u => u.id !== userProfile.id && (u.role === '관리자' || u.roleCode === 'ADMIN' || u.role === '매니저'));
+      // Send mail to all admins/managers (모니터링 계정 제외)
+      const admins = users.filter(u => u.id !== userProfile.id && (u.role === '관리자' || u.roleCode === 'ADMIN' || u.role === '매니저') && isOperationalUser(u));
       const mailPromises = admins.map(admin => 
         addDoc(collection(db, 'mails'), {
           senderId: 'SYSTEM',
@@ -458,7 +459,7 @@ export const LeaveManagement: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.slice().sort((a, b) => {
+                      {users.filter(isOperationalUser).slice().sort((a, b) => {
                         const getRank = (pos: string = '') => {
                           if (pos.includes('대표')) return 1;
                           if (pos.includes('차장')) return 2;

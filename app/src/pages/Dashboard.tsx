@@ -7,6 +7,7 @@ import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } fro
 import { db, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Task, User } from '../types';
+import { isOperationalUser } from '../utils/userUtils';
 
 const getHoliday = (dateStr: string) => {
   const holidays: Record<string, { name: string; country: 'KR' | 'AE' }> = {
@@ -2625,8 +2626,8 @@ export const Dashboard: React.FC = () => {
                 <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#10b981' }} />
               </div>
 
-              {/* Other assignees */}
-              {users.filter(u => u.id !== userProfile?.id).map(u => {
+              {/* Other assignees (모니터링 외주 계정 제외) */}
+              {users.filter(u => u.id !== userProfile?.id && isOperationalUser(u)).map(u => {
                 const isSelected = filter === u.id;
                 const mTasks = tasks.filter(t => t.assigneeId === u.id || t.assigneeName === u.name);
                 return (

@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { User } from '../types';
+import { isOperationalUser } from '../utils/userUtils';
 
 interface Attachment {
   name: string;
@@ -718,7 +719,7 @@ export const ApprovalSystem: React.FC = () => {
   const submittedDocs = documents.filter(d => d.requesterId === userProfile?.id);
   const archiveDocs = documents.filter(d => d.status !== 'PENDING' && (d.requesterId === userProfile?.id || d.approverId === userProfile?.id || userProfile?.role === '관리자'));
   const activeList = activeTab === 'pending' ? pendingDocs : activeTab === 'submitted' ? submittedDocs : archiveDocs;
-  const potentialApprovers = users.filter(u => u.id !== userProfile?.id && (u.role === '관리자' || u.role === '매니저'));
+  const potentialApprovers = users.filter(u => u.id !== userProfile?.id && (u.role === '관리자' || u.role === '매니저') && isOperationalUser(u));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflowY: 'auto' }}>

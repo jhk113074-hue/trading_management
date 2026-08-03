@@ -4,6 +4,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { db, firebaseConfig } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { isMonitoringUser } from '../utils/userUtils';
 
 export const TeamManagement: React.FC = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -190,6 +191,11 @@ export const TeamManagement: React.FC = () => {
                     <span className={`q-badge ${member.role === '관리자' ? 'q1' : 'q2'}`}>
                       {member.role}
                     </span>
+                    {isMonitoringUser(member) && (
+                      <span style={{ marginLeft: '6px', fontSize: '11px', fontWeight: 800, color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
+                        모니터링 전용
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : '-'}
