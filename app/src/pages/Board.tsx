@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskCard } from '../components/TaskCard';
@@ -13,13 +14,37 @@ const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bg: st
 ];
 
 export const Board: React.FC = () => {
-  const { tasks, updateTaskStatus, addTask } = useTasks();
+  const { tasks, updateTask, updateTaskStatus, addTask } = useTasks();
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
+
+  const handleSelectTask = (task: Task | null) => {
+    setSelectedTask(task);
+    if (task) {
+      setSearchParams({ taskId: task.id }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    const queryTaskId = searchParams.get('taskId') || searchParams.get('id');
+    if (queryTaskId && tasks.length > 0) {
+      const found = tasks.find(t => t.id === queryTaskId);
+      if (found) {
+        if (!selectedTask || selectedTask.id !== found.id) {
+          setSelectedTask(found);
+        }
+      }
+    } else if (!queryTaskId && selectedTask) {
+      setSelectedTask(null);
+    }
+  }, [searchParams, tasks]);
 
   // Filter: show only my tasks if toggled
   const visibleTasks = showOnlyMine
@@ -143,7 +168,7 @@ export const Board: React.FC = () => {
                       onMouseEnter={e => { if (isOwn) (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'; }}
                     >
-                      <TaskCard task={task} onClick={() => setSelectedTask(task)} />
+                      <TaskCard task={task} onClick={() => handleSelectTask(task)} />
                       {/* 내 업무일 때: 빠른 상태 이동 버튼 */}
                       {isOwn && (
                         <div style={{ display: 'flex', gap: '4px', padding: '4px 8px 8px', background: '#fff', borderRadius: '0 0 8px 8px' }}>
@@ -181,24 +206,14 @@ export const Board: React.FC = () => {
       {isModalOpen && <TaskModal onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} />}
 
       {selectedTask && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setSelectedTask(null)}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{selectedTask.title}</h3>
-              <button onClick={() => setSelectedTask(null)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
-              <div><span style={{ color: '#6b7280' }}>담당자:</span> <strong>{selectedTask.assigneeName}</strong></div>
-              <div><span style={{ color: '#6b7280' }}>마감일:</span> <strong>{selectedTask.dueDate || '-'}</strong></div>
-              <div><span style={{ color: '#6b7280' }}>유형:</span> {selectedTask.type}</div>
-              <div><span style={{ color: '#6b7280' }}>사분면:</span> {selectedTask.quadrant}</div>
-              {selectedTask.projectName && <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#6b7280' }}>프로젝트:</span> {selectedTask.projectName}</div>}
-              {selectedTask.description && <div dangerouslySetInnerHTML={{ __html: selectedTask.description }} style={{ gridColumn: 'span 2', color: 'var(--text-secondary)', marginTop: '8px', overflowX: 'auto' }} />}
-            </div>
-          </div>
-        </div>
+        <TaskModal
+          initialTask={selectedTask}
+          onClose={() => handleSelectTask(null)}
+          onSave={async (data) => {
+            await updateTask({ ...selectedTask, ...data } as Task);
+            handleSelectTask(null);
+          }}
+        />
       )}
     </div>
   );

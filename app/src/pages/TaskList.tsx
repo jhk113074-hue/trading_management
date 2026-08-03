@@ -1,4 +1,5 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
@@ -62,6 +63,8 @@ const formatDateShort = (val?: string | Date): string => {
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('taskList_visibleColumns');
@@ -97,6 +100,30 @@ export const TaskList: React.FC = () => {
   const [inlineStatus, setInlineStatus] = useState<string>('TODO');
   const [inlineType, setInlineType] = useState<string>('DAILY');
   const [inlineSchedule, setInlineSchedule] = useState<string>('SELF');
+
+  const handleOpenTask = (task: Task) => {
+    setEditingTask(task);
+    setSearchParams({ taskId: task.id }, { replace: true });
+  };
+
+  const handleCloseTask = () => {
+    setEditingTask(null);
+    setSearchParams({}, { replace: true });
+  };
+
+  useEffect(() => {
+    const queryTaskId = searchParams.get('taskId') || searchParams.get('id');
+    if (queryTaskId && tasks.length > 0) {
+      const found = tasks.find(t => t.id === queryTaskId);
+      if (found) {
+        if (!editingTask || editingTask.id !== found.id) {
+          setEditingTask(found);
+        }
+      }
+    } else if (!queryTaskId && editingTask) {
+      setEditingTask(null);
+    }
+  }, [searchParams, tasks]);
   const [inlineImportance, setInlineImportance] = useState<string>('B');
   const [inlineUrgency, setInlineUrgency] = useState<number>(5);
   const [inlineAssignee, setInlineAssignee] = useState<string>('');
@@ -1009,7 +1036,7 @@ export const TaskList: React.FC = () => {
                 };
 
                 return (
-                  <tr key={task.id} className="task-row-hover" style={{ height: '48px', borderBottom: '1px solid #f1f5f9', backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white') }} onClick={() => setEditingTask(task)}>
+                  <tr key={task.id} className="task-row-hover" style={{ height: '48px', borderBottom: '1px solid #f1f5f9', backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white') }} onClick={() => handleOpenTask(task)}>
                     {renderedColumns.map(col => (
                       <React.Fragment key={col.key}>
                         {renderCell(col.key)}
@@ -1063,10 +1090,10 @@ export const TaskList: React.FC = () => {
       {editingTask && (
         <TaskModal
           initialTask={editingTask}
-          onClose={() => setEditingTask(null)}
+          onClose={handleCloseTask}
           onSave={async (data) => {
             await updateTask({ ...editingTask, ...data } as Task);
-            setEditingTask(null);
+            handleCloseTask();
           }}
         />
       )}
