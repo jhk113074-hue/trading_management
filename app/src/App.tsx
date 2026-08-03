@@ -28,6 +28,7 @@ import { ImportDetail } from './pages/ImportDetail';
 import { Credentials } from './pages/Credentials';
 import { DomesticTrade } from './pages/DomesticTrade';
 import { DomesticQuotes } from './pages/DomesticQuotes';
+import { SystemLogs } from './pages/SystemLogs';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -76,6 +77,7 @@ const App: React.FC = () => {
               <Route path="credentials" element={<Credentials />} />
 
               <Route path="issues" element={<IssueBoard />} />
+              <Route path="system-logs" element={<SystemLogs />} />
               <Route path="leave-management" element={<LeaveManagement />} />
               <Route path="approvals" element={<ApprovalSystem />} />
               <Route path="mails" element={<Mails />} />

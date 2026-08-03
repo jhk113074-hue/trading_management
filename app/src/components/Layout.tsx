@@ -509,6 +509,7 @@ export const Layout: React.FC = () => {
         { path: '/credentials', label: '🔑 비밀번호 관리', external: false }
       ] as any },
       { section: '시스템', items: [
+        { path: '/system-logs', label: '📜 시스템 업데이트 로그', external: false },
         { path: '/issues', label: '🛠️ 오류/수정 게시판 (새 창)', external: true }
       ] as any }
     ];
