@@ -640,8 +640,8 @@ export const Mails: React.FC = () => {
   }
 
   const nowStr = new Date().toISOString();
-  // Filter inbox: Hide future scheduled mails from recipients
-  const inboxMails = mails.filter(m => m.receiverId === userProfile?.id && (!m.scheduledAt || m.scheduledAt <= nowStr));
+  // Filter inbox: Hide future scheduled mails from recipients (support both receiverId and recipientId)
+  const inboxMails = mails.filter(m => (m.receiverId === userProfile?.id || (m as any).recipientId === userProfile?.id) && (!m.scheduledAt || m.scheduledAt <= nowStr));
   const sentMails = mails.filter(m => m.senderId === userProfile?.id);
   const activeList = activeTab === 'inbox' ? inboxMails : sentMails;
   const addressableUsers = users.filter(u => u.id !== userProfile?.id && isOperationalUser(u));

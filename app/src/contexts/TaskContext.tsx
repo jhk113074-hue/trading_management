@@ -136,7 +136,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       await addDoc(collection(db, 'mails'), {
-        recipientId: taskData.assigneeId,
+        receiverId: taskData.assigneeId,
         senderName: taskData.requesterName || currentUser.displayName || '위임자',
         senderId: requesterId,
         title: `🤝 [업무 위임] ${taskData.title || '새로운 업무가 위임되었습니다.'}`,
@@ -160,7 +160,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const senderName = task.assigneeName || currentUser.displayName || '담당자';
       await addDoc(collection(db, 'mails'), {
-        recipientId: requesterId,
+        receiverId: requesterId,
         senderName: senderName,
         senderId: currentUser.uid,
         title: `✅ [업무 완료 보고] ${task.title}`,

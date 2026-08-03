@@ -249,7 +249,7 @@ export const Tasks: React.FC = () => {
               const requesterId = completingTask.createdBy || completingTask.requesterId;
               if (requesterId && userProfile) {
                 await addDoc(collection(db, 'mails'), {
-                  recipientId: requesterId,
+                  receiverId: requesterId,
                   senderName: userProfile.name || '담당자',
                   senderId: userProfile.id || 'system',
                   title: `✅ [업무 완료 보고] ${completingTask.title}`,
