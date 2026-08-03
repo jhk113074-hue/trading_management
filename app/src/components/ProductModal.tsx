@@ -547,7 +547,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
     setIsSaving(true);
     try {
-      const docId = (initialProduct && !isCopy) ? initialProduct.id : formData.productCode;
+      const targetCode = (formData.productCode || '').trim();
+      const docId = (initialProduct && !isCopy) ? initialProduct.id : targetCode;
       
       // 기본 공급 유통사 정보를 구형 단일 필드군에 대입 (하위 호환성 유지)
       let backupFields: any = {};
@@ -575,6 +576,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       const isPallet = formData.packageType?.toLowerCase().includes('pallet');
       const finalData: Partial<Product> = {
         ...formData,
+        productCode: targetCode || docId,
         ...backupFields,
         unit: (formData.unit || 'KG').toUpperCase(),
         packingMethods: (formData.packingMethods || []).map(m => ({
@@ -600,6 +602,21 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       }
 
       await setDoc(doc(db, 'companies', COMPANY_ID, 'products', docId), finalData);
+      
+      // 만약 기존 수정 건에서 productCode/docId가 변경되었다면 이전 문서 삭제
+      if (initialProduct && !isCopy && targetCode && initialProduct.id !== targetCode) {
+        try {
+          await setDoc(doc(db, 'companies', COMPANY_ID, 'products', targetCode), {
+            ...finalData,
+            productCode: targetCode
+          });
+          const { deleteDoc } = await import('firebase/firestore');
+          await deleteDoc(doc(db, 'companies', COMPANY_ID, 'products', initialProduct.id));
+        } catch (delErr) {
+          console.warn('Old product doc cleanup warning:', delErr);
+        }
+      }
+
       alert('✅ 성공적으로 저장되었습니다.');
       onClose();
     } catch (err: any) {
