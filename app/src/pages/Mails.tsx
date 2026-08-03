@@ -339,6 +339,14 @@ export const Mails: React.FC = () => {
     }
   };
 
+  const getReceiverDisplayName = (m: Mail) => {
+    if (m.receiverName && m.receiverName !== 'undefined') return m.receiverName;
+    if ((m as any).recipientName && (m as any).recipientName !== 'undefined') return (m as any).recipientName;
+    const found = users.find(u => u.id === m.receiverId || u.id === (m as any).recipientId);
+    if (found?.name) return found.name;
+    return '수신자';
+  };
+
   const handleReadMail = async (mail: Mail) => {
     setSelectedMail(mail);
     setIsDetailModalOpen(true);
@@ -766,23 +774,23 @@ export const Mails: React.FC = () => {
   const addressableUsers = users.filter(u => u.id !== userProfile?.id && isOperationalUser(u));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: 'calc(100vh - 110px)', overflow: 'hidden' }}>
       
-      {/* Header */}
+      {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 850, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             ✉️ 사내 메일 및 업무 알림
           </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>동료 직원과의 업무 메일 및 시스템 자동 알림을 편리하게 모니터링하며, 항목 클릭/더블클릭 시 상세 다이얼로그 팝업이 열립니다.</p>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>동료 직원과의 업무 메일 및 시스템 자동 알림 소통 창구입니다. 항목을 더블클릭 시 상세 다이얼로그 팝업이 열립니다.</p>
         </div>
       </div>
 
       {/* Main Layout Container */}
-      <div style={{ flex: 1, display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'flex', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#fff', overflow: 'hidden', minHeight: 0, boxShadow: '0 4px 12px rgba(15, 23, 42, 0.05)' }}>
         
         {/* 1. Left Sidebar Navigation (220px) */}
-        <div style={{ width: '220px', minWidth: '220px', background: '#f8fafc', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', padding: '16px 12px', gap: '12px', boxSizing: 'border-box' }}>
+        <div style={{ width: '220px', minWidth: '220px', background: '#f8fafc', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', padding: '16px 12px', gap: '14px', boxSizing: 'border-box' }}>
           
           {/* Compose Button */}
           <button
@@ -797,43 +805,44 @@ export const Mails: React.FC = () => {
             }}
             style={{
               width: '100%',
-              height: '40px',
+              height: '42px',
               background: '#3b82f6',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
-              fontSize: '13.5px',
+              fontSize: '14.5px',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
               transition: 'all 0.2s',
               flexShrink: 0
             }}
             onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
             onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
           >
-            ✏️ 메일 쓰기
+            ✏️ 새 메일 작성
           </button>
 
           {/* Folder Tree List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto' }}>
             <button
               onClick={() => { setSelectedFolder('all'); setSelectedMail(null); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '6px', border: 'none',
-                background: selectedFolder === 'all' ? '#e0f2fe' : 'transparent',
-                color: selectedFolder === 'all' ? '#0369a1' : '#334155',
-                fontWeight: selectedFolder === 'all' ? 800 : 600,
-                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                padding: '12px 14px', borderRadius: '8px', border: 'none',
+                background: selectedFolder === 'all' ? '#eff6ff' : 'transparent',
+                color: selectedFolder === 'all' ? '#1d4ed8' : '#334155',
+                fontWeight: selectedFolder === 'all' ? 850 : 650,
+                fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
+                borderLeft: selectedFolder === 'all' ? '4px solid #3b82f6' : '4px solid transparent'
               }}
             >
               <span>📥 전체 메일함</span>
-              <span style={{ fontSize: '11px', background: selectedFolder === 'all' ? '#bae6fd' : '#e2e8f0', color: '#334155', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', background: selectedFolder === 'all' ? '#bfdbfe' : '#e2e8f0', color: selectedFolder === 'all' ? '#1e40af' : '#475569', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>
                 {inboxMails.length}
               </span>
             </button>
@@ -842,15 +851,16 @@ export const Mails: React.FC = () => {
               onClick={() => { setSelectedFolder('unread'); setSelectedMail(null); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                padding: '12px 14px', borderRadius: '8px', border: 'none',
                 background: selectedFolder === 'unread' ? '#fef2f2' : 'transparent',
                 color: selectedFolder === 'unread' ? '#dc2626' : '#334155',
-                fontWeight: selectedFolder === 'unread' ? 800 : 600,
-                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                fontWeight: selectedFolder === 'unread' ? 850 : 650,
+                fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
+                borderLeft: selectedFolder === 'unread' ? '4px solid #ef4444' : '4px solid transparent'
               }}
             >
               <span>🔴 안읽은 메일함</span>
-              <span style={{ fontSize: '11px', background: unreadMails.length > 0 ? '#ef4444' : '#e2e8f0', color: unreadMails.length > 0 ? '#fff' : '#334155', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', background: unreadMails.length > 0 ? '#ef4444' : '#e2e8f0', color: unreadMails.length > 0 ? '#fff' : '#475569', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>
                 {unreadMails.length}
               </span>
             </button>
@@ -859,15 +869,16 @@ export const Mails: React.FC = () => {
               onClick={() => { setSelectedFolder('important'); setSelectedMail(null); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                padding: '12px 14px', borderRadius: '8px', border: 'none',
                 background: selectedFolder === 'important' ? '#fefce8' : 'transparent',
                 color: selectedFolder === 'important' ? '#a16207' : '#334155',
-                fontWeight: selectedFolder === 'important' ? 800 : 600,
-                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                fontWeight: selectedFolder === 'important' ? 850 : 650,
+                fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
+                borderLeft: selectedFolder === 'important' ? '4px solid #eab308' : '4px solid transparent'
               }}
             >
               <span>⭐ 중요 메일함</span>
-              <span style={{ fontSize: '11px', background: selectedFolder === 'important' ? '#fef08a' : '#e2e8f0', color: '#854d0e', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', background: selectedFolder === 'important' ? '#fef08a' : '#e2e8f0', color: '#854d0e', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>
                 {importantMails.length}
               </span>
             </button>
@@ -876,15 +887,16 @@ export const Mails: React.FC = () => {
               onClick={() => { setSelectedFolder('sent'); setSelectedMail(null); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                padding: '12px 14px', borderRadius: '8px', border: 'none',
                 background: selectedFolder === 'sent' ? '#f0fdf4' : 'transparent',
                 color: selectedFolder === 'sent' ? '#15803d' : '#334155',
-                fontWeight: selectedFolder === 'sent' ? 800 : 600,
-                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                fontWeight: selectedFolder === 'sent' ? 850 : 650,
+                fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
+                borderLeft: selectedFolder === 'sent' ? '4px solid #22c55e' : '4px solid transparent'
               }}
             >
               <span>📤 보낸 메일함</span>
-              <span style={{ fontSize: '11px', background: selectedFolder === 'sent' ? '#dcfce7' : '#e2e8f0', color: '#166534', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', background: selectedFolder === 'sent' ? '#dcfce7' : '#e2e8f0', color: '#166534', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>
                 {sentMails.length}
               </span>
             </button>
@@ -893,15 +905,16 @@ export const Mails: React.FC = () => {
               onClick={() => { setSelectedFolder('system'); setSelectedMail(null); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '6px', border: 'none',
+                padding: '12px 14px', borderRadius: '8px', border: 'none',
                 background: selectedFolder === 'system' ? '#faf5ff' : 'transparent',
                 color: selectedFolder === 'system' ? '#7e22ce' : '#334155',
-                fontWeight: selectedFolder === 'system' ? 800 : 600,
-                fontSize: '13px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                fontWeight: selectedFolder === 'system' ? 850 : 650,
+                fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
+                borderLeft: selectedFolder === 'system' ? '4px solid #a855f7' : '4px solid transparent'
               }}
             >
               <span>🤖 업무/시스템 알림</span>
-              <span style={{ fontSize: '11px', background: selectedFolder === 'system' ? '#f3e8ff' : '#e2e8f0', color: '#6b21a8', padding: '1px 7px', borderRadius: '10px', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', background: selectedFolder === 'system' ? '#f3e8ff' : '#e2e8f0', color: '#6b21a8', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>
                 {systemMails.length}
               </span>
             </button>
@@ -913,21 +926,21 @@ export const Mails: React.FC = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', boxSizing: 'border-box', overflow: 'hidden' }}>
           
           {/* Top Search & Toolbar */}
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: '16px' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: '16px' }}>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600, color: '#475569', fontSize: '13px' }}>
-                <input type="checkbox" checked={isAllSelected} onChange={handleToggleSelectAll} style={{ cursor: 'pointer' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 700, color: '#334155', fontSize: '14px' }}>
+                <input type="checkbox" checked={isAllSelected} onChange={handleToggleSelectAll} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
                 <span>전체선택 ({selectedMailIds.length})</span>
               </label>
 
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={handleBulkMarkRead}
                   disabled={selectedMailIds.length === 0}
                   style={{
-                    padding: '4px 10px', background: selectedMailIds.length > 0 ? '#f1f5f9' : '#fafafa',
-                    border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+                    height: '34px', padding: '0 14px', background: selectedMailIds.length > 0 ? '#f1f5f9' : '#fafafa',
+                    border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700,
                     color: selectedMailIds.length > 0 ? '#334155' : '#cbd5e1', cursor: selectedMailIds.length > 0 ? 'pointer' : 'default'
                   }}
                 >
@@ -937,8 +950,8 @@ export const Mails: React.FC = () => {
                   onClick={handleBulkDelete}
                   disabled={selectedMailIds.length === 0}
                   style={{
-                    padding: '4px 10px', background: selectedMailIds.length > 0 ? '#fef2f2' : '#fafafa',
-                    border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+                    height: '34px', padding: '0 14px', background: selectedMailIds.length > 0 ? '#fef2f2' : '#fafafa',
+                    border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '13px', fontWeight: 700,
                     color: selectedMailIds.length > 0 ? '#dc2626' : '#cbd5e1', cursor: selectedMailIds.length > 0 ? 'pointer' : 'default'
                   }}
                 >
@@ -952,30 +965,30 @@ export const Mails: React.FC = () => {
               placeholder="🔍 메일 제목, 보낸이/받는이 검색..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ width: '280px', height: '34px', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '320px', height: '36px', padding: '0 14px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
           {/* Mail Table List */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontWeight: 750 }}>
-                  <th style={{ padding: '10px 12px', width: '40px', textAlign: 'center' }}></th>
-                  <th style={{ padding: '10px 12px', width: '40px', textAlign: 'center' }}></th>
-                  <th style={{ padding: '10px 12px', width: '160px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1', color: '#475569', fontWeight: 800, fontSize: '13.5px' }}>
+                  <th style={{ padding: '12px 14px', width: '44px', textAlign: 'center' }}></th>
+                  <th style={{ padding: '12px 14px', width: '44px', textAlign: 'center' }}></th>
+                  <th style={{ padding: '12px 16px', width: '180px', letterSpacing: '0.02em' }}>
                     {selectedFolder === 'sent' ? '받는 사람' : '보낸 사람'}
                   </th>
-                  <th style={{ padding: '10px 12px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>메일 제목 (클릭/더블클릭 시 상세 팝업)</th>
-                  <th style={{ padding: '10px 12px', width: '180px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>발송 일시</th>
-                  <th style={{ padding: '10px 12px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
-                  <th style={{ padding: '10px 12px', width: '60px', textAlign: 'center' }}></th>
+                  <th style={{ padding: '12px 16px', letterSpacing: '0.02em' }}>메일 제목</th>
+                  <th style={{ padding: '12px 16px', width: '190px', letterSpacing: '0.02em' }}>발송 일시</th>
+                  <th style={{ padding: '12px 16px', width: '110px', textAlign: 'center', letterSpacing: '0.02em' }}>상태</th>
+                  <th style={{ padding: '12px 14px', width: '50px', textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMails.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: '50px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+                    <td colSpan={7} style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                       등록된 메일이 없습니다.
                     </td>
                   </tr>
@@ -984,6 +997,7 @@ export const Mails: React.FC = () => {
                     const isUnread = !mail.isRead && mail.receiverId === userProfile?.id;
                     const isChecked = selectedMailIds.includes(mail.id);
                     const isFuture = mail.scheduledAt && mail.scheduledAt > nowStr;
+                    const receiverDisplay = getReceiverDisplayName(mail);
 
                     return (
                       <tr
@@ -994,73 +1008,73 @@ export const Mails: React.FC = () => {
                           borderBottom: '1px solid #f1f5f9',
                           cursor: 'pointer',
                           backgroundColor: isUnread ? '#f8fafc' : '#fff',
-                          fontWeight: isUnread ? 'bold' : 'normal',
+                          height: '48px',
                           transition: 'background 0.15s'
                         }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = isUnread ? '#f8fafc' : '#fff'}
                       >
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => handleToggleSelectMail(mail.id, e as any)}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'pointer', width: '15px', height: '15px' }}
                           />
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => handleToggleImportant(mail)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px', padding: 0 }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: 0 }}
                             title={mail.isImportant ? "중요 해제" : "중요 표시"}
                           >
                             {mail.isImportant ? '⭐' : '☆'}
                           </button>
                         </td>
-                        <td style={{ padding: '10px 12px', color: '#1e293b', fontWeight: isUnread ? 800 : 600 }}>
+                        <td style={{ padding: '12px 16px', color: '#1e293b', fontSize: '14.5px', fontWeight: isUnread ? 800 : 600 }}>
                           {selectedFolder === 'sent' ? (
-                            `To: ${mail.receiverName}`
+                            `To: ${receiverDisplay}`
                           ) : (
                             mail.senderName === '시스템 알림' ? (
                               <span style={{ color: '#dc2626', fontWeight: 800 }}>🤖 {mail.senderName}</span>
                             ) : mail.senderName
                           )}
                         </td>
-                        <td style={{ padding: '10px 12px', color: isUnread ? '#0f172a' : '#334155' }}>
-                          <span style={{ fontWeight: isUnread ? 800 : 500 }}>{mail.title}</span>
+                        <td style={{ padding: '12px 16px', color: isUnread ? '#0f172a' : '#334155', fontSize: '14.5px' }}>
+                          <span style={{ fontWeight: isUnread ? 800 : 500, fontSize: isUnread ? '15px' : '14.5px' }}>{mail.title}</span>
                           {mail.attachments && mail.attachments.length > 0 && (
-                            <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px' }}>📎({mail.attachments.length})</span>
+                            <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px', fontWeight: 700 }}>📎 ({mail.attachments.length})</span>
                           )}
                         </td>
-                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: '13px' }}>
+                        <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '14px' }}>
                           {new Date(mail.createdAt).toLocaleString('ko-KR')}
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                           {selectedFolder !== 'sent' ? (
                             <span style={{
-                              fontSize: '12px',
+                              fontSize: '13px',
                               fontWeight: 800,
-                              padding: '2px 8px',
+                              padding: '4px 10px',
                               borderRadius: '12px',
                               background: isUnread ? '#fee2e2' : '#f1f5f9',
-                              color: isUnread ? '#dc2626' : '#64748b'
+                              color: isUnread ? '#dc2626' : '#475569'
                             }}>
                               {isUnread ? '안읽음' : '읽음'}
                             </span>
                           ) : (
                             isFuture ? (
-                              <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1' }}>
                                 예약대기
                               </span>
                             ) : (
-                              <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', background: mail.isRead ? '#d1fae5' : '#fef3c7', color: mail.isRead ? '#065f46' : '#d97706' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', background: mail.isRead ? '#dcfce7' : '#fef3c7', color: mail.isRead ? '#166534' : '#d97706' }}>
                                 {mail.isRead ? '상대방읽음' : '읽지않음'}
                               </span>
                             )
                           )}
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                           <button
                             type="button"
                             onClick={(e) => handleDeleteMail(mail.id, e)}
@@ -1069,7 +1083,7 @@ export const Mails: React.FC = () => {
                               background: 'none',
                               color: '#ef4444',
                               border: 'none',
-                              fontSize: '15px',
+                              fontSize: '16px',
                               cursor: 'pointer',
                               padding: '2px'
                             }}
@@ -1093,45 +1107,45 @@ export const Mails: React.FC = () => {
       {isDetailModalOpen && selectedMail && (
         <div
           onClick={() => setIsDetailModalOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', boxSizing: 'border-box' }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '10px', width: '100%', maxWidth: '850px', maxHeight: '90vh', boxShadow: '0 20px 40px rgba(15,23,42,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #cbd5e1' }}
+            style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '960px', maxHeight: '92vh', boxShadow: '0 25px 50px -12px rgba(15,23,42,0.25)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #cbd5e1' }}
           >
             {/* Modal Header Bar */}
-            <div style={{ padding: '14px 20px', background: '#fafafa', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>✉️</span>
-                <span style={{ fontSize: '16px', fontWeight: 850, color: '#1e293b' }}>사내 메일 상세 보기</span>
+            <div style={{ padding: '16px 24px', background: '#fafafa', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>✉️</span>
+                <span style={{ fontSize: '17px', fontWeight: 850, color: '#0f172a' }}>사내 메일 상세 보기</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', fontWeight: 700 }}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b', fontWeight: 700 }}
               >
                 ✕
               </button>
             </div>
 
             {/* Action Bar inside Modal */}
-            <div style={{ padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ padding: '12px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={() => { setIsDetailModalOpen(false); handleReplyMail(selectedMail); }}
-                  style={{ padding: '6px 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  style={{ height: '36px', padding: '0 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   ↩️ 답장
                 </button>
                 <button
                   onClick={() => { setIsDetailModalOpen(false); handleForwardMail(selectedMail); }}
-                  style={{ padding: '6px 14px', background: '#fff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  style={{ height: '36px', padding: '0 16px', background: '#fff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   🔁 전달
                 </button>
                 <button
                   onClick={() => handleToggleImportant(selectedMail)}
-                  style={{ padding: '6px 14px', background: '#fff', color: selectedMail.isImportant ? '#a16207' : '#334155', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  style={{ height: '36px', padding: '0 16px', background: '#fff', color: selectedMail.isImportant ? '#a16207' : '#334155', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   {selectedMail.isImportant ? '⭐ 중요 해제' : '⭐ 중요 표시'}
                 </button>
@@ -1139,38 +1153,38 @@ export const Mails: React.FC = () => {
 
               <button
                 onClick={(e) => { setIsDetailModalOpen(false); handleDeleteMail(selectedMail.id, e); }}
-                style={{ padding: '6px 12px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ height: '36px', padding: '0 14px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '13.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 🗑️ 삭제
               </button>
             </div>
 
-            {/* Sender & Subject Header Info */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', background: '#fff' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: '0 0 14px 0', lineHeight: 1.4 }}>
+            {/* Sender & Subject Header Info Card */}
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 850, color: '#0f172a', margin: '0 0 16px 0', lineHeight: 1.45 }}>
                 {selectedMail.title}
               </h2>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: selectedMail.senderName === '시스템 알림' ? '#fef2f2' : '#eff6ff', color: selectedMail.senderName === '시스템 알림' ? '#dc2626' : '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '15px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: selectedMail.senderName === '시스템 알림' ? '#fef2f2' : '#eff6ff', color: selectedMail.senderName === '시스템 알림' ? '#dc2626' : '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
                   {selectedMail.senderName === '시스템 알림' ? '🤖' : selectedMail.senderName.slice(0, 2)}
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
                     {selectedMail.senderName}
-                    <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#64748b', marginLeft: '8px' }}>
-                      ➔ 수신: <strong>{selectedMail.receiverName}</strong>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#475569', marginLeft: '10px' }}>
+                      ➔ 수신: <strong>{getReceiverDisplayName(selectedMail)}</strong>
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: '13.5px', color: '#64748b', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                     <span>발송일시: {new Date(selectedMail.createdAt).toLocaleString('ko-KR')}</span>
                     {selectedMail.ccNames && selectedMail.ccNames.length > 0 && (
                       <span>참조: {selectedMail.ccNames.join(', ')}</span>
                     )}
                     {selectedMail.scheduledAt && (
-                      <span style={{ color: '#0369a1', fontWeight: 700 }}>⏰ 예약발송: {new Date(selectedMail.scheduledAt).toLocaleString('ko-KR')}</span>
+                      <span style={{ color: '#0369a1', fontWeight: 750 }}>⏰ 예약발송: {new Date(selectedMail.scheduledAt).toLocaleString('ko-KR')}</span>
                     )}
                   </div>
                 </div>
@@ -1179,32 +1193,32 @@ export const Mails: React.FC = () => {
 
             {/* Attachments Card Bar */}
             {selectedMail.attachments && selectedMail.attachments.length > 0 && (
-              <div style={{ padding: '12px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+              <div style={{ padding: '14px 28px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#334155' }}>
                   📎 첨부파일 ({selectedMail.attachments.length}개)
                 </span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                   {selectedMail.attachments.map((file, fIdx) => (
-                    <div key={fIdx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100px' }}>
+                    <div key={fIdx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '130px' }}>
                       {file.type.startsWith('image/') ? (
                         <img
                           src={file.data}
                           alt={file.name}
                           onClick={() => previewFile(file.data, file.name)}
-                          style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                          style={{ width: '100%', height: '65px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
                         />
                       ) : (
                         <button
                           type="button"
                           onClick={() => previewFile(file.data, file.name)}
-                          style={{ width: '100%', height: '60px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer' }}
+                          style={{ width: '100%', height: '65px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', cursor: 'pointer' }}
                         >
                           📄
                         </button>
                       )}
                       <span
                         onClick={() => previewFile(file.data, file.name)}
-                        style={{ fontSize: '10px', color: '#334155', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ fontSize: '11.5px', color: '#1e293b', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center', cursor: 'pointer', fontWeight: 650 }}
                         title={file.name}
                       >
                         {file.name}
@@ -1216,19 +1230,19 @@ export const Mails: React.FC = () => {
             )}
 
             {/* Mail Body Viewer */}
-            <div style={{ flex: 1, padding: '24px', overflowY: 'auto', background: '#fff' }}>
+            <div style={{ flex: 1, padding: '32px 36px', overflowY: 'auto', background: '#fff' }}>
               <div
                 dangerouslySetInnerHTML={{ __html: selectedMail.content }}
-                style={{ fontSize: '14.5px', lineHeight: 1.7, color: '#334155' }}
+                style={{ fontSize: '15.5px', lineHeight: 1.8, color: '#1e293b' }}
               />
             </div>
 
             {/* Modal Footer */}
-            <div style={{ padding: '12px 20px', background: '#fafafa', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '14px 24px', background: '#fafafa', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                style={{ padding: '6px 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                style={{ height: '36px', padding: '0 20px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '14px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
               >
                 닫기
               </button>
