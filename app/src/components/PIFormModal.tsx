@@ -895,40 +895,76 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     if (items.length > 0) {
       rowsToExport = items.map(it => {
         const rawCode = getRawProductCode(it.productCode);
-        const currency = it.purchasePriceKrw > 0 ? 'KRW' : 'USD';
-        const price = it.purchasePriceKrw > 0 ? it.purchasePriceKrw : it.purchasePriceUsd;
+        const currency = it.purchasePriceKrw > 0 ? 'KRW' : (it.purchasePriceCurrency || 'KRW');
+        const price = it.purchasePriceKrw > 0 ? it.purchasePriceKrw : (it.purchasePriceUsd || 0);
+        const exRate = it.exchangeRate || formData.exchangeRate || 1400;
+        const matchedProd = products.find(p => p.productCode === rawCode || p.id === rawCode);
+        const prodName = it.productName || matchedProd?.nameEn || matchedProd?.nameKo || rawCode;
+        const spec = it.spec || it.description || matchedProd?.spec || '';
+        const supplierName = it.supplierName || matchedProd?.supplierName || (matchedProd as any)?.supplier || '';
+
+        const costUsd = currency === 'KRW' ? (price / exRate) : price;
+        const totalCostUsd = costUsd * (it.quantity || 0);
+        const salePriceUsd = it.salePriceUsd || 0;
+        const lineTotalUsd = it.lineTotalUsd || (salePriceUsd * (it.quantity || 0));
+        const profitUsd = lineTotalUsd - totalCostUsd;
+
         return {
           '상품코드 (Product Code)': rawCode,
+          '품목명 (Product Name)': prodName,
+          '규격 (Spec)': spec,
+          '패킹방식 (Packing Method)': it.selectedPackingMethodId || 'Default',
           '수량 (Quantity)': it.quantity || 0,
           '단위 (Unit)': it.unit || 'EA',
           '매입통화 (Currency)': currency,
           '매입단가 (Purchase Price)': price || 0,
+          '환율 (Exchange Rate)': exRate,
           '마진율 (%) (Margin Rate)': it.marginRate !== undefined ? it.marginRate : 15,
           '올림자릿수 (Round Digits)': it.roundDigits !== undefined ? it.roundDigits : 2,
+          '판매단가 ($) (Sale Price USD)': salePriceUsd,
+          '총액 ($) (Total USD)': lineTotalUsd,
+          '예상이익 ($) (Profit USD)': parseFloat(profitUsd.toFixed(2)),
+          '매입처 (Supplier)': supplierName,
           '비고 (Remarks)': it.remarks || ''
         };
       });
     } else {
       rowsToExport = [
         {
-          '상품코드 (Product Code)': 'WBR-7575Z',
-          '수량 (Quantity)': 80,
+          '상품코드 (Product Code)': 'P0053',
+          '품목명 (Product Name)': '25mm Insulation Skin Cover',
+          '규격 (Spec)': '(1x1m, Wall, 1.2T, ABS+ASA)',
+          '패킹방식 (Packing Method)': '1000_PLT',
+          '수량 (Quantity)': 2800,
           '단위 (Unit)': 'EA',
           '매입통화 (Currency)': 'KRW',
-          '매입단가 (Purchase Price)': 1860,
+          '매입단가 (Purchase Price)': 9320,
+          '환율 (Exchange Rate)': 1350,
           '마진율 (%) (Margin Rate)': 10,
-          '올림자릿수 (Round Digits)': 2,
-          '비고 (Remarks)': '예시 항목 1'
+          '올림자릿수 (Round Digits)': 1,
+          '판매단가 ($) (Sale Price USD)': 7.70,
+          '총액 ($) (Total USD)': 21560.00,
+          '예상이익 ($) (Profit USD)': 2229.63,
+          '매입처 (Supplier)': '주식회사 정도',
+          '비고 (Remarks)': ''
         },
         {
-          '상품코드 (Product Code)': 'WBR-0160Z',
-          '수량 (Quantity)': 20,
+          '상품코드 (Product Code)': 'P0151',
+          '품목명 (Product Name)': '25mm Insulation Skin Cover',
+          '규격 (Spec)': '(1x0.5m, Wall, 1.2T, ABS+ASA)',
+          '패킹방식 (Packing Method)': 'Default',
+          '수량 (Quantity)': 3000,
           '단위 (Unit)': 'EA',
           '매입통화 (Currency)': 'KRW',
-          '매입단가 (Purchase Price)': 3230,
-          '마진율 (%) (Margin Rate)': 15,
-          '올림자릿수 (Round Digits)': 2,
-          '비고 (Remarks)': '예시 항목 2'
+          '매입단가 (Purchase Price)': 6220,
+          '환율 (Exchange Rate)': 1350,
+          '마진율 (%) (Margin Rate)': 10,
+          '올림자릿수 (Round Digits)': 1,
+          '판매단가 ($) (Sale Price USD)': 5.20,
+          '총액 ($) (Total USD)': 15600.00,
+          '예상이익 ($) (Profit USD)': 1777.78,
+          '매입처 (Supplier)': '주식회사 정도',
+          '비고 (Remarks)': ''
         }
       ];
     }
@@ -957,32 +993,40 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
 
         const parsedItems: PIItem[] = json.map((row, idx) => {
-          const rawCode = String(row['상품코드 (Product Code)'] || '').trim();
-          const quantity = parseFloat(row['수량 (Quantity)']) || 0;
-          const unit = String(row['단위 (Unit)'] || 'EA').trim().toUpperCase();
-          const currency = String(row['매입통화 (Currency)'] || 'KRW').trim().toUpperCase();
-          const purchasePrice = parseFloat(row['매입단가 (Purchase Price)']) || 0;
-          const marginRate = parseFloat(row['마진율 (%) (Margin Rate)']) !== undefined && !isNaN(parseFloat(row['마진율 (%) (Margin Rate)'])) ? parseFloat(row['마진율 (%) (Margin Rate)']) : 15;
-          const roundDigits = parseFloat(row['올림자릿수 (Round Digits)']) !== undefined && !isNaN(parseFloat(row['올림자릿수 (Round Digits)'])) ? parseFloat(row['올림자릿수 (Round Digits)']) : 2;
-          const remarks = String(row['비고 (Remarks)'] || '').trim();
+          const rawCode = String(row['상품코드 (Product Code)'] || row['상품코드'] || '').trim();
+          const productNameInput = String(row['품목명 (Product Name)'] || row['품목명'] || '').trim();
+          const specInput = String(row['규격 (Spec)'] || row['규격'] || '').trim();
+          const packingMethodInput = String(row['패킹방식 (Packing Method)'] || row['패킹방식'] || '').trim();
+          const quantity = parseFloat(row['수량 (Quantity)'] || row['수량']) || 0;
+          const unit = String(row['단위 (Unit)'] || row['단위'] || 'EA').trim().toUpperCase();
+          const currency = String(row['매입통화 (Currency)'] || row['매입통화'] || 'KRW').trim().toUpperCase();
+          const purchasePrice = parseFloat(row['매입단가 (Purchase Price)'] || row['매입단가']) || 0;
+          const exRateInput = parseFloat(row['환율 (Exchange Rate)'] || row['환율']);
+          const marginRateVal = row['마진율 (%) (Margin Rate)'] !== undefined ? row['마진율 (%) (Margin Rate)'] : row['마진율'];
+          const marginRate = parseFloat(marginRateVal) !== undefined && !isNaN(parseFloat(marginRateVal)) ? parseFloat(marginRateVal) : 15;
+          const roundDigitsVal = row['올림자릿수 (Round Digits)'] !== undefined ? row['올림자릿수 (Round Digits)'] : row['올림자릿수'];
+          const roundDigits = parseFloat(roundDigitsVal) !== undefined && !isNaN(parseFloat(roundDigitsVal)) ? parseFloat(roundDigitsVal) : 2;
+          const supplierNameInput = String(row['매입처 (Supplier)'] || row['매입처'] || '').trim();
+          const remarks = String(row['비고 (Remarks)'] || row['비고'] || '').trim();
 
           const purchasePriceKrw = currency === 'KRW' ? purchasePrice : 0;
           const purchasePriceUsd = currency !== 'KRW' ? purchasePrice : 0;
 
-          const p = products.find(prod => prod.productCode === rawCode);
-          let displayName = rawCode;
-          let spec = '';
+          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+          let displayName = productNameInput || rawCode;
+          let spec = specInput;
           let unitToUse = unit;
-          let selectedPackingMethodId = 'default_injected';
+          let selectedPackingMethodId = packingMethodInput || 'default_injected';
           let packingSpecOverride: any = undefined;
 
           if (p) {
-            displayName = p.nameEn || p.nameKo || '';
-            spec = p.spec || '';
+            if (!productNameInput) displayName = p.nameEn || p.nameKo || '';
+            if (!specInput) spec = p.spec || '';
             unitToUse = p.unit || unit;
             
             const methods = getProductPackingMethods(p);
-            const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
+            const matchedMethod = methods.find((m: any) => m.id === packingMethodInput || m.packageType === packingMethodInput);
+            const defaultMethod = matchedMethod || methods.find((m: any) => m.isDefault) || methods[0];
             if (defaultMethod) {
               selectedPackingMethodId = defaultMethod.id;
               if (defaultMethod.unit) {
@@ -1002,7 +1046,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           }
 
           let rawSalePrice = 0;
-          const rate = formData.exchangeRate || 1400;
+          const rate = exRateInput || formData.exchangeRate || 1400;
           if (purchasePriceKrw > 0) {
             rawSalePrice = purchasePriceKrw / rate / (1 - marginRate / 100);
           } else {
@@ -1036,6 +1080,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             lineNumber: idx + 1,
             productCode: p ? `[${p.productCode}] ${displayName}` : rawCode,
             productName: displayName,
+            supplierName: supplierNameInput || (p?.supplierName || (p as any)?.supplier || ''),
             spec,
             description: displayName,
             quantity,
