@@ -480,7 +480,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     }
   };
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingCategory, setUploadingCategory] = useState<'TDS' | 'MSDS' | '기타' | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<'TDS' | 'MSDS' | '기타' | null>(null);
 
   const handleDragOverDoc = (e: React.DragEvent, category: 'TDS' | 'MSDS' | '기타') => {
@@ -510,42 +510,47 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
   const handleDocUpload = async (files: FileList | null, category: 'TDS' | 'MSDS' | '기타') => {
     if (!files || files.length === 0) return;
-    setIsUploading(true);
-    const prodId = initialProduct?.id || formData.productCode || `temp_${Date.now()}`;
-    const newDocs = [...(formData.technicalDocuments || [])];
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const uniqueFileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `products/${prodId}/${uniqueFileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+    setUploadingCategory(category);
+    try {
+      const prodId = initialProduct?.id || formData.productCode || `temp_${Date.now()}`;
+      const newDocs = [...(formData.technicalDocuments || [])];
       
-      await new Promise<void>((resolve) => {
-        uploadTask.on('state_changed', null, 
-          (error: any) => {
-            console.error("Upload failed for", file.name, error);
-            resolve();
-          }, 
-          async () => {
-            try {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              newDocs.push({
-                name: file.name,
-                url,
-                size: file.size,
-                path: uploadTask.snapshot.ref.fullPath,
-                category
-              });
-            } catch(e) {
-              console.error("Download URL error", e);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniqueFileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `products/${prodId}/${uniqueFileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        
+        await new Promise<void>((resolve) => {
+          uploadTask.on('state_changed', null, 
+            (error: any) => {
+              console.error("Upload failed for", file.name, error);
+              resolve();
+            }, 
+            async () => {
+              try {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                newDocs.push({
+                  name: file.name,
+                  url,
+                  size: file.size,
+                  path: uploadTask.snapshot.ref.fullPath,
+                  category
+                });
+              } catch(e) {
+                console.error("Download URL error", e);
+              }
+              resolve();
             }
-            resolve();
-          }
-        );
-      });
+          );
+        });
+      }
+      setFormData(prev => ({ ...prev, technicalDocuments: newDocs }));
+    } catch (e: any) {
+      console.error("Doc upload error:", e);
+    } finally {
+      setUploadingCategory(null);
     }
-    setFormData(prev => ({ ...prev, technicalDocuments: newDocs }));
-    setIsUploading(false);
   };
 
   const handleDocDelete = async (index: number) => {
@@ -1680,6 +1685,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   {(['TDS', 'MSDS', '기타'] as const).map(cat => {
                     const docsOfCat = (formData.technicalDocuments || []).filter(d => d.category === cat);
                     const isDragOver = dragOverCategory === cat;
+                    const isCatUploading = uploadingCategory === cat;
                     
                     return (
                       <div 
@@ -1735,7 +1741,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             onMouseOver={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#3b82f6'; }}
                             onMouseOut={e => { if (!isDragOver) e.currentTarget.style.borderColor = 'var(--border-default)'; }}
                           >
-                            {isUploading 
+                            {isCatUploading 
                               ? '📤 업로드 중...' 
                               : (isDragOver 
                                   ? '📥 여기에 파일 내려놓기' 
