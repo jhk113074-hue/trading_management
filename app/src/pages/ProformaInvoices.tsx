@@ -450,7 +450,7 @@ export const ProformaInvoices: React.FC = () => {
       </header>
 
       {/* 간단 대시보드 스탯 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 견적 건수</span>
@@ -464,13 +464,6 @@ export const ProformaInvoices: React.FC = () => {
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.quotesYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.quotesYsAmount).toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalQuotesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>예상 총 영업이익</span>
-            <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 700 }}>(평균 마진율: {piStats.avgMarginRate.toFixed(1)}%)</span>
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#15803d' }}>${piStats.totalExpectedProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -605,10 +598,6 @@ export const ProformaInvoices: React.FC = () => {
                 TOTAL (USD) {getSortIcon('totalUsd')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('totalUsd', e)} />
               </th>
-              <th style={{ padding: '12px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.expectedProfit, minWidth: colWidths.expectedProfit, maxWidth: colWidths.expectedProfit, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#15803d', background: '#f0fdf4', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                EXPECTED PROFIT
-                <ResizeHandle onMouseDown={(e) => handleResizeStart('expectedProfit', e)} />
-              </th>
               <th style={{ padding: '12px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 ISSUER
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('issuingCompany', e)} />
@@ -679,19 +668,6 @@ export const ProformaInvoices: React.FC = () => {
                     </td>
                     <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '14px' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.expectedProfit, minWidth: colWidths.expectedProfit, maxWidth: colWidths.expectedProfit, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#15803d', fontSize: '13px' }}>
-                      {(() => {
-                        if (!p.items || !Array.isArray(p.items)) return '-';
-                        const profit = p.items.reduce((iSum, it) => {
-                          const costUsd = (it as any).purchasePriceUsd > 0 
-                            ? (it as any).purchasePriceUsd 
-                            : (((it as any).purchasePriceKrw || 0) / ((it as any).exchangeRate || p.exchangeRate || 1400));
-                          return iSum + (((it as any).salePriceUsd || 0) - costUsd) * ((it as any).quantity || 0);
-                        }, 0);
-                        const marginPct = (p.totalUsd || 0) > 0 ? (profit / p.totalUsd) * 100 : 0;
-                        return `$${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPct.toFixed(1)}%)`;
-                      })()}
                     </td>
                     <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }}>{issuerBadge}</td>
                     <td style={{ padding: '9px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
