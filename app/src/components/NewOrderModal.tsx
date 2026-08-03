@@ -27,9 +27,11 @@ interface Props {
   onSaveSuccess: () => void;
   currentUser: string;
   initialQuotationId?: string;
+  initialOrder?: Order;
+  isCopy?: boolean;
 }
 
-export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, currentUser, initialQuotationId }) => {
+export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, currentUser, initialQuotationId, initialOrder, isCopy }) => {
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
@@ -60,7 +62,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     poDate: new Date().toISOString().split('T')[0],
     requestedDelivery: '',
     remark: '',
-    status: '주문' as const,
+    status: '주문' as any,
     exchangeRate: 1400,
     issuingCompany: 'YSACC' as 'YSACC' | 'YS' | '영성ACC',
     // PI-derived shipping fields
@@ -142,6 +144,52 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       }
     }
   }, [initialQuotationId, quotations]);
+
+  // Pre-load from initialOrder if passed (PO 복사 및 수정)
+  useEffect(() => {
+    if (initialOrder) {
+      setFormData(prev => ({
+        ...prev,
+        type: (initialOrder as any).type || 'trade',
+        poId: isCopy ? '' : (initialOrder.ciNumber || initialOrder.id || ''),
+        custPo: initialOrder.custPo || '',
+        quotationId: initialOrder.quotationId || '',
+        customerId: (initialOrder as any).customerId || '',
+        customerName: initialOrder.customer || (initialOrder as any).customerName || '',
+        customerAddress: (initialOrder as any).customerAddress || '',
+        contactPerson: (initialOrder as any).contactPerson || '',
+        manager: currentUser || initialOrder.manager || '',
+        incoterms: (initialOrder.incoterms as any) || prev.incoterms,
+        paymentTerms: initialOrder.paymentTerms || prev.paymentTerms,
+        poDate: isCopy ? new Date().toISOString().split('T')[0] : (initialOrder.poDate || new Date().toISOString().split('T')[0]),
+        requestedDelivery: initialOrder.requestedDelivery || '',
+        remark: initialOrder.remark || '',
+        status: isCopy ? '주문' : (initialOrder.status || '주문'),
+        exchangeRate: initialOrder.exchangeRate || prev.exchangeRate,
+        issuingCompany: initialOrder.issuingCompany || prev.issuingCompany,
+        departurePort: (initialOrder as any).departurePort || '',
+        destinationPort: (initialOrder as any).destinationPort || '',
+        packagingSpec: (initialOrder as any).packagingSpec || '',
+        shippingMethod: (initialOrder as any).shippingMethod || '',
+        deliveryTerm: (initialOrder as any).deliveryTerm || '',
+        origin: (initialOrder as any).origin || '',
+        yourRef: (initialOrder as any).yourRef || '',
+        piDate: (initialOrder as any).piDate || '',
+        validUntilDate: (initialOrder as any).validUntilDate || ''
+      }));
+
+      if (Array.isArray(initialOrder.items) && initialOrder.items.length > 0) {
+        setItems(initialOrder.items.map((it, idx) => ({
+          ...it,
+          itemId: (idx + 1).toString()
+        })));
+      }
+
+      if (Array.isArray(initialOrder.forwarders) && initialOrder.forwarders.length > 0) {
+        setForwarders(initialOrder.forwarders);
+      }
+    }
+  }, [initialOrder, isCopy, currentUser]);
 
   // Auto-generate PO Number has been removed. ID is inputted manually as Confirmed CI Number.
 
@@ -545,8 +593,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             onMouseDown={handleMouseDown}
             style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', borderRadius: '12px 12px 0 0', cursor: 'move', userSelect: 'none' }}>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>신규 PO(발주서) 등록</div>
-              <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
+                {isCopy ? '📋 PO 복사 등록 (신규 작성)' : (initialOrder ? '✏️ PO 정보 수정' : '➕ 신규 PO(발주서) 등록')}
+              </div>
+              <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
+                {isCopy ? '기존 PO의 고객사 및 품목 정보 기반으로 신규 PO를 빠르게 복사 등록합니다.' : '고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.'}
+              </div>
             </div>
             <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#475569'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>✕</button>
           </div>

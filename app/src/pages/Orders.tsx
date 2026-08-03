@@ -130,6 +130,20 @@ export const Orders: React.FC = () => {
   const [rangeStart, setRangeStart] = useState<string>(() => getSavedFilter('rangeStart', new Date().toISOString().split('T')[0]));
   const [rangeEnd, setRangeEnd] = useState<string>(() => getSavedFilter('rangeEnd', new Date().toISOString().split('T')[0]));
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | undefined>(undefined);
+  const [selectedCopyOrder, setSelectedCopyOrder] = useState<Order | undefined>(undefined);
+  const [isCopyMode, setIsCopyMode] = useState<boolean>(false);
+
+  const handleCopyOrder = (order: Order) => {
+    setSelectedCopyOrder(order);
+    setIsCopyMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenNewOrder = () => {
+    setSelectedCopyOrder(undefined);
+    setIsCopyMode(false);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     try {
@@ -743,9 +757,32 @@ export const Orders: React.FC = () => {
         {/* 카드 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {order.ciNumber || order.id}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {order.ciNumber || order.id}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyOrder(order);
+                }}
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  padding: '1px 5px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+                title="PO 복사"
+              >
+                📋 복사
+              </button>
+            </div>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {order.customer}
             </span>
@@ -1063,7 +1100,35 @@ export const Orders: React.FC = () => {
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
                       <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
-                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
+                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{order.ciNumber || order.id}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyOrder(order);
+                            }}
+                            style={{
+                              background: '#f1f5f9',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: '#475569',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                            title="PO 복사 (동일 내용으로 신규 PO 등록)"
+                          >
+                            📋 복사
+                          </button>
+                        </div>
+                      </td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
                       <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
@@ -1243,7 +1308,7 @@ export const Orders: React.FC = () => {
             📥 목록 받기 (Excel)
           </button>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenNewOrder}
             style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
             onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
             onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
@@ -1282,8 +1347,6 @@ export const Orders: React.FC = () => {
       {/* 뷰 전환 탭 + 필터 통합 한 줄 */}
       <FilterBar />
 
-
-
       {/* 뷰 컨텐츠 */}
       {loading ? (
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
@@ -1304,10 +1367,12 @@ export const Orders: React.FC = () => {
       {/* 신규 PO 모달 */}
       {isModalOpen && (
         <NewOrderModal
-          onClose={() => { setIsModalOpen(false); setSelectedQuotationId(undefined); }}
-          onSaveSuccess={() => { setIsModalOpen(false); setSelectedQuotationId(undefined); }}
+          onClose={() => { setIsModalOpen(false); setSelectedQuotationId(undefined); setSelectedCopyOrder(undefined); setIsCopyMode(false); }}
+          onSaveSuccess={() => { setIsModalOpen(false); setSelectedQuotationId(undefined); setSelectedCopyOrder(undefined); setIsCopyMode(false); }}
           currentUser={currentUser}
           initialQuotationId={selectedQuotationId}
+          initialOrder={selectedCopyOrder}
+          isCopy={isCopyMode}
         />
       )}
     </div>
