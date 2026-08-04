@@ -783,7 +783,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>면장상 환율 (₩/1$)</label>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) (₩/1$)</label>
               <input
                 type="number"
                 placeholder="예: 1400"

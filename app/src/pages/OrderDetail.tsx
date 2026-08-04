@@ -10373,9 +10373,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
                     <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '160px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출면장 기준환율 {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1352.50" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1478.44" />
                   </div>
 
                   {/* B/L 번호 목록 다중 입력 */}
@@ -12303,12 +12303,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           </div>
                         </div>
                         <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                          <div style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>적용 수출면장환율</div>
+                          <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>적용 BL 선적일자 기준 환율(서울외국환중개 사이트)</div>
                           <div style={{ fontSize: '16.5px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
                             ₩{customsRate.toLocaleString()} KRW
                           </div>
                           <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            {basicForm.customsExchangeRate ? '수출면장 환율 적용됨' : 'PI 환율 또는 기본 환율 적용됨'}
+                            {basicForm.customsExchangeRate ? 'BL 선적일자 기준 환율 적용됨' : 'PI 환율 또는 기본 환율 적용됨'}
                           </div>
                         </div>
                         <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.181',
+    version: 'v2.8.181',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '환율 명칭 개편 [BL 선적일자 기준 환율 (서울외국환중개 사이트)] 적용',
+    content: '• 기존 [수출면장 기준환율] / [면장상 환율] 레이블 명칭을 사용자 요청에 맞춰 [BL 선적일자 기준 환율(서울외국환중개 사이트)]로 명확히 명칭 변경 적용\n• 주문 상세 및 퀵 수정 모달 등의 관련 UI 레이블 일괄 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.180',
     version: 'v2.8.180',
     date: '2026-08-04',
