@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.183',
+    version: 'v2.8.183',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '주문관리 자동 업무 생성 중단 및 기존 자동생성 건 자동 정돈',
+    content: '• 주문 변경/저장 시 자동업무([자동] 주문 관리...)가 생성·갱신되지 않도록 비활성화 적용\n• 기존에 자동 생성되었던 주문관리 자동 업무 항목 자동 정리 정돈',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.182',
     version: 'v2.8.182',
     date: '2026-08-04',

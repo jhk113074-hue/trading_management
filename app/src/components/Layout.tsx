@@ -178,6 +178,35 @@ export const Layout: React.FC = () => {
     cleanUpDuplicates();
   }, []);
 
+  // Clean up existing auto-generated Order management tasks per user request
+  React.useEffect(() => {
+    const cleanUpOrderAutoTasks = async () => {
+      try {
+        const hasCleaned = localStorage.getItem('has_cleaned_order_auto_tasks_v1');
+        if (hasCleaned) return;
+
+        const { query, collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+
+        const q = query(collection(db, 'tasks'));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            if (data.title && typeof data.title === 'string' && data.title.includes('[자동] 주문 관리')) {
+              await deleteDoc(doc(db, 'tasks', docSnap.id));
+              console.log('Purged auto order task:', docSnap.id);
+            }
+          }
+        }
+        localStorage.setItem('has_cleaned_order_auto_tasks_v1', 'true');
+      } catch (err) {
+        console.error("Purge auto order tasks error:", err);
+      }
+    };
+    cleanUpOrderAutoTasks();
+  }, []);
+
   // 2 Hours Session Timeout Monitor Hook
   React.useEffect(() => {
     if (!userProfile) return;

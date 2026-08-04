@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc, addDoc, query, where } from 'firebase/firestore';
+import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage, auth } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -2016,76 +2016,9 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  const autoRegisterOrderTask = async (piNum: string, customerName: string, actionDescription: string) => {
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
-      if (isMonitoringUser({ email: currentUser.email || '', name: currentUser.displayName || '' })) {
-        console.log('Skip autoRegisterOrderTask for monitoring user:', currentUser.email);
-        return;
-      }
-      const userKey = currentUser.email?.split('@')[0] || '';
-      let assigneeId = userKey;
-      let assigneeName = '시스템';
-
-      if (userKey === 'jhkim1130') {
-        assigneeId = 'jhkim1130';
-        assigneeName = '김주한';
-      } else if (userKey === 'jhk010624') {
-        assigneeId = 'jhk010624';
-        assigneeName = '김하은';
-      } else if (userKey === 'alexpark') {
-        assigneeId = 'alexpark';
-        assigneeName = '박현';
-      } else {
-        assigneeId = userKey || 'system';
-        assigneeName = currentUser.displayName || userKey || '시스템';
-      }
-
-      // Look for an existing incomplete auto task for this Order
-      const q = query(
-        collection(db, 'tasks'),
-        where('title', '==', `[자동] 주문 관리: ${customerName} (PI: ${piNum})`),
-        where('status', '!=', 'DONE')
-      );
-      const snap = await getDocs(q);
-      
-      const taskDescription = `주문관리(PI: ${piNum}, 바이어: ${customerName})의 일부 업무가 진행 및 갱신되었습니다.\n- 변경/작업 내역:\n  ${actionDescription}\n- 담당자: ${assigneeName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
-      
-      if (!snap.empty) {
-        // Option A: Update existing incomplete task
-        const existingDoc = snap.docs[0];
-        const existingData = existingDoc.data() as any;
-        const updatedDesc = `${existingData.description || ''}\n\n[업데이트 - ${new Date().toLocaleTimeString()}]\n- ${actionDescription}`;
-        
-        await updateDoc(doc(db, 'tasks', existingDoc.id), {
-          description: updatedDesc,
-          updatedAt: new Date().toISOString()
-        });
-        console.log('Updated existing auto OrderTask:', existingDoc.id);
-      } else {
-        // Create a new task
-        const newTask = {
-          title: `[자동] 주문 관리: ${customerName} (PI: ${piNum})`,
-          description: taskDescription,
-          status: 'IN_PROGRESS',
-          type: 'DAILY',
-          scheduleType: 'SELF',
-          importance: 'B',
-          urgency: 5,
-          quadrant: 'Q2',
-          assigneeId: assigneeId,
-          assigneeName: assigneeName,
-          createdBy: assigneeId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        await addDoc(collection(db, 'tasks'), newTask);
-        console.log('Created new auto OrderTask');
-      }
-    } catch (e) {
-      console.error('Failed to auto register Order task:', e);
-    }
+  const autoRegisterOrderTask = async (_piNum: string, _customerName: string, _actionDescription: string) => {
+    // Auto order task creation disabled per user request
+    return;
   };
 
   const autoCompleteOrderTask = async (piNum: string, customerName: string) => {
