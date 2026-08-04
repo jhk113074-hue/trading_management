@@ -689,6 +689,7 @@ export const DomesticTrade: React.FC = () => {
       {showCustomerSearchModal && (
         <CustomerSearchModal
           customers={dbCustomers}
+          initialSearchQuery={customerName || ''}
           onClose={() => setShowCustomerSearchModal(false)}
           onSelect={handleSelectCustomer}
           onRefreshCustomers={fetchTradesAndMasters}

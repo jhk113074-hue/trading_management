@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.187',
+    version: 'v2.8.187',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '고객사 검색 모달(Subwindow) 열기 시 입력란 텍스트 자동 검색어 반영 연동',
+    content: '• 주문/견적/무역관리 양식의 [고객정보] 입력란 옆 [검색] 버튼 클릭 시, 기존에 작성/선택되어 있던 업체명 텍스트가 고객사 검색 팝업 검색창에 자동으로 사전 입력되어 즉시 검색되도록 기능 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.186',
     version: 'v2.8.186',
     date: '2026-08-04',

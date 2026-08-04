@@ -9,9 +9,10 @@ interface Props {
   onSelect: (customer: Customer) => void;
   customers: Customer[];
   onRefreshCustomers?: () => void;
+  initialSearchQuery?: string;
 }
 
-export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, customers, onRefreshCustomers }) => {
+export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, customers, onRefreshCustomers, initialSearchQuery }) => {
   // Real-time local customers list state
   const [customerList, setCustomerList] = useState<Customer[]>(customers || []);
 
@@ -21,6 +22,14 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
       setCustomerList(customers);
     }
   }, [customers]);
+
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery || '');
+
+  useEffect(() => {
+    if (initialSearchQuery !== undefined && initialSearchQuery !== null) {
+      setSearchTerm(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   // Real-time Firestore Customer Listener
   useEffect(() => {
@@ -71,7 +80,6 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
     };
   }, [isDragging]);
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [isCustModalOpen, setIsCustModalOpen] = useState(false);
   const [editingCust, setEditingCust] = useState<Customer | undefined>(undefined);

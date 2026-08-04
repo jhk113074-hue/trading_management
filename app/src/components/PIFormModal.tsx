@@ -3550,6 +3550,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       {isCustomerSearchOpen && (
         <CustomerSearchModal
           customers={customers}
+          initialSearchQuery={formData.customerName || ''}
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={(c) => {
             setFormData(prev => ({

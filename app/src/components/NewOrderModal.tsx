@@ -1384,6 +1384,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       {isCustomerSearchOpen && (
         <CustomerSearchModal
           customers={customers}
+          initialSearchQuery={formData.customerName || ''}
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={(cust) => {
             handleFormDataChange('customerId', cust.id);

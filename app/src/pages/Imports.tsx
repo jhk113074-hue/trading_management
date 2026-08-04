@@ -2791,6 +2791,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       {showCustomerModal && (
         <CustomerSearchModal
           customers={customers}
+          initialSearchQuery={editingRequest?.finalCustomer || ''}
           onClose={() => setShowCustomerModal(false)}
           onSelect={(cust) => {
             setEditingRequest(p => p ? ({ ...p, finalCustomer: cust.name }) : null);

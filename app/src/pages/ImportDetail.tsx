@@ -5505,6 +5505,7 @@ customsDuty,
       {showCustomerModal && (
         <CustomerSearchModal
           customers={customers}
+          initialSearchQuery={request?.finalCustomer || ''}
           onClose={() => setShowCustomerModal(false)}
           onSelect={(cust) => {
             const updated = importRequests.map(r => r.id === id ? { ...r, finalCustomer: cust.name } : r);

@@ -13234,6 +13234,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       {isCustomerSearchOpen && (
         <CustomerSearchModal
           customers={customers}
+          initialSearchQuery={basicForm.customer || ''}
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={async (customer) => {
             const custName = customer.name || '';
