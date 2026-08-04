@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.186',
+    version: 'v2.8.186',
+    date: '2026-08-04',
+    category: '버그수정',
+    title: '고객사 팝업 이력 내 타 고객사 주문 교차 혼선 매칭 방지 정밀화',
+    content: '• 고객사 코드/ID(customerCode/customerId)가 존재하는 주문건의 경우 타 거래처 이력에 혼선 매칭되지 않도록 코드 매칭 우선권 엄격 적용\n• 유사업체명(예: Union / Vina / Factory 등) 부분 키워드 오매칭 방지 로직 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.185',
     version: 'v2.8.185',
     date: '2026-08-04',

@@ -356,6 +356,11 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const orderSnap = await getDocs(ordersRef);
         const cleanTargetName   = targetName.replace(/[^a-z0-9]/g, '');
         const cleanTargetNameKo = targetNameKo.replace(/[^a-z0-9가-힣]/g, '');
+        const targetCodeLower = targetCode ? targetCode.toLowerCase() : '';
+        const targetIdLower = targetId ? targetId.toLowerCase() : '';
+        const exactNameClean = exactName ? exactName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '') : '';
+        const exactNameKoClean = exactNameKo ? exactNameKo.toLowerCase().replace(/[^a-z0-9가-힣]/g, '') : '';
+
         const orderResults = new Map<string, any>();
 
         orderSnap.docs.forEach((d: any) => {
@@ -365,19 +370,35 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           const cId = String(data.customerId || '').trim().toLowerCase();
           const cCode = String(data.customerCode || '').trim().toLowerCase();
 
-          const matchCode = targetCode && (cCode === targetCode.toLowerCase() || cId === targetCode.toLowerCase());
-          const matchId = targetId && (cId === targetId.toLowerCase() || cCode === targetId.toLowerCase());
-
-          let matchName = false;
-          if (cleanTargetName && cleanTargetName.length >= 2) {
-            matchName = cValClean.includes(cleanTargetName) || cleanTargetName.includes(cValClean);
+          // 1. If order has an explicit customerCode or customerId, enforce code matching
+          const orderHasCode = Boolean(cCode || cId);
+          if (orderHasCode) {
+            const isCodeMatch = (cCode && (cCode === targetCodeLower || cCode === targetIdLower)) ||
+                                (cId && (cId === targetCodeLower || cId === targetIdLower));
+            if (isCodeMatch) {
+              orderResults.set(d.id, toExportRecord(d));
+            }
+            // Code is present; if it doesn't match, do not fallback to fuzzy name matching
+            return;
           }
-          let matchNameKo = false;
-          if (cleanTargetNameKo && cleanTargetNameKo.length >= 2) {
-            matchNameKo = cValClean.includes(cleanTargetNameKo) || cleanTargetNameKo.includes(cValClean);
+
+          // 2. Fallback for legacy orders without customerCode/customerId: Match strictly by customer name
+          let isNameMatch = false;
+          if (cValClean && (cleanTargetName || cleanTargetNameKo || exactNameClean || exactNameKoClean)) {
+            if (cValClean === cleanTargetName || cValClean === cleanTargetNameKo ||
+                (exactNameClean && cValClean === exactNameClean) ||
+                (exactNameKoClean && cValClean === exactNameKoClean)) {
+              isNameMatch = true;
+            } else if (cleanTargetName.length >= 4 && cValClean.includes(cleanTargetName)) {
+              isNameMatch = true;
+            } else if (cleanTargetNameKo.length >= 4 && cValClean.includes(cleanTargetNameKo)) {
+              isNameMatch = true;
+            } else if (cValClean.length >= 8 && (cleanTargetName.includes(cValClean) || cleanTargetNameKo.includes(cValClean))) {
+              isNameMatch = true;
+            }
           }
 
-          if (matchCode || matchId || matchName || matchNameKo) {
+          if (isNameMatch) {
             orderResults.set(d.id, toExportRecord(d));
           }
         });
