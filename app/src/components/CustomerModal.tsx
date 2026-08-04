@@ -237,26 +237,113 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         const toExportRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
-          const paidAmt = data.paymentStatus === 'PAID' ? totAmt : Number(data.paidAmount || 0);
+
+          let paidAmt = 0;
+          if (data.paymentStatus === 'PAID' || data.paymentStatus === 'COMPLETED' || data.paymentStatus === '수금완료' || data.status === '완료') {
+            paidAmt = totAmt;
+          } else {
+            let sumCollected = 0;
+            if (Array.isArray(data.paymentCollectedInstallments) && data.paymentCollectedInstallments.length > 0) {
+              sumCollected = data.paymentCollectedInstallments.reduce((sum: number, inst: any) => {
+                return sum + (Number(inst.amount) || Number(inst.total) || 0);
+              }, 0);
+            }
+            const rootPaid = Number(
+              data.paidAmount ||
+              data.collectedAmount ||
+              data.depositAmount ||
+              data.totalCollectedAmount ||
+              data.totalCollectedUsd ||
+              data.paymentCollectedAmount ||
+              0
+            );
+            paidAmt = Math.max(sumCollected, rootPaid);
+          }
+
           const rawDate = data.orderDate || data.piDate || data.createdAt;
           const dateStr = parseDateStr(rawDate);
-          return { id: d.id, type: '수출', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'PAID' : 'UNPAID') };
+          const isFull = paidAmt >= totAmt && totAmt > 0;
+          const isPartial = !isFull && paidAmt > 0;
+
+          return {
+            id: d.id,
+            type: '수출',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'USD',
+            paidAmount: paidAmt,
+            paymentStatus: data.paymentStatus || (isFull ? 'PAID' : isPartial ? 'PARTIAL' : 'UNPAID')
+          };
         };
+
         const toImportRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.invoiceAmount || 0);
-          const paidAmt = data.paymentStatus === 'COMPLETED' || data.status === '완료' ? totAmt : Number(data.paidAmount || 0);
+
+          let paidAmt = 0;
+          if (data.paymentStatus === 'COMPLETED' || data.paymentStatus === 'PAID' || data.status === '완료' || data.paymentStatus === '수금완료') {
+            paidAmt = totAmt;
+          } else {
+            let sumCollected = 0;
+            if (Array.isArray(data.paymentInstallments) && data.paymentInstallments.length > 0) {
+              sumCollected = data.paymentInstallments.reduce((sum: number, inst: any) => sum + (Number(inst.amount) || Number(inst.total) || 0), 0);
+            }
+            const rootPaid = Number(data.paidAmount || data.depositAmount || data.collectedAmount || 0);
+            paidAmt = Math.max(sumCollected, rootPaid);
+          }
+
           const rawDate = data.importDate || data.blDate || data.createdAt;
           const dateStr = parseDateStr(rawDate);
-          return { id: d.id, type: '수입', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id, totalAmount: totAmt, currency: data.currency || 'USD', paidAmount: paidAmt, paymentStatus: data.paymentStatus || (paidAmt >= totAmt && totAmt > 0 ? 'COMPLETED' : 'PENDING') };
+          const isFull = paidAmt >= totAmt && totAmt > 0;
+          const isPartial = !isFull && paidAmt > 0;
+
+          return {
+            id: d.id,
+            type: '수입',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'USD',
+            paidAmount: paidAmt,
+            paymentStatus: data.paymentStatus || (isFull ? 'COMPLETED' : isPartial ? 'PARTIAL' : 'PENDING')
+          };
         };
+
         const toDomesticRecord = (d: any) => {
           const data = d.data();
           const totAmt = Number(data.totalAmount || data.totalPrice || 0);
-          const paidAmt = data.depositStatus === '입금완료' || data.status === '완료' ? totAmt : Number(data.depositAmount || 0);
+
+          let paidAmt = 0;
+          if (data.depositStatus === '입금완료' || data.status === '완료' || data.paymentStatus === 'PAID') {
+            paidAmt = totAmt;
+          } else {
+            let sumCollected = 0;
+            if (Array.isArray(data.paymentInstallments) && data.paymentInstallments.length > 0) {
+              sumCollected = data.paymentInstallments.reduce((sum: number, inst: any) => sum + (Number(inst.amount) || Number(inst.total) || 0), 0);
+            }
+            const rootPaid = Number(data.depositAmount || data.paidAmount || data.collectedAmount || 0);
+            paidAmt = Math.max(sumCollected, rootPaid);
+          }
+
           const rawDate = data.tradeDate || data.invoiceDate || data.createdAt;
           const dateStr = parseDateStr(rawDate);
-          return { id: d.id, type: '국내', date: dateStr, year: dateStr.substring(0, 4), ciNumber: data.tradeNo || data.statementNo || d.id, totalAmount: totAmt, currency: data.currency || 'KRW', paidAmt: paidAmt, paymentStatus: data.depositStatus || (paidAmt >= totAmt && totAmt > 0 ? '입금완료' : '미입금') };
+          const isFull = paidAmt >= totAmt && totAmt > 0;
+          const isPartial = !isFull && paidAmt > 0;
+
+          return {
+            id: d.id,
+            type: '국내',
+            date: dateStr,
+            year: dateStr.substring(0, 4),
+            ciNumber: data.tradeNo || data.statementNo || d.id,
+            totalAmount: totAmt,
+            currency: data.currency || 'KRW',
+            paidAmount: paidAmt,
+            paymentStatus: data.depositStatus || (isFull ? '입금완료' : isPartial ? '부분입금' : '미입금')
+          };
         };
 
         const exportRecords: any[] = [];
@@ -735,6 +822,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                 : `$${s.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                               const isPaidFull = s.paidAmount >= s.totalAmount && s.totalAmount > 0;
+                              const isPaidPartial = !isPaidFull && s.paidAmount > 0;
 
                               return (
                                 <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
@@ -750,14 +838,14 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                   </td>
                                   <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb' }}>{s.ciNumber}</td>
                                   <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{amtFormatted}</td>
-                                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#3b82f6' }}>{paidFormatted}</td>
+                                  <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : isPaidPartial ? '#d97706' : '#3b82f6' }}>{paidFormatted}</td>
                                   <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                                     <span style={{
                                       fontSize: '11px', fontWeight: 800, padding: '2px 7px', borderRadius: '4px',
-                                      background: isPaidFull ? '#dcfce7' : '#fee2e2',
-                                      color: isPaidFull ? '#15803d' : '#b91c1c'
+                                      background: isPaidFull ? '#dcfce7' : isPaidPartial ? '#fef3c7' : '#fee2e2',
+                                      color: isPaidFull ? '#15803d' : isPaidPartial ? '#b45309' : '#b91c1c'
                                     }}>
-                                      {isPaidFull ? '🟢 수금완료' : '🔴 미수금'}
+                                      {isPaidFull ? '🟢 수금완료' : isPaidPartial ? '🟡 부분수금' : '🔴 미수금'}
                                     </span>
                                   </td>
                                 </tr>

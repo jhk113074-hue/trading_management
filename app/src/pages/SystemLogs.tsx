@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.184',
+    version: 'v2.8.184',
+    date: '2026-08-04',
+    category: '버그수정',
+    title: '고객사 정보 [통합 주문/판매 및 수금 이력] 수금/입금 금액 실시간 집계 동기화 수정',
+    content: '• 주문 상세 [대금 수금 관리 (분할 영수)]에 등록된 수금 내역(paymentCollectedInstallments) 및 최상위 입금 금액 필드가 고객사 CRM 매출/수금 이력 탭에 정확히 집계 반영되도록 수금액 파싱 로직 개선\n• 수금 상태를 [🟢 수금완료 / 🟡 부분수금 / 🔴 미수금]으로 세분화 및 시각적 가독성 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.183',
     version: 'v2.8.183',
     date: '2026-08-04',
