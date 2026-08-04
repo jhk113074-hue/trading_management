@@ -31,15 +31,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
   const [selectedSalesYear, setSelectedSalesYear] = useState<string>('ALL');
+  const [selectedCompany, setSelectedCompany] = useState<string>('ALL');
 
   const availableYears = useMemo<string[]>(() => {
     return Array.from(new Set(salesHistory.map((s: any) => s.year).filter((y: any) => y && y !== '-'))).sort().reverse();
   }, [salesHistory]);
 
   const filteredList = useMemo<any[]>(() => {
-    if (selectedSalesYear === 'ALL') return salesHistory;
-    return salesHistory.filter((s: any) => s.year === selectedSalesYear);
-  }, [salesHistory, selectedSalesYear]);
+    return salesHistory.filter((s: any) => {
+      const matchYear = selectedSalesYear === 'ALL' || s.year === selectedSalesYear;
+      const matchCompany = selectedCompany === 'ALL' || s.companyCode === selectedCompany;
+      return matchYear && matchCompany;
+    });
+  }, [salesHistory, selectedSalesYear, selectedCompany]);
 
   const salesCount = useMemo<number>(() => filteredList.length, [filteredList]);
 
@@ -267,12 +271,18 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           const isFull = paidAmt >= totAmt && totAmt > 0;
           const isPartial = !isFull && paidAmt > 0;
 
+          const rawComp = String(data.issuingCompany || data.companyType || data.seller || data.myCompany || '').trim();
+          const ciNoStr = String(data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id);
+          const isYS = rawComp === 'YS' || rawComp === '영성ACC' || ciNoStr.startsWith('YS-') || String(d.id).startsWith('YS-');
+
           return {
             id: d.id,
             type: '수출',
+            companyCode: isYS ? 'YS' : 'YSACC',
+            companyName: isYS ? '영성ACC' : '(주)와이에스에이씨씨',
             date: dateStr,
             year: dateStr.substring(0, 4),
-            ciNumber: data.ciNumber || data.piNumber || data.custPo || data.orderNo || d.id,
+            ciNumber: ciNoStr,
             totalAmount: totAmt,
             currency: data.currency || 'USD',
             paidAmount: paidAmt,
@@ -301,12 +311,18 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           const isFull = paidAmt >= totAmt && totAmt > 0;
           const isPartial = !isFull && paidAmt > 0;
 
+          const rawComp = String(data.importCompany || data.companyType || data.issuingCompany || '').trim();
+          const invNoStr = String(data.invoiceNo || data.blNo || data.importNo || d.id);
+          const isYS = rawComp === 'YS' || rawComp === '영성ACC' || invNoStr.startsWith('YS-') || String(d.id).startsWith('YS-');
+
           return {
             id: d.id,
             type: '수입',
+            companyCode: isYS ? 'YS' : 'YSACC',
+            companyName: isYS ? '영성ACC' : '(주)와이에스에이씨씨',
             date: dateStr,
             year: dateStr.substring(0, 4),
-            ciNumber: data.invoiceNo || data.blNo || data.importNo || d.id,
+            ciNumber: invNoStr,
             totalAmount: totAmt,
             currency: data.currency || 'USD',
             paidAmount: paidAmt,
@@ -335,12 +351,18 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           const isFull = paidAmt >= totAmt && totAmt > 0;
           const isPartial = !isFull && paidAmt > 0;
 
+          const rawComp = String(data.companyType || data.issuingCompany || '').trim();
+          const trNoStr = String(data.tradeNo || data.statementNo || d.id);
+          const isYS = rawComp === 'YS' || rawComp === '영성ACC' || trNoStr.startsWith('YS-') || String(d.id).startsWith('YS-');
+
           return {
             id: d.id,
             type: '국내',
+            companyCode: isYS ? 'YS' : 'YSACC',
+            companyName: isYS ? '영성ACC' : '(주)와이에스에이씨씨',
             date: dateStr,
             year: dateStr.substring(0, 4),
-            ciNumber: data.tradeNo || data.statementNo || d.id,
+            ciNumber: trNoStr,
             totalAmount: totAmt,
             currency: data.currency || 'KRW',
             paidAmount: paidAmt,
@@ -755,6 +777,26 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                         <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           💰 통합 주문/판매 및 수금 이력 ({salesCount}건)
                         </span>
+                        {/* Company Filter Dropdown */}
+                        <select
+                          value={selectedCompany}
+                          onChange={(e) => setSelectedCompany(e.target.value)}
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            backgroundColor: '#f8fafc',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        >
+                          <option value="ALL">🏢 전체 발행사 ({salesHistory.length}건)</option>
+                          <option value="YSACC">🏢 (주)와이에스에이씨씨 ({salesHistory.filter((s: any) => s.companyCode === 'YSACC').length}건)</option>
+                          <option value="YS">🏢 영성ACC ({salesHistory.filter((s: any) => s.companyCode === 'YS').length}건)</option>
+                        </select>
                         {/* Year Filter Dropdown */}
                         <select
                           value={selectedSalesYear}
@@ -781,8 +823,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                         * 수출주문관리, 수입주문관리, 국내주문관리 실시간 매칭 기록
                       </span>
                     </div>
-
-
 
                     {/* Financial Summary Badges */}
                     {filteredList.length > 0 && (
@@ -828,6 +868,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                             <tr>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>년월일 (Date)</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>구분</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>발행 주체</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>CI / 문서 번호</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>판매/계약 금액</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>수금/입금 금액</th>
@@ -880,6 +921,16 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                       {s.type === '수출' ? '🚢 수출' : s.type === '수입' ? '🛃 수입' : '🇰🇷 국내'}
                                     </span>
                                   </td>
+                                  <td style={{ padding: '6px 10px' }}>
+                                    <span style={{
+                                      fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                                      background: s.companyCode === 'YS' ? '#ecfdf5' : '#eff6ff',
+                                      color: s.companyCode === 'YS' ? '#059669' : '#2563eb',
+                                      border: s.companyCode === 'YS' ? '1px solid #a7f3d0' : '1px solid #bfdbfe'
+                                    }}>
+                                      🏢 {s.companyName}
+                                    </span>
+                                  </td>
                                   <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb', textDecoration: 'underline' }}>
                                     🔗 {s.ciNumber}
                                   </td>
@@ -902,8 +953,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                           {/* TOTAL Row */}
                           <tfoot style={{ background: '#f1f5f9', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
                             <tr>
-                              <td colSpan={3} style={{ padding: '10px', color: '#1e293b', fontSize: '13px' }}>
-                                📊 합계 (TOTAL - {selectedSalesYear === 'ALL' ? '전체' : selectedSalesYear + '년'} 총 {filteredList.length}건)
+                              <td colSpan={4} style={{ padding: '10px', color: '#1e293b', fontSize: '13px' }}>
+                                📊 합계 (TOTAL - {selectedCompany === 'ALL' ? '전체 발행사' : selectedCompany === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'} / {selectedSalesYear === 'ALL' ? '전체' : selectedSalesYear + '년'} 총 {filteredList.length}건)
                               </td>
                               <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a', fontSize: '13.5px' }}>
                                 {totalAmtUSD > 0 && <div>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.188',
+    version: 'v2.8.188',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '고객사 CRM 이력 내 (주)와이에스에이씨씨 vs 영성ACC 발행 주체 별도 구분 및 필터링 적용',
+    content: '• 고객사 정보 모달 내 [통합 주문/판매 및 수금 이력] 테이블에 [발행 주체] 컬럼 및 색상 뱃지((주)와이에스에이씨씨 - Blue / 영성ACC - Green) 추가\n• [전체 발행사], [(주)와이에스에이씨씨], [영성ACC] 드롭다운 필터 선택 시 주체별 매출/수금/미수금 금액 및 내역 자동 분리 집계 기능 구현',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.187',
     version: 'v2.8.187',
     date: '2026-08-04',
