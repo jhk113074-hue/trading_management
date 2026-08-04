@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.180',
+    version: 'v2.8.180',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '업무 BASKET & 전체업무리스트 완료 보고 팝업 연동 및 위임자 보고서 제출/셀프위임 예외 처리',
+    content: '• 업무중 BASKET에서 완료 BASKET으로 드래그 이동 시 [✅ 업무 완료 보고 & 코멘트 작성] 팝업창 자동 연결\n• 타인 위임 업무 완료 시 위임자에게 완료보고서 쪽지/메일 자동 제출 처리\n• 스스로 위임(셀프 생성/담당)된 업무는 위임자 보고서 제출 대상에서 자동 제외 및 팝업 레이블 정리 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.179',
     version: 'v2.8.179',
     date: '2026-08-04',

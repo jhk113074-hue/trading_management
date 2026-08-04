@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
+import { TaskCompletionModal } from '../components/TaskCompletionModal';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -336,7 +337,7 @@ const toLocalDateStr = (val?: string | Date): string => {
 
 export const Dashboard: React.FC = () => {
   const location = useLocation();
-  const { tasks, addTask, updateTask, loading } = useTasks();
+  const { tasks, addTask, updateTask, updateTaskStatus, loading } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile, currentUser } = useAuth();
 
@@ -926,6 +927,7 @@ export const Dashboard: React.FC = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverBasketId, setDragOverBasketId] = useState<string | null>(null);
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
 
   const unassignedTasks = useMemo(() => {
     return tasks.filter(t => (t.status === 'TODO' || t.status === 'PENDING') && (!t.assigneeId || !users.some(u => u.id === t.assigneeId)));
@@ -948,26 +950,30 @@ export const Dashboard: React.FC = () => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (newStatus === 'DONE') {
+      setCompletingTask(task);
+      setDraggingId(null);
+      setDragOverBasketId(null);
+      return;
+    }
+
     try {
-      await updateTask({ ...tasks.find(t => t.id === taskId)!, status: newStatus as any });
-      // 자동 날짜 기록 (IN_PROGRESS → startDate, DONE → dueDate/completedAt)
+      await updateTask({ ...task, status: newStatus as any });
       const today = new Date().toISOString().split('T')[0];
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
       const extraUpdates: Record<string, any> = { status: newStatus, updatedAt: new Date().toISOString() };
       if (newStatus === 'IN_PROGRESS' && !task.startDate) {
         extraUpdates.startDate = today;
         extraUpdates.completedAt = null;
-      }
-      if (newStatus === 'DONE') {
-        extraUpdates.dueDate = today;
-        extraUpdates.completedAt = new Date().toISOString();
       }
       await updateDoc(doc(db, 'tasks', taskId), extraUpdates);
     } catch (err) {
       console.error(err);
     }
     setDraggingId(null);
+    setDragOverBasketId(null);
   };
 
   const handleAssigneeDragOver = (e: React.DragEvent) => {
@@ -3087,6 +3093,18 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {completingTask && (
+        <TaskCompletionModal
+          taskTitle={completingTask.title}
+          assigneeName={completingTask.assigneeName}
+          requesterName={completingTask.requesterName}
+          onConfirm={async (comment) => {
+            await updateTaskStatus(completingTask.id, 'DONE', comment);
+            setCompletingTask(null);
+          }}
+          onCancel={() => setCompletingTask(null)}
+        />
       )}
     </div>
   );

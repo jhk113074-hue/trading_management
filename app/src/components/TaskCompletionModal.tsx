@@ -76,7 +76,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
           <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '12px', fontSize: '13px', color: '#166534' }}>
             <div style={{ fontWeight: 750, marginBottom: '4px' }}>📋 대상 업무: {taskTitle}</div>
             {assigneeName && <div style={{ fontSize: '12px', color: '#15803d' }}>담당자: {assigneeName}</div>}
-            {requesterName && <div style={{ fontSize: '12px', color: '#15803d' }}>위임자: {requesterName}</div>}
+            {requesterName && requesterName !== assigneeName && <div style={{ fontSize: '12px', color: '#15803d' }}>위임자: {requesterName}</div>}
           </div>
 
           <div>

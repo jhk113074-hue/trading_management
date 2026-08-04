@@ -28,7 +28,7 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   // Firestore 실시간 업무 데이터 구독
   useEffect(() => {
@@ -151,16 +151,40 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // 완료 보고 알림 발송
+  // 완료 보고 알림 발송 (스스로 위임은 제외)
   const sendCompletionNotification = async (task: Task, comment?: string) => {
     if (!currentUser) return;
-    const requesterId = task.createdBy || task.requesterId;
-    if (!requesterId || requesterId === currentUser.uid) return;
+
+    const assigneeId = task.assigneeId;
+    const assigneeName = task.assigneeName || userProfile?.name || currentUser.displayName || '';
+
+    const requesterId = task.requesterId || (task.createdBy && task.createdBy !== assigneeId && task.createdBy !== assigneeName ? task.createdBy : null);
+    const requesterName = task.requesterName;
+
+    // 스스로 위임(셀프 생성/담당) 여부 검증
+    const isSelfDelegated = 
+      (!requesterId && !requesterName) ||
+      (requesterId && assigneeId && requesterId === assigneeId) ||
+      (requesterId && currentUser.uid && requesterId === currentUser.uid) ||
+      (requesterName && assigneeName && requesterName === assigneeName) ||
+      (requesterName && currentUser.displayName && requesterName === currentUser.displayName) ||
+      (requesterName && userProfile?.name && requesterName === userProfile.name) ||
+      (task.createdBy && assigneeId && task.createdBy === assigneeId) ||
+      (task.createdBy && assigneeName && task.createdBy === assigneeName);
+
+    if (isSelfDelegated) {
+      return;
+    }
+
+    let targetReceiverId = requesterId;
+    if (!targetReceiverId || targetReceiverId === currentUser.uid || targetReceiverId === assigneeId) {
+      return;
+    }
 
     try {
-      const senderName = task.assigneeName || currentUser.displayName || '담당자';
+      const senderName = assigneeName || '담당자';
       await addDoc(collection(db, 'mails'), {
-        receiverId: requesterId,
+        receiverId: targetReceiverId,
         senderName: senderName,
         senderId: currentUser.uid,
         title: `✅ [업무 완료 보고] ${task.title}`,
