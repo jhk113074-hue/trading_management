@@ -5730,8 +5730,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               )}
             </div>
 
-            {/* 줄 3: 인코텀즈 / 결제 조건 / L/C 거래 여부 / 요청 납기일 / 제품준비일(최종 완료일) */}
-            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr 1fr' : '0.8fr 1.2fr 1.1fr 1fr 1.1fr', gap: '10px', width: '100%' }}>
+            {/* 줄 3: 인코텀즈 / 결제 조건 / L/C 거래 여부 / 요청 납기일 / ETD 일자 / 제품준비일(최종 완료일) */}
+            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr 1fr' : '0.8fr 1.2fr 1fr 1fr 1fr 1.1fr', gap: '10px', width: '100%' }}>
               {order?.type !== 'consulting' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                   <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>인코텀즈</span>
@@ -5774,6 +5774,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
                 <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
+
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>ETD (출항예정일)</span>
+                  <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(prev => ({ ...prev, etd: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              )}
 
               {order?.type !== 'consulting' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>

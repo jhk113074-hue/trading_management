@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.182',
+    version: 'v2.8.182',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '주문 상세 [📦 주문 기본 정보] 카드 내 ETD (출항예정일) 입력/조회 필드 추가',
+    content: '• 주문 상세 상단 [📦 주문 기본 정보] 영역 3번째 줄에 [ETD (출항예정일)] 날짜 선택 및 조회 필드 직관적 추가 적용\n• 수정 모드에서 ETD 일자를 자유롭게 지정·저장 및 물류 프로세스 연동 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.181',
     version: 'v2.8.181',
     date: '2026-08-04',
