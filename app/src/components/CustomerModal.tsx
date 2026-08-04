@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSave }) => {
+  const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'crm'>('info');
   const [crmTasks, setCrmTasks] = useState<any[]>([]);
@@ -825,7 +827,28 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                               const isPaidPartial = !isPaidFull && s.paidAmount > 0;
 
                               return (
-                                <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
+                                <tr
+                                  key={s.id}
+                                  onClick={() => {
+                                    onClose();
+                                    if (s.type === '수출') {
+                                      navigate(`/orders/${s.id}`);
+                                    } else if (s.type === '수입') {
+                                      navigate(`/imports/${s.id}`);
+                                    } else if (s.type === '국내') {
+                                      navigate(`/domestic-orders`);
+                                    }
+                                  }}
+                                  title={`${s.ciNumber} 클릭 시 해당 주문 상세 페이지로 이동`}
+                                  style={{
+                                    borderBottom: '1px solid #e2e8f0',
+                                    height: '40px',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.15s'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
                                   <td style={{ padding: '6px 10px', color: '#1e293b', fontWeight: 600 }}>{s.date}</td>
                                   <td style={{ padding: '6px 10px' }}>
                                     <span style={{
@@ -836,7 +859,9 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                       {s.type === '수출' ? '🚢 수출' : s.type === '수입' ? '🛃 수입' : '🇰🇷 국내'}
                                     </span>
                                   </td>
-                                  <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb' }}>{s.ciNumber}</td>
+                                  <td style={{ padding: '6px 10px', fontWeight: 700, color: '#2563eb', textDecoration: 'underline' }}>
+                                    🔗 {s.ciNumber}
+                                  </td>
                                   <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{amtFormatted}</td>
                                   <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : isPaidPartial ? '#d97706' : '#3b82f6' }}>{paidFormatted}</td>
                                   <td style={{ padding: '6px 10px', textAlign: 'center' }}>

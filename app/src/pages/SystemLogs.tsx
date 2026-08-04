@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.185',
+    version: 'v2.8.185',
+    date: '2026-08-04',
+    category: '기능개선',
+    title: '고객사 정보 [통합 주문/판매 및 수금 이력] 각 주문 행 클릭 시 해당 주문 상세 바로가기 연동',
+    content: '• 고객사 정보 팝업의 [통합 주문/판매 및 수금 이력] 테이블 행(또는 CI/문서번호 링크) 클릭 시 해당 수출주문(OrderDetail)/수입주문(ImportDetail)/국내주문 상세 페이지로 즉시 이동 연동\n• 행 마우스 호버 효과 및 CI 번호 링크 아이콘(🔗) 시각화 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.184',
     version: 'v2.8.184',
     date: '2026-08-04',
