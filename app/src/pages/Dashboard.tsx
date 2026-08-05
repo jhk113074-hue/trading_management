@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
@@ -337,6 +337,7 @@ const toLocalDateStr = (val?: string | Date): string => {
 
 export const Dashboard: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { tasks, addTask, updateTask, updateTaskStatus, loading } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile, currentUser } = useAuth();
@@ -456,9 +457,38 @@ export const Dashboard: React.FC = () => {
 
   // ── Calendar States & Subscription ──
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
 
   const derivedEvents = useMemo(() => {
     const list = [...calendarEvents];
+
+    // 1. Add approved annual leave / vacation events
+    leaveRequests.forEach(req => {
+      const start = (req.startDate || "").trim();
+      const end = (req.endDate || start).trim();
+      if (start) {
+        let typeLabel = '종일휴가';
+        if (req.leaveType === 'AM_HALF') typeLabel = '오전반차';
+        else if (req.leaveType === 'PM_HALF') typeLabel = '오후반차';
+        else if (req.leaveType === 'HOURLY') typeLabel = `시간차 (${req.startTime || ''}~${req.endTime || ''})`;
+        else if (req.totalDays && req.totalDays > 1) typeLabel = `휴가 (${req.totalDays}일)`;
+
+        list.push({
+          id: `leave-${req.id}`,
+          title: `✈️ [휴가] ${req.userName || '직원'} (${typeLabel})`,
+          type: '휴가',
+          startDate: start,
+          startTime: req.startTime || '09:00',
+          endDate: end,
+          endTime: req.endTime || '18:00',
+          isPublic: true,
+          creatorName: req.userName || 'System',
+          description: `신청자: ${req.userName || ''}\n구분: ${typeLabel}\n기간: ${start} ~ ${end} (${req.totalDays || 1}일)\n사유: ${req.reason || '사유 없음'}\n상태: 승인완료 (결재자: ${req.approvedBy || '관리자'})`
+        });
+      }
+    });
+
+    // 2. Add Export ETD events
     orders.forEach(o => {
       const etd = (o.etd || "").trim();
       if (etd) {
@@ -477,6 +507,7 @@ export const Dashboard: React.FC = () => {
       }
     });
     
+    // 3. Add Import ETA events
     imports.forEach(imp => {
       const eta = (imp.eta || "").trim();
       if (eta) {
@@ -496,7 +527,7 @@ export const Dashboard: React.FC = () => {
     });
 
     return list;
-  }, [calendarEvents, orders, imports]);
+  }, [calendarEvents, orders, imports, leaveRequests]);
 
 
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -506,7 +537,7 @@ export const Dashboard: React.FC = () => {
   const [activeDateEventsList, setActiveDateEventsList] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [eventForm, setEventForm] = useState({
     title: '',
-    type: '개인일정' as '개인일정' | '미팅' | '출장' | '기타',
+    type: '개인일정' as '개인일정' | '미팅' | '출장' | '기타' | '휴가',
     startDate: '',
     startTime: '09:00',
     endDate: '',
@@ -536,7 +567,23 @@ export const Dashboard: React.FC = () => {
       console.error("Calendar events subscription error:", err);
     });
 
-    return () => unsubEvents();
+    const unsubLeaves = onSnapshot(collection(db, 'leave_requests'), (snapshot) => {
+      const leaveData: any[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.status === 'APPROVED') {
+          leaveData.push({ id: docSnap.id, ...data });
+        }
+      });
+      setLeaveRequests(leaveData);
+    }, (err) => {
+      console.error("Leave requests subscription error:", err);
+    });
+
+    return () => {
+      unsubEvents();
+      unsubLeaves();
+    };
   }, [currentUser]);
 
   const handlePrevMonth = () => {
@@ -570,6 +617,7 @@ export const Dashboard: React.FC = () => {
       case '개인일정': return { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' };
       case '미팅': return { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0' };
       case '출장': return { bg: '#faf5ff', text: '#5b21b6', border: '#e9d5ff' };
+      case '휴가': return { bg: '#fff1f2', text: '#be123c', border: '#fecdd3' };
       default: return { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' };
     }
   };
@@ -793,6 +841,18 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSaveEvent = async () => {
+    if (selectedEventForView?.id?.startsWith('leave-')) {
+      alert('승인된 연월차 내역은 [연월차 관리] 메뉴에서 관리됩니다.');
+      navigate('/leave-management');
+      setSelectedEventForView(null);
+      return;
+    }
+    if (selectedEventForView?.id?.startsWith('order-etd-') || selectedEventForView?.id?.startsWith('import-eta-')) {
+      alert('자동 매칭된 시스템 일정은 수입/수출 주문 상세 메뉴에서 관리됩니다.');
+      setSelectedEventForView(null);
+      return;
+    }
+
     if (!eventForm.title.trim()) {
       alert('일정 제목을 입력해주세요.');
       return;
@@ -840,6 +900,18 @@ export const Dashboard: React.FC = () => {
 
   const handleDeleteEvent = async () => {
     if (!selectedEventForView) return;
+    if (selectedEventForView.id.startsWith('leave-')) {
+      alert('승인된 연월차 내역은 [연월차 관리] 메뉴에서 관리됩니다.');
+      navigate('/leave-management');
+      setSelectedEventForView(null);
+      return;
+    }
+    if (selectedEventForView.id.startsWith('order-etd-') || selectedEventForView.id.startsWith('import-eta-')) {
+      alert('자동 매칭된 시스템 일정은 수입/수출 주문 상세 메뉴에서 관리됩니다.');
+      setSelectedEventForView(null);
+      return;
+    }
+
     if (!window.confirm('이 일정을 정말 삭제하시겠습니까?')) return;
     const COMPANY_ID = "YSACC";
     try {

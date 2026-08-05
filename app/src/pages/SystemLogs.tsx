@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.189',
+    version: 'v2.8.189',
+    date: '2026-08-05',
+    category: '기능개선',
+    title: '연월차 관리 승인완료 휴가 데이터 YSACC 스케줄러 달력 및 일정 목록 실시간 자동 연동',
+    content: '• [연월차 관리] 메뉴에서 최종 승인완료된 전 직원 연차/반차/시간차 신청 내역을 메인 화면 [YSACC 스케줄러] 달력에 실시간 연동\n• 달력 날짜 셀에 로즈 핑크(Rose) 뱃지 및 표시 아이콘(✈️ [휴가] 이름 (구분)) 적용, [금주의 일정] 및 [월 전체 일정] 카드 목록에 기간/구분/사유/결재 정보 자동 통합 표시',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.188',
     version: 'v2.8.188',
     date: '2026-08-04',
