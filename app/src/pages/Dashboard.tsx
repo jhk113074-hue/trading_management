@@ -335,6 +335,33 @@ const toLocalDateStr = (val?: string | Date): string => {
   }
 };
 
+const parseTitleAndDate = (rawTitle: string, explicitDate: string) => {
+  let title = rawTitle.trim();
+  let dueDate = explicitDate || '';
+
+  if (!dueDate && title) {
+    const currentYr = new Date().getFullYear();
+    const isoMatch = title.match(/\b(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])\b/);
+    if (isoMatch) {
+      const y = isoMatch[1];
+      const m = isoMatch[2].padStart(2, '0');
+      const d = isoMatch[3].padStart(2, '0');
+      dueDate = `${y}-${m}-${d}`;
+      title = title.replace(isoMatch[0], '').trim();
+    } else {
+      const mdMatch = title.match(/\b(0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])\b/);
+      if (mdMatch) {
+        const m = mdMatch[1].padStart(2, '0');
+        const d = mdMatch[2].padStart(2, '0');
+        dueDate = `${currentYr}-${m}-${d}`;
+        title = title.replace(mdMatch[0], '').trim();
+      }
+    }
+  }
+
+  return { title, dueDate };
+};
+
 export const Dashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -995,10 +1022,12 @@ export const Dashboard: React.FC = () => {
   const [quadrantFilter, setQuadrantFilter] = useState('ALL');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
+  const [quickTaskDueDate, setQuickTaskDueDate] = useState('');
   
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverBasketId, setDragOverBasketId] = useState<string | null>(null);
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
+  const [delegatedQuickDueDate, setDelegatedQuickDueDate] = useState('');
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
 
   const unassignedTasks = useMemo(() => {
@@ -1112,31 +1141,40 @@ export const Dashboard: React.FC = () => {
     setDraggingId(null);
   };
 
-  const handleUnassignedQuickAdd = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && delegatedQuickTitle.trim()) {
-      const currentAssignerId = userProfile?.id || currentUser?.uid || '';
-      const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
-      await addTask({
-        title: delegatedQuickTitle,
-        description: '',
-        status: 'TODO',
-        type: 'DAILY',
-        scheduleType: 'SELF',
-        importance: 'B',
-        urgency: 5,
-        quadrant: 'Q2',
-        assigneeId: '',
-        assigneeName: '미배정',
-        requesterId: currentAssignerId,
-        requesterName: currentAssignerName,
-        createdAt: new Date().toISOString()
-      } as any);
-      setDelegatedQuickTitle('');
-    }
+  const submitDelegatedQuickTask = async () => {
+    if (!delegatedQuickTitle.trim()) return;
+    const { title, dueDate } = parseTitleAndDate(delegatedQuickTitle, delegatedQuickDueDate);
+    if (!title) return;
+
+    const currentAssignerId = userProfile?.id || currentUser?.uid || '';
+    const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
+    await addTask({
+      title,
+      dueDate: dueDate || undefined,
+      description: '',
+      status: 'TODO',
+      type: 'DAILY',
+      scheduleType: 'SELF',
+      importance: 'B',
+      urgency: 5,
+      quadrant: 'Q2',
+      assigneeId: '',
+      assigneeName: '미배정',
+      requesterId: currentAssignerId,
+      requesterName: currentAssignerName,
+      startDate: selectedDate || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString()
+    } as any);
+    setDelegatedQuickTitle('');
+    setDelegatedQuickDueDate('');
   };
 
-
-
+  const handleUnassignedQuickAdd = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      await submitDelegatedQuickTask();
+    }
+  };
 
   const TaskChip: React.FC<{ task: Task }> = ({ task }) => {
     const quad = (task.quadrant || 'Q2').toUpperCase();
@@ -1147,6 +1185,9 @@ export const Dashboard: React.FC = () => {
       Q4: { color: 'var(--text-muted)', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
     };
     const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isOverdue = task.dueDate && task.dueDate < todayStr;
+    const isToday = task.dueDate === todayStr;
 
     return (
       <div
@@ -1168,9 +1209,19 @@ export const Dashboard: React.FC = () => {
             color: badgeStyle.color, background: badgeStyle.bg, border: badgeStyle.border, flexShrink: 0,
           }}>{quad}</span>
         </div>
-        <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
           {task.projectName && <span style={{ fontSize: '0.66rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 4px', color: 'var(--text-secondary)' }}>{task.projectName}</span>}
-          {task.dueDate && <span style={{ fontSize: '0.66rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : 'var(--text-secondary)' }}>📅 {task.dueDate}</span>}
+          <span style={{
+            fontSize: '0.64rem',
+            fontWeight: task.dueDate ? 700 : 500,
+            color: isOverdue ? '#ef4444' : isToday ? '#d97706' : task.dueDate ? '#475569' : '#94a3b8',
+            background: isOverdue ? '#fef2f2' : isToday ? '#fffbeb' : task.dueDate ? '#f1f5f9' : '#fafafa',
+            padding: '1px 4px',
+            borderRadius: '3px',
+            border: '1px solid #cbd5e1'
+          }}>
+            {isOverdue ? '🚨 마감초과' : isToday ? '🔥 오늘마감' : '📅 마감'} {task.dueDate || '미정'}
+          </span>
           {(task.commentCount ?? 0) > 0 && (
             <span 
               className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
@@ -1333,22 +1384,34 @@ export const Dashboard: React.FC = () => {
     }
   ];
 
+  const submitQuickTask = async () => {
+    if (!quickTaskTitle.trim()) return;
+    const { title, dueDate } = parseTitleAndDate(quickTaskTitle, quickTaskDueDate);
+    if (!title) return;
+
+    await addTask({
+      title,
+      dueDate: dueDate || undefined,
+      status: 'TODO',
+      type: 'DAILY',
+      scheduleType: 'SELF',
+      importance: 'B',
+      urgency: 5,
+      quadrant: 'Q2',
+      assigneeId: userProfile?.id || '',
+      assigneeName: userProfile?.name || '관리자',
+      startDate: selectedDate || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString()
+    } as any);
+
+    setQuickTaskTitle('');
+    setQuickTaskDueDate('');
+  };
+
   const handleQuickAdd = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && quickTaskTitle.trim()) {
-      await addTask({
-        title: quickTaskTitle,
-        status: 'TODO',
-        type: 'DAILY',
-        scheduleType: 'SELF',
-        importance: 'B',
-        urgency: 5,
-        quadrant: 'Q2',
-        assigneeId: userProfile?.id || '',
-        assigneeName: userProfile?.name || '관리자',
-        startDate: selectedDate || new Date().toISOString().split('T')[0],
-        createdAt: new Date().toISOString()
-      } as any);
-      setQuickTaskTitle('');
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      await submitQuickTask();
     }
   };
 
@@ -2807,15 +2870,51 @@ export const Dashboard: React.FC = () => {
 
             {/* Quick add unassigned task input */}
             <div style={{ marginTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '6px 10px' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>＋</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '4px 6px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>＋</span>
                 <input
                   value={delegatedQuickTitle}
                   onChange={e => setDelegatedQuickTitle(e.target.value)}
                   onKeyDown={handleUnassignedQuickAdd}
                   placeholder="업무 직접 입력 후 Enter"
-                  style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.75rem', color: 'var(--text-primary)' }}
+                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.75rem', color: 'var(--text-primary)' }}
                 />
+                <input
+                  type="date"
+                  value={delegatedQuickDueDate}
+                  onChange={e => setDelegatedQuickDueDate(e.target.value)}
+                  onKeyDown={handleUnassignedQuickAdd}
+                  title="마감일 지정 (선택)"
+                  style={{
+                    width: '112px',
+                    padding: '3px 5px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-default)',
+                    background: '#fff',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: '#334155',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={submitDelegatedQuickTask}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    background: '#3b82f6',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  등록
+                </button>
               </div>
             </div>
           </div>
@@ -3009,8 +3108,30 @@ export const Dashboard: React.FC = () => {
                             )}
                           </div>
                           
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)' }}>
-                            <span>마감 {task.dueDate || '-'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {(() => {
+                              const todayStr = new Date().toISOString().split('T')[0];
+                              const isDone = task.status === 'DONE';
+                              const hasDueDate = !!task.dueDate;
+                              const isOverdue = hasDueDate && !isDone && Boolean(task.dueDate && task.dueDate < todayStr);
+                              const isTodayDue = hasDueDate && !isDone && task.dueDate === todayStr;
+
+                              return (
+                                <span style={{
+                                  fontWeight: (isOverdue || isTodayDue) ? 800 : 600,
+                                  color: isOverdue ? '#ef4444' : isTodayDue ? '#d97706' : hasDueDate ? '#475569' : '#94a3b8',
+                                  background: isOverdue ? '#fef2f2' : isTodayDue ? '#fffbeb' : hasDueDate ? '#f1f5f9' : '#fafafa',
+                                  padding: '1px 4px',
+                                  borderRadius: '3px',
+                                  border: '1px solid #cbd5e1',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}>
+                                  {isOverdue ? '🚨 마감초과' : isTodayDue ? '🔥 오늘마감' : '📅 마감'} {task.dueDate || '미정'}
+                                </span>
+                              );
+                            })()}
                             <span style={{ color: 'var(--focus-ring)', fontWeight: 700 }}>{task.projectName || 'YSACC'}</span>
                           </div>
                         </div>
@@ -3018,14 +3139,61 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </div>
                   {basket.id === 'TODO' && filter !== '전체' && (
-                    <input 
-                      type="text" 
-                      placeholder="+ 업무명 입력 후 Enter" 
-                      value={quickTaskTitle}
-                      onChange={(e) => setQuickTaskTitle(e.target.value)}
-                      onKeyDown={handleQuickAdd}
-                      style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px dashed var(--border-default)', background: 'transparent', fontSize: '0.72rem', outline: 'none' }} 
-                    />
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="+ 업무명 입력 후 Enter" 
+                        value={quickTaskTitle}
+                        onChange={(e) => setQuickTaskTitle(e.target.value)}
+                        onKeyDown={handleQuickAdd}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          padding: '5px 8px',
+                          borderRadius: '6px',
+                          border: '1px dashed var(--border-default)',
+                          background: '#fff',
+                          fontSize: '0.73rem',
+                          outline: 'none'
+                        }} 
+                      />
+                      <input
+                        type="date"
+                        value={quickTaskDueDate}
+                        onChange={(e) => setQuickTaskDueDate(e.target.value)}
+                        onKeyDown={handleQuickAdd}
+                        title="마감일 지정 (선택)"
+                        style={{
+                          width: '112px',
+                          padding: '4px 5px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-default)',
+                          background: '#f8fafc',
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={submitQuickTask}
+                        style={{
+                          padding: '5px 8px',
+                          borderRadius: '6px',
+                          background: '#3b82f6',
+                          color: '#fff',
+                          border: 'none',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        등록
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

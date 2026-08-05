@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.190',
+    version: 'v2.8.190',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: 'Dashboard 빠른 업무 등록(Enter) 시 마감일 선택/자동인식 기능 추가 및 카니반 마감일 뱃지 시각화 강화',
+    content: '• 대기 업무 및 미배당 업무 빠른 입력란(+ 업무명 입력 후 Enter)에 마감일 날짜 선택(Date Picker) 및 [등록] 버튼 추가\n• 업무명 입력 시 텍스트 내 날짜(예: 8/15 또는 2026-08-15) 입력 자동 감지 및 마감일 자동 세팅 기능 적용\n• 메인 대시보드 칸반 카드에 [📅 마감 YYYY-MM-DD], [🔥 오늘마감], [🚨 마감초과], [📅 마감 미정] 구분 뱃지 적용으로 각 업무별 마감일 명확화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.189',
     version: 'v2.8.189',
     date: '2026-08-05',
