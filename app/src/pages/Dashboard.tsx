@@ -1186,8 +1186,10 @@ export const Dashboard: React.FC = () => {
     };
     const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
     const todayStr = new Date().toISOString().split('T')[0];
-    const isOverdue = task.dueDate && task.dueDate < todayStr;
-    const isToday = task.dueDate === todayStr;
+    const isDone = task.status === 'DONE';
+    const isOverdue = !!(task.dueDate && !isDone && task.dueDate < todayStr);
+    const isToday = !!(task.dueDate && !isDone && task.dueDate === todayStr);
+    const blinkClass = isOverdue ? 'blink-due-red' : isToday ? 'blink-due-amber' : '';
 
     return (
       <div
@@ -1211,15 +1213,18 @@ export const Dashboard: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
           {task.projectName && <span style={{ fontSize: '0.66rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 4px', color: 'var(--text-secondary)' }}>{task.projectName}</span>}
-          <span style={{
-            fontSize: '0.64rem',
-            fontWeight: task.dueDate ? 700 : 500,
-            color: isOverdue ? '#ef4444' : isToday ? '#d97706' : task.dueDate ? '#475569' : '#94a3b8',
-            background: isOverdue ? '#fef2f2' : isToday ? '#fffbeb' : task.dueDate ? '#f1f5f9' : '#fafafa',
-            padding: '1px 4px',
-            borderRadius: '3px',
-            border: '1px solid #cbd5e1'
-          }}>
+          <span
+            className={blinkClass}
+            style={{
+              fontSize: '0.64rem',
+              fontWeight: task.dueDate ? 700 : 500,
+              color: isOverdue ? '#ef4444' : isToday ? '#d97706' : task.dueDate ? '#475569' : '#94a3b8',
+              background: isOverdue ? '#fef2f2' : isToday ? '#fffbeb' : task.dueDate ? '#f1f5f9' : '#fafafa',
+              padding: '1px 4px',
+              borderRadius: '3px',
+              border: '1px solid #cbd5e1'
+            }}
+          >
             {isOverdue ? '🚨 마감초과' : isToday ? '🔥 오늘마감' : '📅 마감'} {task.dueDate || '미정'}
           </span>
           {(task.commentCount ?? 0) > 0 && (
@@ -3115,19 +3120,23 @@ export const Dashboard: React.FC = () => {
                               const hasDueDate = !!task.dueDate;
                               const isOverdue = hasDueDate && !isDone && Boolean(task.dueDate && task.dueDate < todayStr);
                               const isTodayDue = hasDueDate && !isDone && task.dueDate === todayStr;
+                              const blinkClass = isOverdue ? 'blink-due-red' : isTodayDue ? 'blink-due-amber' : '';
 
                               return (
-                                <span style={{
-                                  fontWeight: (isOverdue || isTodayDue) ? 800 : 600,
-                                  color: isOverdue ? '#ef4444' : isTodayDue ? '#d97706' : hasDueDate ? '#475569' : '#94a3b8',
-                                  background: isOverdue ? '#fef2f2' : isTodayDue ? '#fffbeb' : hasDueDate ? '#f1f5f9' : '#fafafa',
-                                  padding: '1px 4px',
-                                  borderRadius: '3px',
-                                  border: '1px solid #cbd5e1',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '2px'
-                                }}>
+                                <span
+                                  className={blinkClass}
+                                  style={{
+                                    fontWeight: (isOverdue || isTodayDue) ? 800 : 600,
+                                    color: isOverdue ? '#ef4444' : isTodayDue ? '#d97706' : hasDueDate ? '#475569' : '#94a3b8',
+                                    background: isOverdue ? '#fef2f2' : isTodayDue ? '#fffbeb' : hasDueDate ? '#f1f5f9' : '#fafafa',
+                                    padding: '1px 4px',
+                                    borderRadius: '3px',
+                                    border: '1px solid #cbd5e1',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }}
+                                >
                                   {isOverdue ? '🚨 마감초과' : isTodayDue ? '🔥 오늘마감' : '📅 마감'} {task.dueDate || '미정'}
                                 </span>
                               );

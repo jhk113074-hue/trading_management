@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.191',
+    version: 'v2.8.191',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '당일 마감일 및 마감 초과 업무 실시간 깜박임(Blink) 효과 및 완료/날짜변경 시 자동 종료 적용',
+    content: '• 마감일이 당일이거나 이미 초과된 미완료 업무 카드에 실시간 애니메이션 블링크(🔥 오늘마감: 주황 깜박임 / 🚨 마감초과: 붉은색 깜박임) 적용\n• 업무 상태가 [완료]로 이동하거나, 마감일이 미래 날짜로 변경되는 즉시 깜박임 효과 자동 해제되도록 제어 로직 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.190',
     version: 'v2.8.190',
     date: '2026-08-06',

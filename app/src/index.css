@@ -302,6 +302,45 @@ body {
   gap: 2px;
 }
 
+/* 마감일 깜박임 효과 (Blink animation on Due Date / Overdue) */
+@keyframes blink-due-red-anim {
+  0%, 100% {
+    background-color: #fef2f2;
+    color: #ef4444;
+    border-color: #fecaca;
+    box-shadow: 0 0 0px transparent;
+  }
+  50% {
+    background-color: #ef4444;
+    color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+}
+
+@keyframes blink-due-amber-anim {
+  0%, 100% {
+    background-color: #fffbeb;
+    color: #d97706;
+    border-color: #fef08a;
+    box-shadow: 0 0 0px transparent;
+  }
+  50% {
+    background-color: #f59e0b;
+    color: #ffffff;
+    border-color: #d97706;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+  }
+}
+
+.blink-due-red {
+  animation: blink-due-red-anim 1.2s infinite ease-in-out !important;
+}
+
+.blink-due-amber {
+  animation: blink-due-amber-anim 1.2s infinite ease-in-out !important;
+}
+
 .sidebar-backdrop {
   display: none;
 }
