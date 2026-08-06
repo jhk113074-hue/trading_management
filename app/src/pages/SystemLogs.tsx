@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.199',
+    version: 'v2.8.199',
+    date: '2026-08-07',
+    category: '기능개선',
+    title: 'PO 상세화면과 주문 대시보드 간 진행 현황(done/total 및 다음단계) 데이터 동기화 최적화',
+    content: '• 주문 필드 데이터 기반 동적 자동감지(getEffectiveStageCompletion) 로직을 공용 유틸에 구축\n• PO 상세를 열어 수동 저장하지 않은 신규/기존 주문도 대시보드 테이블에서 PO 상세와 100% 동일한 진행률(예: 수주 2/2✓, 전체 2/12 17%) 및 다음 업무 단계가 정확히 계산되어 정밀 일치하도록 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.198',
     version: 'v2.8.198',
     date: '2026-08-07',

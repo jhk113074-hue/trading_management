@@ -16,10 +16,10 @@ interface NextAction {
   step: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료';
 }
 
-import { getOverallProgress as utilGetOverallProgress, getStageProgress as utilGetStageProgress, STAGE_KEYS, type StageKey } from '../utils/orderProgress';
+import { getOverallProgress as utilGetOverallProgress, getStageProgress as utilGetStageProgress, getEffectiveStageCompletion, STAGE_KEYS, type StageKey } from '../utils/orderProgress';
 
-const getOverallProgress = (order: Order) => utilGetOverallProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc);
-const getStageProgress = (order: Order, stageKey: StageKey) => utilGetStageProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc, stageKey);
+const getOverallProgress = (order: Order) => utilGetOverallProgress(order);
+const getStageProgress = (order: Order, stageKey: StageKey) => utilGetStageProgress(order, undefined, stageKey);
 
 const mapStatusToStep = (st: string, order?: Order): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료' => {
   if (st === "완료" || st === "정산완료" || (order && getOverallProgress(order).pct === 100)) return "완료";
@@ -51,8 +51,7 @@ const getFirstIncompleteStage = (o: Order): '수주정보' | '소싱/발주' | '
 };
 
 const getNextTodoItem = (order: Order): string => {
-  const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
-  if (!sc) return "진행 정보 없음";
+  const sc = getEffectiveStageCompletion(order);
   const stageLabels: Record<StageKey, string> = {
     '수주정보': '수주정보',
     '소싱발주': '소싱/발주',
@@ -65,6 +64,7 @@ const getNextTodoItem = (order: Order): string => {
     let items = { ...(sc[sk] || {}) };
     if (sk === '수주정보' && isLc !== 'Y') {
       delete items['L/C 정보 입력'];
+      delete items['L/C 거래 상세 정보 입력'];
     }
     // 키 배열을 돌면서 완료되지 않은 항목을 선별
     const unfinished = Object.entries(items).find(([_, isDone]) => !isDone);
@@ -1118,7 +1118,7 @@ export const Orders: React.FC = () => {
                       {/* 단계 */}
                       <td style={getTdStyle(8)}>
                         {(() => {
-                          const { done: overallDone, total: overallTotal, pct: overallPct } = utilGetOverallProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc);
+                          const { done: overallDone, total: overallTotal, pct: overallPct } = getOverallProgress(order);
                           return (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               {/* 상단 뱃지 & 전체 수치 */}
