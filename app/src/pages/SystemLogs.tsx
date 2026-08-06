@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.192',
+    version: 'v2.8.192',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '마감일 미설정 미완료 업무 카드에 빨간색 [🚨 마감일 등록요..] 안내 뱃지 직관적 적용',
+    content: '• 마감일이 지정되지 않은 미완료 업무 카드에 기존 "마감 미정" 대신 빨간색(Red) 경고 스타일의 [🚨 마감일 등록요..] 뱃지가 시각적으로 명확하게 표시되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.191',
     version: 'v2.8.191',
     date: '2026-08-06',

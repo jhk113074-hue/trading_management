@@ -32,7 +32,35 @@ export const TaskCard: React.FC<Props> = ({ task, onClick }) => {
       </div>
       <div className="task-footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>마감 {task.dueDate}</span>
+          {(() => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isDone = task.status === 'DONE';
+            const hasDueDate = !!task.dueDate;
+            const isOverdue = hasDueDate && !isDone && Boolean(task.dueDate && task.dueDate < todayStr);
+            const isTodayDue = hasDueDate && !isDone && task.dueDate === todayStr;
+            const isNoDueDate = !hasDueDate && !isDone;
+            const blinkClass = isOverdue ? 'blink-due-red' : isTodayDue ? 'blink-due-amber' : '';
+
+            return (
+              <span
+                className={blinkClass}
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: (isOverdue || isTodayDue || isNoDueDate) ? 800 : 600,
+                  color: isOverdue ? '#ef4444' : isTodayDue ? '#d97706' : isNoDueDate ? '#ef4444' : '#475569',
+                  background: isOverdue ? '#fef2f2' : isTodayDue ? '#fffbeb' : isNoDueDate ? '#fef2f2' : '#f1f5f9',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: isNoDueDate ? '1px solid #fecaca' : isOverdue ? '1px solid #fecaca' : isTodayDue ? '1px solid #fef08a' : '1px solid #cbd5e1',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '2px'
+                }}
+              >
+                {isOverdue ? `🚨 마감초과 ${task.dueDate}` : isTodayDue ? `🔥 오늘마감 ${task.dueDate}` : isNoDueDate ? '🚨 마감일 등록요..' : `📅 마감 ${task.dueDate}`}
+              </span>
+            );
+          })()}
           {(task.commentCount ?? 0) > 0 && (
             <div 
               className={hasNewComment ? 'blink-badge' : ''}
