@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.194',
+    version: 'v2.8.194',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '마감일 버튼 클릭 시 브라우저 네이티브 달력(showPicker) 강제 팝업 바인딩',
+    content: '• 마감일 컴팩트 버튼 클릭 시 HTMLInputElement.showPicker() API를 직접 호출하여 어떤 웹 브라우저 및 디바이스에서도 달력 선택 모달이 100% 동작하도록 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.193',
     version: 'v2.8.193',
     date: '2026-08-06',

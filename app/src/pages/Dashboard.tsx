@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -1023,11 +1023,13 @@ export const Dashboard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   const [quickTaskDueDate, setQuickTaskDueDate] = useState('');
+  const quickDateInputRef = useRef<HTMLInputElement>(null);
   
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverBasketId, setDragOverBasketId] = useState<string | null>(null);
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
   const [delegatedQuickDueDate, setDelegatedQuickDueDate] = useState('');
+  const delegatedQuickDateInputRef = useRef<HTMLInputElement>(null);
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
 
   const unassignedTasks = useMemo(() => {
@@ -2888,9 +2890,14 @@ export const Dashboard: React.FC = () => {
                 />
 
                 {/* Compact Date Picker Trigger */}
-                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
                   {delegatedQuickDueDate ? (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap' }}>
+                    <div 
+                      onClick={() => {
+                        try { delegatedQuickDateInputRef.current?.showPicker(); } catch { delegatedQuickDateInputRef.current?.focus(); }
+                      }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                    >
                       <span>📅 {delegatedQuickDueDate.slice(5)}</span>
                       <span 
                         onClick={(e) => { e.stopPropagation(); setDelegatedQuickDueDate(''); }} 
@@ -2901,22 +2908,31 @@ export const Dashboard: React.FC = () => {
                       </span>
                     </div>
                   ) : (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }} title="마감일 선택">
-                      <span>📅 마감일</span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try { delegatedQuickDateInputRef.current?.showPicker(); } catch { delegatedQuickDateInputRef.current?.focus(); }
+                      }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      title="마감일 선택"
+                    >
+                      📅 마감일
+                    </button>
                   )}
                   <input
+                    ref={delegatedQuickDateInputRef}
                     type="date"
                     value={delegatedQuickDueDate}
                     onChange={e => setDelegatedQuickDueDate(e.target.value)}
                     onKeyDown={handleUnassignedQuickAdd}
                     style={{
                       position: 'absolute',
-                      inset: 0,
+                      width: '1px',
+                      height: '1px',
                       opacity: 0,
-                      cursor: 'pointer',
-                      width: '100%',
-                      height: '100%'
+                      pointerEvents: 'none',
+                      border: 'none',
+                      padding: 0
                     }}
                   />
                 </div>
@@ -3189,9 +3205,14 @@ export const Dashboard: React.FC = () => {
                       />
 
                       {/* Compact Date Picker Trigger */}
-                      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
                         {quickTaskDueDate ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap' }}>
+                          <div 
+                            onClick={() => {
+                              try { quickDateInputRef.current?.showPicker(); } catch { quickDateInputRef.current?.focus(); }
+                            }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          >
                             <span>📅 {quickTaskDueDate.slice(5)}</span>
                             <span 
                               onClick={(e) => { e.stopPropagation(); setQuickTaskDueDate(''); }} 
@@ -3202,22 +3223,31 @@ export const Dashboard: React.FC = () => {
                             </span>
                           </div>
                         ) : (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }} title="마감일 선택">
-                            <span>📅 마감일</span>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try { quickDateInputRef.current?.showPicker(); } catch { quickDateInputRef.current?.focus(); }
+                            }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            title="마감일 선택"
+                          >
+                            📅 마감일
+                          </button>
                         )}
                         <input
+                          ref={quickDateInputRef}
                           type="date"
                           value={quickTaskDueDate}
                           onChange={(e) => setQuickTaskDueDate(e.target.value)}
                           onKeyDown={handleQuickAdd}
                           style={{
                             position: 'absolute',
-                            inset: 0,
+                            width: '1px',
+                            height: '1px',
                             opacity: 0,
-                            cursor: 'pointer',
-                            width: '100%',
-                            height: '100%'
+                            pointerEvents: 'none',
+                            border: 'none',
+                            padding: 0
                           }}
                         />
                       </div>
