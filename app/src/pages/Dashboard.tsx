@@ -8,7 +8,7 @@ import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } fro
 import { db, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Task, User } from '../types';
-import { isOperationalUser } from '../utils/userUtils';
+import { isOperationalUser, isCompletionReportExempt } from '../utils/userUtils';
 
 const getHoliday = (dateStr: string) => {
   const holidays: Record<string, { name: string; country: 'KR' | 'AE' }> = {
@@ -1057,6 +1057,28 @@ export const Dashboard: React.FC = () => {
     if (!task) return;
 
     if (newStatus === 'DONE') {
+      const currentUserId = userProfile?.id || currentUser?.uid || '';
+      const currentUserName = userProfile?.name || currentUser?.displayName || '';
+
+      if (isCompletionReportExempt(task, currentUserId, currentUserName)) {
+        // 위임자 본인 또는 자기 스스로 등록한 업무: 완료보고서 제출 없이 바로 DONE 처리
+        try {
+          await updateTask({ ...task, status: 'DONE' as any });
+          const today = new Date().toISOString().split('T')[0];
+          await updateDoc(doc(db, 'tasks', taskId), {
+            status: 'DONE',
+            completedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            dueDate: task.dueDate || today
+          });
+        } catch (err) {
+          console.error("Failed to complete task:", err);
+        }
+        setDraggingId(null);
+        setDragOverBasketId(null);
+        return;
+      }
+
       setCompletingTask(task);
       setDraggingId(null);
       setDragOverBasketId(null);

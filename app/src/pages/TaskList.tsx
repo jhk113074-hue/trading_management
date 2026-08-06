@@ -8,6 +8,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 import { calculateQuadrant } from '../utils/businessRules';
+import { isCompletionReportExempt } from '../utils/userUtils';
 
 const typeLabels: Record<string, string> = {
   PROJECT: '📁 프로젝트', DAILY: '📝 일상업무', PERIODIC: '🔄 주기업무', DELEGATED: '🤝 위임업무'
@@ -62,7 +63,7 @@ const formatDateShort = (val?: string | Date): string => {
 
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
@@ -947,7 +948,13 @@ export const TaskList: React.FC = () => {
                               if (isDone) {
                                 await updateTaskStatus(task.id, 'TODO');
                               } else {
-                                setCompletingTask(task);
+                                const currentUserId = userProfile?.id || currentUser?.uid || '';
+                                const currentUserName = userProfile?.name || currentUser?.displayName || '';
+                                if (isCompletionReportExempt(task, currentUserId, currentUserName)) {
+                                  await updateTaskStatus(task.id, 'DONE');
+                                } else {
+                                  setCompletingTask(task);
+                                }
                               }
                             }}
                             style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#16a34a' }}

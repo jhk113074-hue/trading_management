@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.196',
+    version: 'v2.8.196',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '위임자 및 자기 스스로 등록/계획한 업무 완료 보고서 작성 모달 면제(예외 처리)',
+    content: '• 본인이 위임자(requester)인 업무 및 자기 스스로 계획/등록한 업무 완료 시 완료 보고서 코멘트 작성 팝업 창 없이 바로 완료(DONE) 처리되도록 개선\n• 타인에게 위임받은 업무 완료 시에만 선별적으로 완료 보고서 및 코멘트 작성 모달이 팝업되도록 업무 흐름 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.195',
     version: 'v2.8.195',
     date: '2026-08-06',
