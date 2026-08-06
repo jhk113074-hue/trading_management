@@ -1148,6 +1148,12 @@ export const Dashboard: React.FC = () => {
     const { title, dueDate } = parseTitleAndDate(delegatedQuickTitle, delegatedQuickDueDate);
     if (!title) return;
 
+    if (!dueDate) {
+      alert('마감일을 입력해주세요.');
+      try { delegatedQuickDateInputRef.current?.showPicker(); } catch { delegatedQuickDateInputRef.current?.focus(); }
+      return;
+    }
+
     const currentAssignerId = userProfile?.id || currentUser?.uid || '';
     const currentAssignerName = userProfile?.name || currentUser?.displayName || '관리자';
     await addTask({
@@ -1397,6 +1403,12 @@ export const Dashboard: React.FC = () => {
     if (!quickTaskTitle.trim()) return;
     const { title, dueDate } = parseTitleAndDate(quickTaskTitle, quickTaskDueDate);
     if (!title) return;
+
+    if (!dueDate) {
+      alert('마감일을 입력해주세요.');
+      try { quickDateInputRef.current?.showPicker(); } catch { quickDateInputRef.current?.focus(); }
+      return;
+    }
 
     await addTask({
       title,

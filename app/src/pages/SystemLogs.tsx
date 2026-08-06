@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.195',
+    version: 'v2.8.195',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '빠른 업무 등록 시 마감일 필수 입력 검증 및 안내 메시지 팝업 추가',
+    content: '• 마감일을 지정하지 않고 업무 등록 버튼/Enter 입력 시 "마감일을 입력해주세요." 경고 메시지가 표시되며 즉시 달력 선택 모달이 자동으로 열리도록 필수 검증 처리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.194',
     version: 'v2.8.194',
     date: '2026-08-06',
