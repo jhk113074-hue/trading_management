@@ -140,7 +140,7 @@ const STEP_DEFAULT_SUBTAB: Record<string, Record<string, string>> = {
   "소싱/발주": { sourcingTab: "소싱발주" },
   "물류/선적": { logisticsTab: "선적관리" },
   "서류관리": { documentTab: "서류업로드" },
-  "정산/결제": { settlementTab: "정산현황" },
+  "정산/결제": { settlementTab: "세금계산서" },
 };
 
 const normalizeStep = (raw: string | null): typeof steps[number] => {
@@ -204,7 +204,7 @@ export const OrderDetail: React.FC = () => {
   const activeSourcingTab = (searchParams.get("sourcingTab") || "소싱발주") as '소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제' | '대금결제관리';
   const activeLogisticsTab = (searchParams.get("logisticsTab") || "선적관리") as '선적관리' | '패킹리스트' | '도착보고_쉬핑마크';
   const activeDocumentTab = (searchParams.get("documentTab") || "서류업로드") as '서류업로드' | 'CI_PL작성';
-  const activeSettlementTab = (searchParams.get("settlementTab") || "정산현황") as '세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황';
+  const activeSettlementTab = (searchParams.get("settlementTab") || "세금계산서") as '세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황';
 
   const initialStepSetRef = useRef(false);
   useEffect(() => {

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.197',
+    version: 'v2.8.197',
+    date: '2026-08-07',
+    category: '기능개선',
+    title: 'PO 상세 [정산/결제] 탭 진입 시 첫 번째 업무 단계인 [세금계산서] 서브탭 기본 선택 적용',
+    content: '• 기존 정산/결제 클릭 시 정산현황부터 열리던 동선을 업무 프로세스 순서상 첫 번째 단계인 [세금계산서] 서브탭으로 기본 진입되도록 변경하여 편의성 향상',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.196',
     version: 'v2.8.196',
     date: '2026-08-06',
