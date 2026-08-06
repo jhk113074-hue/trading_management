@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.198',
+    version: 'v2.8.198',
+    date: '2026-08-07',
+    category: '기능개선',
+    title: '수주 주문관리 대시보드 테이블에 주문별 5단계 상세 진행 현황(done/total) 시각화 적용',
+    content: '• 주문 목록의 [단계] 컬럼에 PO 상세와 동일한 5개 단계(수주, 소싱, 선적, 서류, 정산)의 세부 완료 건수(예: 2/2✓, 1/3 등) 및 전체 진척도(전체 done/total, %)를 정밀 표시하도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.197',
     version: 'v2.8.197',
     date: '2026-08-07',

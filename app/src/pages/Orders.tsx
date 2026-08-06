@@ -95,7 +95,7 @@ export const Orders: React.FC = () => {
   const processedPiRef = useRef<string | null>(null);
 
   // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([110, 160, 100, 240, 120, 140, 100, 100, 280, 240, 60]);
+  const { thStyle, resizerProps, colWidths } = useColumnResize([110, 160, 100, 240, 120, 140, 100, 100, 300, 240, 60]);
 
   // 오름차순/내림차순 정렬 상태
   const [sortKey, setSortKey] = useState<'날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
@@ -1068,7 +1068,6 @@ export const Orders: React.FC = () => {
                 {processedOrders.map(order => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = order.totalAmount || pi?.totalUsd || 0;
-                  const { pct } = getOverallProgress(order);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
                   const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#cbd5e1';
@@ -1097,7 +1096,7 @@ export const Orders: React.FC = () => {
                     <tr
                       key={order.id}
                       onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-                      style={{ borderBottom: '1px solid #cbd5e1', height: '56px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                      style={{ borderBottom: '1px solid #cbd5e1', minHeight: '62px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
@@ -1118,42 +1117,89 @@ export const Orders: React.FC = () => {
                       <td style={getTdStyle(7, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
                       {/* 단계 */}
                       <td style={getTdStyle(8)}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                             <span style={{ 
-                                background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
-                                color: isAllFinished ? '#10b981' : '#2563eb', 
-                                border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                                fontSize: '11px', 
-                                fontWeight: 700, 
-                                padding: '3px 8px', 
-                                borderRadius: '4px', 
-                                whiteSpace: 'nowrap' 
-                              }}>
-                               {displayStage}
-                             </span>
-                             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                               {pct}%
-                             </span>
-                           </div>
-                          <div style={{ display: 'flex', gap: '2px' }}>
-                            {STAGE_KEYS.map((sk) => {
-                              const { done, total } = getStageProgress(order, sk);
-                              const isDone = total > 0 && done === total;
-                              const isWorking = done > 0 && done < total;
-                              const statusText = isDone ? '완료' : (isWorking ? '작업중' : '미작업');
-                              const color = isDone ? '#10b981' : isWorking ? '#2563eb' : 'var(--border-default)';
-                              const labelMap: Record<string, string> = {
-                                '수주정보': '수주정보',
-                                '소싱발주': '소싱/발주',
-                                '물류선적': '물류/선적',
-                                '서류관리': '서류관리',
-                                '정산결제': '정산/결제'
-                              };
-                              return <div key={sk} title={`${labelMap[sk] || sk}: ${statusText}`} style={{ flex: 1, height: '5px', borderRadius: '3px', background: color }} />;
-                            })}
-                          </div>
-                        </div>
+                        {(() => {
+                          const { done: overallDone, total: overallTotal, pct: overallPct } = utilGetOverallProgress((order as any).stageCompletion, (order as any).isLc || (order as any).basicForm?.isLc);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {/* 상단 뱃지 & 전체 수치 */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ 
+                                    background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
+                                    color: isAllFinished ? '#10b981' : '#2563eb', 
+                                    border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
+                                    fontSize: '11px', 
+                                    fontWeight: 750, 
+                                    padding: '2px 6px', 
+                                    borderRadius: '4px', 
+                                    whiteSpace: 'nowrap' 
+                                  }}>
+                                    {displayStage}
+                                  </span>
+                                  <span style={{ fontSize: '11.5px', color: '#1e293b', fontWeight: 800 }}>
+                                    {overallPct}%
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700, background: '#eff6ff', padding: '1px 6px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                                  전체 {overallDone}/{overallTotal}
+                                </span>
+                              </div>
+
+                              {/* 5단계 프로그레스 바 */}
+                              <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
+                                {STAGE_KEYS.map((sk) => {
+                                  const { done, total } = getStageProgress(order, sk);
+                                  const isDone = total > 0 && done === total;
+                                  const isWorking = done > 0 && done < total;
+                                  const color = isDone ? '#10b981' : isWorking ? '#2563eb' : 'var(--border-default)';
+                                  return (
+                                    <div 
+                                      key={sk} 
+                                      style={{ 
+                                        flex: 1, 
+                                        height: '5px', 
+                                        borderRadius: '3px', 
+                                        background: color 
+                                      }} 
+                                    />
+                                  );
+                                })}
+                              </div>
+
+                              {/* 5단계 개별 진행 카운트 (수주 2/2✓ | 소싱 1/1✓ | 선적 1/3 | 서류 0/2 | 정산 0/4) */}
+                              <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '10px', fontWeight: 700 }}>
+                                {STAGE_KEYS.map((sk) => {
+                                  const { done, total } = getStageProgress(order, sk);
+                                  const isDone = total > 0 && done === total;
+                                  const isWorking = done > 0 && done < total;
+                                  const labelMap: Record<string, string> = {
+                                    '수주정보': '수주',
+                                    '소싱발주': '소싱',
+                                    '물류선적': '선적',
+                                    '서류관리': '서류',
+                                    '정산결제': '정산'
+                                  };
+                                  const color = isDone ? '#15803d' : isWorking ? '#1d4ed8' : '#94a3b8';
+                                  return (
+                                    <span 
+                                      key={sk} 
+                                      title={`${labelMap[sk] || sk}: ${done}/${total} (${isDone ? '완료' : isWorking ? '진행중' : '미진행'})`} 
+                                      style={{ 
+                                        flex: 1, 
+                                        textAlign: 'center', 
+                                        color, 
+                                        whiteSpace: 'nowrap',
+                                        letterSpacing: '-0.02em'
+                                      }}
+                                    >
+                                      {done}/{total}{isDone ? '✓' : ''}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                        {/* 다음단계 */}
                       <td style={getTdStyle(9)}>
