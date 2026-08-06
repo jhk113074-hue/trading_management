@@ -2877,39 +2877,56 @@ export const Dashboard: React.FC = () => {
 
             {/* Quick add unassigned task input */}
             <div style={{ marginTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '4px 6px' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>＋</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '3px 6px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700 }}>＋</span>
                 <input
                   value={delegatedQuickTitle}
                   onChange={e => setDelegatedQuickTitle(e.target.value)}
                   onKeyDown={handleUnassignedQuickAdd}
                   placeholder="업무 직접 입력 후 Enter"
-                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.75rem', color: 'var(--text-primary)' }}
+                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.73rem', color: 'var(--text-primary)' }}
                 />
-                <input
-                  type="date"
-                  value={delegatedQuickDueDate}
-                  onChange={e => setDelegatedQuickDueDate(e.target.value)}
-                  onKeyDown={handleUnassignedQuickAdd}
-                  title="마감일 지정 (선택)"
-                  style={{
-                    width: '112px',
-                    padding: '3px 5px',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border-default)',
-                    background: '#fff',
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    color: '#334155',
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                />
+
+                {/* Compact Date Picker Trigger */}
+                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                  {delegatedQuickDueDate ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap' }}>
+                      <span>📅 {delegatedQuickDueDate.slice(5)}</span>
+                      <span 
+                        onClick={(e) => { e.stopPropagation(); setDelegatedQuickDueDate(''); }} 
+                        style={{ cursor: 'pointer', color: '#3b82f6', fontWeight: 800, fontSize: '0.65rem', padding: '0 2px' }}
+                        title="마감일 취소"
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }} title="마감일 선택">
+                      <span>📅 마감일</span>
+                    </div>
+                  )}
+                  <input
+                    type="date"
+                    value={delegatedQuickDueDate}
+                    onChange={e => setDelegatedQuickDueDate(e.target.value)}
+                    onKeyDown={handleUnassignedQuickAdd}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      opacity: 0,
+                      cursor: 'pointer',
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  />
+                </div>
+
+                {/* Submit Button */}
                 <button
                   type="button"
                   onClick={submitDelegatedQuickTask}
                   style={{
-                    padding: '4px 8px',
+                    padding: '2px 6px',
                     borderRadius: '4px',
                     background: '#3b82f6',
                     color: '#fff',
@@ -2917,7 +2934,8 @@ export const Dashboard: React.FC = () => {
                     fontSize: '0.7rem',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   등록
@@ -3151,56 +3169,74 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </div>
                   {basket.id === 'TODO' && filter !== '전체' && (
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '6px', background: '#fff', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '3px 6px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700 }}>＋</span>
                       <input 
                         type="text" 
-                        placeholder="+ 업무명 입력 후 Enter" 
+                        placeholder="업무명 입력 후 Enter" 
                         value={quickTaskTitle}
                         onChange={(e) => setQuickTaskTitle(e.target.value)}
                         onKeyDown={handleQuickAdd}
                         style={{
                           flex: 1,
                           minWidth: 0,
-                          padding: '5px 8px',
-                          borderRadius: '6px',
-                          border: '1px dashed var(--border-default)',
-                          background: '#fff',
+                          border: 'none',
+                          background: 'transparent',
                           fontSize: '0.73rem',
-                          outline: 'none'
+                          outline: 'none',
+                          color: 'var(--text-primary)'
                         }} 
                       />
-                      <input
-                        type="date"
-                        value={quickTaskDueDate}
-                        onChange={(e) => setQuickTaskDueDate(e.target.value)}
-                        onKeyDown={handleQuickAdd}
-                        title="마감일 지정 (선택)"
-                        style={{
-                          width: '112px',
-                          padding: '4px 5px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-default)',
-                          background: '#f8fafc',
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          color: '#334155',
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      />
+
+                      {/* Compact Date Picker Trigger */}
+                      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                        {quickTaskDueDate ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap' }}>
+                            <span>📅 {quickTaskDueDate.slice(5)}</span>
+                            <span 
+                              onClick={(e) => { e.stopPropagation(); setQuickTaskDueDate(''); }} 
+                              style={{ cursor: 'pointer', color: '#3b82f6', fontWeight: 800, fontSize: '0.65rem', padding: '0 2px' }}
+                              title="마감일 취소"
+                            >
+                              ✕
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 5px', fontSize: '0.68rem', fontWeight: 700, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }} title="마감일 선택">
+                            <span>📅 마감일</span>
+                          </div>
+                        )}
+                        <input
+                          type="date"
+                          value={quickTaskDueDate}
+                          onChange={(e) => setQuickTaskDueDate(e.target.value)}
+                          onKeyDown={handleQuickAdd}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            opacity: 0,
+                            cursor: 'pointer',
+                            width: '100%',
+                            height: '100%'
+                          }}
+                        />
+                      </div>
+
+                      {/* Submit button */}
                       <button
                         type="button"
                         onClick={submitQuickTask}
                         style={{
-                          padding: '5px 8px',
-                          borderRadius: '6px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
                           background: '#3b82f6',
                           color: '#fff',
                           border: 'none',
-                          fontSize: '0.72rem',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
                           cursor: 'pointer',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0
                         }}
                       >
                         등록

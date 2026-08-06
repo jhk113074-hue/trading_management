@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.193',
+    version: 'v2.8.193',
+    date: '2026-08-06',
+    category: '기능개선',
+    title: '빠른 업무 등록 입력 바 마감일 트리거 초슬림 컴팩트 UI 최적화',
+    content: '• 빠른 업무 등록 입력 바(+ 업무명 입력 후 Enter)에서 기존 넓은 마감일 입력 박스를 컴팩트한 [📅 마감일] 버튼 트리거로 슬림화하여 업무명 타이핑 공간 90% 이상 확보\n• 날짜 선택 시 [📅 MM-DD ✕] 초소형 뱃지로 변경되어 마감일 취소 및 확인이 직관적이며 입력란 텍스트 잘림 현상 완벽 방지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.192',
     version: 'v2.8.192',
     date: '2026-08-06',
