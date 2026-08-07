@@ -1526,6 +1526,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '40px' }}>
+              <th style={{ padding: '12px 10px', fontSize: '11.5px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '55px', textAlign: 'center' }}>NO.</th>
               {isQuoteMode ? (
                 <>
                   {renderTh('quote_requestDate', '견적일', 'requestDate')}
@@ -1563,7 +1564,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </tr>
           </thead>
           <tbody>
-            {filteredRequests.map(req => (
+            {filteredRequests.map((req, reqIndex) => (
               <tr 
                 key={req.id}
                 onClick={() => {
@@ -1577,6 +1578,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
+                <td style={{ padding: '9px 10px', fontSize: '12.5px', fontWeight: 700, color: '#64748b', textAlign: 'center', width: '55px', whiteSpace: 'nowrap' }}>{reqIndex + 1}</td>
                 {isQuoteMode ? (
                   <>
                     {/* 견적일 */}
@@ -1877,6 +1879,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             ))}
             {filteredRequests.length > 0 && (
               <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
+                <td style={{ width: '55px', textAlign: 'center' }}></td>
                 {!isQuoteMode ? (
                   <>
                     <td style={getTdStyle('active_requestDate')}>합계</td>

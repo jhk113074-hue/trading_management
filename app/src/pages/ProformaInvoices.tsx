@@ -49,6 +49,7 @@ export const ProformaInvoices: React.FC = () => {
 
   // Resizable column widths state
   const [colWidths, setColWidths] = useState<Record<string, number>>({
+    no: 55,
     piDate: 95,
     piNumber: 200,
     customerName: 180,
@@ -578,6 +579,10 @@ export const ProformaInvoices: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
             <tr>
+              <th style={{ padding: '12px 10px', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.no, minWidth: colWidths.no, maxWidth: colWidths.no, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                NO.
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('no', e)} />
+              </th>
               <th onClick={() => handleSort('piDate')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 DATE {getSortIcon('piDate')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piDate', e)} />
@@ -615,11 +620,11 @@ export const ProformaInvoices: React.FC = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>검색 결과가 없습니다</td></tr>
+              <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>검색 결과가 없습니다</td></tr>
             ) : (
-              filteredAndSorted.map(p => {
+              filteredAndSorted.map((p, pIndex) => {
                 const issuerBadge = (p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC')
                                  ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>영성ACC</span>
                                  : <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>YSACC</span>;
@@ -644,6 +649,7 @@ export const ProformaInvoices: React.FC = () => {
                     className="hover-row"
                     onClick={() => handleOpenForm(p.id)}
                   >
+                    <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.no, minWidth: colWidths.no, maxWidth: colWidths.no, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '12.5px', fontWeight: 700 }}>{pIndex + 1}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'left' }}>
                       <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '13px' }}>{p.piNumber || '-'}</span>
@@ -793,7 +799,7 @@ export const ProformaInvoices: React.FC = () => {
             )}
             {filteredAndSorted.length > 0 && (
               <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold', borderTop: '2.5px solid var(--border-default)' }}>
-                <td colSpan={4} style={{ padding: '14px 10px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800 }}>합계</td>
+                <td colSpan={5} style={{ padding: '14px 10px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800 }}>합계</td>
                 <td style={{ padding: '14px 10px', color: '#0f172a', whiteSpace: 'nowrap', fontSize: '16px', fontWeight: 800, textAlign: 'right', paddingRight: '12px' }}>
                   ${filteredAndSorted.reduce((sum, p) => sum + (p.totalUsd || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>

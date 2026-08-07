@@ -872,6 +872,7 @@ export const DomesticTrade: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14.5px' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase', textAlign: 'center', width: '55px' }}>NO.</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주문일자</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주문번호</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주체</th>
@@ -887,12 +888,12 @@ export const DomesticTrade: React.FC = () => {
             <tbody>
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
+                  <td colSpan={11} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                     등록된 국내 주문 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
-                filteredTrades.map(item => {
+                filteredTrades.map((item, itemIndex) => {
                   const margin = (item.salesAmount || 0) - (item.buyingAmount || 0);
                   const itemCount = item.items ? item.items.length : 1;
                   const itemSummary = item.items && item.items.length > 0
@@ -914,6 +915,7 @@ export const DomesticTrade: React.FC = () => {
                       onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
+                      <td style={{ padding: '12px', color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' }}>{itemIndex + 1}</td>
                       <td style={{ padding: '12px', color: '#475569', fontWeight: 600 }}>{item.tradeDate}</td>
                       <td style={{ padding: '12px', fontWeight: 800, color: '#1e293b' }}>
                         {item.tradeNo}
@@ -1056,7 +1058,7 @@ export const DomesticTrade: React.FC = () => {
             {filteredTrades.length > 0 && (
               <tfoot>
                 <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
-                  <td colSpan={5} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredTrades.length}건)</td>
+                  <td colSpan={6} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredTrades.length}건)</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: stats.totalMargin >= 0 ? '#10b981' : '#ef4444' }}>₩{stats.totalMargin.toLocaleString()}</td>
                   <td colSpan={3} />

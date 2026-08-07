@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.201',
+    version: 'v2.8.201',
+    date: '2026-08-07',
+    category: '기능개선',
+    title: '영업관리 전 메뉴 대시보드(수출/수입/국내 견적 및 주문) 행 번호(NO.) 넘버링 일괄 적용',
+    content: '• 영업관리 섹션 내 모든 6개 대시보드(수출 견적/주문, 수입 견적/주문, 국내 견적/주문) 테이블 최좌측에 행 번호(NO.) 컬럼을 일괄 적용하여 시각적 가독성 및 건수 식별 편의성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.200',
     version: 'v2.8.200',
     date: '2026-08-07',

@@ -898,6 +898,7 @@ export const DomesticQuotes: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14.5px' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase', textAlign: 'center', width: '55px' }}>NO.</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적일자</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적번호 (Revision)</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주체</th>
@@ -913,12 +914,12 @@ export const DomesticQuotes: React.FC = () => {
             <tbody>
               {filteredQuotes.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
+                  <td colSpan={11} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                     등록된 국내 견적 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
-                filteredQuotes.map(item => {
+                filteredQuotes.map((item, itemIndex) => {
                   const margin = (item.quoteAmount || 0) - (item.expectedBuyingAmount || 0);
                   const itemCount = item.items ? item.items.length : 1;
                   const itemSummary = item.items && item.items.length > 0
@@ -932,6 +933,7 @@ export const DomesticQuotes: React.FC = () => {
                       onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
+                      <td style={{ padding: '12px', color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' }}>{itemIndex + 1}</td>
                       <td style={{ padding: '12px', color: '#475569', fontWeight: 600 }}>{item.quoteDate}</td>
                       <td style={{ padding: '12px', fontWeight: 800, color: '#1e293b' }}>
                         {item.quoteNo}
@@ -1029,7 +1031,7 @@ export const DomesticQuotes: React.FC = () => {
             {filteredQuotes.length > 0 && (
               <tfoot>
                 <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
-                  <td colSpan={5} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredQuotes.length}건)</td>
+                  <td colSpan={6} style={{ padding: '12px 16px', color: '#1e293b' }}>합계 ({filteredQuotes.length}건)</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>₩{stats.totalBuying.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb' }}>₩{stats.totalQuote.toLocaleString()}</td>
                   <td style={{ padding: '12px', textAlign: 'right', color: stats.totalMargin >= 0 ? '#10b981' : '#ef4444' }}>₩{stats.totalMargin.toLocaleString()}</td>
