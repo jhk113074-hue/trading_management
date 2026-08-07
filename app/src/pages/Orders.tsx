@@ -94,11 +94,11 @@ export const Orders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const processedPiRef = useRef<string | null>(null);
 
-  // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([110, 160, 100, 240, 120, 140, 100, 100, 300, 240, 60]);
+  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
+  const { thStyle, resizerProps, colWidths } = useColumnResize([55, 110, 160, 100, 240, 120, 140, 100, 100, 300, 240, 60]);
 
   // 오름차순/내림차순 정렬 상태
-  const [sortKey, setSortKey] = useState<'날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
+  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
@@ -963,7 +963,7 @@ export const Orders: React.FC = () => {
                 </span>
               </div>
 
-              {/* 진행률 */}
+                {/* 진행률 */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '80px' }}>
                 <div style={{ width: '80px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px' }} />
@@ -1025,7 +1025,7 @@ export const Orders: React.FC = () => {
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
                 <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
-                    {['날짜','주문번호','수주사','발주사','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
+                    {['No.','날짜','주문번호','수주사','발주사','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
                         key={h} 
                         onClick={() => h !== '복사' && handleSort(h)}
@@ -1065,7 +1065,7 @@ export const Orders: React.FC = () => {
                   </tr>
                 </thead>
               <tbody>
-                {processedOrders.map(order => {
+                {processedOrders.map((order, orderIndex) => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = order.totalAmount || pi?.totalUsd || 0;
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
@@ -1100,23 +1100,24 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
-                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
-                      <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
-                      <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
-                      <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' })}>{orderIndex + 1}</td>
+                      <td style={getTdStyle(1, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
+                      <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
+                      <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
+                      <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
+                      <td style={getTdStyle(5, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(5, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(6, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
                         {(() => {
                           const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
-                      <td style={getTdStyle(6, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
-                      <td style={getTdStyle(7, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
+                      <td style={getTdStyle(7, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
+                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
                       {/* 단계 */}
-                      <td style={getTdStyle(8)}>
+                      <td style={getTdStyle(9)}>
                         {(() => {
                           const { done: overallDone, total: overallTotal, pct: overallPct } = getOverallProgress(order);
                           return (
@@ -1202,7 +1203,7 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                        {/* 다음단계 */}
-                      <td style={getTdStyle(9)}>
+                      <td style={getTdStyle(10)}>
                         {(() => {
                            const todoText = getNextTodoItem(order);
                            const isAllDone = todoText === "모든 업무 완료";
@@ -1219,7 +1220,7 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                       {/* 복사 */}
-                      <td style={getTdStyle(10, { textAlign: 'center' })}>
+                      <td style={getTdStyle(11, { textAlign: 'center' })}>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1260,12 +1261,13 @@ export const Orders: React.FC = () => {
                     <td style={{ width: colWidths[0], minWidth: colWidths[0], maxWidth: colWidths[0], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[1], minWidth: colWidths[1], maxWidth: colWidths[1], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }} />
                     {/* 발주사 열에 '합계' 텍스트 배치 */}
-                    <td style={{ padding: '14px 16px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }}>
+                    <td style={{ padding: '14px 16px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }}>
                       합계
                     </td>
                     {/* 발주액 열에 실제 합계 금액 배치 */}
-                    <td style={{ padding: '14px 16px', color: '#0f172a', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }}>
+                    <td style={{ padding: '14px 16px', color: '#0f172a', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
                       ${processedOrders.reduce((sum, o) => {
                         const pi = quotations.find(q => q.id === o.quotationId);
                         return sum + (pi?.totalUsd || o.totalAmount || 0);

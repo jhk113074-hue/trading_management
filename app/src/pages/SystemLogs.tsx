@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.200',
+    version: 'v2.8.200',
+    date: '2026-08-07',
+    category: '기능개선',
+    title: '수주 주문관리 대시보드 테이블 최좌측에 행 번호(No.) 넘버링 컬럼 추가',
+    content: '• 주문 목록 테이블 가장 좌측에 1번부터 시작하는 순서 넘버링(No.) 컬럼을 추가하여 주문 건수 식별 및 가독성 향상',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.199',
     version: 'v2.8.199',
     date: '2026-08-07',
