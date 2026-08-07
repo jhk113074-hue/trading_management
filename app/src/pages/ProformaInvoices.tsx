@@ -68,7 +68,12 @@ export const ProformaInvoices: React.FC = () => {
     const saved = localStorage.getItem(`pi_col_widths_${userId}`);
     if (saved) {
       try {
-        setColWidths(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setColWidths(prev => ({
+          ...prev,
+          ...parsed,
+          no: parsed.no || 55
+        }));
       } catch (e) {
         console.error(e);
       }
@@ -579,7 +584,7 @@ export const ProformaInvoices: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
             <tr>
-              <th style={{ padding: '12px 10px', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.no, minWidth: colWidths.no, maxWidth: colWidths.no, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              <th style={{ padding: '12px 10px', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.no || 55, minWidth: colWidths.no || 55, maxWidth: colWidths.no || 55, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 NO.
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('no', e)} />
               </th>
@@ -649,7 +654,7 @@ export const ProformaInvoices: React.FC = () => {
                     className="hover-row"
                     onClick={() => handleOpenForm(p.id)}
                   >
-                    <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.no, minWidth: colWidths.no, maxWidth: colWidths.no, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '12.5px', fontWeight: 700 }}>{pIndex + 1}</td>
+                    <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.no || 55, minWidth: colWidths.no || 55, maxWidth: colWidths.no || 55, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '12.5px', fontWeight: 700 }}>{pIndex + 1}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'left' }}>
                       <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '13px' }}>{p.piNumber || '-'}</span>

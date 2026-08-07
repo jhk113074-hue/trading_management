@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.202',
+    version: 'v2.8.202',
+    date: '2026-08-07',
+    category: '버그수정',
+    title: '수출 견적관리(ProformaInvoices) 대시보드 NO. 컬럼 너비 비정상 확장 현구 수정',
+    content: '• 기존 사용자 브라우저 localStorage에 저장된 이전 컬럼 너비 설정 파싱 시 NO. 컬럼 너비가 누락(undefined)되어 테이블 열이 비정상적으로 넓어지던 현상을 55px 표준 너비 및 안전 처리로 완벽 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.201',
     version: 'v2.8.201',
     date: '2026-08-07',
