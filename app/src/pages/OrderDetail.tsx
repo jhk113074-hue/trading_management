@@ -20,7 +20,7 @@ import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
 import { PoEmailSendModal } from '../components/PoEmailSendModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
-import { getOverallProgress, getStageProgress, type StageKey } from '../utils/orderProgress';
+import { getOverallProgress, getStageProgress, getEffectiveStageCompletion, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
 import { useAuth } from '../contexts/AuthContext';
 import { isMonitoringUser } from '../utils/userUtils';
@@ -5219,8 +5219,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           { key: '정산결제', label: '정산/결제', icon: '💰', tabTarget: '정산/결제' },
         ];
 
+        // 자동 감지 + 수동 오버라이드가 결합된 실효 stageCompletion 계산
+        const currentOrderObj = { ...order, basicForm, stageCompletion, stageCompletionOverride: manualOverride };
+        const effectiveSC = getEffectiveStageCompletion(currentOrderObj);
+
         // 전체 완료율 (공용 유틸 활용)
-        const { done: allDoneCount, total: allItemsCount, pct: totalPct } = getOverallProgress(stageCompletion, basicForm.isLc);
+        const { done: allDoneCount, total: allItemsCount, pct: totalPct } = getOverallProgress(effectiveSC, basicForm.isLc);
 
         return (
           <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: isChecklistCollapsed ? '8px 14px' : '12px 16px', marginBottom: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', transition: 'all 0.2s' }}>
@@ -5242,7 +5246,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 {/* 5개 단계 슬림 배지 칩들 */}
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {stageMeta.map(({ key, label, icon, tabTarget }) => {
-                    const { done, total } = getStageProgress(stageCompletion, basicForm.isLc, key);
+                    const { done, total } = getStageProgress(effectiveSC, basicForm.isLc, key);
                     const isFullyDone = done === total;
                     const isPartiallyDone = done > 0 && done < total;
                     const isActive = activeStep === tabTarget;
@@ -5327,9 +5331,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 {/* 5개 단계 카드 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
                   {stageMeta.map(({ key, label, icon, tabTarget }) => {
-                    const { done, total, pct } = getStageProgress(stageCompletion, basicForm.isLc, key);
+                    const { done, total, pct } = getStageProgress(effectiveSC, basicForm.isLc, key);
                     const isActive = activeStep === tabTarget;
-                    let items = { ...(stageCompletion[key] || {}) };
+                    let items = { ...(effectiveSC[key] || {}) };
                     if (key === '수주정보' && basicForm.isLc !== 'Y') {
                       delete items['L/C 거래 상세 정보 입력'];
                     }
@@ -5470,7 +5474,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           const stageKey = STEP_LABEL_TO_STAGE_KEY[step];
           const badge = (() => {
             if (!stageKey) return null;
-            const { done, total, pct } = getStageProgress(stageCompletion, basicForm.isLc, stageKey);
+            const currentEffectiveSC = getEffectiveStageCompletion({ ...order, basicForm, stageCompletion, stageCompletionOverride: manualOverride });
+            const { done, total, pct } = getStageProgress(currentEffectiveSC, basicForm.isLc, stageKey);
             if (total === 0) return null;
             if (pct === 100) return <span style={{ marginLeft: '6px', fontSize: '12px', fontWeight: 800, color: isCurrent ? '#6ee7b7' : '#10b981' }}>✓</span>;
             if (pct === 0) return <span style={{ marginLeft: '6px', fontSize: '12px', fontWeight: 600, color: isCurrent ? '#cbd5e1' : '#94a3b8' }}>○</span>;
