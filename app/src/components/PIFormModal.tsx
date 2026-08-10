@@ -2800,7 +2800,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     {formData.type !== 'consulting' && (
                       <td style={{ padding: '4px' }}>
-                        {it.productCode ? (() => {
+                        {(() => {
                           const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
                           const methods = getProductPackingMethods(prod);
                           const selectedMethod = methods.find((m: any) => m.id === (it.selectedPackingMethodId || 'default_injected'))
@@ -2916,9 +2916,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               )}
                             </div>
                           );
-                        })() : (
-                          <div style={{ color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>--</div>
-                        )}
+                        })()}
                       </td>
                     )}
                     <td style={{ padding: '4px' }}>
