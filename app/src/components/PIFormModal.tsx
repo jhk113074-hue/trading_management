@@ -2631,7 +2631,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   const isDragOver = dragOverIndex === idx;
                   return (
                   <tr 
-                    key={`pi-item-${it.lineNumber || (idx + 1)}-${it.productCode || idx}`} 
+                    key={`pi-item-${idx}`} 
                     draggable={true}
                     onDragStart={(e) => handleDragStart(e, idx)}
                     onDragOver={(e) => handleDragOver(e, idx)}
