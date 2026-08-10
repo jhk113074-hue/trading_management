@@ -1389,7 +1389,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const productCodeVal = getFieldValue('productCode');
       const parsedCode = getRawProductCode(productCodeVal);
       const p = products.find(prod => prod.productCode === parsedCode);
-      if (p) {
+      if (p && (parsedCode === p.productCode || productCodeVal === `[${p.productCode}] ${p.nameEn || p.nameKo || ''}`)) {
         const displayName = p.nameEn || p.nameKo || '';
         it.productCode = `[${p.productCode}] ${displayName}`;
         it.productName = displayName;
