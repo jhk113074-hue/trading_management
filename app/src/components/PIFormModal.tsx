@@ -2779,14 +2779,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           {(() => {
                             const rawCode = getRawProductCode(it.productCode);
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                            if (p && p.supplierName) {
-                              return (
-                                <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={p.supplierName}>
-                                  {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
-                                </span>
-                              );
-                            }
-                            return null;
+                            return (
+                              <div style={{ minHeight: '18px', display: 'flex', alignItems: 'center' }}>
+                                {p && p.supplierName ? (
+                                  <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={p.supplierName}>
+                                    {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                  </span>
+                                ) : null}
+                              </div>
+                            );
                           })()}
                         </div>
                         <textarea 
