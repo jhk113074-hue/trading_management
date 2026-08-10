@@ -2858,15 +2858,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               </div>
 
                               {/* 자동 계산값 힌트 (수동 입력 안 했을 때만 표시) */}
-                              {!it.palletQty && autoQty > 0 && (
-                                <div
-                                  style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', paddingLeft: '2px' }}
-                                  onClick={() => updateItem(idx, 'palletQty', autoQty)}
-                                  title="클릭하여 적용"
-                                >
-                                  ≈ {autoQty} {packUnit} (자동)
-                                </div>
-                              )}
+                              <div style={{ minHeight: '16px', display: 'flex', alignItems: 'center' }}>
+                                {!it.palletQty && autoQty > 0 && (
+                                  <div
+                                    style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', paddingLeft: '2px' }}
+                                    onClick={() => updateItem(idx, 'palletQty', autoQty)}
+                                    title="클릭하여 적용"
+                                  >
+                                    ≈ {autoQty} {packUnit} (자동)
+                                  </div>
+                                )}
+                              </div>
 
                               {/* 📦 클릭 시 인라인 펼침 — 패킹방식 선택 */}
                               {isExpanded && (
