@@ -19,7 +19,7 @@ interface Supplier {
 interface MeetingCompany {
   companyId: string;
   companyName: string;
-  type: 'CUSTOMER' | 'SUPPLIER';
+  type: 'CUSTOMER' | 'SUPPLIER' | 'INTERNAL';
   attendees: string;
 }
 
@@ -78,7 +78,7 @@ export const MeetingMinutes: React.FC = () => {
 
   // Add Company overlay states
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
-  const [tempCompanyType, setTempCompanyType] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER');
+  const [tempCompanyType, setTempCompanyType] = useState<'CUSTOMER' | 'SUPPLIER' | 'INTERNAL'>('INTERNAL');
   const [tempCompanyId, setTempCompanyId] = useState('');
   const [tempCompanyName, setTempCompanyName] = useState('');
   const [tempAttendees, setTempAttendees] = useState('');
@@ -1640,8 +1640,8 @@ export const MeetingMinutes: React.FC = () => {
                     {companies.map((c, idx) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '8px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
-                            {c.type === 'CUSTOMER' ? '고객사' : '공급사'}
+                          <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: c.type === 'INTERNAL' ? '#f3e8ff' : c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'INTERNAL' ? '#7e22ce' : c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
+                            {c.type === 'INTERNAL' ? '자사/사내' : c.type === 'CUSTOMER' ? '고객사' : '공급사'}
                           </span>
                           <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>{c.companyName}</span>
                           <span style={{ fontSize: '12px', color: '#64748b' }}>(참석자: {c.attendees})</span>
@@ -1950,24 +1950,40 @@ export const MeetingMinutes: React.FC = () => {
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>업체 유형</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참여 유형</label>
                 <select
                   value={tempCompanyType}
                   onChange={e => {
-                    setTempCompanyType(e.target.value as any);
-                    setTempCompanyId('');
-                    setTempCompanyName('');
+                    const newType = e.target.value as any;
+                    setTempCompanyType(newType);
+                    if (newType === 'INTERNAL') {
+                      setTempCompanyId('YSACC');
+                      setTempCompanyName('YSACC (자사/사내)');
+                    } else {
+                      setTempCompanyId('');
+                      setTempCompanyName('');
+                    }
                   }}
                   style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
                 >
-                  <option value="CUSTOMER">고객사 (Customer)</option>
-                  <option value="SUPPLIER">공급업체 (Supplier)</option>
+                  <option value="INTERNAL">🏢 자사/사내회의 (YSACC)</option>
+                  <option value="CUSTOMER">👥 고객사 (Customer)</option>
+                  <option value="SUPPLIER">🏭 공급업체 (Supplier)</option>
                 </select>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>업체 찾기 ★</label>
-                {tempCompanyType === 'CUSTOMER' ? (
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  {tempCompanyType === 'INTERNAL' ? '회사 구분' : '업체 찾기 ★'}
+                </label>
+                {tempCompanyType === 'INTERNAL' ? (
+                  <input
+                    type="text"
+                    readOnly
+                    value="YSACC (본사 사내회의)"
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f1f5f9', fontWeight: 700, color: '#1e293b' }}
+                  />
+                ) : tempCompanyType === 'CUSTOMER' ? (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
                       type="text"
@@ -2005,10 +2021,41 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참석자 명단</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참석자 명단 (직원/외부인)</label>
+                  {users.length > 0 && (
+                    <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600 }}>💡 아래 사내 직원 빠른 추가 가능</span>
+                  )}
+                </div>
+
+                {/* 사내 직원 빠른 선택 태그 버튼들 */}
+                {users.length > 0 && (
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    {users.map((u, uIdx) => {
+                      const name = u.name || u.displayName || u.email?.split('@')[0] || '직원';
+                      return (
+                        <button
+                          key={uIdx}
+                          type="button"
+                          onClick={() => {
+                            setTempAttendees(prev => {
+                              if (!prev) return name;
+                              if (prev.includes(name)) return prev;
+                              return `${prev}, ${name}`;
+                            });
+                          }}
+                          style={{ padding: '2px 8px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#1e40af', cursor: 'pointer' }}
+                        >
+                          + {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <input
                   type="text"
-                  placeholder="예: 김대리, 이과장"
+                  placeholder="예: 대표이사 김주한, 박현 차장, 김하은 사원"
                   value={tempAttendees}
                   onChange={e => setTempAttendees(e.target.value)}
                   style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
@@ -2107,8 +2154,8 @@ export const MeetingMinutes: React.FC = () => {
                 <strong>👥 연계 참여업체 및 참석자:</strong>
                 {(selectedMeeting.companies || []).map((c, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', color: '#334155' }}>
-                    <span style={{ fontWeight: 800, color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
-                      [{c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
+                    <span style={{ fontWeight: 800, color: c.type === 'INTERNAL' ? '#7e22ce' : c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
+                      [{c.type === 'INTERNAL' ? '자사/사내' : c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
                     </span>
                     <span>(참석자: {c.attendees})</span>
                   </div>
