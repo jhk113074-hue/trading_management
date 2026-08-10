@@ -1387,8 +1387,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     // Auto calculate
     if (hasField('productCode')) {
       const productCodeVal = getFieldValue('productCode');
-      const parsedCode = getRawProductCode(productCodeVal);
-      const p = products.find(prod => prod.productCode === parsedCode);
       const exactMatch = products.find(prod => prod.productCode === productCodeVal || `[${prod.productCode}] ${prod.nameEn || prod.nameKo || ''}` === productCodeVal);
       if (exactMatch) {
         const displayName = exactMatch.nameEn || exactMatch.nameKo || '';
