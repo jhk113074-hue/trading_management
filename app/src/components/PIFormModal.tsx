@@ -628,7 +628,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
       }
     }
-  }, [products, items]);
+  }, [products]);
 
   // Calculate Valid Until Date
   useEffect(() => {
