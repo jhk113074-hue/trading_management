@@ -93,14 +93,35 @@ export function getEffectiveStageCompletion(order: any): CompletionMap {
   }
 
   // 5. 정산결제 Auto Detect
-  if (basic.supplierTaxInvoiceDetails || order.supplierTaxInvoiceDetails || order.taxInvoiceNo) {
+  const taxInvoiceDetails = basic.supplierTaxInvoiceDetails || order.supplierTaxInvoiceDetails;
+  if (order.taxInvoiceNo) {
     sc.정산결제['세금계산서 발행 완료'] = true;
+  } else if (taxInvoiceDetails && typeof taxInvoiceDetails === 'object') {
+    const taxKeys = Object.keys(taxInvoiceDetails);
+    if (taxKeys.length > 0 && taxKeys.some(k => {
+      const d = taxInvoiceDetails[k];
+      if (Array.isArray(d)) return d.some((x: any) => !!(x?.invoiceNo || x?.issueDate || x?.approvalNo));
+      return !!((d as any)?.invoiceNo || (d as any)?.issueDate || (d as any)?.approvalNo);
+    })) {
+      sc.정산결제['세금계산서 발행 완료'] = true;
+    }
   }
+
   if (basic.paymentCollectedDate || order.paymentCollectedDate || (basic.paymentCollectedInstallments || order.paymentCollectedInstallments)?.some((i: any) => (i.amount || 0) > 0)) {
     sc.정산결제['입금 진행 완료'] = true;
   }
-  if (order.supplierPaymentStatus === 'COMPLETED' || basic.supplierPayments || order.supplierPayments) {
+
+  const supplierPayments = basic.supplierPayments || order.supplierPayments;
+  if (order.supplierPaymentStatus === 'COMPLETED') {
     sc.정산결제['공급업체 대금 결제 완료'] = true;
+  } else if (supplierPayments && typeof supplierPayments === 'object') {
+    const spKeys = Object.keys(supplierPayments);
+    if (spKeys.length > 0 && spKeys.some(k => {
+      const sp = supplierPayments[k];
+      return sp?.status === '결제완료' || sp?.status === '입금완료' || (sp?.amount || 0) > 0 || !!sp?.paidDate;
+    })) {
+      sc.정산결제['공급업체 대금 결제 완료'] = true;
+    }
   }
   const installments = basic.paymentCollectedInstallments || order.paymentCollectedInstallments || [];
   const totalCollected = installments.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
