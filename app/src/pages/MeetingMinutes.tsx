@@ -102,6 +102,52 @@ export const MeetingMinutes: React.FC = () => {
   const [minuteWindowPosition, setMinuteWindowPosition] = useState({ x: 100, y: 50 });
   const [isMinuteWindowMinimized, setIsMinuteWindowMinimized] = useState(false);
 
+  // Modaless states for Draggable & Vertically Resizable Detail Window
+  const [detailWindowPos, setDetailWindowPos] = useState({ x: Math.max(20, (window.innerWidth - 850) / 2), y: 60 });
+  const [detailWindowHeight, setDetailWindowHeight] = useState(650);
+
+  const handleDetailHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT' || (e.target as HTMLElement).tagName === 'A') {
+      return;
+    }
+    const startX = e.clientX - detailWindowPos.x;
+    const startY = e.clientY - detailWindowPos.y;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setDetailWindowPos({
+        x: Math.max(0, Math.min(window.innerWidth - 300, moveEvent.clientX - startX)),
+        y: Math.max(0, Math.min(window.innerHeight - 100, moveEvent.clientY - startY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleDetailResizeBottomMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = detailWindowHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      setDetailWindowHeight(Math.max(300, Math.min(window.innerHeight - detailWindowPos.y - 20, startHeight + deltaY)));
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   const handleMinuteHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') {
       return;
@@ -1991,146 +2037,189 @@ export const MeetingMinutes: React.FC = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Modeless Detail Window */}
       {isDetailOpen && selectedMeeting && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '900px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-            
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>📅 {selectedMeeting.date}</span>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: 'var(--text-primary)' }}>{selectedMeeting.title}</h3>
-              </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+        <div 
+          style={{ 
+            position: 'fixed', 
+            left: `${detailWindowPos.x}px`,
+            top: `${detailWindowPos.y}px`,
+            width: '880px', 
+            maxWidth: '96vw', 
+            height: `${detailWindowHeight}px`,
+            zIndex: 9999, 
+            background: '#fff', 
+            borderRadius: '12px', 
+            boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)', 
+            border: '1px solid #cbd5e1', 
+            overflow: 'hidden', 
+            display: 'flex', 
+            flexDirection: 'column' 
+          }}
+        >
+          {/* Draggable Header */}
+          <div 
+            onMouseDown={handleDetailHeaderMouseDown}
+            style={{ 
+              padding: '12px 20px', 
+              background: '#f8fafc', 
+              borderBottom: '1px solid var(--border-color)', 
+              display: 'flex', 
+              justify: 'space-between', 
+              alignItems: 'center',
+              cursor: 'move',
+              userSelect: 'none'
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>📅 {selectedMeeting.date} (드래그하여 이동)</span>
+              <h3 style={{ margin: '2px 0 0 0', fontSize: '15.5px', fontWeight: 850, color: 'var(--text-primary)' }}>{selectedMeeting.title}</h3>
             </div>
+            <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer', padding: '4px 8px' }}>✕</button>
+          </div>
 
-            <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-              
-              {/* Metadata area */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
-                {selectedMeeting.videoMeetingUrl && (
-                  <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      📹 화상회의 참여 링크: <span style={{ textDecoration: 'underline', wordBreak: 'break-all' }}>{selectedMeeting.videoMeetingUrl}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => window.open(selectedMeeting.videoMeetingUrl, '_blank')}
-                      style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
-                    >
-                      🔗 화상회의 즉시 입장
-                    </button>
-                  </div>
-                )}
-
-                {selectedMeeting.projectName && (
-                  <div style={{ fontSize: '12.5px', color: '#334155' }}>
-                    <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
-                  </div>
-                )}
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
-                  <strong>👥 연계 참여업체 및 참석자:</strong>
-                  {(selectedMeeting.companies || []).map((c, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', color: '#334155' }}>
-                      <span style={{ fontWeight: 800, color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
-                        [{c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
-                      </span>
-                      <span>(참석자: {c.attendees})</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px' }}>
-                  작성자: {selectedMeeting.createdByName} | 등록일: {new Date(selectedMeeting.createdAt).toLocaleString()}
-                </div>
-              </div>
-
-              {/* Meeting Notes Detail Content */}
-              <div
-                dangerouslySetInnerHTML={{ __html: selectedMeeting.content }}
-                style={{
-                  padding: '20px',
-                  background: '#fff',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  fontSize: '13.5px',
-                  lineHeight: 1.7,
-                  color: '#334155',
-                  minHeight: '260px'
-                }}
-              />
-
-              {/* Detail Attachments Grid */}
-              {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 첨부파일 ({selectedMeeting.attachments.length})</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
-                    {selectedMeeting.attachments.map((file, fileIdx) => (
-                      <div key={fileIdx} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                        {file.type.startsWith('image/') ? (
-                          <img
-                            src={file.data}
-                            alt={file.name}
-                            onClick={() => {
-                              setPreviewFileUrl(file.data);
-                              setPreviewFileName(file.name);
-                              setPreviewFileType(file.type);
-                            }}
-                            style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
-                          />
-                        ) : (
-                          <div 
-                            onClick={() => {
-                              setPreviewFileUrl(file.data);
-                              setPreviewFileName(file.name);
-                              setPreviewFileType(file.type);
-                            }}
-                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', color: 'var(--text-secondary)' }}
-                          >
-                            📄
-                          </div>
-                        )}
-                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
-                          {file.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+          <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+            
+            {/* Metadata area */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+              {selectedMeeting.videoMeetingUrl && (
+                <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📹 화상회의 참여 링크: <span style={{ textDecoration: 'underline', wordBreak: 'break-all' }}>{selectedMeeting.videoMeetingUrl}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(selectedMeeting.videoMeetingUrl, '_blank')}
+                    style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    🔗 화상회의 즉시 입장
+                  </button>
                 </div>
               )}
 
-            </div>
+              {selectedMeeting.projectName && (
+                <div style={{ fontSize: '12.5px', color: '#334155' }}>
+                  <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
+                <strong>👥 연계 참여업체 및 참석자:</strong>
+                {(selectedMeeting.companies || []).map((c, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', color: '#334155' }}>
+                    <span style={{ fontWeight: 800, color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
+                      [{c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
+                    </span>
+                    <span>(참석자: {c.attendees})</span>
+                  </div>
+                ))}
+              </div>
 
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                onClick={() => handleCopyLink(selectedMeeting)}
-                style={{ padding: '8px 16px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-              >
-                🔗 공유 링크 복사
-              </button>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => setIsMailShareOpen(true)}
-                  style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  ✉️ 사내 메일로 공유
-                </button>
-                <button
-                  onClick={() => { handleOpenEditForm(selectedMeeting); setIsDetailOpen(false); }}
-                  style={{ padding: '8px 16px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  수정하기
-                </button>
-                <button
-                  onClick={() => setIsDetailOpen(false)}
-                  style={{ padding: '8px 16px', background: 'var(--border-default)', color: 'var(--text-primary)', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  닫기
-                </button>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px' }}>
+                작성자: {selectedMeeting.createdByName} | 등록일: {new Date(selectedMeeting.createdAt).toLocaleString()}
               </div>
             </div>
 
+            {/* Meeting Notes Detail Content */}
+            <div
+              dangerouslySetInnerHTML={{ __html: selectedMeeting.content }}
+              style={{
+                padding: '20px',
+                background: '#fff',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                fontSize: '13.5px',
+                lineHeight: 1.7,
+                color: '#334155',
+                minHeight: '220px'
+              }}
+            />
+
+            {/* Detail Attachments Grid */}
+            {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 첨부파일 ({selectedMeeting.attachments.length})</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+                  {selectedMeeting.attachments.map((file, fileIdx) => (
+                    <div key={fileIdx} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                      {file.type.startsWith('image/') ? (
+                        <img
+                          src={file.data}
+                          alt={file.name}
+                          onClick={() => {
+                            setPreviewFileUrl(file.data);
+                            setPreviewFileName(file.name);
+                            setPreviewFileType(file.type);
+                          }}
+                          style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                        />
+                      ) : (
+                        <div 
+                          onClick={() => {
+                            setPreviewFileUrl(file.data);
+                            setPreviewFileName(file.name);
+                            setPreviewFileType(file.type);
+                          }}
+                          style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                        >
+                          📄
+                        </div>
+                      )}
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                        {file.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              onClick={() => handleCopyLink(selectedMeeting)}
+              style={{ padding: '8px 16px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              🔗 공유 링크 복사
+            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setIsMailShareOpen(true)}
+                style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                ✉️ 사내 메일로 공유
+              </button>
+              <button
+                onClick={() => { handleOpenEditForm(selectedMeeting); setIsDetailOpen(false); }}
+                style={{ padding: '8px 16px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                수정하기
+              </button>
+              <button
+                onClick={() => setIsDetailOpen(false)}
+                style={{ padding: '8px 16px', background: 'var(--border-default)', color: 'var(--text-primary)', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Vertical Resize Handle Handle */}
+          <div
+            onMouseDown={handleDetailResizeBottomMouseDown}
+            style={{
+              height: '8px',
+              background: '#e2e8f0',
+              cursor: 'ns-resize',
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'center',
+              userSelect: 'none'
+            }}
+            title="위아래로 크기 조절"
+          >
+            <div style={{ width: '32px', height: '3px', background: '#94a3b8', borderRadius: '2px' }} />
           </div>
         </div>
       )}
