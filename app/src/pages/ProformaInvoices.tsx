@@ -26,11 +26,12 @@ export const ProformaInvoices: React.FC = () => {
 
   const [filterPiStatus, setFilterPiStatus] = useState<string>('All');
   const [filterCustomer, setFilterCustomer] = useState('');
+  const [filterCountry, setFilterCountry] = useState('All');
   const [filterIssuer, setFilterIssuer] = useState('All');
   const [filterPiNum, setFilterPiNum] = useState('');
 
   // Sorting
-  const [sortKey, setSortKey] = useState<keyof ProformaInvoice | 'customerName'>('piDate');
+  const [sortKey, setSortKey] = useState<keyof ProformaInvoice | 'customerName' | 'countryName'>('piDate');
   const [sortDir, setSortDir] = useState<1 | -1>(-1); // default desc
 
   // Modals
@@ -51,9 +52,10 @@ export const ProformaInvoices: React.FC = () => {
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     no: 55,
     piDate: 95,
-    piNumber: 180,
-    customerName: 220,
-    itemsSummary: 220,
+    piNumber: 175,
+    customerName: 180,
+    countryName: 120,
+    itemsSummary: 210,
     totalUsd: 120,
     expectedProfit: 135,
     issuingCompany: 85,
@@ -203,6 +205,12 @@ export const ProformaInvoices: React.FC = () => {
         }
       }
 
+      const cust = customers[p.customerId];
+      const country = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+      
+      if (filterCountry !== 'All') {
+        if (country !== filterCountry) return false;
+      }
       if (filterCustomer && p.customerId !== filterCustomer) return false;
       if (filterIssuer !== 'All' && p.issuingCompany !== filterIssuer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
@@ -221,8 +229,13 @@ export const ProformaInvoices: React.FC = () => {
       let vb: any = b[sortKey as keyof ProformaInvoice] ?? "";
 
       if (sortKey === 'customerName') {
-        va = (customers[a.customerId]?.name || "").toLowerCase();
-        vb = (customers[b.customerId]?.name || "").toLowerCase();
+        va = (customers[a.customerId]?.name || (a as any).customerName || "").toLowerCase();
+        vb = (customers[b.customerId]?.name || (b as any).customerName || "").toLowerCase();
+      } else if (sortKey === 'countryName') {
+        const ca = customers[a.customerId];
+        const cb = customers[b.customerId];
+        va = (ca?.countryName || ca?.countryCode || (a as any).countryName || "").toLowerCase();
+        vb = (cb?.countryName || cb?.countryCode || (b as any).countryName || "").toLowerCase();
       } else if (typeof va === 'string' && typeof vb === 'string') {
         va = va.toLowerCase();
         vb = vb.toLowerCase();
@@ -234,7 +247,21 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
+  }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCountry, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
+
+  // 보유 국가 목록 계산 (드롭다운 필터용)
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    Object.values(customers).forEach(c => {
+      const country = c.countryName || c.countryCode;
+      if (country) set.add(country);
+    });
+    pis.forEach(p => {
+      const country = (p as any).countryName || (p as any).countryCode || (p as any).country;
+      if (country) set.add(country);
+    });
+    return Array.from(set).sort();
+  }, [customers, pis]);
 
   const piStats = useMemo(() => {
     // 1. 총 견적 건수 & 각사 건수 (모든 상태 포함)
@@ -551,19 +578,25 @@ export const ProformaInvoices: React.FC = () => {
           </div>
         )}
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px', maxWidth: '200px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '130px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
           <option value="">👥 전체 고객</option>
-          {Object.entries(customers).map(([id, c]) => {
-            const country = c.countryName || c.countryCode;
-            return (
-              <option key={id} value={id}>
-                {c.name}{country ? ` (${country})` : ''}
-              </option>
-            );
-          })}
+          {Object.entries(customers).map(([id, c]) => (
+            <option key={id} value={id}>{c.name}</option>
+          ))}
         </select>
 
-        
+        {/* 국가 필터 */}
+        <select
+          value={filterCountry}
+          onChange={e => setFilterCountry(e.target.value)}
+          style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '120px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', cursor: 'pointer', flexShrink: 0, height: '34px', boxSizing: 'border-box' }}
+        >
+          <option value="All">🌍 전체 국가</option>
+          {availableCountries.map(country => (
+            <option key={country} value={country}>{country}</option>
+          ))}
+        </select>
+
         <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '150px', fontSize: '13px', outline: 'none', flexShrink: 0, height: '34px', boxSizing: 'border-box', color: '#1e293b' }} />
 
         {/* PI 상태 필터 */}
@@ -578,7 +611,7 @@ export const ProformaInvoices: React.FC = () => {
           <option value="취소">취소</option>
           <option value="만료">만료</option>
         </select>
- 
+
         <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>
           총 {filteredAndSorted.length}건
         </span>
@@ -604,6 +637,10 @@ export const ProformaInvoices: React.FC = () => {
               <th onClick={() => handleSort('customerName')} style={{ padding: '12px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 CUSTOMER {getSortIcon('customerName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('customerName', e)} />
+              </th>
+              <th onClick={() => handleSort('countryName')} style={{ padding: '12px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: colWidths.countryName || 120, minWidth: colWidths.countryName || 120, maxWidth: colWidths.countryName || 120, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                COUNTRY {getSortIcon('countryName')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('countryName', e)} />
               </th>
               <th style={{ padding: '12px 10px', borderRight: '1px solid #cbd5e1', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 ITEMS
@@ -670,18 +707,16 @@ export const ProformaInvoices: React.FC = () => {
                       )}
                     </td>
                     <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>
+                      {customers[p.customerId]?.name || (p as any).customerName || '-'}
+                    </td>
+                    <td style={{ padding: '9px 10px', width: colWidths.countryName || 120, minWidth: colWidths.countryName || 120, maxWidth: colWidths.countryName || 120, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', fontSize: '12.5px' }}>
                       {(() => {
                         const cust = customers[p.customerId];
-                        const custName = cust?.name || (p as any).customerName || '-';
                         const country = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+                        if (!country) return <span style={{ color: '#cbd5e1' }}>-</span>;
                         return (
-                          <span title={`${custName}${country ? ` (${country})` : ''}`}>
-                            {custName}
-                            {country ? (
-                              <span style={{ color: '#2563eb', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '3px', padding: '1px 5px', fontSize: '11px', fontWeight: 700, marginLeft: '5px', display: 'inline-block' }}>
-                                {country}
-                              </span>
-                            ) : null}
+                          <span style={{ color: '#1e40af', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 8px', fontSize: '11.5px', fontWeight: 750, display: 'inline-block' }}>
+                            {country}
                           </span>
                         );
                       })()}
