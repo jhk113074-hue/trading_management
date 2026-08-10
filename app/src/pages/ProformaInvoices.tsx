@@ -551,11 +551,16 @@ export const ProformaInvoices: React.FC = () => {
           </div>
         )}
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px', maxWidth: '200px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
           <option value="">👥 전체 고객</option>
-          {Object.entries(customers).map(([id, c]) => (
-            <option key={id} value={id}>{c.name}</option>
-          ))}
+          {Object.entries(customers).map(([id, c]) => {
+            const country = c.countryName || c.countryCode;
+            return (
+              <option key={id} value={id}>
+                {c.name}{country ? ` (${country})` : ''}
+              </option>
+            );
+          })}
         </select>
 
         
@@ -664,7 +669,23 @@ export const ProformaInvoices: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>
+                      {(() => {
+                        const cust = customers[p.customerId];
+                        if (!cust) return '-';
+                        const country = cust.countryName || cust.countryCode;
+                        return (
+                          <span title={`${cust.name}${country ? ` (${country})` : ''}`}>
+                            {cust.name}
+                            {country && (
+                              <span style={{ color: '#475569', fontSize: '12px', fontWeight: 500, marginLeft: '4px' }}>
+                                ({country})
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td style={{ padding: '9px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12.5px', color: '#475569', verticalAlign: 'middle' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
                         <span title={p.itemsSummary.join(', ')}>
