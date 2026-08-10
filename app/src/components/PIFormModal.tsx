@@ -1389,24 +1389,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const productCodeVal = getFieldValue('productCode');
       const parsedCode = getRawProductCode(productCodeVal);
       const p = products.find(prod => prod.productCode === parsedCode);
-      if (p) {
-        const displayName = p.nameEn || p.nameKo || '';
-        it.productCode = `[${p.productCode}] ${displayName}`;
+      const exactMatch = products.find(prod => prod.productCode === productCodeVal || `[${prod.productCode}] ${prod.nameEn || prod.nameKo || ''}` === productCodeVal);
+      if (exactMatch) {
+        const displayName = exactMatch.nameEn || exactMatch.nameKo || '';
+        it.productCode = `[${exactMatch.productCode}] ${displayName}`;
         it.productName = displayName;
-        it.spec = p.spec || '';
+        it.spec = exactMatch.spec || '';
         it.description = displayName;
-        it.unit = (p.unit || 'KG').toUpperCase();
-        // Assuming purchase price is in KRW or USD
-        if (p.currency === 'KRW') {
-          it.purchasePriceKrw = p.purchasePrice || 0;
+        it.unit = (exactMatch.unit || 'KG').toUpperCase();
+        if (exactMatch.currency === 'KRW') {
+          it.purchasePriceKrw = exactMatch.purchasePrice || 0;
           it.purchasePriceUsd = 0;
         } else {
-          it.purchasePriceUsd = p.purchasePrice || 0;
+          it.purchasePriceUsd = exactMatch.purchasePrice || 0;
           it.purchasePriceKrw = 0;
         }
         
-        // Auto select default packing method if exists
-        const methods = getProductPackingMethods(p);
+        const methods = getProductPackingMethods(exactMatch);
         const existingMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
         const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
         
@@ -1455,10 +1454,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         } else {
           it.selectedPackingMethodId = undefined;
           it.packingSpecOverride = undefined;
-          if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.quantity = (it.palletQty || 1) * p.qtyPerPallet;
-          } else if (p.weight && p.weight > 0) {
-            it.quantity = (it.palletQty || 1) * p.weight;
+          if (exactMatch.qtyPerPallet && exactMatch.qtyPerPallet > 0) {
+            it.quantity = (it.palletQty || 1) * exactMatch.qtyPerPallet;
+          } else if (exactMatch.weight && exactMatch.weight > 0) {
+            it.quantity = (it.palletQty || 1) * exactMatch.weight;
           } else {
             it.quantity = it.quantity || 0;
           }
@@ -1469,8 +1468,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (!it.unit) {
           it.unit = 'EA';
         }
-        it.selectedPackingMethodId = 'default_injected';
-        it.packingSpecOverride = undefined;
       }
     }
 
