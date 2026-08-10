@@ -83,7 +83,6 @@ export const MeetingMinutes: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterProject, setFilterProject] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
