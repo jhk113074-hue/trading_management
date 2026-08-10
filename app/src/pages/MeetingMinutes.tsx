@@ -2065,7 +2065,7 @@ export const MeetingMinutes: React.FC = () => {
               background: '#f8fafc', 
               borderBottom: '1px solid var(--border-color)', 
               display: 'flex', 
-              justify: 'space-between', 
+              justifyContent: 'space-between', 
               alignItems: 'center',
               cursor: 'move',
               userSelect: 'none'
@@ -2214,7 +2214,7 @@ export const MeetingMinutes: React.FC = () => {
               cursor: 'ns-resize',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
               userSelect: 'none'
             }}
             title="위아래로 크기 조절"
