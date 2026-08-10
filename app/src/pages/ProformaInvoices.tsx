@@ -51,9 +51,9 @@ export const ProformaInvoices: React.FC = () => {
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     no: 55,
     piDate: 95,
-    piNumber: 200,
-    customerName: 180,
-    itemsSummary: 240,
+    piNumber: 180,
+    customerName: 220,
+    itemsSummary: 220,
     totalUsd: 120,
     expectedProfit: 135,
     issuingCompany: 85,
@@ -672,16 +672,16 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>
                       {(() => {
                         const cust = customers[p.customerId];
-                        if (!cust) return '-';
-                        const country = cust.countryName || cust.countryCode;
+                        const custName = cust?.name || (p as any).customerName || '-';
+                        const country = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
                         return (
-                          <span title={`${cust.name}${country ? ` (${country})` : ''}`}>
-                            {cust.name}
-                            {country && (
-                              <span style={{ color: '#475569', fontSize: '12px', fontWeight: 500, marginLeft: '4px' }}>
-                                ({country})
+                          <span title={`${custName}${country ? ` (${country})` : ''}`}>
+                            {custName}
+                            {country ? (
+                              <span style={{ color: '#2563eb', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '3px', padding: '1px 5px', fontSize: '11px', fontWeight: 700, marginLeft: '5px', display: 'inline-block' }}>
+                                {country}
                               </span>
-                            )}
+                            ) : null}
                           </span>
                         );
                       })()}
