@@ -176,6 +176,23 @@ export const ProformaInvoices: React.FC = () => {
     return (p as any).piStatus || '협상중';
   };
 
+  const normalizeCountry = (c?: string): string => {
+    if (!c) return '';
+    const trimmed = c.trim();
+    if (!trimmed) return '';
+    const upper = trimmed.toUpperCase();
+    if (upper === 'KSA' || upper.includes('SAUDI')) return 'SAUDI ARABIA';
+    if (upper === 'UAE' || upper.includes('EMIRATES')) return 'UAE';
+    if (upper === '대한민국' || upper === 'KOREA' || upper === 'SOUTH KOREA') return 'SOUTH KOREA';
+    return upper;
+  };
+
+  const getPiCountry = (p: ProformaInvoice): string => {
+    const cust = customers[p.customerId];
+    const raw = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+    return normalizeCountry(raw);
+  };
+
   const filteredAndSorted = useMemo(() => {
     let filtered = pis.filter(p => {
       // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
@@ -205,8 +222,7 @@ export const ProformaInvoices: React.FC = () => {
         }
       }
 
-      const cust = customers[p.customerId];
-      const country = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+      const country = getPiCountry(p);
       
       if (filterCountry !== 'All') {
         if (country !== filterCountry) return false;
@@ -232,10 +248,8 @@ export const ProformaInvoices: React.FC = () => {
         va = (customers[a.customerId]?.name || (a as any).customerName || "").toLowerCase();
         vb = (customers[b.customerId]?.name || (b as any).customerName || "").toLowerCase();
       } else if (sortKey === 'countryName') {
-        const ca = customers[a.customerId];
-        const cb = customers[b.customerId];
-        va = (ca?.countryName || ca?.countryCode || (a as any).countryName || "").toLowerCase();
-        vb = (cb?.countryName || cb?.countryCode || (b as any).countryName || "").toLowerCase();
+        va = getPiCountry(a);
+        vb = getPiCountry(b);
       } else if (typeof va === 'string' && typeof vb === 'string') {
         va = va.toLowerCase();
         vb = vb.toLowerCase();
@@ -249,15 +263,15 @@ export const ProformaInvoices: React.FC = () => {
     return filtered;
   }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCountry, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
 
-  // 보유 국가 목록 계산 (드롭다운 필터용)
+  // 보유 국가 목록 계산 (드롭다운 필터용, 정규화된 영문 대문자 통일)
   const availableCountries = useMemo(() => {
     const set = new Set<string>();
     Object.values(customers).forEach(c => {
-      const country = c.countryName || c.countryCode;
+      const country = normalizeCountry(c.countryName || c.countryCode);
       if (country) set.add(country);
     });
     pis.forEach(p => {
-      const country = (p as any).countryName || (p as any).countryCode || (p as any).country;
+      const country = getPiCountry(p);
       if (country) set.add(country);
     });
     return Array.from(set).sort();
@@ -711,8 +725,7 @@ export const ProformaInvoices: React.FC = () => {
                     </td>
                     <td style={{ padding: '9px 10px', width: colWidths.countryName || 120, minWidth: colWidths.countryName || 120, maxWidth: colWidths.countryName || 120, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', fontSize: '12.5px' }}>
                       {(() => {
-                        const cust = customers[p.customerId];
-                        const country = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+                        const country = getPiCountry(p);
                         if (!country) return <span style={{ color: '#cbd5e1' }}>-</span>;
                         return (
                           <span style={{ color: '#1e40af', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '2px 8px', fontSize: '11.5px', fontWeight: 750, display: 'inline-block' }}>
