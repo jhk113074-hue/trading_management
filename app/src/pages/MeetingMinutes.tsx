@@ -44,7 +44,7 @@ interface MeetingMinute {
   date: string;
   meetingTime?: string;
   meetingType?: 'INTERNAL' | 'CUSTOMER' | 'SUPPLIER' | 'GLOBAL';
-  status?: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED';
+  status?: 'REQUESTED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED';
   projectName?: string;
   customerId?: string;
   customerName?: string;
@@ -105,7 +105,7 @@ export const MeetingMinutes: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [meetingTime, setMeetingTime] = useState('10:00');
   const [meetingType, setMeetingType] = useState<'INTERNAL' | 'CUSTOMER' | 'SUPPLIER' | 'GLOBAL'>('INTERNAL');
-  const [status, setStatus] = useState<'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED'>('REQUESTED');
+  const [status, setStatus] = useState<'REQUESTED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED'>('REQUESTED');
   const [agenda, setAgenda] = useState('');
   const [projectName, setProjectName] = useState('');
   const [companies, setCompanies] = useState<MeetingCompany[]>([]);
@@ -848,7 +848,7 @@ export const MeetingMinutes: React.FC = () => {
     }, 2000);
   };
 
-  const handleOpenNewForm = async (defaultStatus: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED' = 'REQUESTED') => {
+  const handleOpenNewForm = async (defaultStatus: 'REQUESTED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' = 'REQUESTED') => {
     setIsSaving(false);
     const docRef = doc(collection(db, 'meetings'));
     const draftData: MeetingMinute = {
@@ -1237,7 +1237,7 @@ export const MeetingMinutes: React.FC = () => {
         >
           <span>📅 1. 사전 회의 신청 및 일정 조율</span>
           <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: '10px', fontWeight: 800 }}>
-            {meetings.filter(m => m.status === 'REQUESTED' || m.status === 'IN_PROGRESS').length}
+            {meetings.filter(m => m.status === 'REQUESTED' || m.status === 'CONFIRMED' || m.status === 'IN_PROGRESS').length}
           </span>
         </button>
 
@@ -1325,7 +1325,7 @@ export const MeetingMinutes: React.FC = () => {
       {activeTab === 'SCHEDULE' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {(() => {
-            const scheduledList = filteredMeetings.filter(m => m.status === 'REQUESTED' || m.status === 'IN_PROGRESS');
+            const scheduledList = filteredMeetings.filter(m => m.status === 'REQUESTED' || m.status === 'CONFIRMED' || m.status === 'IN_PROGRESS');
             if (scheduledList.length === 0) {
               return (
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
@@ -1356,8 +1356,15 @@ export const MeetingMinutes: React.FC = () => {
                       <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 800, background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}>
                         📅 {m.date} {m.meetingTime ? `(${m.meetingTime})` : ''}
                       </span>
-                      <span style={{ fontSize: '11px', background: m.status === 'IN_PROGRESS' ? '#fef3c7' : '#e0f2fe', color: m.status === 'IN_PROGRESS' ? '#b45309' : '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
-                        {m.status === 'IN_PROGRESS' ? '🔴 회의 진행중' : '⏳ 회의 예정'}
+                      <span style={{
+                        fontSize: '11px',
+                        background: m.status === 'CONFIRMED' ? '#dcfce7' : m.status === 'IN_PROGRESS' ? '#fef3c7' : '#e0f2fe',
+                        color: m.status === 'CONFIRMED' ? '#15803d' : m.status === 'IN_PROGRESS' ? '#b45309' : '#0369a1',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontWeight: 800
+                      }}>
+                        {m.status === 'CONFIRMED' ? '✅ 회의 확정됨' : m.status === 'IN_PROGRESS' ? '🔴 회의 진행중' : '📩 미팅 요청됨'}
                       </span>
                     </div>
 
@@ -1378,23 +1385,40 @@ export const MeetingMinutes: React.FC = () => {
                     </div>
 
                     <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      {m.videoMeetingUrl ? (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); window.open(m.videoMeetingUrl, '_blank'); }}
-                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}
-                        >
-                          📹 화상회의 즉시 입장
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>화상링크 미생성</span>
-                      )}
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {m.status === 'REQUESTED' && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await updateDoc(doc(db, 'meetings', m.id), { status: 'CONFIRMED', updatedAt: new Date().toISOString() });
+                              alert("회의 일정이 확정(CONFIRMED)되었습니다. 참석자들에게 이메일/알림이 수신됩니다.");
+                            }}
+                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            ✅ 미팅 확정
+                          </button>
+                        )}
+
+                        {m.videoMeetingUrl ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); window.open(m.videoMeetingUrl, '_blank'); }}
+                            style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            📹 화상회의 입장
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>화상링크 미생성</span>
+                        )}
+                      </div>
+                      
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleOpenEditForm(m); }}
                         style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                       >
-                        ✍️ 회의록 작성/수정
+                        ✍️ 작성/수정
                       </button>
                     </div>
                   </div>
@@ -1780,9 +1804,10 @@ export const MeetingMinutes: React.FC = () => {
                     onChange={e => setStatus(e.target.value as any)}
                     style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 750 }}
                   >
-                    <option value="REQUESTED">📅 1. 사전 회의 신청/예정</option>
-                    <option value="IN_PROGRESS">🔴 2. 실시간 회의 진행중</option>
-                    <option value="COMPLETED">✅ 3. 회의록 최종 확정 (완료)</option>
+                    <option value="REQUESTED">📩 1. 사전 미팅 신청 (미확정)</option>
+                    <option value="CONFIRMED">✅ 2. 미팅 일정 확정 (Confirmed)</option>
+                    <option value="IN_PROGRESS">🔴 3. 실시간 회의 진행중</option>
+                    <option value="COMPLETED">📝 4. 회의록 최종 확정 (완료)</option>
                   </select>
                 </div>
 
