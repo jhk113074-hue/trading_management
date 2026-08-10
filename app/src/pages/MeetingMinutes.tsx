@@ -30,15 +30,28 @@ interface Attachment {
   data: string; // Base64 url
 }
 
+interface ActionItem {
+  id: string;
+  task: string;
+  assignee: string; // Employee or Company contact
+  dueDate: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
 interface MeetingMinute {
   id: string;
   title: string;
   date: string;
+  meetingTime?: string;
+  meetingType?: 'INTERNAL' | 'CUSTOMER' | 'SUPPLIER' | 'GLOBAL';
+  status?: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED';
   projectName?: string;
   customerId?: string;
   customerName?: string;
   attendees: string;
+  agenda?: string;
   content: string; // HTML content from rich editor
+  actionItems?: ActionItem[];
   createdAt: string;
   createdBy: string;
   createdByName: string;
@@ -63,10 +76,14 @@ export const MeetingMinutes: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Active Tab: 'SCHEDULE' (1. 사전 신청/조율) | 'MINUTES' (2-3. 회의록 관리) | 'ACTIONS' (4. 액션 아이템 추적)
+  const [activeTab, setActiveTab] = useState<'SCHEDULE' | 'MINUTES' | 'ACTIONS'>('SCHEDULE');
+
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterProject, setFilterProject] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -87,10 +104,15 @@ export const MeetingMinutes: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [meetingTime, setMeetingTime] = useState('10:00');
+  const [meetingType, setMeetingType] = useState<'INTERNAL' | 'CUSTOMER' | 'SUPPLIER' | 'GLOBAL'>('INTERNAL');
+  const [status, setStatus] = useState<'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED'>('REQUESTED');
+  const [agenda, setAgenda] = useState('');
   const [projectName, setProjectName] = useState('');
   const [companies, setCompanies] = useState<MeetingCompany[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [contentHTML, setContentHTML] = useState('');
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [videoMeetingUrl, setVideoMeetingUrl] = useState('');
   const [videoPlatform, setVideoPlatform] = useState<'MEET' | 'TEAMS' | 'ZOOM' | 'OTHER'>('MEET');
   const [isSaving, setIsSaving] = useState(false);
@@ -827,18 +849,23 @@ export const MeetingMinutes: React.FC = () => {
     }, 2000);
   };
 
-  const handleOpenNewForm = async () => {
+  const handleOpenNewForm = async (defaultStatus: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED' = 'REQUESTED') => {
     setIsSaving(false);
     const docRef = doc(collection(db, 'meetings'));
     const draftData: MeetingMinute = {
       id: docRef.id,
       title: '',
       date: new Date().toISOString().split('T')[0],
+      meetingTime: '10:00',
+      meetingType: 'INTERNAL',
+      status: defaultStatus,
       projectName: '',
       customerId: '',
       customerName: '',
       attendees: '',
+      agenda: '',
       content: '',
+      actionItems: [],
       createdAt: new Date().toISOString(),
       createdBy: userProfile?.id || '',
       createdByName: userProfile?.name || '시스템',
@@ -851,12 +878,17 @@ export const MeetingMinutes: React.FC = () => {
     setEditId(docRef.id);
     setTitle('');
     setDate(draftData.date);
+    setMeetingTime('10:00');
+    setMeetingType('INTERNAL');
+    setStatus(defaultStatus);
+    setAgenda('');
     setProjectName('');
     setCustomerId('');
     setCustomerName('');
     setCompanies([]);
     setAttachments([]);
     setContentHTML('');
+    setActionItems([]);
     setIsFormOpen(true);
 
     setTimeout(() => {
@@ -868,12 +900,17 @@ export const MeetingMinutes: React.FC = () => {
     setEditId(m.id);
     setTitle(m.title);
     setDate(m.date);
+    setMeetingTime(m.meetingTime || '10:00');
+    setMeetingType(m.meetingType || 'INTERNAL');
+    setStatus(m.status || 'COMPLETED');
+    setAgenda(m.agenda || '');
     setProjectName(m.projectName || '');
     setCustomerId(m.customerId || '');
     setCustomerName(m.customerName || '');
     setCompanies(m.companies || []);
     setAttachments(m.attachments || []);
     setContentHTML(m.content);
+    setActionItems(m.actionItems || []);
     setVideoMeetingUrl(m.videoMeetingUrl || '');
     setVideoPlatform(m.videoPlatform || 'MEET');
     setIsFormOpen(true);
@@ -906,6 +943,10 @@ export const MeetingMinutes: React.FC = () => {
         await updateDoc(doc(db, 'meetings', editId), {
           title,
           date,
+          meetingTime,
+          meetingType,
+          status,
+          agenda,
           projectName,
           customerId: customerId || (companies.length > 0 ? companies[0].companyId : ''),
           customerName: customerName || aggregatedCustName,
@@ -915,10 +956,11 @@ export const MeetingMinutes: React.FC = () => {
           videoMeetingUrl,
           videoPlatform,
           content: currentEditorContent,
+          actionItems,
           isDraft: false,
           updatedAt: new Date().toISOString()
         });
-        alert("회의록이 성공적으로 저장되었습니다.");
+        alert(status === 'REQUESTED' ? "회의 신청/예정이 등록되었습니다." : "회의록이 성공적으로 저장되었습니다.");
         setIsFormOpen(false);
       }
     } catch (err) {
@@ -1131,40 +1173,129 @@ export const MeetingMinutes: React.FC = () => {
   const addressableUsers = users.filter(u => u.id !== userProfile?.id);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>📝 회의록 관리</h2>
-          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '6px 0 0 0' }}>프로젝트 및 연계 고객사별 회의 내용을 체계적으로 작성하고 모니터링하는 허브입니다.</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>📝 통합 회의 수명주기 관리 (Meeting Management)</h2>
+          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>회의 요청/일정 조율부터 회의록 실시간 협업, 후속 액션 아이템(Action Items) 추적까지 원스톱으로 관리합니다.</p>
         </div>
-        <button 
-          onClick={handleOpenNewForm}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => handleOpenNewForm('REQUESTED')}
+            style={{
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              color: '#334155',
+              borderRadius: '4px',
+              padding: '0 14px',
+              height: '34px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            📅 회의 일정 신청
+          </button>
+          <button 
+            onClick={() => handleOpenNewForm('COMPLETED')}
+            style={{
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '0 16px',
+              height: '34px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            ✍️ 회의록 바로 작성
+          </button>
+        </div>
+      </div>
+
+      {/* 3-Tab Navigation Bar */}
+      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '4px', background: '#fff', padding: '4px 8px 0 8px', borderRadius: '6px 6px 0 0' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('SCHEDULE')}
           style={{
-            background: '#3b82f6',
-            color: '#fff',
+            padding: '10px 18px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'SCHEDULE' ? 800 : 600,
+            color: activeTab === 'SCHEDULE' ? '#2563eb' : '#64748b',
             border: 'none',
-            borderRadius: '4px',
-            padding: '0 16px',
-            height: '34px',
-            fontSize: '12.5px',
-            fontWeight: 700,
+            borderBottom: activeTab === 'SCHEDULE' ? '3px solid #2563eb' : '3px solid transparent',
+            background: 'transparent',
             cursor: 'pointer',
-            transition: 'background 0.2s',
             display: 'flex',
             alignItems: 'center',
-            boxSizing: 'border-box'
+            gap: '6px'
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
-          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
         >
-          ✍️ 새 회의록 작성
+          <span>📅 1. 사전 회의 신청 및 일정 조율</span>
+          <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: '10px', fontWeight: 800 }}>
+            {meetings.filter(m => m.status === 'REQUESTED' || m.status === 'IN_PROGRESS').length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('MINUTES')}
+          style={{
+            padding: '10px 18px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'MINUTES' ? 800 : 600,
+            color: activeTab === 'MINUTES' ? '#2563eb' : '#64748b',
+            border: 'none',
+            borderBottom: activeTab === 'MINUTES' ? '3px solid #2563eb' : '3px solid transparent',
+            background: 'transparent',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>📝 2. 회의록 관리 (완료/보관)</span>
+          <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 7px', borderRadius: '10px', fontWeight: 800 }}>
+            {meetings.filter(m => !m.status || m.status === 'COMPLETED').length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ACTIONS')}
+          style={{
+            padding: '10px 18px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'ACTIONS' ? 800 : 600,
+            color: activeTab === 'ACTIONS' ? '#2563eb' : '#64748b',
+            border: 'none',
+            borderBottom: activeTab === 'ACTIONS' ? '3px solid #2563eb' : '3px solid transparent',
+            background: 'transparent',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>⚡ 3. 후속 과제 (Action Items)</span>
+          {(() => {
+            const count = meetings.reduce((acc, m) => acc + (m.actionItems?.filter(a => a.status !== 'COMPLETED').length || 0), 0);
+            return (
+              <span style={{ fontSize: '11px', background: count > 0 ? '#fef3c7' : '#f1f5f9', color: count > 0 ? '#b45309' : '#475569', padding: '2px 7px', borderRadius: '10px', fontWeight: 800 }}>
+                {count}
+              </span>
+            );
+          })()}
         </button>
       </div>
 
       {/* Filters Bar */}
-      <div style={{ display: 'flex', gap: '12px', background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', background: '#fff', padding: '14px 16px', borderRadius: '4px', border: '1px solid #cbd5e1', flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           type="text"
           placeholder="회의 제목, 참석자, 프로젝트 검색..."
@@ -1191,109 +1322,277 @@ export const MeetingMinutes: React.FC = () => {
         />
       </div>
 
-      {/* Card Grid List */}
-      {filteredMeetings.length === 0 ? (
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-          작성된 회의록이 없습니다. 새로운 회의록을 작성해보세요!
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredMeetings.map(m => (
-            <div
-              key={m.id}
-              onClick={() => { setSelectedMeeting(m); setIsDetailOpen(true); }}
-              style={{
-                background: '#fff',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'none';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>📅 {m.date}</span>
-                <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                  작성: {m.createdByName}
-                </span>
-              </div>
-
-              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b', lineHeight: 1.4 }}>{m.title}</h3>
-
-              {/* Company Badges */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {(m.companies || []).map((c, cIdx) => (
-                  <span
-                    key={cIdx}
+      {/* TAB 1: SCHEDULE (Pre-meeting Requests & Scheduled Meetings) */}
+      {activeTab === 'SCHEDULE' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {(() => {
+            const scheduledList = filteredMeetings.filter(m => m.status === 'REQUESTED' || m.status === 'IN_PROGRESS');
+            if (scheduledList.length === 0) {
+              return (
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                  📅 현재 예정되거나 신청된 회의 일정이 없습니다. 우측 상단 <b>[📅 회의 일정 신청]</b> 버튼을 클릭하여 회의를 예약해 보세요!
+                </div>
+              );
+            }
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
+                {scheduledList.map(m => (
+                  <div
+                    key={m.id}
+                    onClick={() => { setSelectedMeeting(m); setIsDetailOpen(true); }}
                     style={{
-                      fontSize: '11px',
-                      background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7',
-                      color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontWeight: 700
+                      background: '#fff',
+                      border: '1px solid #93c5fd',
+                      borderTop: '4px solid #3b82f6',
+                      borderRadius: '6px',
+                      padding: '18px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxShadow: '0 2px 6px rgba(59,130,246,0.06)'
                     }}
                   >
-                    {c.type === 'CUSTOMER' ? '🏢' : '⚙️'} {c.companyName}
-                  </span>
-                ))}
-                {m.projectName && (
-                  <span style={{ fontSize: '11px', background: '#ecfdf5', color: '#047857', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    🚀 {m.projectName}
-                  </span>
-                )}
-                {m.attachments && m.attachments.length > 0 && (
-                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    📎 첨부 ({m.attachments.length})
-                  </span>
-                )}
-              </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 800, background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}>
+                        📅 {m.date} {m.meetingTime ? `(${m.meetingTime})` : ''}
+                      </span>
+                      <span style={{ fontSize: '11px', background: m.status === 'IN_PROGRESS' ? '#fef3c7' : '#e0f2fe', color: m.status === 'IN_PROGRESS' ? '#b45309' : '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                        {m.status === 'IN_PROGRESS' ? '🔴 회의 진행중' : '⏳ 회의 예정'}
+                      </span>
+                    </div>
 
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '60px', overflow: 'hidden' }}>
-                <strong style={{ color: '#1e293b' }}>참석자 목록:</strong>
-                {(m.companies || []).map((c, cIdx) => (
-                  <span key={cIdx} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    • {c.companyName}: {c.attendees}
-                  </span>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b' }}>{m.title}</h3>
+
+                    {m.agenda && (
+                      <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '8px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        💡 <b>안건:</b> {m.agenda}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {(m.companies || []).map((c, cIdx) => (
+                        <span key={cIdx} style={{ fontSize: '11px', background: c.type === 'INTERNAL' ? '#f3e8ff' : c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'INTERNAL' ? '#7e22ce' : c.type === 'CUSTOMER' ? '#0369a1' : '#d97706', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                          [{c.type === 'INTERNAL' ? '자사' : c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {m.videoMeetingUrl ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); window.open(m.videoMeetingUrl, '_blank'); }}
+                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}
+                        >
+                          📹 화상회의 즉시 입장
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>화상링크 미생성</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleOpenEditForm(m); }}
+                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                      >
+                        ✍️ 회의록 작성/수정
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
+            );
+          })()}
+        </div>
+      )}
 
-              <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={e => { e.stopPropagation(); handleCopyLink(m); }}
-                  style={{ background: '#eff6ff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#2563eb', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  🔗 링크복사
-                </button>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    onClick={e => { e.stopPropagation(); handleOpenEditForm(m); }}
-                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); handleDelete(m.id); }}
-                    style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#dc2626', cursor: 'pointer' }}
-                  >
-                    삭제
-                  </button>
+      {/* TAB 2: MINUTES ARCHIVE (Completed Meeting Minutes) */}
+      {activeTab === 'MINUTES' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {(() => {
+            const completedList = filteredMeetings.filter(m => !m.status || m.status === 'COMPLETED');
+            if (completedList.length === 0) {
+              return (
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                  작성된 최종 회의록이 없습니다. 새로운 회의록을 작성해보세요!
                 </div>
+              );
+            }
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                {completedList.map(m => (
+                  <div
+                    key={m.id}
+                    onClick={() => { setSelectedMeeting(m); setIsDetailOpen(true); }}
+                    style={{
+                      background: '#fff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      padding: '18px',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>📅 {m.date}</span>
+                      <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        작성: {m.createdByName}
+                      </span>
+                    </div>
+
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b', lineHeight: 1.4 }}>{m.title}</h3>
+
+                    {/* Company Badges */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {(m.companies || []).map((c, cIdx) => (
+                        <span
+                          key={cIdx}
+                          style={{
+                            fontSize: '11px',
+                            background: c.type === 'INTERNAL' ? '#f3e8ff' : c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7',
+                            color: c.type === 'INTERNAL' ? '#7e22ce' : c.type === 'CUSTOMER' ? '#0369a1' : '#d97706',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: 700
+                          }}
+                        >
+                          {c.type === 'INTERNAL' ? '🏢' : c.type === 'CUSTOMER' ? '👥' : '⚙️'} {c.companyName}
+                        </span>
+                      ))}
+                      {m.projectName && (
+                        <span style={{ fontSize: '11px', background: '#ecfdf5', color: '#047857', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                          🚀 {m.projectName}
+                        </span>
+                      )}
+                      {m.attachments && m.attachments.length > 0 && (
+                        <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                          📎 첨부 ({m.attachments.length})
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '60px', overflow: 'hidden' }}>
+                      <strong style={{ color: '#1e293b' }}>참석자 목록:</strong>
+                      {(m.companies || []).map((c, cIdx) => (
+                        <span key={cIdx} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          • {c.companyName}: {c.attendees}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleCopyLink(m); }}
+                        style={{ background: '#eff6ff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#2563eb', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        🔗 링크복사
+                      </button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleOpenEditForm(m); }}
+                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDelete(m.id); }}
+                          style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', fontWeight: 700, color: '#dc2626', cursor: 'pointer' }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
+            );
+          })()}
+        </div>
+      )}
+
+      {/* TAB 3: ACTIONS (Action Items Dashboard) */}
+      {activeTab === 'ACTIONS' && (
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 850, color: '#1e293b', margin: 0 }}>⚡ 회의 도출 후속 과제 (Action Items Tracking)</h3>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>회의록에서 할당된 수행 과제들의 실시간 이행 상태입니다.</span>
+          </div>
+
+          {(() => {
+            const allItems: { meetingTitle: string; meetingDate: string; meetingId: string; item: ActionItem }[] = [];
+            meetings.forEach(m => {
+              (m.actionItems || []).forEach(item => {
+                allItems.push({ meetingTitle: m.title, meetingDate: m.date, meetingId: m.id, item });
+              });
+            });
+
+            if (allItems.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', fontSize: '13px' }}>
+                  등록되거나 추출된 후속 과제(Action Items)가 없습니다. 회의록 작성 시 하단에 액션 아이템을 등록해 보세요!
+                </div>
+              );
+            }
+
+            return (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#475569', fontWeight: 750 }}>상태</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#475569', fontWeight: 750 }}>수행 과제</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#475569', fontWeight: 750 }}>담당자</th>
+                    <th style={{ padding: '10px', textAlign: 'center', color: '#475569', fontWeight: 750 }}>조치 기한</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#475569', fontWeight: 750 }}>출처 회의록</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allItems.map((entry, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          background: entry.item.status === 'COMPLETED' ? '#dcfce7' : entry.item.status === 'IN_PROGRESS' ? '#fef3c7' : '#f1f5f9',
+                          color: entry.item.status === 'COMPLETED' ? '#15803d' : entry.item.status === 'IN_PROGRESS' ? '#b45309' : '#475569'
+                        }}>
+                          {entry.item.status === 'COMPLETED' ? '✅ 완료' : entry.item.status === 'IN_PROGRESS' ? '⏳ 진행중' : '📌 미진행'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', fontWeight: 700, color: '#1e293b' }}>{entry.item.task}</td>
+                      <td style={{ padding: '10px', color: '#2563eb', fontWeight: 600 }}>👤 {entry.item.assignee || '미지정'}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>📅 {entry.item.dueDate || '-'}</td>
+                      <td style={{ padding: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const found = meetings.find(m => m.id === entry.meetingId);
+                            if (found) { setSelectedMeeting(found); setIsDetailOpen(true); }
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#0369a1', textDecoration: 'underline', cursor: 'pointer', fontSize: '12.5px', fontWeight: 600 }}
+                        >
+                          {entry.meetingTitle} ({entry.meetingDate})
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
       )}
 
@@ -1473,6 +1772,57 @@ export const MeetingMinutes: React.FC = () => {
                 </div>
               </div>
               
+              {/* 회의 상태 및 수명주기 단계 선택 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.2fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 상태 (Lifecycle)</label>
+                  <select
+                    value={status}
+                    onChange={e => setStatus(e.target.value as any)}
+                    style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 750 }}
+                  >
+                    <option value="REQUESTED">📅 1. 사전 회의 신청/예정</option>
+                    <option value="IN_PROGRESS">🔴 2. 실시간 회의 진행중</option>
+                    <option value="COMPLETED">✅ 3. 회의록 최종 확정 (완료)</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 시각</label>
+                  <input
+                    type="time"
+                    value={meetingTime}
+                    onChange={e => setMeetingTime(e.target.value)}
+                    style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 구분</label>
+                  <select
+                    value={meetingType}
+                    onChange={e => setMeetingType(e.target.value as any)}
+                    style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 750 }}
+                  >
+                    <option value="INTERNAL">🏢 자사/사내 미팅</option>
+                    <option value="CUSTOMER">👥 바이어/고객사 미팅</option>
+                    <option value="SUPPLIER">🏭 공급사/공장 미팅</option>
+                    <option value="GLOBAL">🌐 글로벌 삼자 미팅</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 핵심 안건 (Agenda)</label>
+                  <input
+                    type="text"
+                    placeholder="예: 대만 선적 일정 지연 대책 수립"
+                    value={agenda}
+                    onChange={e => setAgenda(e.target.value)}
+                    style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 일자 <span style={{ color: '#ef4444' }}>*</span></label>
@@ -1788,6 +2138,94 @@ export const MeetingMinutes: React.FC = () => {
                           type="button"
                           onClick={() => removeAttachment(fileIdx)}
                           style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(239, 68, 68, 0.9)', border: 'none', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Items Registration & Task Assignment Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '16px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>⚡ 도출된 후속 과제 (Action Items) 등록 ({actionItems.length})</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newItem: ActionItem = {
+                        id: `item_${Date.now()}`,
+                        task: '',
+                        assignee: userProfile?.name || '미지정',
+                        dueDate: new Date().toISOString().split('T')[0],
+                        status: 'PENDING'
+                      };
+                      setActionItems(prev => [...prev, newItem]);
+                    }}
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    + 액션아이템 추가
+                  </button>
+                </div>
+
+                {actionItems.length === 0 ? (
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', textAlign: 'center', padding: '8px 0' }}>
+                    등록된 후속 과제가 없습니다. 상단 버튼을 눌러 담당자별 수행 과제를 할당해 보세요.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {actionItems.map((item, itemIdx) => (
+                      <div key={item.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fff', padding: '8px 10px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                        <select
+                          value={item.status}
+                          onChange={e => {
+                            const updated = [...actionItems];
+                            updated[itemIdx].status = e.target.value as any;
+                            setActionItems(updated);
+                          }}
+                          style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', height: '30px', background: '#fff', color: '#1e293b', fontWeight: 700 }}
+                        >
+                          <option value="PENDING">📌 미진행</option>
+                          <option value="IN_PROGRESS">⏳ 진행중</option>
+                          <option value="COMPLETED">✅ 완료</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="수행할 과제 내용 (예: 야간 상차 실시간 통지 셋팅)"
+                          value={item.task}
+                          onChange={e => {
+                            const updated = [...actionItems];
+                            updated[itemIdx].task = e.target.value;
+                            setActionItems(updated);
+                          }}
+                          style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '30px', outline: 'none' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="담당자"
+                          value={item.assignee}
+                          onChange={e => {
+                            const updated = [...actionItems];
+                            updated[itemIdx].assignee = e.target.value;
+                            setActionItems(updated);
+                          }}
+                          style={{ width: '110px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '30px', outline: 'none' }}
+                        />
+                        <input
+                          type="date"
+                          value={item.dueDate}
+                          onChange={e => {
+                            const updated = [...actionItems];
+                            updated[itemIdx].dueDate = e.target.value;
+                            setActionItems(updated);
+                          }}
+                          style={{ width: '130px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '30px', outline: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setActionItems(prev => prev.filter((_, i) => i !== itemIdx))}
+                          style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                         >
                           ✕
                         </button>
@@ -2181,6 +2619,37 @@ export const MeetingMinutes: React.FC = () => {
                 minHeight: '220px'
               }}
             />
+
+            {/* Detail Action Items List */}
+            {selectedMeeting.actionItems && selectedMeeting.actionItems.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>⚡ 도출된 후속 과제 (Action Items - {selectedMeeting.actionItems.length})</span>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', background: '#fff', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>상태</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>수행 과제</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>담당자</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'center', color: '#475569' }}>조치 기한</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedMeeting.actionItems.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '6px 10px' }}>
+                          <span style={{ fontSize: '10.5px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: item.status === 'COMPLETED' ? '#dcfce7' : item.status === 'IN_PROGRESS' ? '#fef3c7' : '#f1f5f9', color: item.status === 'COMPLETED' ? '#15803d' : item.status === 'IN_PROGRESS' ? '#b45309' : '#475569' }}>
+                            {item.status === 'COMPLETED' ? '✅ 완료' : item.status === 'IN_PROGRESS' ? '⏳ 진행중' : '📌 미진행'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '6px 10px', fontWeight: 700, color: '#1e293b' }}>{item.task}</td>
+                        <td style={{ padding: '6px 10px', color: '#2563eb', fontWeight: 600 }}>👤 {item.assignee || '미지정'}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>📅 {item.dueDate || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Detail Attachments Grid */}
             {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
