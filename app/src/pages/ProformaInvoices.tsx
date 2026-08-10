@@ -234,7 +234,7 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
+  }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
 
   const piStats = useMemo(() => {
     // 1. 총 견적 건수 & 각사 건수 (모든 상태 포함)
