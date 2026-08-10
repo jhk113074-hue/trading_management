@@ -1318,6 +1318,11 @@ export const Dashboard: React.FC = () => {
           const { start, end } = getWeekRange(weekOffset);
           const wStartStr = toLocalDateStr(start);
           const wEndStr = toLocalDateStr(end);
+          
+          // 마감일이 지났지만 미완료된 업무는 과거 주차(weekOffset < 0)에는 표시하지 않고, 이번 주(weekOffset === 0) 이상에 이관되어 표시됨
+          if (tDue < wStartStr) {
+            return false;
+          }
           return tStart <= wEndStr && tDue >= wStartStr;
         } else {
           return tStart <= endDate && tDue >= startDate;
