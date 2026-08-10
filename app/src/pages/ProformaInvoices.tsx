@@ -315,7 +315,7 @@ export const ProformaInvoices: React.FC = () => {
     };
   }, [pis, orders]);
 
-  const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
+  const handleSort = (key: keyof ProformaInvoice | 'customerName' | 'countryName') => {
     if (sortKey === key) {
       setSortDir(sortDir === 1 ? -1 : 1);
     } else {
