@@ -848,7 +848,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                             <span style={{ fontWeight: 800, color: '#2563eb' }}>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             <span style={{ color: '#94a3b8' }}>|</span>
                             <span style={{ fontWeight: 800, color: '#16a34a' }}>수금 완료: ${totalPaidUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                            {totalAmtUSD - totalPaidUSD > 0 && (
+                            {totalAmtUSD - totalPaidUSD > 0.01 && (
                               <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })})</span>
                             )}
                           </div>
@@ -900,7 +900,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                 ? `₩${Math.round(s.paidAmount).toLocaleString()}`
                                 : `$${s.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-                              const isPaidFull = s.paidAmount >= s.totalAmount && s.totalAmount > 0;
+                              const isPaidFull = (s.paidAmount >= s.totalAmount - 0.01) && s.totalAmount > 0;
                               const isPaidPartial = !isPaidFull && s.paidAmount > 0;
 
                               return (
