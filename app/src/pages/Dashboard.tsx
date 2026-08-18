@@ -2809,7 +2809,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>{userProfile?.name} (본인)</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>({tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건)</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>({tasks.filter(t => (t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name) && t.status !== 'DONE').length}건)</span>
                   </div>
                 </div>
                 <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#10b981' }} />
@@ -2818,7 +2818,7 @@ export const Dashboard: React.FC = () => {
               {/* Other assignees (모니터링 외주 계정 제외) */}
               {users.filter(u => u.id !== userProfile?.id && isOperationalUser(u)).map(u => {
                 const isSelected = filter === u.id;
-                const mTasks = tasks.filter(t => t.assigneeId === u.id || t.assigneeName === u.name);
+                const mTasks = tasks.filter(t => (t.assigneeId === u.id || t.assigneeName === u.name) && t.status !== 'DONE');
                 return (
                   <div
                     key={u.id}
