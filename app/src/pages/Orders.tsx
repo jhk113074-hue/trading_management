@@ -94,11 +94,11 @@ export const Orders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const processedPiRef = useRef<string | null>(null);
 
-  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([55, 110, 160, 100, 240, 120, 140, 100, 100, 300, 240, 60]);
+  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
+  const { thStyle, resizerProps, colWidths } = useColumnResize([50, 95, 150, 90, 200, 180, 110, 130, 90, 90, 280, 220, 55]);
 
   // 오름차순/내림차순 정렬 상태
-  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
+  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
@@ -449,6 +449,9 @@ export const Orders: React.FC = () => {
         } else if (sortKey === '발주사') {
           valA = a.customer || '';
           valB = b.customer || '';
+        } else if (sortKey === '품목') {
+          valA = (a.items && a.items.length > 0) ? (a.items.map(i => i.name).filter(Boolean).join(', ')) : '';
+          valB = (b.items && b.items.length > 0) ? (b.items.map(i => i.name).filter(Boolean).join(', ')) : '';
         } else if (sortKey === '발주액') {
           const piA = quotations.find(q => q.id === a.quotationId);
           const piB = quotations.find(q => q.id === b.quotationId);
@@ -1025,7 +1028,7 @@ export const Orders: React.FC = () => {
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
                 <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
-                    {['No.','날짜','주문번호','수주사','발주사','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
+                    {['No.','날짜','주문번호','수주사','발주사','품목','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
                         key={h} 
                         onClick={() => h !== '복사' && handleSort(h)}
@@ -1080,6 +1083,10 @@ export const Orders: React.FC = () => {
                   const displayStage = getFirstIncompleteStage(order);
                   const isAllFinished = displayStage === '완료';
 
+                  const itemNames = (order.items && order.items.length > 0)
+                    ? order.items.map(i => i.name).filter(Boolean).join(', ')
+                    : (pi?.itemsSummary ? pi.itemsSummary.join(', ') : '-');
+
                   const getTdStyle = (idx: number, extra: React.CSSProperties = {}): React.CSSProperties => ({
                     padding: '9px 16px',
                     width: colWidths[idx],
@@ -1105,19 +1112,20 @@ export const Orders: React.FC = () => {
                       <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
-                      <td style={getTdStyle(5, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(5, { color: '#334155', fontWeight: 600, fontSize: '12.5px' })} title={itemNames}>{itemNames}</td>
+                      <td style={getTdStyle(6, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(6, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(7, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
                         {(() => {
                           const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
-                      <td style={getTdStyle(7, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
-                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
+                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
+                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
                       {/* 단계 */}
-                      <td style={getTdStyle(9)}>
+                      <td style={getTdStyle(10)}>
                         {(() => {
                           const { done: overallDone, total: overallTotal, pct: overallPct } = getOverallProgress(order);
                           return (
@@ -1203,7 +1211,7 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                        {/* 다음단계 */}
-                      <td style={getTdStyle(10)}>
+                      <td style={getTdStyle(11)}>
                         {(() => {
                            const todoText = getNextTodoItem(order);
                            const isAllDone = todoText === "모든 업무 완료";
@@ -1220,7 +1228,7 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                       {/* 복사 */}
-                      <td style={getTdStyle(11, { textAlign: 'center' })}>
+                      <td style={getTdStyle(12, { textAlign: 'center' })}>
                         <button
                           type="button"
                           onClick={(e) => {
