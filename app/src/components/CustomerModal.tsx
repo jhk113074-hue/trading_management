@@ -785,6 +785,17 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                 const totalAmtKRW = filteredList.filter((s: any) => s.currency === 'KRW').reduce((sum: number, s: any) => sum + s.totalAmount, 0);
                 const totalPaidKRW = filteredList.filter((s: any) => s.currency === 'KRW').reduce((sum: number, s: any) => sum + s.paidAmount, 0);
 
+                // 발행주체별 (YSACC vs 영성ACC) 미수금 계산
+                const ysaccListUSD = filteredList.filter((s: any) => s.companyCode === 'YSACC' && s.currency === 'USD');
+                const ysListUSD = filteredList.filter((s: any) => s.companyCode === 'YS' && s.currency === 'USD');
+                const ysaccUnpaidUSD = ysaccListUSD.reduce((sum: number, s: any) => sum + s.totalAmount, 0) - ysaccListUSD.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+                const ysUnpaidUSD = ysListUSD.reduce((sum: number, s: any) => sum + s.totalAmount, 0) - ysListUSD.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+
+                const ysaccListKRW = filteredList.filter((s: any) => s.companyCode === 'YSACC' && s.currency === 'KRW');
+                const ysListKRW = filteredList.filter((s: any) => s.companyCode === 'YS' && s.currency === 'KRW');
+                const ysaccUnpaidKRW = ysaccListKRW.reduce((sum: number, s: any) => sum + s.totalAmount, 0) - ysaccListKRW.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+                const ysUnpaidKRW = ysListKRW.reduce((sum: number, s: any) => sum + s.totalAmount, 0) - ysListKRW.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+
                 return (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
@@ -841,26 +852,48 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
                     {/* Financial Summary Badges */}
                     {filteredList.length > 0 && (
-                      <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                         {totalAmtUSD > 0 && (
-                          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 800, color: '#1e40af' }}>USD 총 매출:</span>
                             <span style={{ fontWeight: 800, color: '#2563eb' }}>${totalAmtUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             <span style={{ color: '#94a3b8' }}>|</span>
                             <span style={{ fontWeight: 800, color: '#16a34a' }}>수금 완료: ${totalPaidUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             {totalAmtUSD - totalPaidUSD > 0.01 && (
-                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })})</span>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
+                                <span style={{ fontWeight: 800, color: '#dc2626' }}>
+                                  (총 미수금: ${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                                </span>
+                                {selectedCompany === 'ALL' && (ysaccUnpaidUSD > 0.01 || ysUnpaidUSD > 0.01) && (
+                                  <span style={{ fontSize: '11px', color: '#64748b', background: '#fff', border: '1px solid #fecaca', padding: '1px 6px', borderRadius: '4px', display: 'inline-flex', gap: '5px' }}>
+                                    {ysaccUnpaidUSD > 0.01 && <span style={{ color: '#2563eb', fontWeight: 700 }}>YSACC: ${(ysaccUnpaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>}
+                                    {ysaccUnpaidUSD > 0.01 && ysUnpaidUSD > 0.01 && <span>/</span>}
+                                    {ysUnpaidUSD > 0.01 && <span style={{ color: '#059669', fontWeight: 700 }}>영성: ${(ysUnpaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
                         {totalAmtKRW > 0 && (
-                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 800, color: '#166534' }}>KRW 총 매출:</span>
                             <span style={{ fontWeight: 800, color: '#16a34a' }}>₩{Math.round(totalAmtKRW).toLocaleString()}</span>
                             <span style={{ color: '#94a3b8' }}>|</span>
                             <span style={{ fontWeight: 800, color: '#2563eb' }}>수금 완료: ₩{Math.round(totalPaidKRW).toLocaleString()}</span>
                             {totalAmtKRW - totalPaidKRW > 0 && (
-                              <span style={{ fontWeight: 800, color: '#dc2626' }}>(미수금: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})</span>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
+                                <span style={{ fontWeight: 800, color: '#dc2626' }}>
+                                  (총 미수금: ₩{Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()})
+                                </span>
+                                {selectedCompany === 'ALL' && (ysaccUnpaidKRW > 0 || ysUnpaidKRW > 0) && (
+                                  <span style={{ fontSize: '11px', color: '#64748b', background: '#fff', border: '1px solid #fecaca', padding: '1px 6px', borderRadius: '4px', display: 'inline-flex', gap: '5px' }}>
+                                    {ysaccUnpaidKRW > 0 && <span style={{ color: '#2563eb', fontWeight: 700 }}>YSACC: ₩{Math.round(ysaccUnpaidKRW).toLocaleString()}</span>}
+                                    {ysaccUnpaidKRW > 0 && ysUnpaidKRW > 0 && <span>/</span>}
+                                    {ysUnpaidKRW > 0 && <span style={{ color: '#059669', fontWeight: 700 }}>영성: ₩{Math.round(ysUnpaidKRW).toLocaleString()}</span>}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -989,6 +1022,13 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                       {totalAmtUSD - totalPaidUSD > 0.01 && `$${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                       {totalAmtKRW - totalPaidKRW > 0 && `₩${Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()}`}
                                     </span>
+                                    {selectedCompany === 'ALL' && (ysaccUnpaidUSD > 0.01 || ysUnpaidUSD > 0.01) && (
+                                      <div style={{ fontSize: '9.5px', color: '#64748b', display: 'flex', gap: '4px', marginTop: '1px' }}>
+                                        {ysaccUnpaidUSD > 0.01 && <span style={{ color: '#2563eb', fontWeight: 700 }}>YSACC ${Math.round(ysaccUnpaidUSD).toLocaleString()}</span>}
+                                        {ysaccUnpaidUSD > 0.01 && ysUnpaidUSD > 0.01 && <span>/</span>}
+                                        {ysUnpaidUSD > 0.01 && <span style={{ color: '#059669', fontWeight: 700 }}>영성 ${Math.round(ysUnpaidUSD).toLocaleString()}</span>}
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: '#dcfce7', color: '#15803d', fontWeight: 800 }}>
