@@ -75,6 +75,20 @@ const getNextTodoItem = (order: Order): string => {
   return "모든 업무 완료";
 };
 
+export const getOrderAmountUsd = (order: Order, quotation?: ProformaInvoice): number => {
+  if (order.items && order.items.length > 0) {
+    const itemsUsdSum = order.items
+      .filter(it => !it.isSourcingOnly && it.currency !== 'KRW')
+      .reduce((sum, it) => sum + (it.amount || ((it.qty || 0) * (it.unitPrice || 0))), 0);
+    const forwardersUsdSum = (order.forwarders || [])
+      .reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
+    if (itemsUsdSum > 0 || forwardersUsdSum > 0) {
+      return itemsUsdSum + forwardersUsdSum;
+    }
+  }
+  return order.totalAmount || quotation?.totalUsd || 0;
+};
+
 // 단계 → stageKey 매핑
 const stepToStageKey: Record<string, StageKey> = {
   '수주정보': '수주정보',
@@ -455,15 +469,15 @@ export const Orders: React.FC = () => {
         } else if (sortKey === '발주액') {
           const piA = quotations.find(q => q.id === a.quotationId);
           const piB = quotations.find(q => q.id === b.quotationId);
-          valA = a.totalAmount || piA?.totalUsd || 0;
-          valB = b.totalAmount || piB?.totalUsd || 0;
+          valA = getOrderAmountUsd(a, piA);
+          valB = getOrderAmountUsd(b, piB);
         } else if (sortKey === '매출액') {
           const piA = quotations.find(q => q.id === a.quotationId);
           const piB = quotations.find(q => q.id === b.quotationId);
           const rateA = a.customsExchangeRate || a.exchangeRate || piA?.exchangeRate || 1350;
           const rateB = b.customsExchangeRate || b.exchangeRate || piB?.exchangeRate || 1350;
-          valA = (a.totalAmount || piA?.totalUsd || 0) * rateA;
-          valB = (b.totalAmount || piB?.totalUsd || 0) * rateB;
+          valA = getOrderAmountUsd(a, piA) * rateA;
+          valB = getOrderAmountUsd(b, piB) * rateB;
         } else if (sortKey === 'ETD') {
           valA = a.etd || '';
           valB = b.etd || '';
@@ -510,13 +524,13 @@ export const Orders: React.FC = () => {
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
       const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (o.totalAmount || pi?.totalUsd || 0);
+      return sum + getOrderAmountUsd(o, pi);
     }, 0);
     
     const salesOrders = processedOrders.filter(o => (o.etd || "").trim() !== "");
     const salesTotalKrw = salesOrders.reduce((sum, o) => {
       const pi = quotations.find(q => q.id === o.quotationId);
-      const amount = o.totalAmount || pi?.totalUsd || 0;
+      const amount = getOrderAmountUsd(o, pi);
       const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
       return sum + (amount * rate);
     }, 0);
@@ -526,24 +540,24 @@ export const Orders: React.FC = () => {
       totalUsd,
       totalYsaccUsd: processedOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (o.totalAmount || pi?.totalUsd || 0);
+        return sum + getOrderAmountUsd(o, pi);
       }, 0),
       totalYsUsd: processedOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (o.totalAmount || pi?.totalUsd || 0);
+        return sum + getOrderAmountUsd(o, pi);
       }, 0),
       urgentCount: processedOrders.filter(o => o.nextAction.level === 'RED').length,
       salesCount: salesOrders.length,
       salesTotalKrw,
       salesYsaccKrw: salesOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        const amount = o.totalAmount || pi?.totalUsd || 0;
+        const amount = getOrderAmountUsd(o, pi);
         const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
         return sum + (amount * rate);
       }, 0),
       salesYsKrw: salesOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        const amount = o.totalAmount || pi?.totalUsd || 0;
+        const amount = getOrderAmountUsd(o, pi);
         const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
         return sum + (amount * rate);
       }, 0),
@@ -736,7 +750,7 @@ export const Orders: React.FC = () => {
   // ── 오더 카드 (칸반/목록 공통 사용) ──────────────────────────────────────
   const OrderCard = ({ order, compact = false }: { order: Order & { nextAction: NextAction }; compact?: boolean }) => {
     const pi = quotations.find(q => q.id === order.quotationId);
-    const amount = pi?.totalUsd || order.totalAmount || 0;
+    const amount = getOrderAmountUsd(order, pi);
     const { pct } = getOverallProgress(order);
     const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : 'var(--text-secondary)';
     const lvlBg   = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
@@ -859,7 +873,7 @@ export const Orders: React.FC = () => {
         const colOrders = processedOrders.filter(o => getFirstIncompleteStage(o) === col.step);
         const colAmount = colOrders.reduce((sum, o) => {
           const pi = quotations.find(q => q.id === o.quotationId);
-          return sum + (pi?.totalUsd || o.totalAmount || 0);
+          return sum + getOrderAmountUsd(o, pi);
         }, 0);
         return (
           <div key={col.key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -922,7 +936,7 @@ export const Orders: React.FC = () => {
           </div>
         ) : orders.map(o => {
           const pi = quotations.find(q => q.id === o.quotationId);
-          const amount = pi?.totalUsd || o.totalAmount || 0;
+          const amount = getOrderAmountUsd(o, pi);
           const { pct } = getOverallProgress(o);
           const currentStep = mapStatusToStep(o.status || '');
           return (
@@ -1070,7 +1084,7 @@ export const Orders: React.FC = () => {
               <tbody>
                 {processedOrders.map((order, orderIndex) => {
                   const pi = quotations.find(q => q.id === order.quotationId);
-                  const amount = order.totalAmount || pi?.totalUsd || 0;
+                  const amount = getOrderAmountUsd(order, pi);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
                   const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#cbd5e1';
