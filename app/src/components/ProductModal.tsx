@@ -30,10 +30,13 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   const [showMfgSearch, setShowMfgSearch] = useState(false);
   const [showSupSearch, setShowSupSearch] = useState(false);
 
-  // Category states
+  // Category & Unit states
   const [largeCategories, setLargeCategories] = useState<string[]>([]);
   const [mediumCategories, setMediumCategories] = useState<string[]>([]);
   const [smallCategories, setSmallCategories] = useState<string[]>([]);
+  const [unitList, setUnitList] = useState<string[]>(['KG', 'PCS', 'BOX', 'M2', 'M', 'EA', 'SET']);
+  const [isAddingUnit, setIsAddingUnit] = useState(false);
+  const [newUnitVal, setNewUnitVal] = useState('');
 
   const [isAddingLarge, setIsAddingLarge] = useState(false);
   const [isAddingMedium, setIsAddingMedium] = useState(false);
@@ -49,9 +52,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   const [newMediumVal, setNewMediumVal] = useState('');
   const [newSmallVal, setNewSmallVal] = useState('');
 
-  // Fetch categories from DB or Bootstrap
+  // Fetch categories & units from DB or Bootstrap
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchCategoriesAndUnits = async () => {
       try {
         const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'productCategories'));
         const cats = snap.docs.map(doc => doc.data() as { name: string; type: 'large' | 'medium' | 'small' });
@@ -80,12 +83,37 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
           setMediumCategories([...new Set(medium)].sort());
           setSmallCategories([...new Set(small)].sort());
         }
+
+        // Fetch custom units
+        const unitSnap = await getDocs(collection(db, 'companies', COMPANY_ID, 'productUnits'));
+        const dbUnits = unitSnap.docs.map(d => d.data().name as string);
+        const defaultUnits = ['KG', 'PCS', 'BOX', 'M2', 'M', 'EA', 'SET'];
+        const combined = [...new Set([...defaultUnits, ...dbUnits])];
+        setUnitList(combined);
       } catch (e) {
-        console.error("Failed to load categories:", e);
+        console.error("Failed to load categories/units:", e);
       }
     };
-    fetchCategories();
+    fetchCategoriesAndUnits();
   }, [products]);
+
+  const registerNewUnit = async (name: string) => {
+    if (!name.trim()) return;
+    const trimmed = name.trim().toUpperCase();
+    try {
+      await setDoc(doc(db, 'companies', COMPANY_ID, 'productUnits', trimmed), {
+        name: trimmed,
+        createdAt: serverTimestamp()
+      });
+      setUnitList(prev => [...new Set([...prev, trimmed])]);
+      handleChange('unit', trimmed);
+      setIsAddingUnit(false);
+      setNewUnitVal('');
+    } catch (e) {
+      console.error(e);
+      alert('신규 단위 등록에 실패했습니다.');
+    }
+  };
 
   const registerNewCategory = async (name: string, type: 'large' | 'medium' | 'small') => {
     if (!name.trim()) return;
@@ -1483,13 +1511,65 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#2563eb', margin: 0 }}>📦 제품 패킹(포장) 방법 목록</h4>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>기본 단위:</span>
-                        <select 
-                          value={formData.unit ?? ''} 
-                          onChange={e => handleChange('unit', e.target.value)} 
-                          style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                        >
-                          {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
+                        {!isAddingUnit ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <select 
+                              value={formData.unit ?? ''} 
+                              onChange={e => handleChange('unit', e.target.value)} 
+                              style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                            >
+                              {unitList.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingUnit(true)}
+                              style={{
+                                padding: '2px 6px',
+                                fontSize: '11px',
+                                border: '1px solid #cbd5e1',
+                                background: '#f8fafc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: '#2563eb',
+                                fontWeight: 600
+                              }}
+                              title="신규 단위 직접 등록"
+                            >
+                              ＋ 단위 추가
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="text"
+                              placeholder="단위 입력 (예: L, TON)"
+                              value={newUnitVal}
+                              onChange={e => setNewUnitVal(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  registerNewUnit(newUnitVal);
+                                }
+                              }}
+                              style={{ padding: '4px 6px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12px', width: '110px', outline: 'none' }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => registerNewUnit(newUnitVal)}
+                              style={{ padding: '4px 8px', fontSize: '11px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                            >
+                              등록
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setIsAddingUnit(false); setNewUnitVal(''); }}
+                              style={{ padding: '4px 6px', fontSize: '11px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              취소
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <button 
@@ -1627,7 +1707,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, unit: e.target.value }))} 
                           style={{ padding: '7px 9px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
-                          {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => (
+                          {unitList.map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
