@@ -242,7 +242,20 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
         const toExportRecord = (d: any) => {
           const data = d.data();
-          const totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
+          let totAmt = 0;
+          if (Array.isArray(data.items) && data.items.length > 0) {
+            const itemsUsdSum = data.items
+              .filter((it: any) => !it.isSourcingOnly && it.currency !== 'KRW')
+              .reduce((sum: number, it: any) => sum + (Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0))), 0);
+            const forwardersUsdSum = (data.forwarders || [])
+              .reduce((sum: number, fw: any) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
+            if (itemsUsdSum > 0 || forwardersUsdSum > 0) {
+              totAmt = itemsUsdSum + forwardersUsdSum;
+            }
+          }
+          if (totAmt === 0) {
+            totAmt = Number(data.totalAmount || data.grandTotal || data.orderAmountUsd || data.contractAmount || data.price || 0);
+          }
 
           let paidAmt = 0;
           if (data.paymentStatus === 'PAID' || data.paymentStatus === 'COMPLETED' || data.paymentStatus === '수금완료' || data.status === '완료') {
@@ -269,7 +282,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
 
           const rawDate = data.orderDate || data.piDate || data.createdAt;
           const dateStr = parseDateStr(rawDate);
-          const isFull = paidAmt >= totAmt && totAmt > 0;
+          // 0.01달러 부동소수점 오차 감안 완납 판정
+          const isFull = (paidAmt >= totAmt - 0.01) && totAmt > 0;
           const isPartial = !isFull && paidAmt > 0;
 
           const rawComp = String(data.issuingCompany || data.companyType || data.seller || data.myCompany || '').trim();
