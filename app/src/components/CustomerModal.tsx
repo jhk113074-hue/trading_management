@@ -980,13 +980,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                                 {totalAmtKRW > 0 && <div>₩{Math.round(totalPaidKRW).toLocaleString()}</div>}
                               </td>
                               <td style={{ padding: '10px', textAlign: 'center' }}>
-                                {totalAmtUSD - totalPaidUSD > 0 || totalAmtKRW - totalPaidKRW > 0 ? (
-                                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c', fontWeight: 800 }}>
-                                    미수금 잔액 존재
-                                  </span>
+                                {totalAmtUSD - totalPaidUSD > 0.01 || totalAmtKRW - totalPaidKRW > 0 ? (
+                                  <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c', fontWeight: 800 }}>
+                                      🔴 미수금 잔액
+                                    </span>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#dc2626' }}>
+                                      {totalAmtUSD - totalPaidUSD > 0.01 && `$${(totalAmtUSD - totalPaidUSD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                      {totalAmtKRW - totalPaidKRW > 0 && `₩${Math.round(totalAmtKRW - totalPaidKRW).toLocaleString()}`}
+                                    </span>
+                                  </div>
                                 ) : (
                                   <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: '#dcfce7', color: '#15803d', fontWeight: 800 }}>
-                                    전액 수금 완료
+                                    🟢 전액 수금 완료
                                   </span>
                                 )}
                               </td>
