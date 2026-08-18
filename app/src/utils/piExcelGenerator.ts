@@ -387,11 +387,13 @@ export const generatePIExcel = async (
       const marginVal = (item.marginRate !== undefined && item.marginRate !== null && item.marginRate !== 0)
         ? (item.marginRate / 100) 
         : 0.07;
+      const roundDigits = item.roundDigits !== undefined ? item.roundDigits : 2;
 
-      // Excel Formula for Col 6 (UNIT PRICE): ROUNDUP(I{row}/J{row}/(1-K{row}),1)
-      const salePriceUsd = item.salePriceUsd || (exRate && (1 - marginVal) > 0 ? Math.ceil((costKrw / exRate / (1 - marginVal)) * 10) / 10 : 0);
+      // Excel Formula for Col 6 (UNIT PRICE): ROUNDUP(I{row}/J{row}/(1-K{row}), {roundDigits})
+      const factor = Math.pow(10, roundDigits);
+      const salePriceUsd = item.salePriceUsd || (exRate && (1 - marginVal) > 0 ? Math.ceil((costKrw / exRate / (1 - marginVal)) * factor) / factor : 0);
       row.getCell(6).value = {
-        formula: `ROUNDUP(I${currentRow}/J${currentRow}/(1-K${currentRow}),1)`,
+        formula: `ROUNDUP(I${currentRow}/J${currentRow}/(1-K${currentRow}),${roundDigits})`,
         result: salePriceUsd
       };
       row.getCell(6).numFmt = '"$"#,##0.00';
