@@ -124,7 +124,7 @@ export function getEffectiveStageCompletion(order: any): CompletionMap {
     }
   }
   const installments = basic.paymentCollectedInstallments || order.paymentCollectedInstallments || [];
-  const totalCollected = installments.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
+  const totalCollected = installments.reduce((sum: number, i: any) => sum + (Number(i.total) || (Number(i.amount || 0) + Number(i.fee || 0))), 0);
   if (order.collectionStatus === 'COMPLETED' || totalCollected > 0) {
     sc.정산결제['수금 관리 완료'] = true;
   }

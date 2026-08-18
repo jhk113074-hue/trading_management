@@ -251,7 +251,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
             let sumCollected = 0;
             if (Array.isArray(data.paymentCollectedInstallments) && data.paymentCollectedInstallments.length > 0) {
               sumCollected = data.paymentCollectedInstallments.reduce((sum: number, inst: any) => {
-                return sum + (Number(inst.amount) || Number(inst.total) || 0);
+                const totalAmt = Number(inst.total) || (Number(inst.amount || 0) + Number(inst.fee || 0));
+                return sum + totalAmt;
               }, 0);
             }
             const rootPaid = Number(

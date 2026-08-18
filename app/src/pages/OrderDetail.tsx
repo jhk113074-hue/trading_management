@@ -1218,7 +1218,7 @@ export const OrderDetail: React.FC = () => {
     if (allOrderSuppliers.length > 0 && donePaymentCount === allOrderSuppliers.length) {
       po정산['공급업체 대금 결제 완료'] = true;
     }
-    const totalCollectedAmount = (basicForm.paymentCollectedInstallments || []).reduce((sum: number, inst: any) => sum + (Number(inst.amount) || 0), 0);
+    const totalCollectedAmount = (basicForm.paymentCollectedInstallments || []).reduce((sum: number, inst: any) => sum + (Number(inst.total) || (Number(inst.amount || 0) + Number(inst.fee || 0))), 0);
     if (totalCollectedAmount > 0)
       po정산['수금 관리 완료'] = true;
     autoDetect['정산결제'] = po정산;
@@ -12599,7 +12599,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               // (Since PO Amount is in USD). If non-USD, we just show totals.
                               let progressText = '';
                               if (curr === 'USD' && orderAmountUsd > 0) {
-                                const percent = (sumAmount / orderAmountUsd) * 100;
+                                const percent = (sumTotal / orderAmountUsd) * 100;
                                 progressText = ` (PO 대비 입금액 수금율: ${percent.toFixed(2)}%)`;
                               }
 
