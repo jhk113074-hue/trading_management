@@ -95,7 +95,7 @@ export const Orders: React.FC = () => {
   const processedPiRef = useRef<string | null>(null);
 
   // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([50, 95, 150, 90, 200, 180, 110, 130, 90, 90, 280, 220, 55]);
+  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 75, 75, 270, 210, 50]);
 
   // 오름차순/내림차순 정렬 상태
   const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
@@ -1087,8 +1087,27 @@ export const Orders: React.FC = () => {
                     ? order.items.map(i => i.name).filter(Boolean).join(', ')
                     : (pi?.itemsSummary ? pi.itemsSummary.join(', ') : '-');
 
+                  const formatDateShort = (dateStr?: string) => {
+                    if (!dateStr || dateStr === '-') return '-';
+                    const clean = dateStr.trim();
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+                      return clean.slice(2); // 2026-08-14 -> 26-08-14
+                    }
+                    if (/^\d{2}-\d{2}-\d{2}$/.test(clean)) {
+                      return clean;
+                    }
+                    const d = new Date(clean);
+                    if (!isNaN(d.getTime())) {
+                      const yy = String(d.getFullYear()).slice(2);
+                      const mm = String(d.getMonth() + 1).padStart(2, '0');
+                      const dd = String(d.getDate()).padStart(2, '0');
+                      return `${yy}-${mm}-${dd}`;
+                    }
+                    return clean;
+                  };
+
                   const getTdStyle = (idx: number, extra: React.CSSProperties = {}): React.CSSProperties => ({
-                    padding: '9px 16px',
+                    padding: '9px 8px',
                     width: colWidths[idx],
                     minWidth: colWidths[idx],
                     maxWidth: colWidths[idx],
@@ -1108,7 +1127,7 @@ export const Orders: React.FC = () => {
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
                       <td style={getTdStyle(0, { color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' })}>{orderIndex + 1}</td>
-                      <td style={getTdStyle(1, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
+                      <td style={getTdStyle(1, { color: '#64748b', fontSize: '12px', fontWeight: 600, textAlign: 'center' })}>{formatDateShort(order.etd || order.poDate)}</td>
                       <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
@@ -1122,8 +1141,8 @@ export const Orders: React.FC = () => {
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
-                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
-                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
+                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.etd)}</td>
+                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.eta)}</td>
                       {/* 단계 */}
                       <td style={getTdStyle(10)}>
                         {(() => {
