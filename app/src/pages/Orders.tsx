@@ -134,6 +134,7 @@ export const Orders: React.FC = () => {
   const [stepFilter, setStepFilter] = useState(() => getSavedFilter('step', 'All'));
   const [viewFilter, setViewFilter] = useState(() => getSavedFilter('view', 'All'));
   const [completedFilter, setCollapsedFilter] = useState(() => getSavedFilter('completed', 'Hide')); // 'All' | 'Hide'
+  const [etdStatusFilter, setEtdStatusFilter] = useState(() => getSavedFilter('etdStatus', 'All')); // 'All' | 'Unset' | 'Set'
 
   const [dateFilterType, setDateFilterType] = useState<string>(() => getSavedFilter('dateFilterType', 'Last3Months'));
   const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>(() => getSavedFilter('dateFilterTarget', 'date') as any);
@@ -167,6 +168,7 @@ export const Orders: React.FC = () => {
       sessionStorage.setItem('orders_filter_step', stepFilter);
       sessionStorage.setItem('orders_filter_view', viewFilter);
       sessionStorage.setItem('orders_filter_completed', completedFilter);
+      sessionStorage.setItem('orders_filter_etdStatus', etdStatusFilter);
       sessionStorage.setItem('orders_filter_dateFilterType', dateFilterType);
       sessionStorage.setItem('orders_filter_dateFilterTarget', dateFilterTarget);
       sessionStorage.setItem('orders_filter_selectedYear', String(selectedYear));
@@ -409,6 +411,11 @@ export const Orders: React.FC = () => {
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
     if (completedFilter === 'Hide') result = result.filter(o => mapStatusToStep(o.status || '', o) !== '완료');
+    if (etdStatusFilter === 'Unset') {
+      result = result.filter(o => !o.etd || String(o.etd).trim() === '' || String(o.etd).trim() === '-');
+    } else if (etdStatusFilter === 'Set') {
+      result = result.filter(o => o.etd && String(o.etd).trim() !== '' && String(o.etd).trim() !== '-');
+    }
 
     if (dateFilterType !== 'All') {
       result = result.filter(o => {
@@ -519,7 +526,7 @@ export const Orders: React.FC = () => {
       });
     }
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
+  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
 
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
@@ -609,15 +616,16 @@ export const Orders: React.FC = () => {
           {/* 구분선 */}
           <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
 
-          {/* 기본 노출 필터: 발주사, 보기, 완료건 */}
+          {/* 기본 노출 필터: 발주사, 보기, 완료건, ETD */}
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
             { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
-          ].map(({ label, value, set, opts }) => (
+            { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['Unset', '📅 ETD 미정만'], ['Set', '🚢 ETD 확정만']], highlight: etdStatusFilter !== 'All' },
+          ].map(({ label, value, set, opts, highlight }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
-              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: highlight ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
+              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: highlight ? '1.5px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: highlight ? '#eff6ff' : '#fff', color: highlight ? '#1d4ed8' : '#1e293b', fontWeight: highlight ? 700 : 600, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
                 {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
