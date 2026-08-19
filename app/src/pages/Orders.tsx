@@ -410,9 +410,28 @@ export const Orders: React.FC = () => {
     }
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
-    if (completedFilter === 'Hide') result = result.filter(o => mapStatusToStep(o.status || '', o) !== '완료');
-    if (etdStatusFilter === 'Unset') {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (etdStatusFilter === 'UnsetOrFuture') {
+      // ETD 미정 또는 오늘 이후(출항 전) 오더만 표시
+      result = result.filter(o => {
+        const etdVal = (o.etd || '').trim();
+        if (!etdVal || etdVal === '-') return true;
+        return etdVal >= todayStr;
+      });
+    } else if (etdStatusFilter === 'Unset') {
       result = result.filter(o => !o.etd || String(o.etd).trim() === '' || String(o.etd).trim() === '-');
+    } else if (etdStatusFilter === 'Future') {
+      // ETD 확정 & 오늘 이후(출항 전)
+      result = result.filter(o => {
+        const etdVal = (o.etd || '').trim();
+        return etdVal && etdVal !== '-' && etdVal >= todayStr;
+      });
+    } else if (etdStatusFilter === 'Past') {
+      // ETD 경과(출항 완료)
+      result = result.filter(o => {
+        const etdVal = (o.etd || '').trim();
+        return etdVal && etdVal !== '-' && etdVal < todayStr;
+      });
     } else if (etdStatusFilter === 'Set') {
       result = result.filter(o => o.etd && String(o.etd).trim() !== '' && String(o.etd).trim() !== '-');
     }
@@ -621,7 +640,7 @@ export const Orders: React.FC = () => {
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
             { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
-            { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['Unset', '📅 ETD 미정만'], ['Set', '🚢 ETD 확정만']], highlight: etdStatusFilter !== 'All' },
+            { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
           ].map(({ label, value, set, opts, highlight }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: highlight ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
