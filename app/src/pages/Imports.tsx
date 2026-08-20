@@ -982,14 +982,27 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       const copied: ImportRequest = {
         ...req,
         id: nextId,
-        poNumber: generatedPo,
+        poNumber: isQuoteMode ? '' : generatedPo,
         quoteNumber: generatedQuoteNo,
+        blAwb: '', // 기주문 BL/AWB 삭제
         createdAt: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\s/g, ''),
         requestDate: todayIso,
-        eta: isQuoteMode ? '' : (req.eta || ''),
+        etd: '', // 출항일 초기화
+        eta: '', // 입항일 초기화
         itemName: req.itemName.includes('(복사)') ? req.itemName : `${req.itemName} (복사)`,
         customerDecision: isQuoteMode ? '검토중' : '승인',
-        status: isQuoteMode ? '진행 결정 요청' : '발주 진행'
+        status: isQuoteMode ? '진행 결정 요청' : '발주 진행',
+        // 이전 진행 주문의 결제/송금/수금/증빙/세금계산서/정산 기록 삭제하여 완전히 독립적인 신규 견적으로 생성
+        payments: [],
+        collections: [],
+        documents: {},
+        actualCostBreakdown: undefined,
+        settlementCompleted: false,
+        taxInvoiceNumber: '',
+        taxInvoiceIssuedDate: '',
+        taxInvoiceGrandTotal: 0,
+        dealStatementSentDate: '',
+        dealStatementConfirmedDate: ''
       };
 
       const nextList = [copied, ...importRequests];

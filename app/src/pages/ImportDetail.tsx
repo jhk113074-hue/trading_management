@@ -1437,7 +1437,7 @@ export const ImportDetail: React.FC = () => {
             {request.status}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-            BL(AWB): <strong style={{ color: 'var(--text-primary)' }}>{request.blAwb}</strong> | PO: <strong style={{ color: 'var(--text-primary)' }}>{request.poNumber}</strong> | 수입처: <strong style={{ color: 'var(--text-primary)' }}>{request.importCompany || '-'}</strong> | 수출처: <strong style={{ color: 'var(--text-primary)' }}>{request.importerName || '-'}</strong> | 대표제품: <strong style={{ color: 'var(--text-primary)' }}>
+            BL(AWB): <strong style={{ color: 'var(--text-primary)' }}>{request.blAwb || '-'}</strong> | PO: <strong style={{ color: 'var(--text-primary)' }}>{request.poNumber || '-'}</strong> | 수입처: <strong style={{ color: 'var(--text-primary)' }}>{request.importCompany || '-'}</strong> | 수출처: <strong style={{ color: 'var(--text-primary)' }}>{request.importerName || '-'}</strong> | 대표제품: <strong style={{ color: 'var(--text-primary)' }}>
               {(() => {
                 const items = request.piItems || [];
                 const validItems = items.filter((it: any) => it && it.name && it.name.trim() !== '');
