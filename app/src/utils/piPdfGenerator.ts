@@ -81,7 +81,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
             <td style="text-align:center; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(fc.qty || 0).toLocaleString('en-US')}</td>
             <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(fc.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
             <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b;">${fc.remarks || '-'}</td>
+            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b; white-space:pre-wrap; word-break:break-word;">${(fc.remarks || '-').replace(/\n/g, '<br/>')}</td>
           </tr>
         `).join('')}
       </tbody>

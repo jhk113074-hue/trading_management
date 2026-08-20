@@ -3165,12 +3165,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <div style={{ flex: 1, textAlign: 'right', fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
                       ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <input 
-                      type="text" 
-                      placeholder="비고" 
+                    <textarea 
+                      placeholder="비고 (엔터 입력 및 크기 조절 가능)" 
                       value={fc.remarks || ''} 
                       onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
-                      style={{ flex: 3.5, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px' }} 
+                      rows={1}
+                      style={{ 
+                        flex: 3.5, 
+                        minHeight: '32px', 
+                        padding: '5px 6px', 
+                        border: '1px solid var(--border-default)', 
+                        borderRadius: '4px', 
+                        fontSize: '13.5px', 
+                        fontFamily: 'inherit',
+                        resize: 'vertical',
+                        lineHeight: 1.35,
+                        boxSizing: 'border-box'
+                      }} 
                     />
                     <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
                   </div>
