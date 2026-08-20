@@ -954,9 +954,37 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
   const handleDeleteRequest = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`의뢰번호 ${id} 수입운송 건을 삭제하시겠습니까?`)) {
-      const nextList = importRequests.filter(req => req.id !== id);
-      saveToStorage(nextList);
+    const targetReq = importRequests.find(r => r.id === id);
+    if (!targetReq) return;
+
+    if (!isQuoteMode) {
+      // 📦 수입주문관리에서 삭제 시: 견적 데이터는 보존하고 수입주문(승인)만 취소하여 견적관리 단계로 되돌릴지, 아니면 완전 삭제할지 선택
+      const choice = window.confirm(
+        `[수입주문 취소 및 견적 보존]\n` +
+        `의뢰번호 ${id} 수입주문을 취소하고 견적관리 단계(검토중)로 되돌리시겠습니까?\n\n` +
+        `• [확인] : 주문만 취소 (수입견적관리의 원본 견적 데이터는 안전하게 보존됨)\n` +
+        `• [취소] : 작업 취소`
+      );
+      if (choice) {
+        const nextList = importRequests.map(req => {
+          if (req.id === id) {
+            return {
+              ...req,
+              customerDecision: '검토중' as const,
+              status: '진행 결정 요청' as const
+            };
+          }
+          return req;
+        });
+        saveToStorage(nextList);
+        alert(`수입주문이 취소되어 수입견적관리(검토중) 상태로 복원되었습니다.`);
+      }
+    } else {
+      // 📑 수입견적관리에서 삭제 시: 견적 자체를 완전히 삭제
+      if (window.confirm(`의뢰번호 ${id} 수입견적 건을 완전히 삭제하시겠습니까?`)) {
+        const nextList = importRequests.filter(req => req.id !== id);
+        saveToStorage(nextList);
+      }
     }
   };
 
