@@ -57,6 +57,57 @@ export const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeNotificationTask, setActiveNotificationTask] = useState<Task | null>(null);
 
+  // 실시간 기준환율 상태
+  const [exchangeRates, setExchangeRates] = useState<{
+    usd: number;
+    eur: number;
+    cny: number;
+    time: string;
+    loading: boolean;
+    error: boolean;
+  }>({
+    usd: 1390,
+    eur: 1620,
+    cny: 206,
+    time: '',
+    loading: false,
+    error: false,
+  });
+
+  const fetchExchangeRates = React.useCallback(async () => {
+    setExchangeRates(prev => ({ ...prev, loading: true, error: false }));
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (!res.ok) throw new Error('환율 정보를 불러올 수 없습니다.');
+      const data = await res.json();
+      const krw = data.rates?.KRW || 1390;
+      const eur = data.rates?.EUR ? krw / data.rates.EUR : 1620;
+      const cny = data.rates?.CNY ? krw / data.rates.CNY : 206;
+      
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      setExchangeRates({
+        usd: Math.round(krw * 10) / 10,
+        eur: Math.round(eur * 10) / 10,
+        cny: Math.round(cny * 10) / 10,
+        time: timeStr,
+        loading: false,
+        error: false
+      });
+    } catch (err) {
+      console.error('Failed to fetch exchange rates:', err);
+      setExchangeRates(prev => ({ ...prev, loading: false, error: true }));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchExchangeRates();
+    // 30분마다 자동 갱신
+    const interval = setInterval(fetchExchangeRates, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchExchangeRates]);
+
   const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
     try {
       const saved = localStorage.getItem('sidebar_collapsed_sections');
@@ -736,6 +787,68 @@ export const Layout: React.FC = () => {
               >
                 {APP_VERSION}
               </span>
+
+              {/* 오늘의 기준환율 (USD / EUR / CNY + 새로고침 🔄) */}
+              <div 
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginLeft: '12px',
+                  padding: '4px 10px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  color: '#334155',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                }}
+                title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
+              >
+                <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span>💵</span>
+                  <span>기준환율</span>
+                </span>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                  <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
+                  </span>
+                  <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
+                  </span>
+                  <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#d97706' }}>CNY</strong> ₩{exchangeRates.cny.toLocaleString()}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchExchangeRates();
+                  }}
+                  disabled={exchangeRates.loading}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: exchangeRates.loading ? 'wait' : 'pointer',
+                    fontSize: '13px',
+                    padding: '2px 4px',
+                    borderRadius: '4px',
+                    color: exchangeRates.loading ? '#94a3b8' : '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s'
+                  }}
+                  title="실시간 환율 새로고침 🔄"
+                >
+                  <span style={{ display: 'inline-block', transform: exchangeRates.loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>
+                    🔄
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
           <div style={{ flex: 1 }} />
