@@ -68,28 +68,40 @@ export function getEffectiveStageCompletion(order: any): CompletionMap {
     sc.소싱발주['발주서 발행 및 저장'] = true;
   }
 
-  // 3. 물류선적 Auto Detect
-  const hasForwarder = (order.forwardersList && order.forwardersList.length > 0) || (order.forwarders && order.forwarders.length > 0) || order.forwarderName || basic.forwarderName;
-  const hasVolume = basic.shipmentType || order.shipmentType;
-  if (hasForwarder && hasVolume) {
+  // 3. 물류선적 Auto Detect (컨설팅 오더는 물류/선적 면제)
+  const isConsulting = order.type === 'consulting' || basic.type === 'consulting';
+  if (isConsulting) {
     sc.물류선적['포워딩/운송사 및 수출 Volume 선택'] = true;
-  }
-  if (basic.etd || order.etd) {
     sc.물류선적['ETD 입력'] = true;
-  }
-  if (basic.arrivalReportSent || order.arrivalReportSent || (order.issuedDocs?.some((d: any) => d.fileName?.startsWith('도착보고서')))) {
     sc.물류선적['도착보고 발송 완료'] = true;
+  } else {
+    const hasForwarder = (order.forwardersList && order.forwardersList.length > 0) || (order.forwarders && order.forwarders.length > 0) || order.forwarderName || basic.forwarderName;
+    const hasVolume = basic.shipmentType || order.shipmentType;
+    if (hasForwarder && hasVolume) {
+      sc.물류선적['포워딩/운송사 및 수출 Volume 선택'] = true;
+    }
+    if (basic.etd || order.etd) {
+      sc.물류선적['ETD 입력'] = true;
+    }
+    if (basic.arrivalReportSent || order.arrivalReportSent || (order.issuedDocs?.some((d: any) => d.fileName?.startsWith('도착보고서')))) {
+      sc.물류선적['도착보고 발송 완료'] = true;
+    }
   }
 
-  // 4. 서류관리 Auto Detect
-  if (basic.exportDeclarationNo || order.exportDeclarationNo) {
+  // 4. 서류관리 Auto Detect (컨설팅 오더는 무역 선적서류 업로드 면제)
+  if (isConsulting) {
     sc.서류관리['수출신고번호 입력'] = true;
-  }
-  const isDocsUploaded = ((order.ciFiles?.length || basic.ciFiles?.length) || (order.plFiles?.length || basic.plFiles?.length)) &&
-                         (order.cooFiles?.length || basic.cooFiles?.length) &&
-                         (order.blFiles?.length || basic.blFiles?.length);
-  if (isDocsUploaded) {
     sc.서류관리['CI, PL, COO, BL 서류 업로드 완료'] = true;
+  } else {
+    if (basic.exportDeclarationNo || order.exportDeclarationNo) {
+      sc.서류관리['수출신고번호 입력'] = true;
+    }
+    const isDocsUploaded = ((order.ciFiles?.length || basic.ciFiles?.length) || (order.plFiles?.length || basic.plFiles?.length)) &&
+                           (order.cooFiles?.length || basic.cooFiles?.length) &&
+                           (order.blFiles?.length || basic.blFiles?.length);
+    if (isDocsUploaded) {
+      sc.서류관리['CI, PL, COO, BL 서류 업로드 완료'] = true;
+    }
   }
 
   // 5. 정산결제 Auto Detect
