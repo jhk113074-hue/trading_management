@@ -3524,7 +3524,13 @@ export const OrderDetail: React.FC = () => {
     const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
     const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
-    const poDateFormatted = currentPoDateRaw.replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일');
+    const poDateFormatted = (() => {
+      const parts = currentPoDateRaw.split('-');
+      if (parts.length === 3) {
+        return `${parts[0]}년 ${parts[1]}월 ${parts[2]}일`;
+      }
+      return currentPoDateRaw;
+    })();
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
@@ -3928,7 +3934,13 @@ export const OrderDetail: React.FC = () => {
     const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
     const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
-    const poDateFormatted = currentPoDateRaw.replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일');
+    const poDateFormatted = (() => {
+      const parts = currentPoDateRaw.split('-');
+      if (parts.length === 3) {
+        return `${parts[0]}년 ${parts[1]}월 ${parts[2]}일`;
+      }
+      return currentPoDateRaw;
+    })();
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
