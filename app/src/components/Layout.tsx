@@ -864,120 +864,124 @@ export const Layout: React.FC = () => {
               >
                 {APP_VERSION}
               </span>
-
-              {/* 오늘의 기준환율 (USD / EUR / CNY + 새로고침 🔄) */}
-              <div 
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginLeft: '12px',
-                  padding: '4px 10px',
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  fontSize: '12.5px',
-                  color: '#334155',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                }}
-                title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
-              >
-                <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <span>💵</span>
-                  <span>기준환율</span>
-                </span>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                  {/* USD with 30-day moving average & trend */}
-                  <span 
-                    style={{ 
-                      background: '#fff', 
-                      padding: '2px 8px', 
-                      borderRadius: '4px', 
-                      border: exchangeRates.usdTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.usdTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    title={`현재: ₩${exchangeRates.usd.toLocaleString()} | 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원)`}
-                  >
-                    <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
-                    <span style={{ 
-                      fontSize: '11px', 
-                      fontWeight: 800,
-                      color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b' 
-                    }}>
-                      {exchangeRates.usdTrend === 'UP' ? '🔺' : exchangeRates.usdTrend === 'DOWN' ? '🔻' : '➖'}
-                    </span>
-                    {exchangeRates.usdMa30 && (
-                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-                        (30일평균 ₩{exchangeRates.usdMa30.toLocaleString()})
-                      </span>
-                    )}
-                  </span>
-
-                  <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                    <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
-                  </span>
-
-                  {/* USD / CNY with 30-day moving average & trend */}
-                  <span 
-                    style={{ 
-                      background: '#fff', 
-                      padding: '2px 8px', 
-                      borderRadius: '4px', 
-                      border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #fed7aa' : '1px solid #e2e8f0',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    title={`1 USD = ${exchangeRates.cny} CNY | 30일 이동평균: ${exchangeRates.cnyMa30 ?? '-'} CNY (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff})`}
-                  >
-                    <strong style={{ color: '#d97706' }}>USD/CNY</strong> {exchangeRates.cny.toFixed(2)}
-                    <span style={{ 
-                      fontSize: '11px', 
-                      fontWeight: 800,
-                      color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#d97706' : '#64748b' 
-                    }}>
-                      {exchangeRates.cnyTrend === 'UP' ? '🔺' : exchangeRates.cnyTrend === 'DOWN' ? '🔻' : '➖'}
-                    </span>
-                    {exchangeRates.cnyMa30 && (
-                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-                        (30일평균 {exchangeRates.cnyMa30.toFixed(2)})
-                      </span>
-                    )}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fetchExchangeRates();
-                  }}
-                  disabled={exchangeRates.loading}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: exchangeRates.loading ? 'wait' : 'pointer',
-                    fontSize: '13px',
-                    padding: '2px 4px',
-                    borderRadius: '4px',
-                    color: exchangeRates.loading ? '#94a3b8' : '#2563eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s'
-                  }}
-                  title="실시간 환율 새로고침 🔄"
-                >
-                  <span style={{ display: 'inline-block', transform: exchangeRates.loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>
-                    🔄
-                  </span>
-                </button>
-              </div>
             </div>
           </div>
+
+          {/* 중앙: 오늘의 기준환율 (USD / EUR / USD/CNY + 새로고침 🔄) */}
+          <div 
+            style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '4px 10px',
+              background: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '12.5px',
+              color: '#334155',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              zIndex: 10
+            }}
+            title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
+          >
+            <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span>💵</span>
+              <span>기준환율</span>
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+              {/* USD with 30-day moving average & trend */}
+              <span 
+                style={{ 
+                  background: '#fff', 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  border: exchangeRates.usdTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.usdTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title={`현재: ₩${exchangeRates.usd.toLocaleString()} | 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원)`}
+              >
+                <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 800,
+                  color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b' 
+                }}>
+                  {exchangeRates.usdTrend === 'UP' ? '🔺' : exchangeRates.usdTrend === 'DOWN' ? '🔻' : '➖'}
+                </span>
+                {exchangeRates.usdMa30 && (
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                    (30일평균 ₩{exchangeRates.usdMa30.toLocaleString()})
+                  </span>
+                )}
+              </span>
+
+              <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
+              </span>
+
+              {/* USD / CNY with 30-day moving average & trend */}
+              <span 
+                style={{ 
+                  background: '#fff', 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #fed7aa' : '1px solid #e2e8f0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title={`1 USD = ${exchangeRates.cny} CNY | 30일 이동평균: ${exchangeRates.cnyMa30 ?? '-'} CNY (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff})`}
+              >
+                <strong style={{ color: '#d97706' }}>USD/CNY</strong> {exchangeRates.cny.toFixed(2)}
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 800,
+                  color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#d97706' : '#64748b' 
+                }}>
+                  {exchangeRates.cnyTrend === 'UP' ? '🔺' : exchangeRates.cnyTrend === 'DOWN' ? '🔻' : '➖'}
+                </span>
+                {exchangeRates.cnyMa30 && (
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                    (30일평균 {exchangeRates.cnyMa30.toFixed(2)})
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fetchExchangeRates();
+              }}
+              disabled={exchangeRates.loading}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: exchangeRates.loading ? 'wait' : 'pointer',
+                fontSize: '13px',
+                padding: '2px 4px',
+                borderRadius: '4px',
+                color: exchangeRates.loading ? '#94a3b8' : '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s'
+              }}
+              title="실시간 환율 새로고침 🔄"
+            >
+              <span style={{ display: 'inline-block', transform: exchangeRates.loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>
+                🔄
+              </span>
+            </button>
+          </div>
+
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
