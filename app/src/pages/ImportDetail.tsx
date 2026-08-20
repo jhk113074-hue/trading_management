@@ -5628,35 +5628,7 @@ customsDuty,
               const quoteAmountUsd = Math.round(((request.customerQuoteAmount || 0) / appliedRate) * 100) / 100;
               
               const cb = request.costBreakdown || {};
-              const goodsAmountKrw = (cb.buyingPriceUsd || 0) * appliedRate * (cb.buyingQty || 1);
-              const freightKrw = (cb.freightUsd || 0) * appliedRate;
-              const insuranceKrw = (cb.insuranceUsd || 0) * appliedRate;
-              const originInlandKrw = (cb.originInlandUsd || 0) * appliedRate;
-              const cifKrw = Math.round(goodsAmountKrw + freightKrw + insuranceKrw + originInlandKrw);
-              const customsDuty = Math.round(cifKrw * (((cb.ftaTaxRate || 0) + (cb.antiDumpingRate || 0)) / 100));
-              const clearanceFee = cb.clearanceFee || 0;
-              const portFee = cb.portFee || 0;
-              const domesticTransportFee = cb.domesticTransportFee || 0;
-              const handlingFee = cb.handlingFee || 0;
-              const otherFee = cb.otherFee || 0;
-
-               const simpleTotalCost = (cb.productCost || 0) + (cb.freightCost || 0) + (cb.customsCost || 0) + (cb.otherCost || 0);
-              const totalImportCost = simpleTotalCost > 0 
-                ? simpleTotalCost 
-                : (cifKrw + customsDuty + clearanceFee + portFee + domesticTransportFee + handlingFee + otherFee) || 1;
-
               const quoteAmount = request.customerQuoteAmount || 0;
-              const marginRatio = quoteAmount / totalImportCost;
-
-              const totalFreightCostKrw = cb.freightCost || (freightKrw + domesticTransportFee) || 0;
-              const totalProductCostKrw = cb.productCost || (totalImportCost - totalFreightCostKrw);
-
-              const sellingProductCostKrw = totalProductCostKrw * marginRatio;
-              const sellingFreightCostKrw = totalFreightCostKrw * marginRatio;
-
-              const sellingProductCostUsd = Math.round((sellingProductCostKrw / appliedRate) * 100) / 100;
-              const sellingFreightCostUsd = Math.round((sellingFreightCostKrw / appliedRate) * 100) / 100;
-
               const totalBuyingPriceUsd = request.piItems?.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0) || ((cb.buyingPriceUsd || 0) * (cb.buyingQty || 1)) || 1;
 
               const displayTotalQuote = printCurrency === 'KRW'
@@ -5729,105 +5701,63 @@ customsDuty,
                   </h3>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '24px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', height: '26px' }}>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', height: '28px' }}>
                         <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '40px' }}>No</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Description of Commodity</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '80px' }}>HS Code</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '60px' }}>Qty</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '50px' }}>Unit</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '90px' }}>UnitPrice</th>
-                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '110px' }}>Total Amount</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Description of Commodity (제품명)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '80px' }}>Qty (수량)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '60px' }}>Unit (단위)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '120px' }}>UnitPrice (최종판매단가)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '130px' }}>Total Amount (금액)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {request.piItems && request.piItems.length > 0 ? (
-                        <>
-                          {request.piItems.map((item, idx) => {
-                            const uPrice = Number(item.unitPrice) || 0;
-                            const qty = Number(item.qty) || 1;
+                        request.piItems.map((item, idx) => {
+                          const uPrice = Number(item.unitPrice) || 0;
+                          const qty = Number(item.qty) || 1;
 
-                            // Calculate final selling product unit price and total amount (excluding freight cost)
-                            const itemProductTotalSellingKrw = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * sellingProductCostKrw : 0;
-                            const productSellingPriceKrw = Math.round(itemProductTotalSellingKrw / qty);
+                          // 전체 고객 견적 금액(quoteAmount)을 각 품목의 매입 비중대로 배분하여 최종판매단가 및 금액 산출
+                          const itemTotalSellingKrw = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * quoteAmount : quoteAmount;
+                          const productSellingPriceKrw = Math.round(itemTotalSellingKrw / qty);
 
-                            const itemProductTotalSellingUsd = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * sellingProductCostUsd : 0;
-                            const productSellingPriceUsd = itemProductTotalSellingUsd / qty;
+                          const itemTotalSellingUsd = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * quoteAmountUsd : quoteAmountUsd;
+                          const productSellingPriceUsd = itemTotalSellingUsd / qty;
 
-                            const displayUnitPrice = printCurrency === 'KRW'
-                              ? `₩ ${productSellingPriceKrw.toLocaleString()}`
-                              : `$ ${productSellingPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                            const displayTotalAmount = printCurrency === 'KRW'
-                              ? `₩ ${Math.round(itemProductTotalSellingKrw).toLocaleString()}`
-                              : `$ ${itemProductTotalSellingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          const displayUnitPrice = printCurrency === 'KRW'
+                            ? `₩ ${productSellingPriceKrw.toLocaleString()}`
+                            : `$ ${productSellingPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          const displayTotalAmount = printCurrency === 'KRW'
+                            ? `₩ ${Math.round(itemTotalSellingKrw).toLocaleString()}`
+                            : `$ ${itemTotalSellingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-                            return (
-                              <tr key={idx} style={{ height: '26px' }}>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{item.name || request.itemName}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.hsCode || '-'}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{qty.toLocaleString() || '1'}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{displayUnitPrice}</td>
-                                <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>{displayTotalAmount}</td>
-                              </tr>
-                            );
-                          })}
-                          {/* 운임 분리 표시 로우 */}
-                          <tr style={{ height: '26px', background: '#f8fafc' }}>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{request.piItems.length + 1}</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>국제 및 국내 물류 운임 (International &amp; Domestic Freight)</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>LOT</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingFreightCostKrw).toLocaleString()}`
-                                : `$ ${sellingFreightCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingFreightCostKrw).toLocaleString()}`
-                                : `$ ${sellingFreightCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                          </tr>
-                        </>
+                          return (
+                            <tr key={idx} style={{ height: '28px' }}>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>{item.name || request.itemName}</td>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{qty.toLocaleString()}</td>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 600 }}>{displayUnitPrice}</td>
+                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>{displayTotalAmount}</td>
+                            </tr>
+                          );
+                        })
                       ) : (
-                        <>
-                          <tr style={{ height: '26px' }}>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{request.itemName}</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>EA</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingProductCostKrw).toLocaleString()}`
-                                : `$ ${sellingProductCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingProductCostKrw).toLocaleString()}`
-                                : `$ ${sellingProductCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                          </tr>
-                          <tr style={{ height: '26px', background: '#f8fafc' }}>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>2</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>국제 및 국내 물류 운임 (International &amp; Domestic Freight)</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>LOT</td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingFreightCostKrw).toLocaleString()}`
-                                : `$ ${sellingFreightCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                              {printCurrency === 'KRW'
-                                ? `₩ ${Math.round(sellingFreightCostKrw).toLocaleString()}`
-                                : `$ ${sellingFreightCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            </td>
-                          </tr>
-                        </>
+                        <tr style={{ height: '28px' }}>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>{request.itemName}</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{(cb.buyingQty || 1).toLocaleString()}</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{request.piItems?.[0]?.unit || 'EA'}</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 600 }}>
+                            {printCurrency === 'KRW'
+                              ? `₩ ${Math.round((quoteAmount || 0) / (cb.buyingQty || 1)).toLocaleString()}`
+                              : `$ ${(quoteAmountUsd / (cb.buyingQty || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
+                            {printCurrency === 'KRW'
+                              ? `₩ ${(quoteAmount || 0).toLocaleString()}`
+                              : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </td>
+                        </tr>
                       )}
                     </tbody>
                   </table>
