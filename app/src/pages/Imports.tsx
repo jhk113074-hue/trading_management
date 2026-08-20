@@ -1618,8 +1618,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('quote_finalSellingPrice', 'right')}>
                       <span style={{ fontSize: '12.5px', color: '#2563eb', fontWeight: 700 }}>
                         {(() => {
-                          const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                          const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
+                          const totalItemQty = (req.piItems && req.piItems.length > 0)
+                            ? req.piItems.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0)
+                            : (Number(req.costBreakdown?.buyingQty) || 1);
+                          const actualQty = totalItemQty > 0 ? totalItemQty : 1;
+                          const finalPrice = Math.round((req.customerQuoteAmount || 0) / actualQty);
                           return finalPrice ? `₩${finalPrice.toLocaleString()}` : '-';
                         })()}
                       </span>

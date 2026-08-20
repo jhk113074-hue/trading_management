@@ -2277,7 +2277,13 @@ customsDuty,
                             <td style={{ fontWeight: 800, color: '#10b981' }}>단위당 최종 판매단가 (Final Selling Price)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 고객 제시 견적금액 ÷ 수량</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#10b981' }}>
-                              {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
+                              {(() => {
+                                const totalItemQty = (request.piItems && request.piItems.length > 0)
+                                  ? request.piItems.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0)
+                                  : (request.costBreakdown?.buyingQty || 1);
+                                const actualQty = totalItemQty > 0 ? totalItemQty : 1;
+                                return `${Math.round((request.customerQuoteAmount || 0) / actualQty).toLocaleString()} 원 / ${(request.piItems?.[0]?.unit || 'UNIT')}`;
+                              })()}
                             </td>
                             <td style={{ textAlign: 'center', color: '#10b981', fontWeight: 'bold' }}>O</td>
                           </tr>
@@ -2664,7 +2670,13 @@ customsDuty,
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>최종 판매단가 (Unit Price)</label>
                       <strong style={{ fontSize: '13px', color: '#10b981' }}>
-                        {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
+                        {(() => {
+                          const totalItemQty = (request.piItems && request.piItems.length > 0)
+                            ? request.piItems.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0)
+                            : (request.costBreakdown?.buyingQty || 1);
+                          const actualQty = totalItemQty > 0 ? totalItemQty : 1;
+                          return `${Math.round((request.customerQuoteAmount || 0) / actualQty).toLocaleString()} 원 / ${(request.piItems?.[0]?.unit || 'UNIT')}`;
+                        })()}
                       </strong>
                     </div>
                   </div>
