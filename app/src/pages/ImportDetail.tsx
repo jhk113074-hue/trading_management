@@ -2677,6 +2677,15 @@ customsDuty,
               <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>📋 거래 조건 및 특기사항 설정 (Terms &amp; Remarks)</span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.02em' }}>QUOTATION DATE (견적일자)</label>
+                  <input
+                    type="date"
+                    value={request.requestDate || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestDate: e.target.value } : r))}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: '#1d4ed8', outline: 'none', background: '#eff6ff' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>PAYMENT TERMS (결제조건)</label>
                   <input
                     type="text"
@@ -5661,11 +5670,11 @@ customsDuty,
                           </tr>
                           <tr>
                             <td style={{ fontWeight: 'bold' }}>Date (일자) :</td>
-                            <td>{new Date().toLocaleDateString('ko-KR')}</td>
+                            <td>{request.requestDate ? new Date(request.requestDate).toLocaleDateString('ko-KR') : new Date().toLocaleDateString('ko-KR')}</td>
                           </tr>
                           <tr>
                             <td style={{ fontWeight: 'bold' }}>Ref No. :</td>
-                            <td>QT-{id}</td>
+                            <td>{request.quoteNumber || `QT-${id}`}</td>
                           </tr>
                         </tbody>
                       </table>

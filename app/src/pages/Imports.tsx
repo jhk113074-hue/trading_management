@@ -978,13 +978,15 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       const randomSerial = String(Math.floor(100 + Math.random() * 900));
       const generatedQuoteNo = `QT-${dateStr}-${randomSerial}`;
 
+      const todayIso = new Date().toISOString().slice(0, 10);
       const copied: ImportRequest = {
         ...req,
         id: nextId,
         poNumber: generatedPo,
         quoteNumber: generatedQuoteNo,
         createdAt: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\s/g, ''),
-        requestDate: new Date().toISOString().slice(0, 10),
+        requestDate: todayIso,
+        eta: isQuoteMode ? '' : (req.eta || ''),
         itemName: req.itemName.includes('(복사)') ? req.itemName : `${req.itemName} (복사)`,
         customerDecision: isQuoteMode ? '검토중' : '승인',
         status: isQuoteMode ? '진행 결정 요청' : '발주 진행'
@@ -1583,7 +1585,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   <>
                     {/* 견적일 */}
                     <td style={getTdStyle('quote_requestDate')}>
-                      {req.eta || req.requestDate || req.createdAt || '-'}
+                      {req.requestDate || req.createdAt || '-'}
                     </td>
 
                     {/* 견적번호 */}
