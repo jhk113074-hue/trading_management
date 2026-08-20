@@ -119,10 +119,13 @@ export const Orders: React.FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'todo'>('list');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Filters (sessionStorage 연동으로 다른 메뉴 이동 후 복귀 시에도 필터 상태 유지)
+  // Filters: 개별 사용자(userProfile.id)별로 영구 저장(localStorage)하여 브라우저 재접속 후에도 개인 설정 유지
+  const userKeyPrefix = userProfile?.id || userProfile?.name || 'guest';
   const getSavedFilter = (key: string, defaultVal: string) => {
     try {
-      return sessionStorage.getItem(`orders_filter_${key}`) || defaultVal;
+      return localStorage.getItem(`orders_filter_${userKeyPrefix}_${key}`) || 
+             sessionStorage.getItem(`orders_filter_${key}`) || 
+             defaultVal;
     } catch {
       return defaultVal;
     }
@@ -162,25 +165,26 @@ export const Orders: React.FC = () => {
 
   useEffect(() => {
     try {
-      sessionStorage.setItem('orders_filter_issuingCompany', issuingCompanyFilter);
-      sessionStorage.setItem('orders_filter_manager', managerFilter);
-      sessionStorage.setItem('orders_filter_customer', customerFilter);
-      sessionStorage.setItem('orders_filter_step', stepFilter);
-      sessionStorage.setItem('orders_filter_view', viewFilter);
-      sessionStorage.setItem('orders_filter_completed', completedFilter);
-      sessionStorage.setItem('orders_filter_etdStatus', etdStatusFilter);
-      sessionStorage.setItem('orders_filter_dateFilterType', dateFilterType);
-      sessionStorage.setItem('orders_filter_dateFilterTarget', dateFilterTarget);
-      sessionStorage.setItem('orders_filter_selectedYear', String(selectedYear));
-      sessionStorage.setItem('orders_filter_selectedMonth', String(selectedMonth));
-      sessionStorage.setItem('orders_filter_selectedQuarter', String(selectedQuarter));
-      sessionStorage.setItem('orders_filter_selectedHalf', String(selectedHalf));
-      sessionStorage.setItem('orders_filter_rangeStart', rangeStart);
-      sessionStorage.setItem('orders_filter_rangeEnd', rangeEnd);
+      const prefix = `orders_filter_${userKeyPrefix}_`;
+      localStorage.setItem(`${prefix}issuingCompany`, issuingCompanyFilter);
+      localStorage.setItem(`${prefix}manager`, managerFilter);
+      localStorage.setItem(`${prefix}customer`, customerFilter);
+      localStorage.setItem(`${prefix}step`, stepFilter);
+      localStorage.setItem(`${prefix}view`, viewFilter);
+      localStorage.setItem(`${prefix}completed`, completedFilter);
+      localStorage.setItem(`${prefix}etdStatus`, etdStatusFilter);
+      localStorage.setItem(`${prefix}dateFilterType`, dateFilterType);
+      localStorage.setItem(`${prefix}dateFilterTarget`, dateFilterTarget);
+      localStorage.setItem(`${prefix}selectedYear`, String(selectedYear));
+      localStorage.setItem(`${prefix}selectedMonth`, String(selectedMonth));
+      localStorage.setItem(`${prefix}selectedQuarter`, String(selectedQuarter));
+      localStorage.setItem(`${prefix}selectedHalf`, String(selectedHalf));
+      localStorage.setItem(`${prefix}rangeStart`, rangeStart);
+      localStorage.setItem(`${prefix}rangeEnd`, rangeEnd);
     } catch (e) {
       console.error('Failed to save orders filter state', e);
     }
-  }, [issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
+  }, [userKeyPrefix, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
 
   useEffect(() => {
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
