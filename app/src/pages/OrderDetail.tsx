@@ -1139,6 +1139,7 @@ export const OrderDetail: React.FC = () => {
     lcRemark: '',
     shipmentType: 'FCL' as 'LCL' | 'FCL' | '',
     fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>,
+    type: 'trade' as 'trade' | 'consulting',
     blNumbers: [] as string[],
     blNumber: '',
     deliveryPlace: ''
@@ -1181,25 +1182,37 @@ export const OrderDetail: React.FC = () => {
 
     // ── 물류/선적 ──
     const po물류: Record<string, boolean> = {};
-    const hasForwarder = forwardersList.length > 0 && forwardersList.some(fw => !!fw.name);
-    const hasVolume = !!basicForm.shipmentType;
-    if (hasForwarder && hasVolume)
+    const isConsulting = (order as any)?.type === 'consulting' || (basicForm as any)?.type === 'consulting';
+    if (isConsulting) {
       po물류['포워딩/운송사 및 수출 Volume 선택'] = true;
-    if (basicForm.etd)
       po물류['ETD 입력'] = true;
-    if (issuedDocs.some(d => d.status === 'active' && d.fileName.startsWith('도착보고서')))
       po물류['도착보고 발송 완료'] = true;
+    } else {
+      const hasForwarder = forwardersList.length > 0 && forwardersList.some(fw => !!fw.name);
+      const hasVolume = !!basicForm.shipmentType;
+      if (hasForwarder && hasVolume)
+        po물류['포워딩/운송사 및 수출 Volume 선택'] = true;
+      if (basicForm.etd)
+        po물류['ETD 입력'] = true;
+      if (issuedDocs.some(d => d.status === 'active' && d.fileName.startsWith('도착보고서')))
+        po물류['도착보고 발송 완료'] = true;
+    }
     autoDetect['물류선적'] = po물류;
 
     // ── 서류관리 ──
     const po서류: Record<string, boolean> = {};
-    if (basicForm.exportDeclarationNo)
+    if (isConsulting) {
       po서류['수출신고번호 입력'] = true;
-    const isDocsUploaded = ((order.ciFiles && order.ciFiles.length > 0) || (order.plFiles && order.plFiles.length > 0)) &&
-                           (order.cooFiles && order.cooFiles.length > 0) &&
-                           (order.blFiles && order.blFiles.length > 0);
-    if (isDocsUploaded)
       po서류['CI, PL, COO, BL 서류 업로드 완료'] = true;
+    } else {
+      if (basicForm.exportDeclarationNo)
+        po서류['수출신고번호 입력'] = true;
+      const isDocsUploaded = ((order.ciFiles && order.ciFiles.length > 0) || (order.plFiles && order.plFiles.length > 0)) &&
+                             (order.cooFiles && order.cooFiles.length > 0) &&
+                             (order.blFiles && order.blFiles.length > 0);
+      if (isDocsUploaded)
+        po서류['CI, PL, COO, BL 서류 업로드 완료'] = true;
+    }
     autoDetect['서류관리'] = po서류;
 
     // ── 정산/결제 ──
@@ -1797,6 +1810,7 @@ export const OrderDetail: React.FC = () => {
           quotationId: data.quotationId || '',
           shipmentType: data.shipmentType || 'FCL',
           fclSpecs: data.fclSpecs || [],
+          type: data.type || 'trade',
           blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
           blNumber: data.blNumber || ''
         });
@@ -2132,6 +2146,7 @@ export const OrderDetail: React.FC = () => {
         manager: basicForm.manager,
         externalLinks: links,
         issuingCompany: basicForm.issuingCompany,
+        type: basicForm.type || 'trade',
         
         ciNumber: basicForm.ciNumber,
         vesselBooking: basicForm.vesselBooking,
@@ -5529,8 +5544,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           {/* Form Fields Grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             
-            {/* 줄 1: 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.6fr 1.2fr 1fr 1fr 1.2fr', gap: '10px', width: '100%' }}>
+            {/* 줄 1: 오더 구분 / 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr 1.1fr 1fr 1fr 1.2fr', gap: '10px', width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>오더 구분</span>
+                {isEditing ? (
+                  <select 
+                    value={basicForm.type || 'trade'} 
+                    onChange={e => setBasicForm(prev => ({ ...prev, type: e.target.value as 'trade' | 'consulting' }))} 
+                    style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: basicForm.type === 'consulting' ? '#2563eb' : '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
+                  >
+                    <option value="trade">📦 일반 무역 (물류有)</option>
+                    <option value="consulting">💼 컨설팅·용역 (물류無)</option>
+                  </select>
+                ) : (
+                  <input type="text" value={basicForm.type === 'consulting' ? '💼 컨설팅·용역' : '📦 일반 무역'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                )}
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>발행사 (발주서 기준)</span>
                 {isEditing ? (
