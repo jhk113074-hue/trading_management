@@ -1328,38 +1328,82 @@ export const Orders: React.FC = () => {
                     </tr>
                   );
                 })}
-                {processedOrders.length > 0 && (
-                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid var(--border-default)' }}>
-                    <td style={{ width: colWidths[0], minWidth: colWidths[0], maxWidth: colWidths[0], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[1], minWidth: colWidths[1], maxWidth: colWidths[1], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }} />
-                    {/* 발주사 열에 '합계' 텍스트 배치 */}
-                    <td style={{ padding: '14px 16px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }}>
-                      합계
-                    </td>
-                    {/* 발주액 열에 실제 합계 금액 배치 */}
-                    <td style={{ padding: '14px 16px', color: '#0f172a', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
-                      ${processedOrders.reduce((sum, o) => {
-                        const pi = quotations.find(q => q.id === o.quotationId);
-                        return sum + (pi?.totalUsd || o.totalAmount || 0);
-                      }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ padding: '14px 16px', color: '#2563eb', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
-                      ₩{processedOrders.reduce((sum, o) => {
-                        const pi = quotations.find(q => q.id === o.quotationId);
-                        const amount = o.totalAmount || pi?.totalUsd || 0;
-                        const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
-                        return sum + Math.round(amount * rate);
-                      }, 0).toLocaleString()}
-                    </td>
-                    <td style={{ width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[9], minWidth: colWidths[9], maxWidth: colWidths[9], boxSizing: 'border-box' }} />
-                    <td style={{ width: colWidths[10], minWidth: colWidths[10], maxWidth: colWidths[10], boxSizing: 'border-box' }} />
-                  </tr>
-                )}
+                {processedOrders.length > 0 && (() => {
+                  const totalUsd = processedOrders.reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    return sum + getOrderAmountUsd(o, pi);
+                  }, 0);
+                  const ysaccUsd = processedOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    return sum + getOrderAmountUsd(o, pi);
+                  }, 0);
+                  const ysUsd = processedOrders.filter(o => o.issuingCompany === 'YS' || o.issuingCompany === '영성ACC').reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    return sum + getOrderAmountUsd(o, pi);
+                  }, 0);
+
+                  const totalKrw = processedOrders.reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    const amount = getOrderAmountUsd(o, pi);
+                    const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+                    return sum + Math.round(amount * rate);
+                  }, 0);
+                  const ysaccKrw = processedOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    const amount = getOrderAmountUsd(o, pi);
+                    const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+                    return sum + Math.round(amount * rate);
+                  }, 0);
+                  const ysKrw = processedOrders.filter(o => o.issuingCompany === 'YS' || o.issuingCompany === '영성ACC').reduce((sum, o) => {
+                    const pi = quotations.find(q => q.id === o.quotationId);
+                    const amount = getOrderAmountUsd(o, pi);
+                    const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+                    return sum + Math.round(amount * rate);
+                  }, 0);
+
+                  return (
+                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid var(--border-default)' }}>
+                      <td style={{ width: colWidths[0], minWidth: colWidths[0], maxWidth: colWidths[0], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[1], minWidth: colWidths[1], maxWidth: colWidths[1], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }} />
+                      {/* 품목 열에 '합계' 텍스트 배치 */}
+                      <td style={{ padding: '10px 12px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '15px', fontWeight: 800, width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
+                        합계
+                      </td>
+                      {/* 발주액 (USD) 열 */}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }}>
+                        <div style={{ color: '#0f766e', fontSize: '15px', fontWeight: 800 }}>
+                          ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        {issuingCompanyFilter === 'All' && (ysaccUsd > 0 || ysUsd > 0) && (
+                          <div style={{ fontSize: '10.5px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '2px' }}>
+                            {ysaccUsd > 0 && <span style={{ color: '#059669', fontWeight: 700 }}>YSACC: ${Math.round(ysaccUsd).toLocaleString()}</span>}
+                            {ysUsd > 0 && <span style={{ color: '#2563eb', fontWeight: 700 }}>영성: ${Math.round(ysUsd).toLocaleString()}</span>}
+                          </div>
+                        )}
+                      </td>
+                      {/* 매출액 (KRW) 열 */}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }}>
+                        <div style={{ color: '#2563eb', fontSize: '15px', fontWeight: 800 }}>
+                          ₩{totalKrw.toLocaleString()}
+                        </div>
+                        {issuingCompanyFilter === 'All' && (ysaccKrw > 0 || ysKrw > 0) && (
+                          <div style={{ fontSize: '10.5px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '2px' }}>
+                            {ysaccKrw > 0 && <span style={{ color: '#059669', fontWeight: 700 }}>YSACC: ₩{Math.round(ysaccKrw).toLocaleString()}</span>}
+                            {ysKrw > 0 && <span style={{ color: '#2563eb', fontWeight: 700 }}>영성: ₩{Math.round(ysKrw).toLocaleString()}</span>}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[9], minWidth: colWidths[9], maxWidth: colWidths[9], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[10], minWidth: colWidths[10], maxWidth: colWidths[10], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[11], minWidth: colWidths[11], maxWidth: colWidths[11], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[12], minWidth: colWidths[12], maxWidth: colWidths[12], boxSizing: 'border-box' }} />
+                    </tr>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
