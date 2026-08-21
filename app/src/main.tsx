@@ -4,6 +4,11 @@ import App from './App.tsx'
 import './index.css'
 
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    for (const reg of registrations) {
+      reg.update();
+    }
+  });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();
   });
