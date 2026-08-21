@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, COMPANY_ID } from '../firebase';
+import { db, auth, COMPANY_ID } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import type { Supplier } from '../types/supplier';
 
 interface PackingItem {
@@ -27,6 +28,7 @@ interface Props {
     sailingOnOrAbout?: string;
     cfsAddress?: string;
     cfsEntryDate?: string;
+    cfsEntryTime?: string;
     items: any[];
   };
   packingList?: any;
@@ -62,9 +64,15 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
   // Initialize packing items
   const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
 
+  const entryDate = orderInfo.cfsEntryDate || '';
+  const entryTime = orderInfo.cfsEntryTime || '오전 10시까지';
+  const defaultRemarks = entryDate 
+    ? `ORIGIN : MADE IN KOREA\n입고일: ${entryDate} ${entryTime}` 
+    : `ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 ${entryTime}`;
+
   const [formData, setFormData] = useState({
     bookingNo: initialData?.bookingNo || '',
-    remarks: initialData?.remarks || 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
+    remarks: initialData?.remarks && !initialData.remarks.includes('연도-월-일') ? initialData.remarks : defaultRemarks,
     notifyParty: initialData?.notifyParty || 'SAME AS ABOVE',
     portOfLoading: orderInfo.portOfLoading || initialData?.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
     finalDestination: orderInfo.finalDestination || initialData?.finalDestination || 'HAMAD PORT, QATAR',
@@ -81,9 +89,20 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Supplier));
         // Find matches for shipper
-        const matched = list.find(s => s.name === supplierName);
+        const matched = list.find(s => s.name === supplierName || s.supplierCode === supplierName);
         if (matched && !initialData?.shipper) {
-          const formatted = `${matched.name}\n${matched.address || ''}\nTEL: ${matched.phone || matched.managerPhone || ''}`;
+          const primaryContact = matched.contacts?.find(c => c.isPrimary) || matched.contacts?.[0];
+          const contactName = primaryContact?.name || matched.managerName || '';
+          const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+          const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
+          const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
+
+          let lines = [matched.name, matched.address || ''];
+          if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+          if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+          if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+          const formatted = lines.filter(Boolean).join('\n');
           setShipperVal(formatted);
         } else {
           setShipperVal(initialData?.shipper || supplierName);
@@ -105,9 +124,14 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
     loadSuppliersAndCfs();
   }, [supplierName, initialData]);
 
+  const { userProfile } = useAuth();
+
   // Consignee setup
   useEffect(() => {
     const isYS = orderInfo.issuingCompany === 'YS';
+    const myManagerName = userProfile?.name || auth.currentUser?.displayName || '김주한';
+    const myManagerPhone = userProfile?.mobile || userProfile?.phone || '010-4494-1028';
+    const myManagerEmail = userProfile?.email || auth.currentUser?.email || '';
 
     const loadMyCompany = async () => {
       try {
@@ -116,15 +140,14 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
           const data = compDoc.data();
           const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
           const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
-          const phone = data.phone || '010-4494-1028';
-          const manager = data.manager || '김주한';
+          const phone = myManagerPhone || data.phone || '010-4494-1028';
+          const manager = myManagerName || data.manager || '김주한';
           
-          const newConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}`;
+          const newConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}${myManagerEmail ? ` (${myManagerEmail})` : ''}`;
           
-          // Check if initialData.consignee is exactly the legacy hardcoded string. 
-          // If it is, or if it doesn't exist, use the fresh DB data.
+          // Check if initialData.consignee is legacy or unset
           const currentText = initialData?.consignee || '';
-          const isLegacy = currentText.includes('서울 강남구 테헤란로 419') || currentText.includes('경기 김포시 양촌읍 듬박로 89');
+          const isLegacy = currentText.includes('서울 강남구 테헤란로 419') || currentText.includes('경기 김포시 양촌읍 듬박로 89') || currentText.includes('01073611130') || currentText.includes('010-4494-1028');
 
           if (!currentText || isLegacy) {
             setConsigneeVal(newConsignee);
@@ -139,23 +162,23 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
       
       // Fallback
       const fallbackText = initialData?.consignee || '';
-      const isFallbackLegacy = fallbackText.includes('서울 강남구 테헤란로 419') || fallbackText.includes('경기 김포시 양촌읍 듬박로 89');
+      const isFallbackLegacy = fallbackText.includes('서울 강남구 테헤란로 419') || fallbackText.includes('경기 김포시 양촌읍 듬박로 89') || fallbackText.includes('01073611130') || fallbackText.includes('010-4494-1028');
 
       if (fallbackText && !isFallbackLegacy) {
         setConsigneeVal(fallbackText);
       } else if (isYS) {
         setConsigneeVal(
-          `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한`
+          `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: ${myManagerPhone}\n담당자: ${myManagerName}${myManagerEmail ? ` (${myManagerEmail})` : ''}`
         );
       } else {
         setConsigneeVal(
-          `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`
+          `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: ${myManagerPhone}\n담당자: ${myManagerName}${myManagerEmail ? ` (${myManagerEmail})` : ''}`
         );
       }
     };
     
     loadMyCompany();
-  }, [orderInfo.issuingCompany, initialData]);
+  }, [orderInfo.issuingCompany, initialData, userProfile]);
 
   // Packing Items setup
   useEffect(() => {
@@ -166,6 +189,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
           
           let matchedQty = '';
+          let matchedUnit = 'kg';
           if (packingList?.containers) {
             for (const container of packingList.containers) {
               const found = (container.items || []).find((cIt: any) => 
@@ -173,14 +197,20 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
               );
               if (found && found.qty) {
                 matchedQty = found.qty;
+                matchedUnit = (found.unit || 'kg').toLowerCase() === 'ea' ? 'kg' : (found.unit || 'kg');
                 break;
               }
             }
           }
           if (matchedQty && !desc.includes(String(matchedQty))) {
-            desc = `${desc} ${matchedQty} EA`.replace(/\s+/g, ' ');
+            desc = `${desc} ${matchedQty} ${matchedUnit}`.replace(/\s+/g, ' ');
+          } else if (/\bEA\b/i.test(desc)) {
+            desc = desc.replace(/\bEA\b/gi, matchedUnit);
           }
           return { ...it, descOfGoods: desc };
+        }
+        if (/\bEA\b/i.test(desc)) {
+          return { ...it, descOfGoods: desc.replace(/\bEA\b/gi, 'kg') };
         }
         return it;
       });
@@ -196,8 +226,11 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         matchingContainerItems.forEach((it: any) => {
           let desc = it.description || '';
           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          const unitStr = (it.unit || 'kg').toLowerCase() === 'ea' ? 'kg' : (it.unit || 'kg');
           if (it.qty && !desc.includes(String(it.qty))) {
-            desc = `${desc} ${it.qty} EA`.replace(/\s+/g, ' ');
+            desc = `${desc} ${it.qty} ${unitStr}`.replace(/\s+/g, ' ');
+          } else if (/\bEA\b/i.test(desc)) {
+            desc = desc.replace(/\bEA\b/gi, unitStr);
           }
 
           matchedItems.push({

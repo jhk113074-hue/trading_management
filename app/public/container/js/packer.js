@@ -4,9 +4,12 @@ const Packer = (function() {
         'LCL': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
         '20GP': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
         '20RF': { l: 5444, w: 2290, h: 2276, maxWeight: 27000 },
+        '20DG': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
         '40GP': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 },
         '40RF': { l: 11583, w: 2290, h: 2254, maxWeight: 29250 },
-        '40HC': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 }
+        '40HC': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 },
+        '40HQ': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 },
+        '40DG': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 }
     };
 
     function expandItems(items) {

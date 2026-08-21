@@ -1150,13 +1150,16 @@ document.addEventListener('DOMContentLoaded', () => {
             'LCL': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
             '20GP': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
             '20RF': { l: 5444, w: 2290, h: 2276, maxWeight: 27000 },
+            '20DG': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
             '40GP': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 },
-            '40HC': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 }
+            '40HC': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 },
+            '40HQ': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 },
+            '40DG': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 }
         };
         let totalVol = 0;
         let totalWeight = 0;
         
-        ['LCL', '20GP', '20RF', '40GP', '40HC'].forEach(type => {
+        ['LCL', '20GP', '20RF', '20DG', '40GP', '40HC', '40HQ', '40DG'].forEach(type => {
             const qtyInput = document.getElementById(`qty-${type}`);
             const qty = qtyInput ? parseInt(qtyInput.value, 10) || 0 : 0;
             if (qty > 0) {
@@ -1525,7 +1528,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 simulationImageBase64: screenshotDataUrl // Add screenshot data URL
             };
             
-            if (window.opener) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'CONTAINER_SIMULATION_RESULT', data: summary }, '*');
+                window.parent.postMessage({ type: 'EXPORT_PACKING_LIST', containers: [], raw3DPlan: projectData }, '*');
+                alert('💾 컨테이너 적재 결과가 성공적으로 수주 및 3D 적재 계획 보관함에 보관되었습니다.');
+            } else if (window.opener) {
                 window.opener.postMessage({ type: 'CONTAINER_SIMULATION_RESULT', data: summary }, '*');
                 alert('👍 적재 프로젝트와 3D 캡처 이미지가 견적서 화면으로 자동 연계 전송되었습니다.');
             } else {
@@ -2365,8 +2372,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (document.getElementById('qty-LCL')) document.getElementById('qty-LCL').value = data.containers['LCL'] || 0;
                 if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
                 if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
+                if (document.getElementById('qty-20DG')) document.getElementById('qty-20DG').value = data.containers['20DG'] || 0;
                 if (document.getElementById('qty-40GP')) document.getElementById('qty-40GP').value = data.containers['40GP'] || 0;
-                if (document.getElementById('qty-40HC')) document.getElementById('qty-40HC').value = data.containers['40HC'] || 0;
+                if (document.getElementById('qty-40HC')) document.getElementById('qty-40HC').value = (data.containers['40HC'] || data.containers['40HQ']) || 0;
+                if (document.getElementById('qty-40HQ')) document.getElementById('qty-40HQ').value = (data.containers['40HQ'] || data.containers['40HC']) || 0;
+                if (document.getElementById('qty-40DG')) document.getElementById('qty-40DG').value = data.containers['40DG'] || 0;
             }
             
             // Populate items
@@ -2784,6 +2794,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (projectInput) projectInput.value = data.piNumber ? `${data.piNumber} 적재 계획` : '';
                     if (dateInput && data.date) dateInput.value = data.date;
                     if (serialInput) serialInput.value = data.piNumber || '';
+
+                    // Populate containers safely
+                    if (data.containers && typeof data.containers === 'object') {
+                        if (document.getElementById('qty-LCL')) document.getElementById('qty-LCL').value = data.containers['LCL'] || 0;
+                        if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
+                        if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
+                        if (document.getElementById('qty-20DG')) document.getElementById('qty-20DG').value = data.containers['20DG'] || 0;
+                        if (document.getElementById('qty-40GP')) document.getElementById('qty-40GP').value = data.containers['40GP'] || 0;
+                        if (document.getElementById('qty-40HC')) document.getElementById('qty-40HC').value = (data.containers['40HC'] || data.containers['40HQ']) || 0;
+                        if (document.getElementById('qty-40HQ')) document.getElementById('qty-40HQ').value = (data.containers['40HQ'] || data.containers['40HC']) || 0;
+                        if (document.getElementById('qty-40DG')) document.getElementById('qty-40DG').value = data.containers['40DG'] || 0;
+
+                        // Find primary container type with qty > 0
+                        const availableTypes = ['20DG', '20GP', '40HQ', '40HC', '40GP', '20RF', '40DG', 'LCL'];
+                        const primaryType = availableTypes.find(t => (data.containers[t] || 0) > 0) || Object.keys(data.containers)[0] || '20GP';
+                        if (typeof setSelectedContainer === 'function') {
+                            setSelectedContainer(primaryType, data.containers);
+                        }
+                    }
 
                     // Transform and push items
                     if (Array.isArray(data.items)) {

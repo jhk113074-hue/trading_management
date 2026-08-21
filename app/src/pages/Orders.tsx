@@ -237,7 +237,9 @@ export const Orders: React.FC = () => {
               
               if (latestRevDoc) {
                 const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
-                const quoteItems = liSnap.docs.map((d: any) => d.data() as any);
+                const quoteItems = liSnap.docs
+                  .map((d: any) => d.data() as any)
+                  .sort((a: any, b: any) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
                 
                 if (quoteItems.length > 0) {
                   const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));

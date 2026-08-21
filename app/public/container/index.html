@@ -138,8 +138,11 @@
                                 <option value="LCL">LCL (소량 화물)</option>
                                 <option value="20GP">20GP (일반 20ft)</option>
                                 <option value="20RF">20RF (냉동 20ft)</option>
+                                <option value="20DG">20DG (위험물 20ft)</option>
                                 <option value="40GP">40GP (일반 40ft)</option>
                                 <option value="40HC">40HC (하이큐빅)</option>
+                                <option value="40HQ">40HQ (하이큐빅)</option>
+                                <option value="40DG">40DG (위험물 40ft)</option>
                             </select>
                             <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm" style="height: 28px; padding: 0 10px; font-size: 0.8rem;"><i data-lucide="plus"></i> 추가</button>
                         </div>
@@ -197,6 +200,19 @@
                             </div>
                             <span style="font-size: 0.7rem; color: #64748b;">냉동 20ft</span>
                         </div>
+
+                        <!-- 20DG -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">20DG</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="20DG" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-20DG" min="0" value="0" readonly class="container-qty-input" data-type="20DG" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="20DG" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">위험물 20ft</span>
+                        </div>
                         
                         <!-- 40GP -->
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
@@ -211,17 +227,30 @@
                             <span style="font-size: 0.7rem; color: #64748b;">일반 40ft</span>
                         </div>
                         
-                        <!-- 40HC -->
+                        <!-- 40HQ / 40HC -->
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="font-size: 0.85rem; color: #1e293b;">40HC</strong>
+                                <strong style="font-size: 0.85rem; color: #1e293b;">40HQ</strong>
                                 <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
-                                    <button type="button" class="btn-qty-dec" data-type="40HC" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
-                                    <input type="number" id="qty-40HC" min="0" value="0" readonly class="container-qty-input" data-type="40HC" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
-                                    <button type="button" class="btn-qty-inc" data-type="40HC" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                    <button type="button" class="btn-qty-dec" data-type="40HQ" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-40HQ" min="0" value="0" readonly class="container-qty-input" data-type="40HQ" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="40HQ" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
                                 </div>
                             </div>
                             <span style="font-size: 0.7rem; color: #64748b;">하이큐빅</span>
+                        </div>
+
+                        <!-- 40DG -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">40DG</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="40DG" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-40DG" min="0" value="0" readonly class="container-qty-input" data-type="40DG" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="40DG" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">위험물 40ft</span>
                         </div>
                     </div>
                 </section>

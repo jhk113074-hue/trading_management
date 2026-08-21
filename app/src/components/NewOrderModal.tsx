@@ -281,7 +281,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           }));
 
           const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
-          const quoteItems = liSnap.docs.map(d => d.data() as any);
+          const quoteItems = liSnap.docs
+            .map(d => d.data() as any)
+            .sort((a, b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
           
           if (quoteItems.length > 0) {
             // Always fetch the fresh products list directly from Firestore to avoid stale React closure state

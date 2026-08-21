@@ -52,7 +52,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
   const [formData, setFormData] = useState<Partial<Supplier>>({
     supplierCode: '', name: '', bizNumber: '', representative: '',
-    phone: '', purchaseEmail: '', address: '', managerName: '', managerPhone: '',
+    phone: '', purchaseEmail: '', defaultCcEmails: '', address: '', managerName: '', managerPhone: '',
     category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: [],
     countryType: '국내'
   });
@@ -140,9 +140,19 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
   // 기존 bankKrw/bankUsd 역파싱하여 개별 상태에 채워넣기
   useEffect(() => {
     if (initialSupplier) {
+      const initialCcList = (initialSupplier.defaultCcEmails || '')
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(Boolean);
+
+      const mappedContacts = (initialSupplier.contacts || []).map(c => ({
+        ...c,
+        isCc: c.isCc != null ? c.isCc : (c.email ? initialCcList.includes(c.email.trim().toLowerCase()) : false)
+      }));
+
       setFormData({
         ...initialSupplier,
-        contacts: initialSupplier.contacts || []
+        contacts: mappedContacts
       });
 
       // 1. 원화 통장 역파싱
@@ -681,7 +691,10 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                   <Input label="종목" value={formData.itemName} onChange={(v: any) => handleChange('itemName', v)} placeholder="예: 화학원료" />
                   <Select label="업체 구분" value={formData.category || '공급사'} onChange={(v: any) => handleChange('category', v)} options={['공급사', '포워딩사']} />
                   <Input label="대표전화번호" value={formData.phone} onChange={(v: any) => handleChange('phone', v)} placeholder="02-XXX-XXXX" />
-                  <div style={{ gridColumn: 'span 3' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <Input label="기본 참조(CC) 이메일 (쉼표 구분)" value={formData.defaultCcEmails} onChange={(v: any) => handleChange('defaultCcEmails', v)} placeholder="예: cc1@supplier.com, cc2@supplier.com" />
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
                     <Input label="본사 주소 (Address)" value={formData.address} onChange={(v: any) => handleChange('address', v)} placeholder="도로명 주소 또는 본사 영문 주소" />
                   </div>
                   
@@ -799,21 +812,23 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                        <th style={{ padding: '3px 6px', width: '45px', textAlign: 'center' }}>대표</th>
-                        <th style={{ padding: '3px 6px', width: '140px' }}>이름 (직책)</th>
+                        <th style={{ padding: '3px 6px', width: '40px', textAlign: 'center' }}>대표</th>
+                        <th style={{ padding: '3px 6px', width: '55px', textAlign: 'center' }} title="발주서 및 도착보고 메일 발송 시 참조(CC)에 자동 포함됩니다">참조(CC)</th>
+                        <th style={{ padding: '3px 6px', width: '130px' }}>이름 (직책)</th>
                         <th style={{ padding: '3px 6px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
                         <th style={{ padding: '3px 6px' }}>역할 / 특이사항</th>
-                        <th style={{ padding: '3px 6px', width: '50px', textAlign: 'center' }}>삭제</th>
+                        <th style={{ padding: '3px 6px', width: '45px', textAlign: 'center' }}>삭제</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(!formData.contacts || formData.contacts.length === 0) ? (
                         <tr>
-                          <td colSpan={5} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 공급사 담당자가 없습니다. 상단에서 추가해 주세요.</td>
+                          <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 공급사 담당자가 없습니다. 상단에서 추가해 주세요.</td>
                         </tr>
                       ) : (
                         formData.contacts.map((c, idx) => (
-                          <tr key={c.id || idx} style={{ borderBottom: '1px solid #f1f5f9', background: c.isPrimary ? '#faf5ff' : 'transparent' }}>
+                          <tr key={c.id || idx} style={{ borderBottom: '1px solid #f1f5f9', background: c.isPrimary ? '#faf5ff' : c.isCc ? '#f0fdf4' : 'transparent' }}>
+                            {/* 대표 라디오 */}
                             <td style={{ padding: '3px 6px', textAlign: 'center' }}>
                               <input
                                 type="radio"
@@ -831,9 +846,52 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                                 style={{ cursor: 'pointer' }}
                               />
                             </td>
-                            <td style={{ padding: '3px 6px', fontWeight: 700, color: c.isPrimary ? '#7e22ce' : 'var(--text-primary)' }}>
+                            {/* 참조(CC) 체크박스 */}
+                            <td style={{ padding: '3px 6px', textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!c.isCc}
+                                disabled={!c.email || !c.email.trim()}
+                                title={!c.email ? '이메일 주소가 등록되지 않아 참조로 지정할 수 없습니다' : '체크 시 메일 발송 참조(CC)에 자동 포함'}
+                                onChange={e => {
+                                  const checked = e.target.checked;
+                                  const targetEmail = (c.email || '').trim();
+                                  
+                                  setFormData(prev => {
+                                    const updatedContacts = (prev.contacts || []).map((item, i) => 
+                                      i === idx ? { ...item, isCc: checked } : item
+                                    );
+                                    
+                                    // 상단 defaultCcEmails 필드와 실시간 동기화
+                                    let currentList = (prev.defaultCcEmails || '')
+                                      .split(',')
+                                      .map(x => x.trim())
+                                      .filter(Boolean);
+                                    
+                                    if (targetEmail) {
+                                      if (checked) {
+                                        if (!currentList.includes(targetEmail)) {
+                                          currentList.push(targetEmail);
+                                        }
+                                      } else {
+                                        currentList = currentList.filter(x => x !== targetEmail);
+                                      }
+                                    }
+
+                                    return {
+                                      ...prev,
+                                      contacts: updatedContacts,
+                                      defaultCcEmails: currentList.join(', ')
+                                    };
+                                  });
+                                }}
+                                style={{ cursor: (!c.email || !c.email.trim()) ? 'not-allowed' : 'pointer' }}
+                              />
+                            </td>
+                            <td style={{ padding: '3px 6px', fontWeight: 700, color: c.isPrimary ? '#7e22ce' : c.isCc ? '#166534' : 'var(--text-primary)' }}>
                               {c.name} {c.position && <span style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 400 }}>({c.position})</span>}
                               {c.isPrimary && <span style={{ fontSize: '8px', background: '#f3e8ff', color: '#a855f7', border: '1px solid #d8b4fe', padding: '0px 3px', borderRadius: '2px', marginLeft: '4px' }}>대표</span>}
+                              {c.isCc && <span style={{ fontSize: '8px', background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', padding: '0px 3px', borderRadius: '2px', marginLeft: '4px' }}>CC</span>}
                             </td>
                             <td style={{ padding: '3px 6px' }}>
                               <span style={{ marginRight: '8px', fontWeight: 500 }}>📞 {c.phone || '-'}</span>

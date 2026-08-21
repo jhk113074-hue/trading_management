@@ -15,6 +15,7 @@ export interface Supplier {
   createdAt?: any;
   updatedAt?: any;
   contacts?: SupplierContact[];
+  defaultCcEmails?: string; // 공급처별 기본 참조(CC) 이메일 (쉼표 구분)
 
   // ── 세금계산서/거래처 정보 보강 (옵션 필드, 기존 데이터/로직 영향 없음) ──
   // 사업자등록번호는 기존 bizNumber 필드를 그대로 사용 (중복 필드 생성 방지)
@@ -34,6 +35,7 @@ export interface SupplierContact {
   phone?: string;
   email?: string;
   isPrimary: boolean;
+  isCc?: boolean; // 기본 참조(CC) 수신 여부
   remarks?: string;
 }
 

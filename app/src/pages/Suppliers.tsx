@@ -14,6 +14,7 @@ const excelMapping = [
   { header: "대표자명", key: "representative" },
   { header: "대표전화번호", key: "phone" },
   { header: "구매담당이메일", key: "purchaseEmail" },
+  { header: "기본참조이메일", key: "defaultCcEmails" },
   { header: "본사주소", key: "address" },
   { header: "구매담당자명", key: "managerName" },
   { header: "구매담당자연락처", key: "managerPhone" },

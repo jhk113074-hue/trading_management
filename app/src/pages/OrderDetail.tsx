@@ -1115,6 +1115,7 @@ export const OrderDetail: React.FC = () => {
     supplierPayments: {} as Record<string, { status: string; date: string; }>,
     
     supplierTaxInvoice: {} as Record<string, 'Y' | 'N' | ''>,
+    supplierHidePrices: {} as Record<string, boolean>,
     packingList: null as any,
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
@@ -1787,6 +1788,7 @@ export const OrderDetail: React.FC = () => {
           })(),
           supplierPurchaseCertificate: data.supplierPurchaseCertificate || {},
           supplierTaxTypes: data.supplierTaxTypes || {},
+          supplierHidePrices: data.supplierHidePrices || {},
           supplierTaxInvoiceDetails: data.supplierTaxInvoiceDetails || {},
           supplierPoDetails: data.supplierPoDetails || {},
           supplierPurchaseCertFiles: data.supplierPurchaseCertFiles || {},
@@ -2191,6 +2193,7 @@ export const OrderDetail: React.FC = () => {
         supplierPayments: basicForm.supplierPayments,
         
         supplierTaxInvoice: basicForm.supplierTaxInvoice,
+        supplierHidePrices: basicForm.supplierHidePrices || {},
         supplierPurchaseCertificate: basicForm.supplierPurchaseCertificate,
         supplierTaxTypes: basicForm.supplierTaxTypes,
         supplierTaxInvoiceDetails: basicForm.supplierTaxInvoiceDetails || {},
@@ -3469,6 +3472,7 @@ export const OrderDetail: React.FC = () => {
   const handlePrintSupplierPo = async (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+    const hidePrices = !!basicForm.supplierHidePrices?.[supplierName];
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
@@ -3661,12 +3665,14 @@ export const OrderDetail: React.FC = () => {
             <thead>
               <tr>
                 <th style="width: 50px;">No.</th>
-                <th style="width: 250px;">품 명</th>
-                <th style="width: 120px;">스 펙</th>
-                <th style="width: 60px;">수량</th>
-                <th style="width: 80px;">단 가</th>
-                <th style="width: 100px;">금 액</th>
-                <th style="width: 90px;">부가세</th>
+                <th style="width: ${hidePrices ? '450px' : '250px'};">품 명</th>
+                <th style="width: ${hidePrices ? '220px' : '120px'};">스 펙</th>
+                <th style="width: 80px;">수량</th>
+                ${!hidePrices ? `
+                  <th style="width: 80px;">단 가</th>
+                  <th style="width: 100px;">금 액</th>
+                  <th style="width: 90px;">부가세</th>
+                ` : ''}
                 <th>비 고</th>
               </tr>
             </thead>
@@ -3682,10 +3688,12 @@ export const OrderDetail: React.FC = () => {
                     <td class="center">${idx + 1}</td>
                     <td><strong>${itemName}</strong></td>
                     <td class="center">${it.grade || '-'}</td>
-                    <td class="right">${(it.qty || 0).toLocaleString()}</td>
-                    <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
-                    <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
-                    <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${(it.qty || 0).toLocaleString()} ${it.unit || ''}</td>
+                    ${!hidePrices ? `
+                      <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                      <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                      <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    ` : ''}
                     <td style="font-size: 10px; color: var(--text-secondary);">${it.unit} 발주</td>
                   </tr>
                 `;
@@ -3698,9 +3706,11 @@ export const OrderDetail: React.FC = () => {
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
+                  ${!hidePrices ? `
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  ` : ''}
                   <td></td>
                 </tr>
               `).join('')}
@@ -3708,43 +3718,47 @@ export const OrderDetail: React.FC = () => {
               <tr style="font-weight: bold; background-color: #fafafa;">
                 <td colspan="3" class="center">합   계</td>
                 <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
-                <td></td>
-                <td class="right">
-                  ${(() => {
-                    const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const parts = [];
-                    if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
-                <td class="right">
-                  ${(() => {
-                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                    const parts = [];
-                    if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
-                <td class="right" style="color: #dc2626;">
-                  ${(() => {
-                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                    const usdGrand = usdTotal + usdVat;
-                    const krwGrand = krwTotal + krwVat;
-                    const parts = [];
-                    if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
-                    if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
+                ${!hidePrices ? `
+                  <td></td>
+                  <td class="right">
+                    ${(() => {
+                      const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const parts = [];
+                      if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                      if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                  <td class="right">
+                    ${(() => {
+                      const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                      const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                      const parts = [];
+                      if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                      if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                  <td class="right" style="color: #dc2626;">
+                    ${(() => {
+                      const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                      const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                      const usdGrand = usdTotal + usdVat;
+                      const krwGrand = krwTotal + krwVat;
+                      const parts = [];
+                      if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+                      if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                ` : `
+                  <td></td>
+                `}
               </tr>
             </tbody>
           </table>
@@ -3869,6 +3883,8 @@ export const OrderDetail: React.FC = () => {
 
       const payload = cleanUndefined({
         supplierPoDetails: updatedPoDetails,
+        supplierHidePrices: basicForm.supplierHidePrices || {},
+        supplierTaxTypes: basicForm.supplierTaxTypes || {},
         sourcingItems: cleanSourcingItems,
         items: cleanItems,
         updatedAt: serverTimestamp()
@@ -3879,6 +3895,7 @@ export const OrderDetail: React.FC = () => {
       console.warn("Failed to auto-save supplier PO details on issue:", e);
     }
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+    const hidePrices = !!basicForm.supplierHidePrices?.[supplierName];
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
@@ -4072,12 +4089,14 @@ export const OrderDetail: React.FC = () => {
             <thead>
               <tr>
                 <th style="width: 50px;">No.</th>
-                <th style="width: 250px;">품 명</th>
-                <th style="width: 120px;">스 펙</th>
-                <th style="width: 60px;">수량</th>
-                <th style="width: 80px;">단 가</th>
-                <th style="width: 100px;">금 액</th>
-                <th style="width: 90px;">부가세</th>
+                <th style="width: ${hidePrices ? '450px' : '250px'};">품 명</th>
+                <th style="width: ${hidePrices ? '220px' : '120px'};">스 펙</th>
+                <th style="width: 80px;">수량</th>
+                ${!hidePrices ? `
+                  <th style="width: 80px;">단 가</th>
+                  <th style="width: 100px;">금 액</th>
+                  <th style="width: 90px;">부가세</th>
+                ` : ''}
                 <th>비 고</th>
               </tr>
             </thead>
@@ -4093,10 +4112,12 @@ export const OrderDetail: React.FC = () => {
                     <td class="center">${idx + 1}</td>
                     <td><strong>${itemName}</strong></td>
                     <td class="center">${it.grade || '-'}</td>
-                    <td class="right">${(it.qty || 0).toLocaleString()}</td>
-                    <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
-                    <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
-                    <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${(it.qty || 0).toLocaleString()} ${it.unit || ''}</td>
+                    ${!hidePrices ? `
+                      <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                      <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                      <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    ` : ''}
                     <td style="font-size: 10px; color: var(--text-secondary);">${it.unit} 발주</td>
                   </tr>
                 `;
@@ -4109,9 +4130,11 @@ export const OrderDetail: React.FC = () => {
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
+                  ${!hidePrices ? `
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  ` : ''}
                   <td></td>
                 </tr>
               `).join('')}
@@ -4119,43 +4142,47 @@ export const OrderDetail: React.FC = () => {
               <tr style="font-weight: bold; background-color: #fafafa;">
                 <td colspan="3" class="center">합   계</td>
                 <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
-                <td></td>
-                <td class="right">
-                  ${(() => {
-                    const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const parts = [];
-                    if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
-                <td class="right">
-                  ${(() => {
-                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                    const parts = [];
-                    if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
-                <td class="right" style="color: #dc2626;">
-                  ${(() => {
-                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                    const usdGrand = usdTotal + usdVat;
-                    const krwGrand = krwTotal + krwVat;
-                    const parts = [];
-                    if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
-                    if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
-                    return parts.join(' / ');
-                  })()}
-                </td>
+                ${!hidePrices ? `
+                  <td></td>
+                  <td class="right">
+                    ${(() => {
+                      const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const parts = [];
+                      if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                      if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                  <td class="right">
+                    ${(() => {
+                      const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                      const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                      const parts = [];
+                      if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                      if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                  <td class="right" style="color: #dc2626;">
+                    ${(() => {
+                      const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                      const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                      const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                      const usdGrand = usdTotal + usdVat;
+                      const krwGrand = krwTotal + krwVat;
+                      const parts = [];
+                      if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+                      if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
+                      return parts.join(' / ');
+                    })()}
+                  </td>
+                ` : `
+                  <td></td>
+                `}
               </tr>
             </tbody>
           </table>
@@ -6428,7 +6455,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     </span>
                                   );
                                 })()}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14.5px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
                                   <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
                                   <select
                                     value={basicForm.supplierTaxTypes[supplierName] || '과세'}
@@ -6442,14 +6469,32 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                         }
                                       }));
                                     }}
-                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-default)', fontSize: '14.5px', fontWeight: 600, outline: 'none' }}
+                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-default)', fontSize: '13px', fontWeight: 600, outline: 'none' }}
                                   >
                                     <option value="과세">과세 (10%)</option>
                                     <option value="영세">영세 (0%)</option>
                                   </select>
                                 </div>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', fontWeight: 700, color: '#0369a1', cursor: 'pointer', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }} title="체크 시 발주서 인쇄 및 PDF 발행/발송 시 단가, 금액, 부가세, 합계금액을 제외하고 품목 및 수량만 출력합니다.">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!basicForm.supplierHidePrices?.[supplierName]}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierHidePrices: {
+                                          ...(prev.supplierHidePrices || {}),
+                                          [supplierName]: checked
+                                        }
+                                      }));
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                  <span>금액 숨김 (수량만 발주)</span>
+                                </label>
                               </div>
-                              <div style={{ display: 'flex', gap: '6px' }}>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleSaveSupplierPoDetails(supplierName)}
@@ -6608,20 +6653,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   />
                                 </div>
                               </div>
-                              <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '15.5px', marginTop: '5px' }}>
-                                <thead>
-                                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)' }}>
-                                    <th style={{ padding: '6px', textAlign: 'left', width: '320px' }}>품목명</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>스펙</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>수량</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>매입가<br/>(통화/단가)</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>실매입가<br/>(통화/단가)</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>금액</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '80px' }}>부가세</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>합계</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '60px' }}>순서/관리</th>
-                                  </tr>
-                                </thead>
+                              <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '4px' }}>
+                                <table style={{ width: '100%', minWidth: '1330px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
+                                  <thead>
+                                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '250px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '220px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>스펙</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '150px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '165px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '165px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>실매입가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '110px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '80px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
+                                    </tr>
+                                  </thead>
                                 <tbody>
                                   {items.length === 0 ? (
                                     <tr>
@@ -6652,20 +6698,20 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                           }}
                                         >
                                           {/* 1. 상품코드 + 품목명 (병합 열) */}
-                                          <td style={{ padding: '4px', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                               <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
                                                 ⋮⋮
                                               </span>
-                                              <span style={{ fontSize: '15.5px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
+                                              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
                                               {isEditing ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
                                                   <input
                                                     type="text"
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ width: '260px', padding: '3px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px' }}
+                                                    style={{ width: '100%', minWidth: '150px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}
                                                   />
                                                   <button
                                                     type="button"
@@ -6674,19 +6720,19 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                       setIsSourcingSearch(true);
                                                       setIsProductSearchOpen(true);
                                                     }}
-                                                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                     title="품목 검색"
                                                   >
                                                     🔍
                                                   </button>
                                                 </div>
                                               ) : (
-                                                <strong style={{ fontSize: '15.5px', color: '#334155' }}>{itemName}</strong>
+                                                <strong style={{ fontSize: '13px', color: '#334155' }}>{itemName}</strong>
                                               )}
                                             </div>
                                           </td>
                                           {/* 2. 스펙 */}
-                                          <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
                                             {isEditing ? (
                                               <textarea
                                                 value={it.grade || ''}
@@ -6701,30 +6747,30 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     });
                                                   });
                                                 }}
-                                                rows={1}
+                                                rows={2}
+                                                placeholder="스펙/규격 입력"
                                                 style={{
-                                                  width: '120px',
+                                                  width: '100%',
                                                   padding: '4px 6px',
-                                                  border: '1px solid var(--border-default)',
+                                                  border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
-                                                  fontSize: '15.5px',
+                                                  fontSize: '13px',
                                                   textAlign: 'left',
-                                                  resize: 'both',
-                                                  minWidth: '80px',
-                                                  minHeight: '29px',
+                                                  resize: 'vertical',
+                                                  minHeight: '34px',
                                                   fontFamily: 'inherit',
                                                   overflow: 'auto',
                                                   boxSizing: 'border-box'
                                                 }}
                                               />
                                             ) : (
-                                              it.grade || '-'
+                                              <div style={{ fontSize: '13px', color: '#334155', textAlign: 'center' }}>{it.grade || '-'}</div>
                                             )}
                                           </td>
                                           {/* 3. 수량 */}
-                                          <td style={{ padding: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
                                             {isEditing ? (
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
                                                 <input
                                                   type="text"
                                                   inputMode="numeric"
@@ -6734,13 +6780,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     const val = e.target.value.replace(/[^0-9]/g, '');
                                                     handleSourcingItemChange(itemIndexInMain, 'qty', val === '' ? 0 : parseInt(val, 10));
                                                   }}
-                                                  style={{ width: '70px', padding: '3px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right' }}
+                                                  style={{ width: '75px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
                                                 />
                                                 <input
                                                   type="text"
                                                   value={it.unit || 'kg'}
                                                   onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'unit', e.target.value)}
-                                                  style={{ width: '32px', padding: '3px 2px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center' }}
+                                                  style={{ width: '45px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center' }}
                                                 />
                                               </div>
                                             ) : (
@@ -6748,13 +6794,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                             )}
                                           </td>
                                           {/* 4. 매입가 (통화/단가) */}
-                                          <td style={{ padding: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
                                             {isEditing ? (
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                                                 <select
                                                   value={origCurrency}
                                                   onChange={(e) => handleCurrencySelection(e.target.value, origCurrency, customCurrencies, val => handleSourcingItemChange(itemIndexInMain, 'originalPurchaseCurrency', val))}
-                                                  style={{ width: '42px', padding: '2px 2px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', background: '#fff' }}
+                                                  style={{ width: '55px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff' }}
                                                 >
                                                   {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
                                                   <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
@@ -6788,7 +6834,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                       return copy;
                                                     });
                                                   }}
-                                                  style={{ width: '70px', padding: '3px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right' }}
+                                                  style={{ width: '85px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
                                                 />
                                               </div>
                                             ) : (
@@ -6796,8 +6842,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                             )}
                                           </td>
                                           {/* 5. 실매입가 (통화/단가) */}
-                                          <td style={{ padding: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                               <select
                                                 value={purchaseCurrency}
                                                 disabled={!isEditing}
@@ -6813,7 +6859,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     });
                                                   });
                                                 }}
-                                                style={{ width: '42px', padding: '2px 2px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
+                                                style={{ width: '55px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
                                               >
                                                 {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
                                                 <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
@@ -6857,44 +6903,44 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                   });
                                                 }}
                                                 style={{
-                                                  width: '70px',
-                                                  padding: '3px 4px',
-                                                  border: '1px solid var(--border-default)',
+                                                  width: '85px',
+                                                  padding: '4px 6px',
+                                                  border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
-                                                  fontSize: '15.5px',
+                                                  fontSize: '13px',
                                                   textAlign: 'right'
                                                 }}
                                               />
                                             </div>
                                           </td>
                                           {/* 6. 금액 */}
-                                          <td style={{ padding: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 600 }}>
                                             {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                                           </td>
                                           {/* 7. 부가세 */}
-                                          <td style={{ padding: '4px', textAlign: 'right', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
                                             {(() => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
                                               const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
-                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'} ${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
                                           {/* 8. 합계 */}
-                                          <td style={{ padding: '4px', textAlign: 'right', fontWeight: 700, color: '#0f172a', verticalAlign: 'middle' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 750, color: '#0f172a', verticalAlign: 'middle' }}>
                                             {(() => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
                                               const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
                                               const grandAmt = totalPurchaseAmount + vatAmt;
-                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'} ${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
                                           {/* 9. 관리 (복사 / 삭제) */}
-                                          <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                               <button
                                                 type="button"
                                                 onClick={() => copySourcingItem(itemIndexInMain)}
-                                                style={{ padding: '3px 6px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: '3px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 700 }}
+                                                style={{ padding: '4px 6px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
                                                 title="동일 품목 복사 추가"
                                               >
                                                 📋
@@ -6906,7 +6952,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     setSourcingItems(prev => prev.filter(x => x !== it));
                                                   }
                                                 }}
-                                                style={{ padding: '3px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '3px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 600 }}
+                                                style={{ padding: '4px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
                                                 title="품목 삭제"
                                               >
                                                 삭제
@@ -6968,6 +7014,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   )}
                                 </tbody>
                               </table>
+                            </div>
                               
                               {/* 생산완료일만 표시 (납품처는 상단 공통 필드로 이관) */}
                               <div style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderTop: '1px solid var(--border-default)', marginTop: '10px' }}>

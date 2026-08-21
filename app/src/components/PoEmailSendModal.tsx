@@ -7,6 +7,7 @@ interface PoEmailSendModalProps {
   defaultSubject: string;
   defaultContent: string;
   pdfUrl?: string;
+  pdfAttachments?: { title: string; url: string }[];
   onSend: (data: { to: string; cc: string; subject: string; content: string }) => Promise<void> | void;
   onClose: () => void;
 }
@@ -18,6 +19,7 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
   defaultSubject,
   defaultContent,
   pdfUrl,
+  pdfAttachments,
   onSend,
   onClose
 }) => {
@@ -81,7 +83,7 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
         {/* 헤더 */}
         <div style={{ padding: '14px 20px', borderBottom: '1px solid #cbd5e1', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📧 [{supplierName}] 발주서 이메일 발송
+            📧 [{supplierName.replace(/_arrival$/, '')}] 이메일 발송
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>✕</button>
         </div>
@@ -166,11 +168,24 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
 
           {/* 첨부파일 정보 */}
           <div style={{ backgroundColor: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', padding: '10px 12px', fontSize: '12px', color: '#1e40af' }}>
-            <div style={{ fontWeight: 750, marginBottom: '2px' }}>📄 첨부파일 정보</div>
-            {pdfUrl ? (
+            <div style={{ fontWeight: 750, marginBottom: '4px' }}>📄 첨부파일 (다운로드 링크 자동 생성)</div>
+            {pdfAttachments && pdfAttachments.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {pdfAttachments.map((att, idx) => (
+                  <div key={idx} style={{ fontSize: '11.5px', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 700 }}>• {att.title}:</span>
+                    {att.url ? (
+                      <span style={{ wordBreak: 'break-all' }}>{att.url.substring(0, 60)}...</span>
+                    ) : (
+                      <span style={{ color: '#b45309', fontWeight: 600 }}>미발행 (발행 버튼을 누르면 링크가 자동 생성됩니다)</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : pdfUrl ? (
               <div style={{ wordBreak: 'break-all', fontSize: '11.5px', color: '#2563eb' }}>발주서 PDF 파일 원본이 자동 첨부됩니다. ({pdfUrl.substring(0, 70)}...)</div>
             ) : (
-              <div style={{ color: '#b45309', fontWeight: 600 }}>⚠️ 아직 저장된 PDF가 없습니다. (먼저 발주서를 발행 및 저장 후 메일을 보내시면 PDF 링크가 자동 첨부됩니다)</div>
+              <div style={{ color: '#b45309', fontWeight: 600 }}>⚠️ 아직 저장된 PDF가 없습니다. (먼저 문서를 발행 및 저장 후 메일을 보내시면 PDF 링크가 자동 첨부됩니다)</div>
             )}
           </div>
 

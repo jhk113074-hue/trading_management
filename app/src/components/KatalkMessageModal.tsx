@@ -99,7 +99,7 @@ export const KatalkMessageModal: React.FC<KatalkMessageModalProps> = ({
           </div>
 
           {/* 우측 카카오톡 노란 말풍선 (#FEF01B) */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', maxWidth: '88%' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', maxWidth: '92%' }}>
             <span style={{ fontSize: '10px', color: '#556677', fontWeight: 600, whiteSpace: 'nowrap' }}>
               {currentTimeStr}
             </span>
@@ -115,7 +115,40 @@ export const KatalkMessageModal: React.FC<KatalkMessageModalProps> = ({
               wordBreak: 'break-word',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, sans-serif'
             }}>
-              {message}
+              {(() => {
+                const parts = message.split(/(https?:\/\/[^\s]+)/g);
+                return parts.map((part, pIdx) => {
+                  if (part.startsWith('http://') || part.startsWith('https://')) {
+                    const isPdf = part.toLowerCase().includes('.pdf') || part.includes('po_issued_docs');
+                    return (
+                      <div key={pIdx} style={{ margin: '6px 0', background: '#ffffff', borderRadius: '6px', padding: '8px 10px', border: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ fontSize: '11.5px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{isPdf ? '📄' : '🔗'}</span>
+                          <span>{isPdf ? 'PDF 원본 파일 다운로드' : '링크 열기'}</span>
+                        </div>
+                        <a 
+                          href={part} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{ 
+                            background: '#3b82f6', 
+                            color: '#ffffff', 
+                            padding: '3px 8px', 
+                            borderRadius: '4px', 
+                            fontSize: '11px', 
+                            fontWeight: 'bold', 
+                            textDecoration: 'none',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          다운로드
+                        </a>
+                      </div>
+                    );
+                  }
+                  return <span key={pIdx}>{part}</span>;
+                });
+              })()}
             </div>
           </div>
         </div>

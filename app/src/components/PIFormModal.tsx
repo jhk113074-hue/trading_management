@@ -146,6 +146,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   }, []);
 
   const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
+    let defaultRate = 1400.00;
+    try {
+      const savedRate = localStorage.getItem('site_live_usd_rate');
+      if (savedRate && Number(savedRate) > 0) {
+        defaultRate = Math.round((Number(savedRate) - 50) * 10) / 10;
+      }
+    } catch (_) {}
+
     const defaults: Partial<ProformaInvoice> = {
       type: 'trade',
       piNumber: '',
@@ -157,7 +165,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       incoterms: '', destinationPort: '', departurePort: 'Busan, Korea',
       packagingSpec: 'Export Standard packing',
       validityDesc: '4weeks from offered date',
-      paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00,
+      paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: defaultRate,
       remarks: '① This is a basic price. Prices are subject to change based on your additional requests.\n② Shipping cost may vary monthly depending on the carrier\'s current conditions.',
       deliveryTerm: '8weeks from payment confirmation', origin: 'KOREA', yourRef: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
@@ -569,6 +577,31 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       fetchRevisionsAndItems();
     } else {
       if (!isLoadedRef.current) {
+        // Fetch live exchange rate for new PI (Site USD rate - 50 KRW)
+        const fetchLiveRateForNewPI = async () => {
+          try {
+            const res = await fetch('https://open.er-api.com/v6/latest/USD');
+            if (res.ok) {
+              const data = await res.json();
+              const krw = data.rates?.KRW;
+              if (krw && krw > 0) {
+                const liveRate = Math.round(krw * 10) / 10;
+                const calcRate = Math.round((liveRate - 50) * 10) / 10;
+                try {
+                  localStorage.setItem('site_live_usd_rate', String(liveRate));
+                } catch (_) {}
+                setFormData(prev => ({
+                  ...prev,
+                  exchangeRate: calcRate
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to fetch live exchange rate for new PI:", e);
+          }
+        };
+        fetchLiveRateForNewPI();
+
         // Generate temp PI number
         const yy = new Date().getFullYear();
         setFormData(prev => {

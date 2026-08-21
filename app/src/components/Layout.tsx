@@ -98,6 +98,9 @@ export const Layout: React.FC = () => {
       const usdToCny = data.rates?.CNY || 6.75; // 1 USD = ? CNY
       
       const currentUsd = Math.round(krw * 10) / 10;
+      try {
+        localStorage.setItem('site_live_usd_rate', String(currentUsd));
+      } catch (_) {}
       const currentCny = Math.round(usdToCny * 100) / 100;
       let calculatedMa30: number | null = null;
       let calculatedTrend: 'UP' | 'DOWN' | 'SAME' = 'SAME';

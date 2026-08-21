@@ -18,6 +18,33 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.316',
+    version: 'v2.8.316',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 컨테이너 수량(FCL 대수 및 컨테이너별 수량) 자동 연동 및 발주서 금액 숨김(수량만 발주) 옵션 지원',
+    content: '• 주문관리(PO) 물류정보의 FCL 컨테이너 상세 정보(예: 20DG 2대 등)를 3D 적재 시뮬레이션 프로그램과 완벽 연동하여 컨테이너 종류 및 대수가 자동으로 반영되도록 구현\n• 공급업체 발주서(PO) 발행 시 금액 없이 품목 및 수량만 표기하여 출력/발행/발송할 수 있는 [금액 숨김 (수량만 발주)] 옵션 추가\n• 실시간 쉬핑마크 미리보기(Live Preview) 비율 및 텍스트 폰트 시인성 대폭 확대\n• Step 3 3D 적재 시뮬레이션 헤더 카드 1줄 컴팩트화 및 불필요 블록 정리',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.313',
+    version: 'v2.8.313',
+    date: '2026-08-21',
+    category: '기능개선',
+    title: '도착보고서 공급업체(1. Shipper) 대표 담당자(이름, 전화번호, 이메일) 자동 연동 및 품명 수량단위 kg 표기',
+    content: '• 도착보고서 1) Shipper 항목에 등록된 대표 담당자(손지연 선임, 02-3463-6732, jyson@twohchem.com)의 정보가 우선 연동되어 인쇄 및 PDF에 출력되도록 개선\n• 도착보고서 11) Description of Goods 품명에 표시되던 수량단위를 EA에서 kg으로 변경',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.311',
+    version: 'v2.8.311',
+    date: '2026-08-21',
+    category: '기능개선',
+    title: '물류정보 입고시간 입력 기능 추가 및 도착보고서 9) Remarks 입고일/입고시간 자동 연동',
+    content: '• 물류정보 탭에 [입고시간](기본 오전 10시까지 등) 입력 필드 신설\n• 도착보고서 9) Remarks에 물류정보의 입고일 및 입고시간이 자동으로 결합되어 표시되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.202',
     version: 'v2.8.202',
     date: '2026-08-07',
