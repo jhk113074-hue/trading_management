@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.366',
+    version: 'v2.8.366',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '팀원 관리(Team Management) 내 영문이름(English Name) 컬럼 및 등록/수정 항목 추가',
+    content: '• 팀원 관리 테이블에 [영문이름] 컬럼 추가 및 신규 팀원 추가/수정 모달에 영문이름 입력란 연동 완료\\n• 입력된 영문이름은 사용자 정보 DB 및 서식 작성 연동에 일관되게 활용 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.365',
     version: 'v2.8.365',
     date: '2026-08-22',

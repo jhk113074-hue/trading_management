@@ -11,7 +11,7 @@ export const TeamManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newMember, setNewMember] = useState({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
+  const [newMember, setNewMember] = useState({ name: '', nameEn: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState({ text: '', type: '' });
   
@@ -46,7 +46,7 @@ export const TeamManagement: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: new Date().toISOString().split('T')[0], phone: '' });
+    setNewMember({ name: '', nameEn: '', email: '', role: '팀원', department: '', position: '', joinDate: new Date().toISOString().split('T')[0], phone: '' });
     setModalMessage({ text: '', type: '' });
     setShowModal(true);
   };
@@ -55,6 +55,7 @@ export const TeamManagement: React.FC = () => {
     setEditingId(member.id);
     setNewMember({
       name: member.name,
+      nameEn: member.nameEn || '',
       email: member.email,
       role: member.role,
       department: member.department || '',
@@ -75,6 +76,7 @@ export const TeamManagement: React.FC = () => {
         // 수정 로직
         await updateDoc(doc(db, 'users', editingId), {
           name: newMember.name,
+          nameEn: newMember.nameEn || '',
           role: newMember.role,
           department: newMember.department,
           position: newMember.position,
@@ -97,6 +99,7 @@ export const TeamManagement: React.FC = () => {
         
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           name: newMember.name,
+          nameEn: newMember.nameEn || '',
           email: newMember.email,
           role: newMember.role,
           department: newMember.department,
@@ -110,7 +113,7 @@ export const TeamManagement: React.FC = () => {
         await secondaryAuth.signOut();
 
         setShowModal(false);
-        setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
+        setNewMember({ name: '', nameEn: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
         fetchMembers();
         window.alert(`성공적으로 생성되었습니다.\n기본 비밀번호: ${defaultPassword}`); // Try to use alert for success, but it's okay if blocked because modal closes
       }
@@ -166,6 +169,7 @@ export const TeamManagement: React.FC = () => {
               <thead>
               <tr style={{ borderBottom: '1px solid #f1f5f9', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이름</th>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>영문이름</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이메일</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>전화번호</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>부서</th>
@@ -178,10 +182,11 @@ export const TeamManagement: React.FC = () => {
             </thead>
             <tbody>
               {members.length === 0 ? (
-                <tr><td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
+                <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
               ) : members.map(member => (
                 <tr key={member.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                   <td style={{ padding: '16px 24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{member.name}</td>
+                  <td style={{ padding: '16px 24px', color: '#1e293b', fontWeight: 600 }}>{member.nameEn || '-'}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.email}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.phone || '-'}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.department || '-'}</td>
@@ -226,8 +231,12 @@ export const TeamManagement: React.FC = () => {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이름</label>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이름 (국문)</label>
                 <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="성명을 입력하세요" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>영문이름 (English Name)</label>
+                <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: John Kim, Alex Park" value={newMember.nameEn} onChange={e => setNewMember({...newMember, nameEn: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이메일</label>
