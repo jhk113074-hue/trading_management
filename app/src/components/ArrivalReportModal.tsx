@@ -68,11 +68,11 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
   const entryTime = orderInfo.cfsEntryTime || '오전 10시까지';
   const defaultRemarks = entryDate 
     ? `ORIGIN : MADE IN KOREA\n입고일: ${entryDate} ${entryTime}` 
-    : `ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 ${entryTime}`;
+    : `ORIGIN : MADE IN KOREA`;
 
   const [formData, setFormData] = useState({
     bookingNo: initialData?.bookingNo || '',
-    remarks: initialData?.remarks && !initialData.remarks.includes('연도-월-일') ? initialData.remarks : defaultRemarks,
+    remarks: (initialData?.remarks && !initialData.remarks.includes('연도-월-일')) ? initialData.remarks : defaultRemarks,
     notifyParty: initialData?.notifyParty || 'SAME AS ABOVE',
     portOfLoading: orderInfo.portOfLoading || initialData?.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
     finalDestination: orderInfo.finalDestination || initialData?.finalDestination || 'HAMAD PORT, QATAR',
@@ -82,6 +82,24 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
     cfsEta: orderInfo.cfsEntryDate || initialData?.cfsEta || '',
   });
 
+  const formatSupplierShipper = (s: Supplier) => {
+    const primaryContact = s.contacts?.find(c => c.isPrimary) || s.contacts?.[0];
+    const contactName = primaryContact?.name || s.managerName || '';
+    const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+    const contactPhone = primaryContact?.phone || s.managerPhone || s.phone || '';
+    const contactEmail = primaryContact?.email || s.purchaseEmail || '';
+
+    const lines = [s.name];
+    if (s.address) lines.push(s.address);
+    if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+    if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+    if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+    return lines.filter(Boolean).join('\n');
+  };
+
+  const [matchedSupplier, setMatchedSupplier] = useState<Supplier | null>(null);
+
   // Load shippers and CFS list
   useEffect(() => {
     const loadSuppliersAndCfs = async () => {
@@ -89,21 +107,24 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Supplier));
         // Find matches for shipper
-        const matched = list.find(s => s.name === supplierName || s.supplierCode === supplierName);
-        if (matched && !initialData?.shipper) {
-          const primaryContact = matched.contacts?.find(c => c.isPrimary) || matched.contacts?.[0];
-          const contactName = primaryContact?.name || matched.managerName || '';
-          const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
-          const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
-          const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
-
-          let lines = [matched.name, matched.address || ''];
-          if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
-          if (contactPhone) lines.push(`TEL: ${contactPhone}`);
-          if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
-
-          const formatted = lines.filter(Boolean).join('\n');
-          setShipperVal(formatted);
+        const cleanTarget = supplierName.trim().toLowerCase();
+        const matched = list.find(s => 
+          (s.name || '').trim().toLowerCase() === cleanTarget || 
+          (s.supplierCode || '').trim().toLowerCase() === cleanTarget ||
+          (s.name && cleanTarget.includes(s.name.trim().toLowerCase())) ||
+          (cleanTarget && (s.name || '').toLowerCase().includes(cleanTarget))
+        );
+        if (matched) {
+          setMatchedSupplier(matched);
+          const formatted = formatSupplierShipper(matched);
+          const currentShipper = initialData?.shipper || '';
+          
+          // Auto-upgrade if missing, or if previously saved without contact/TEL info
+          if (!currentShipper || (!currentShipper.includes('TEL') && !currentShipper.includes('담당자'))) {
+            setShipperVal(formatted);
+          } else {
+            setShipperVal(currentShipper);
+          }
         } else {
           setShipperVal(initialData?.shipper || supplierName);
         }
@@ -345,7 +366,19 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
             <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #3b82f6', paddingBottom: '4px' }}>1. 선적 및 입고 정보 (Shipping Info)</h4>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>1) Shipper (송하인)</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>1) Shipper (송하인)</label>
+                {matchedSupplier && (
+                  <button 
+                    type="button" 
+                    onClick={() => setShipperVal(formatSupplierShipper(matchedSupplier))}
+                    style={{ fontSize: '10.5px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: '4px', padding: '1px 6px', cursor: 'pointer', fontWeight: 600 }}
+                    title="거래처 마스터의 대표 담당자 및 연락처로 초기화"
+                  >
+                    🔄 거래처 정보로 동기화
+                  </button>
+                )}
+              </div>
               <textarea rows={3} value={shipperVal} onChange={e => setShipperVal(e.target.value)} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
             </div>
 

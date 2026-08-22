@@ -240,6 +240,7 @@ export const OrderDetail: React.FC = () => {
     defaultSubject: string;
     defaultContent: string;
     pdfUrl: string;
+    pdfAttachments?: { title: string; url: string }[];
   } | null>(null);
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
@@ -624,57 +625,7 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  const [isSimFileUploading, setIsSimFileUploading] = useState(false);
-  const [isSimImageUploading, setIsSimImageUploading] = useState(false);
 
-  const handleSimFileUpload = async (file: File) => {
-    if (!file || !order) return;
-    setIsSimFileUploading(true);
-    try {
-      const storageRef = ref(storage, `tasks/${order.id}/actual_simulation_file.json`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      await new Promise<void>((resolve, reject) => {
-        uploadTask.on('state_changed', null, reject, () => resolve());
-      });
-      const url = await getDownloadURL(uploadTask.snapshot.ref);
-      setBasicForm(prev => ({
-        ...prev,
-        actualContainerSimulation: {
-          ...(prev.actualContainerSimulation || {}),
-          simulationFileUrl: url,
-          simulationFileName: file.name
-        }
-      }));
-    } catch (err: any) {
-      alert("업로드 실패: " + err.message);
-    } finally {
-      setIsSimFileUploading(false);
-    }
-  };
-
-  const handleSimImageUpload = async (file: File) => {
-    if (!file || !order) return;
-    setIsSimImageUploading(true);
-    try {
-      const storageRef = ref(storage, `tasks/${order.id}/actual_simulation_image.jpg`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      await new Promise<void>((resolve, reject) => {
-        uploadTask.on('state_changed', null, reject, () => resolve());
-      });
-      const url = await getDownloadURL(uploadTask.snapshot.ref);
-      setBasicForm(prev => ({
-        ...prev,
-        actualContainerSimulation: {
-          ...(prev.actualContainerSimulation || {}),
-          simulationImageUrl: url
-        }
-      }));
-    } catch (err: any) {
-      alert("업로드 실패: " + err.message);
-    } finally {
-      setIsSimImageUploading(false);
-    }
-  };
 
   const handleReceiptUpload = async (file: File, index: number, supplierName: string) => {
     if (!order) return;
@@ -4581,7 +4532,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       defaultCcEmails: defaultCc,
       defaultSubject: `[${companyTitleName}] ${supplierName} 도착보고서 및 쉬핑마크 라벨 발행 알림 (${poNum})`,
       defaultContent: contentStr,
-      pdfUrl: arrivalPdfUrl || shippingPdfUrl
+      pdfUrl: arrivalPdfUrl || shippingPdfUrl,
+      pdfAttachments: [
+        { title: '도착보고서 PDF', url: arrivalPdfUrl },
+        { title: '쉬핑마크 라벨 PDF', url: shippingPdfUrl }
+      ]
     });
   };
 
@@ -9092,76 +9047,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           )}
                         </div>
                       </div>
-
-                      {/* 3D 적재 시뮬레이션 계획 대조 (Planned vs Actual) */}
-                      <div style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', marginBottom: '8px', marginTop: '16px' }}>
-<h4 style={{ margin: '0 0 6px 0', fontSize: '13.5px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
-                      📦 3D 적재 시뮬레이션 계획 대조 (Planned vs Actual)
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      {/* Planned Card */}
-                      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px' }}>
-                        <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#1e3a8a', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>📋 Planned (시뮬레이션 계획안)</div>
-                        {piData?.containerSimulation ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                              {piData.containerSimulation.simulationFileUrl && (
-                                <a href={piData.containerSimulation.simulationFileUrl} download style={{ padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', textDecoration: 'none', color: '#2563eb', fontSize: '15.5px', fontWeight: 700 }}>📁 파일 다운로드</a>
-                              )}
-                              {piData.containerSimulation.simulationImageUrl && (
-                                <button type="button" onClick={() => previewFile(piData.containerSimulation.simulationImageUrl, '계획안 스크린샷')} style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', fontSize: '15.5px', fontWeight: 700, cursor: 'pointer' }}>🔍 스크린샷 보기</button>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>PI에 시뮬레이션 계획안이 등록되지 않았습니다.</div>
-                        )}
-                      </div>
-
-                      {/* Actual Card */}
-                      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px' }}>
-                        <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#10b981', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>✅ Actual (실제 적재 결과)</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13.5px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                            <div>
-                              <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>프로젝트 (.json)</div>
-                              {basicForm.actualContainerSimulation?.simulationFileUrl ? (
-                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                  <a href={basicForm.actualContainerSimulation.simulationFileUrl} download style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '13.5px', fontWeight: 700 }}>다운로드</a>
-                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
-                                </div>
-                              ) : (
-                                <div>
-                                  <input type="file" accept=".json" id="actual-sim-json" onChange={e => e.target.files && handleSimFileUpload(e.target.files[0])} style={{ display: 'none' }} />
-                                  <label htmlFor="actual-sim-json" style={{ padding: '4px 10px', background: '#2563eb', color: '#fff', borderRadius: '4px', fontSize: '15.5px', cursor: 'pointer', fontWeight: 700, display: 'inline-block' }}>{isSimFileUploading ? '...' : '파일 첨부'}</label>
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>결과 스크린샷 이미지</div>
-                              {basicForm.actualContainerSimulation?.simulationImageUrl ? (
-                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                  <img src={basicForm.actualContainerSimulation.simulationImageUrl} alt="Actual Screenshot" style={{ width: '48px', height: '32px', objectFit: 'contain', border: '1px solid var(--border-default)', borderRadius: '4px' }} />
-                                  <button type="button" onClick={() => previewFile(basicForm.actualContainerSimulation.simulationImageUrl, '실제 결과 스크린샷')} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}>보기</button>
-                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationImageUrl: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
-                                </div>
-                              ) : (
-                                <div>
-                                  <input type="file" accept="image/*" id="actual-sim-img" onChange={e => e.target.files && handleSimImageUpload(e.target.files[0])} style={{ display: 'none' }} />
-                                  <label htmlFor="actual-sim-img" style={{ padding: '4px 10px', background: '#2563eb', color: '#fff', borderRadius: '4px', fontSize: '15.5px', cursor: 'pointer', fontWeight: 700, display: 'inline-block' }}>{isSimImageUploading ? '...' : '이미지 첨부'}</label>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                     </div>
                   )}
                 </div>
-              
               )}
 
               {/* 3) 도착보고 및 쉬핑마크 탭 */}
@@ -13282,6 +13170,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           defaultSubject={poEmailModalData.defaultSubject}
           defaultContent={poEmailModalData.defaultContent}
           pdfUrl={poEmailModalData.pdfUrl}
+          pdfAttachments={poEmailModalData.pdfAttachments}
           onSend={handleExecuteSendPoEmail}
           onClose={() => setPoEmailModalData(null)}
         />
