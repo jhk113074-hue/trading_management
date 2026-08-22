@@ -17,6 +17,7 @@ export interface ExcelItem {
 }
 
 export interface CiPlData {
+  bottomFreeText?: string;
   orderId: string;
   piNumber: string;
   customerName: string;
@@ -408,35 +409,55 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         itemRowIdx++;
       }
 
-      // Section B (Only if filled)
-      if (data.vatTrn) {
-        ws.getRow(itemRowIdx).height = 15;
-        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-        const bVal = data.vatTrn.trim();
-        const bText = bVal.toUpperCase().startsWith('B)') ? bVal : `B) TRN Number: ${bVal}`;
-        ws.getCell(`A${itemRowIdx}`).value = bText;
-        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
-        itemRowIdx++;
-      }
+      // Free-form Bottom Text (B, C, D, etc.) or Legacy B/C
+      if (data.bottomFreeText && data.bottomFreeText.trim()) {
+        const lines = data.bottomFreeText.trim().split('\n');
+        lines.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            ws.getRow(itemRowIdx).height = 8;
+            itemRowIdx++;
+            return;
+          }
+          const isHeader = /^[B-Z]\)/i.test(trimmed);
+          ws.getRow(itemRowIdx).height = isHeader ? 16 : 14;
+          ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+          ws.getCell(`A${itemRowIdx}`).value = line;
+          ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: isHeader };
+          ws.getCell(`A${itemRowIdx}`).alignment = { vertical: 'middle', wrapText: true };
+          itemRowIdx++;
+        });
+      } else {
+        // Section B (Only if filled)
+        if (data.vatTrn) {
+          ws.getRow(itemRowIdx).height = 15;
+          ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+          const bVal = data.vatTrn.trim();
+          const bText = bVal.toUpperCase().startsWith('B)') ? bVal : `B) TRN Number: ${bVal}`;
+          ws.getCell(`A${itemRowIdx}`).value = bText;
+          ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+          itemRowIdx++;
+        }
 
-      // Section C (Only if filled)
-      if (data.manufacturerName || data.manufacturerAddress) {
-        ws.getRow(itemRowIdx).height = 15;
-        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-        ws.getCell(`A${itemRowIdx}`).value = 'C) MANUFACTURER/PRODUCER';
-        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
-        itemRowIdx++;
+        // Section C (Only if filled)
+        if (data.manufacturerName || data.manufacturerAddress) {
+          ws.getRow(itemRowIdx).height = 15;
+          ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+          ws.getCell(`A${itemRowIdx}`).value = 'C) MANUFACTURER/PRODUCER';
+          ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+          itemRowIdx++;
 
-        const mfgLines = [];
-        if (data.manufacturerName) mfgLines.push(`1. NAME : ${data.manufacturerName}`);
-        if (data.manufacturerAddress) mfgLines.push(`2. ADDRESS : ${data.manufacturerAddress}`);
+          const mfgLines = [];
+          if (data.manufacturerName) mfgLines.push(`1. NAME : ${data.manufacturerName}`);
+          if (data.manufacturerAddress) mfgLines.push(`2. ADDRESS : ${data.manufacturerAddress}`);
 
-        ws.getRow(itemRowIdx).height = 24;
-        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-        ws.getCell(`A${itemRowIdx}`).value = mfgLines.join('\n');
-        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
-        ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
-        itemRowIdx++;
+          ws.getRow(itemRowIdx).height = 24;
+          ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+          ws.getCell(`A${itemRowIdx}`).value = mfgLines.join('\n');
+          ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
+          ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
+          itemRowIdx++;
+        }
       }
     }
 

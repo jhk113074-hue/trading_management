@@ -246,6 +246,7 @@ export const OrderDetail: React.FC = () => {
     manufacturerName?: string;
     manufacturerAddress?: string;
     hsCodeSummary?: string;
+    bottomFreeText?: string;
   }>({});
   const [showPoDetails, setShowPoDetails] = useState(false);
   const exportExcelRef = useRef<(() => void) | null>(null);
@@ -1849,7 +1850,8 @@ export const OrderDetail: React.FC = () => {
             vatTrn: '',
             manufacturerName: '',
             manufacturerAddress: '',
-            hsCodeSummary: ''
+            hsCodeSummary: '',
+            bottomFreeText: ''
           });
         }
         if ((data as any).po_issued_documents) {
@@ -11133,6 +11135,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     totalCbm: plCbm,
                     introText: effectiveIntroText,
                     containerInfo: effectiveContainerInfo,
+                    bottomFreeText: customCiExtra.bottomFreeText,
                     vatTrn: customCiExtra.vatTrn,
                     manufacturerName: customCiExtra.manufacturerName,
                     manufacturerAddress: customCiExtra.manufacturerAddress,
@@ -11634,13 +11637,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         </div>
                       </div>
 
+                      {/* Section A (Required / Standard) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S)</span>
+                          <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase' }}>
+                            A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) <span style={{ color: '#ef4444' }}>(필수)</span>
+                          </span>
                           <span style={{ fontSize: '10.5px', color: '#0f766e', fontWeight: 600 }}>🔗 상단 CI 품목 및 HS CODE 자동 연동</span>
                         </div>
                         <textarea
-                          rows={2}
+                          rows={3}
                           value={effectiveHsSummary}
                           onChange={e => {
                             const val = e.target.value;
@@ -11651,55 +11657,65 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         />
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>B) TRN NUMBER (VAT REGISTRATION NO)</span>
+                      {/* Large Free-form Bottom Clauses (B, C, D, etc.) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                          <div>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase' }}>
+                              📝 B, C 등 하단 추가 신고 문구 & 부가정보 (자유 입력란)
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px' }}>(Section A 아래에 출력될 B) TRN Number, C) 제조사 등 자유롭게 입력)</span>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             <button
                               type="button"
-                              onClick={() => setCustomCiExtra(p => ({ ...p, vatTrn: p.vatTrn || '100605437100003' }))}
-                              style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10.5px', color: '#3b82f6', cursor: 'pointer' }}
+                              onClick={() => {
+                                setCustomCiExtra(p => {
+                                  const current = p.bottomFreeText || '';
+                                  const trnSample = 'B) TRN Number: 100605437100003';
+                                  const next = current ? `${current}\n${trnSample}` : trnSample;
+                                  return { ...p, bottomFreeText: next };
+                                });
+                              }}
+                              style={{ padding: '3px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#0f766e', cursor: 'pointer' }}
                             >
-                              예시 TRN 입력
+                              + B) TRN Number 예시
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCustomCiExtra(p => {
+                                  const current = p.bottomFreeText || '';
+                                  const mfgSample = 'C) MANUFACTURER/PRODUCER\n1. NAME : JEONGDO CO., LTD\n2. ADDRESS : 123, EXAMPLE ROAD, KOREA';
+                                  const next = current ? `${current}\n${mfgSample}` : mfgSample;
+                                  return { ...p, bottomFreeText: next };
+                                });
+                              }}
+                              style={{ padding: '3px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#3b82f6', cursor: 'pointer' }}
+                            >
+                              + C) 제조사 정보 예시
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCustomCiExtra(p => ({ ...p, bottomFreeText: '' }))}
+                              style={{ padding: '3px 8px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#dc2626', cursor: 'pointer' }}
+                            >
+                              비우기
                             </button>
                           </div>
-                          <input
-                            type="text"
-                            value={customCiExtra.vatTrn || ''}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setCustomCiExtra(p => ({ ...p, vatTrn: val }));
-                            }}
-                            placeholder="예: 100605437100003 또는 B) TRN Number: 100605437100003"
-                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
-                          />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>C) MANUFACTURER/PRODUCER (제조사 및 주소)</span>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <input
-                              type="text"
-                              value={customCiExtra.manufacturerName || ''}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setCustomCiExtra(p => ({ ...p, manufacturerName: val }));
-                              }}
-                              placeholder="제조사명 (예: JEONGDO CO.,LTD)"
-                              style={{ width: '40%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
-                            />
-                            <input
-                              type="text"
-                              value={customCiExtra.manufacturerAddress || ''}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setCustomCiExtra(p => ({ ...p, manufacturerAddress: val }));
-                              }}
-                              placeholder="제조사 영문 주소"
-                              style={{ width: '60%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
-                            />
-                          </div>
-                        </div>
+                        <textarea
+                          rows={6}
+                          value={customCiExtra.bottomFreeText !== undefined ? customCiExtra.bottomFreeText : (customCiExtra.vatTrn ? `B) TRN Number: ${customCiExtra.vatTrn}` : '')}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomCiExtra(p => ({ ...p, bottomFreeText: val }));
+                          }}
+                          placeholder={'예:\nB) TRN Number: 100605437100003\n\nC) MANUFACTURER/PRODUCER\n1. NAME : JEONGDO CO., LTD\n2. ADDRESS : 123, EXAMPLE ROAD, SOUTH KOREA'}
+                          style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '110px', fontFamily: 'inherit', lineHeight: '1.45', background: '#fff' }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -14111,6 +14127,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               totalPackages: totalPkgCount,
               introText: (customCiExtra.introText !== undefined && customCiExtra.introText !== '') ? customCiExtra.introText : (basicForm.lcDescription || ''),
               containerInfo: (customCiExtra.containerInfo !== undefined && customCiExtra.containerInfo !== '') ? customCiExtra.containerInfo : formatContainerInfoFromSpecs(basicForm.shipmentType, basicForm.fclSpecs),
+              bottomFreeText: customCiExtra.bottomFreeText,
               vatTrn: customCiExtra.vatTrn,
               manufacturerName: customCiExtra.manufacturerName,
               manufacturerAddress: customCiExtra.manufacturerAddress,

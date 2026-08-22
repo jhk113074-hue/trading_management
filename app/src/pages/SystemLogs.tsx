@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.347',
+    version: 'v2.8.347',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'CI 하단 Section A(필수) 유지 및 B, C 등 후속 신고 문구 대형 자유 입력란 구축',
+    content: '• Section A) HS CODE 요약(필수) 아래에 사용자가 원하는 모든 추가 신고/인증 문구(B, C 등)를 제한 없이 자유롭게 작성할 수 있는 대형 자유 입력 텍스트 영역 구축\n• 엑셀 및 미리보기에서 작성된 문구가 규격에 맞춰 자동 줄바꿈 및 서식 반영되도록 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.346',
     version: 'v2.8.346',
     date: '2026-08-22',

@@ -46,6 +46,7 @@ export interface CiPlPreviewModalProps {
     totalCbm?: number;
     introText?: string;
     containerInfo?: string;
+    bottomFreeText?: string;
     vatTrn?: string;
     manufacturerName?: string;
     manufacturerAddress?: string;
@@ -556,22 +557,30 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </div>
                 )}
 
-                {data.vatTrn && (
-                  <div style={{ marginTop: '4px' }}>
-                    <span style={{ fontWeight: 800 }}>
-                      {data.vatTrn.trim().toUpperCase().startsWith('B)') ? data.vatTrn.trim() : `B) TRN Number: ${data.vatTrn.trim()}`}
-                    </span>
+                {data.bottomFreeText ? (
+                  <div style={{ marginTop: '6px', whiteSpace: 'pre-line', fontSize: '9.5px', lineHeight: '1.4' }}>
+                    {data.bottomFreeText}
                   </div>
-                )}
+                ) : (
+                  <>
+                    {data.vatTrn && (
+                      <div style={{ marginTop: '4px' }}>
+                        <span style={{ fontWeight: 800 }}>
+                          {data.vatTrn.trim().toUpperCase().startsWith('B)') ? data.vatTrn.trim() : `B) TRN Number: ${data.vatTrn.trim()}`}
+                        </span>
+                      </div>
+                    )}
 
-                {(data.manufacturerName || data.manufacturerAddress) && (
-                  <div style={{ marginTop: '4px' }}>
-                    <div style={{ fontWeight: 800 }}>C) MANUFACTURER/PRODUCER</div>
-                    <div style={{ paddingLeft: '12px' }}>
-                      {data.manufacturerName && <div>1. NAME : {data.manufacturerName}</div>}
-                      {data.manufacturerAddress && <div>2. ADDRESS : {data.manufacturerAddress}</div>}
-                    </div>
-                  </div>
+                    {(data.manufacturerName || data.manufacturerAddress) && (
+                      <div style={{ marginTop: '4px' }}>
+                        <div style={{ fontWeight: 800 }}>C) MANUFACTURER/PRODUCER</div>
+                        <div style={{ paddingLeft: '12px' }}>
+                          {data.manufacturerName && <div>1. NAME : {data.manufacturerName}</div>}
+                          {data.manufacturerAddress && <div>2. ADDRESS : {data.manufacturerAddress}</div>}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
