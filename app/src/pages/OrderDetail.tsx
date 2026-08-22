@@ -9340,7 +9340,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         }
 
                         const entryDate = basicForm.cfsEntryDate || '';
-                        const entryTime = basicForm.cfsEntryTime || '오전 10시까지';
+                        const entryTime = (basicForm as any).cfsEntryTime || '오전 10시까지';
                         let remarksText = repData.remarks || '';
                         if (!remarksText || remarksText.includes('연도-월-일')) {
                           remarksText = entryDate 
