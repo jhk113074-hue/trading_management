@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.376',
+    version: 'v2.8.376',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '패킹 및 컨테이너로딩플랜 내 불필요한 구형 "PL 미리보기 및 PDF 저장" 버튼 정리/제거',
+    content: '• CI/PL 탭으로 서식 미리보기 및 Excel 다운로드가 일원화됨에 따라 로딩플랜 상단의 중복/구형 PL 미리보기 버튼 제거',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.375',
     version: 'v2.8.375',
     date: '2026-08-22',
