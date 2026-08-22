@@ -60,10 +60,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     workbook.creator = 'YSACC Management System';
     workbook.created = new Date();
 
-    const thinBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFCBD5E1' } };
-    const darkBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FF000000' } };
-    const thickBorder = { style: 'medium' as ExcelJS.BorderStyle, color: { argb: 'FF000000' } };
-    const doubleBorder = { style: 'double' as ExcelJS.BorderStyle, color: { argb: 'FF000000' } };
+    const thinBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FF94A3B8' } };
+    const darkBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FF1E293B' } };
+    const thickBorder = { style: 'medium' as ExcelJS.BorderStyle, color: { argb: 'FF0F172A' } };
+    const doubleBorder = { style: 'double' as ExcelJS.BorderStyle, color: { argb: 'FF0F172A' } };
 
     const cleanCiName = (rawName: string) => {
       return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
@@ -74,7 +74,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     const headerAddress = '111-201, 76, WOLMYEONG-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28569, REPUBLIC OF KOREA\nTEL: +82 70 4141 2927 / FAX: +82 303 3444 1130';
 
     const buildSheet = async (sheetName: string, isInvoice: boolean) => {
-      const ws = workbook.addWorksheet(sheetName);
+      const ws = workbook.addWorksheet(sheetName, {
+        views: [{ showGridLines: true }]
+      });
 
       ws.pageSetup.paperSize = 9; // A4
       ws.pageSetup.orientation = 'portrait';
@@ -87,10 +89,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         header: 0.0, footer: 0.0
       };
 
-      // 7 Standard Columns matching A4 width perfectly
+      // 7 Optimized Columns matching A4 portrait print area
       ws.columns = [
-        { width: 15 }, // A: Shipping Mark
-        { width: 35 }, // B: Description of Goods
+        { width: 16 }, // A: Shipping Mark
+        { width: 34 }, // B: Description of Goods
         { width: 15 }, // C: HS Code / Packaging
         { width: 12 }, // D: Qty / Net Weight
         { width: 8 },  // E: Unit
@@ -100,9 +102,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       let currRow = 1;
 
-      // Top Letterhead
+      // 1. Top Letterhead Image or Fallback Text
       let imageAdded = false;
-      const logoUrl = data.letterheadUrl || (isYS ? '/letterhead_ys.png' : '/letterhead_ysacc.png');
+      const logoUrl = data.letterheadUrl || (isYS ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
       if (logoUrl) {
         try {
           const res = await fetch(logoUrl);
@@ -148,7 +150,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow = 5;
       }
 
-      // Document Title
+      // 2. Document Title
       ws.mergeCells(`A${currRow}:G${currRow}`);
       const titleCell = ws.getCell(`A${currRow}`);
       titleCell.value = isInvoice ? 'Commercial Invoice' : 'Packing List';
@@ -157,83 +159,85 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 28;
       currRow += 2;
 
-      // 5x2 Header Grid
+      // 3. 5x2 Header Grid with Generous Row Heights & Line Breaks
       const gridStartRow = currRow;
 
       // Row 1: Shipper (A:D) vs Inv No / LC No (E:G)
       ws.mergeCells(`A${currRow}:D${currRow}`);
-      ws.getCell(`A${currRow}`).value = `Shipper / Beneficiary\n${data.customShipperText || `${companyName}\n${headerAddress}`}`;
+      const shipperVal = data.customShipperText || `${companyName}\n${headerAddress}`;
+      ws.getCell(`A${currRow}`).value = `Shipper / Beneficiary:\n${shipperVal}`;
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
-      ws.getCell(`E${currRow}`).value = `Invoice No. & Date: ${data.invoiceNo || data.piNumber || '-'} / ${data.invoiceDate}\nL/C No. & Date: ${data.lcNo || 'N/A'} ${data.lcDate ? `& ${data.lcDate}` : ''}`;
+      ws.getCell(`E${currRow}`).value = `Invoice No. & Date:\n${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}\n\nL/C No. & Date:\n${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`;
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`E${currRow}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(currRow).height = 42;
+      ws.getRow(currRow).height = 58;
       currRow++;
 
       // Row 2: Applicant (A:D) vs LC Bank (E:G)
       ws.mergeCells(`A${currRow}:D${currRow}`);
-      ws.getCell(`A${currRow}`).value = `Applicant\n${data.customerName || '-'}\n${data.customerAddress || ''}`;
+      const appAddress = data.customerAddress ? `\n${data.customerAddress}` : '';
+      ws.getCell(`A${currRow}`).value = `Applicant:\n${data.customerName || '-'}${appAddress}`;
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
-      ws.getCell(`E${currRow}`).value = `L/C Issuing Bank\n${data.lcIssuingBank || 'N/A'}`;
+      ws.getCell(`E${currRow}`).value = `L/C Issuing Bank:\n${data.lcIssuingBank || 'N/A'}`;
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`E${currRow}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(currRow).height = 36;
+      ws.getRow(currRow).height = 48;
       currRow++;
 
       // Row 3: Notify Party (A:D) vs Remarks (E:G)
       ws.mergeCells(`A${currRow}:D${currRow}`);
-      ws.getCell(`A${currRow}`).value = `Notify Party\n${data.notifyParty || data.customerName || 'Same as Applicant'}`;
+      ws.getCell(`A${currRow}`).value = `Notify Party:\n${data.notifyParty || data.customerName || 'Same as Applicant'}`;
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
-      ws.getCell(`E${currRow}`).value = `Remarks\n${data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}`;
+      ws.getCell(`E${currRow}`).value = `Remarks:\n${data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}`;
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5 };
       ws.getCell(`E${currRow}`).alignment = { wrapText: true, vertical: 'top' };
       const remarkLines = (data.remarks || '').split('\n').length;
-      ws.getRow(currRow).height = Math.max(34, remarkLines * 12 + 10);
+      ws.getRow(currRow).height = Math.max(50, remarkLines * 13 + 18);
       currRow++;
 
       // Row 4: Ports (A:B & C:D) vs Payment Terms (E:G)
       ws.mergeCells(`A${currRow}:B${currRow}`);
-      ws.getCell(`A${currRow}`).value = `Port of Loading\n${data.portOfLoading || '-'}`;
+      ws.getCell(`A${currRow}`).value = `Port of Loading:\n${data.portOfLoading || '-'}`;
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`A${currRow}`).alignment = { vertical: 'top' };
+      ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`C${currRow}:D${currRow}`);
-      ws.getCell(`C${currRow}`).value = `Port of Discharge\n${data.portOfDischarge || '-'}`;
+      ws.getCell(`C${currRow}`).value = `Port of Discharge:\n${data.portOfDischarge || '-'}`;
       ws.getCell(`C${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`C${currRow}`).alignment = { vertical: 'top' };
+      ws.getCell(`C${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
-      ws.getCell(`E${currRow}`).value = `Payment Terms\n${data.paymentTerms || '-'}`;
+      ws.getCell(`E${currRow}`).value = `Payment Terms:\n${data.paymentTerms || '-'}`;
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`E${currRow}`).alignment = { vertical: 'top' };
-      ws.getRow(currRow).height = 28;
+      ws.getCell(`E${currRow}`).alignment = { wrapText: true, vertical: 'top' };
+      ws.getRow(currRow).height = 34;
       currRow++;
 
       // Row 5: Vessel / Flight & ETD (A:B & C:D) vs Delivery Terms (E:G)
       ws.mergeCells(`A${currRow}:B${currRow}`);
-      ws.getCell(`A${currRow}`).value = `Vessel / Flight\n${data.vesselName || '-'}`;
+      ws.getCell(`A${currRow}`).value = `Vessel / Flight:\n${data.vesselName || '-'}`;
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`A${currRow}`).alignment = { vertical: 'top' };
+      ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`C${currRow}:D${currRow}`);
-      ws.getCell(`C${currRow}`).value = `ETD\n${data.etd || '-'}`;
+      ws.getCell(`C${currRow}`).value = `ETD:\n${data.etd || '-'}`;
       ws.getCell(`C${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`C${currRow}`).alignment = { vertical: 'top' };
+      ws.getCell(`C${currRow}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
-      ws.getCell(`E${currRow}`).value = `Delivery Terms\n${data.deliveryTerms || '-'}`;
+      ws.getCell(`E${currRow}`).value = `Delivery Terms:\n${data.deliveryTerms || '-'}`;
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`E${currRow}`).alignment = { vertical: 'top' };
-      ws.getRow(currRow).height = 28;
+      ws.getCell(`E${currRow}`).alignment = { wrapText: true, vertical: 'top' };
+      ws.getRow(currRow).height = 34;
 
       const gridEndRow = currRow;
       currRow++;
@@ -244,15 +248,15 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.getCell(r, c).border = {
             top: thinBorder,
             bottom: thinBorder,
-            left: (c === 1 || c === 3 || c === 5) ? thinBorder : undefined,
-            right: (c === 2 || c === 4 || c === 7) ? thinBorder : undefined
+            left: (c === 1 || c === 3 || c === 5) ? darkBorder : undefined,
+            right: (c === 2 || c === 4 || c === 7) ? darkBorder : undefined
           };
         }
       }
 
       currRow++; // Spacer row
 
-      // Item Table Header
+      // 4. Item Table Header
       const thRow = currRow;
       ws.getRow(thRow).height = 24;
       const headers = isInvoice
@@ -263,7 +267,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         const colLetter = String.fromCharCode(65 + idx);
         const cell = ws.getCell(`${colLetter}${thRow}`);
         cell.value = th;
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF000000' } };
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = { top: thickBorder, bottom: thickBorder, left: thinBorder, right: thinBorder };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
@@ -284,9 +288,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       itemsList.forEach(it => {
         const r = currRow;
-        ws.getRow(r).height = 20;
-
         const cleanName = cleanCiName(it.name || '');
+        const descLines = cleanName.split('\n').length;
+        ws.getRow(r).height = Math.max(22, descLines * 14 + 4);
 
         if (isInvoice) {
           const qty = Number(it.qty) || 0;
@@ -382,9 +386,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       }
 
-      // TOTAL AMOUNT ROW
+      // 5. TOTAL AMOUNT ROW
       const totalRow = currRow;
-      ws.getRow(totalRow).height = 22;
+      ws.getRow(totalRow).height = 24;
 
       ws.mergeCells(`A${totalRow}:C${totalRow}`);
       const totTitleCell = ws.getCell(`A${totalRow}`);
@@ -394,7 +398,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       if (isInvoice) {
         ws.getCell(`D${totalRow}`).value = totalQty;
-        ws.getCell(`D${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`D${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`D${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`D${totalRow}`).numFmt = '#,##0';
 
@@ -402,12 +406,12 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`F${totalRow}`).value = '';
 
         ws.getCell(`G${totalRow}`).value = totalAmt;
-        ws.getCell(`G${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`G${totalRow}`).font = { name: 'Arial', size: 10, bold: true };
         ws.getCell(`G${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`G${totalRow}`).numFmt = 'US$#,##0.00';
       } else {
         ws.getCell(`D${totalRow}`).value = totalNetW;
-        ws.getCell(`D${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`D${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`D${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`D${totalRow}`).numFmt = '#,##0.00';
 
@@ -416,12 +420,12 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`E${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`F${totalRow}`).value = totalGrossW;
-        ws.getCell(`F${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`F${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`F${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`F${totalRow}`).numFmt = '#,##0.00';
 
         ws.getCell(`G${totalRow}`).value = totalCbmV;
-        ws.getCell(`G${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`G${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`G${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`G${totalRow}`).numFmt = '#,##0.000';
       }
@@ -432,7 +436,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       currRow++;
 
-      // Dotted separator line
+      // 6. Dotted separator line
       ws.mergeCells(`A${currRow}:G${currRow}`);
       ws.getCell(`A${currRow}`).value = '--------------------------------------------------------------------------------------------------------------------------------';
       ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8, color: { argb: 'FF94A3B8' } };
@@ -440,7 +444,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 14;
       currRow++;
 
-      // Container Info
+      // 7. Container Info
       if (data.containerInfo) {
         const cInfoFormatted = data.containerInfo.toUpperCase().startsWith('CONTAINER')
           ? data.containerInfo
@@ -449,27 +453,27 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`A${currRow}`).value = cInfoFormatted;
         ws.getCell(`A${currRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 9, bold: true };
-        ws.getRow(currRow).height = 16;
+        ws.getRow(currRow).height = 18;
         currRow++;
       }
 
-      // Intro Text
+      // 8. Intro Text
       if (data.introText && data.introText.trim()) {
         ws.mergeCells(`A${currRow}:G${currRow}`);
         ws.getCell(`A${currRow}`).value = data.introText.trim();
         ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
         ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
         const linesCount = data.introText.split('\n').length;
-        ws.getRow(currRow).height = Math.max(16, linesCount * 13);
+        ws.getRow(currRow).height = Math.max(18, linesCount * 14);
         currRow++;
       }
 
-      // Section A (Only if filled)
+      // 9. Section A (Only if filled)
       if (data.hsCodeSummary && data.hsCodeSummary.trim()) {
         ws.mergeCells(`A${currRow}:G${currRow}`);
         ws.getCell(`A${currRow}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
         ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: true };
-        ws.getRow(currRow).height = 15;
+        ws.getRow(currRow).height = 18;
         currRow++;
 
         const hsLines = data.hsCodeSummary.trim().split('\n').length;
@@ -477,17 +481,17 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`A${currRow}`).value = data.hsCodeSummary.trim();
         ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
         ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
-        ws.getRow(currRow).height = Math.max(20, hsLines * 13 + 4);
+        ws.getRow(currRow).height = Math.max(22, hsLines * 14 + 6);
         currRow++;
       }
 
-      // Free-form Bottom Clauses (B, C, D, etc.)
+      // 10. Free-form Bottom Clauses (B, C, D, etc.)
       if (data.bottomFreeText && data.bottomFreeText.trim()) {
         const lines = data.bottomFreeText.trim().split('\n');
         lines.forEach(line => {
           const trimmed = line.trim();
           if (!trimmed) {
-            ws.getRow(currRow).height = 8;
+            ws.getRow(currRow).height = 10;
             currRow++;
             return;
           }
@@ -496,7 +500,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.getCell(`A${currRow}`).value = line;
           ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: isHeader };
           ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
-          ws.getRow(currRow).height = isHeader ? 16 : 14;
+          ws.getRow(currRow).height = isHeader ? 18 : 15;
           currRow++;
         });
       } else {
@@ -506,7 +510,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           const bText = bVal.toUpperCase().startsWith('B)') ? bVal : `B) TRN Number: ${bVal}`;
           ws.getCell(`A${currRow}`).value = bText;
           ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: true };
-          ws.getRow(currRow).height = 15;
+          ws.getRow(currRow).height = 18;
           currRow++;
         }
 
@@ -514,7 +518,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.mergeCells(`A${currRow}:G${currRow}`);
           ws.getCell(`A${currRow}`).value = 'C) MANUFACTURER/PRODUCER';
           ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: true };
-          ws.getRow(currRow).height = 15;
+          ws.getRow(currRow).height = 18;
           currRow++;
 
           const mfgLines = [];
@@ -525,18 +529,18 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.getCell(`A${currRow}`).value = mfgLines.join('\n');
           ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
           ws.getCell(`A${currRow}`).alignment = { wrapText: true };
-          ws.getRow(currRow).height = 24;
+          ws.getRow(currRow).height = 26;
           currRow++;
         }
       }
 
-      // Sign-off / Signature
+      // 11. Sign-off / Signature
       currRow += 2;
       ws.mergeCells(`E${currRow}:G${currRow}`);
       ws.getCell(`E${currRow}`).value = 'Signed by';
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 8.5, italic: true };
       ws.getCell(`E${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 15;
+      ws.getRow(currRow).height = 16;
       currRow += 3;
 
       ws.mergeCells(`E${currRow}:G${currRow}`);
@@ -544,7 +548,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`E${currRow}`).font = { name: 'Arial', size: 10, bold: true };
       ws.getCell(`E${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       ws.getCell(`E${currRow}`).border = { top: darkBorder };
-      ws.getRow(currRow).height = 20;
+      ws.getRow(currRow).height = 22;
     };
 
     await buildSheet('Commercial Invoice', true);

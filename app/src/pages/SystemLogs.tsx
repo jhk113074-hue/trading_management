@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.351',
+    version: 'v2.8.351',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'CI / PL Excel 셀 높이·여백 최적화 및 깨끗한 공식 레터헤드 교체',
+    content: '• Shipper, Applicant, Notify, Remarks, 항구 및 선적 정보 행 높이를 48~58pt로 확대하여 텍스트 겹침/잘림 현상 완전 해소\n• 라벨과 데이터 간 줄바꿈(개행) 적용 및 공식 레터헤드 이미지 바인딩',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.350',
     version: 'v2.8.350',
     date: '2026-08-22',
