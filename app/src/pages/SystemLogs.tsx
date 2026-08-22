@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.370',
+    version: 'v2.8.370',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Packing List (PL 탭) 상단 품목 안내문 (Intro Text) 편집 및 CI/LC 실시간 양방향 연동 추가',
+    content: '• PL 서식 탭 첫 번째 컨테이너 품목 상단에 [📝 상단 품목 안내문 (INTRO TEXT)] 편집란 추가\\n• L/C 물품 설명(Description) 또는 CI 탭에서 입력/수정한 안내문구가 PL 탭과 실시간 양방향 동기화되어 즉시 반영 및 수정 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.369',
     version: 'v2.8.369',
     date: '2026-08-22',

@@ -11972,6 +11972,47 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </tr>
                               </thead>
                               <tbody>
+                                {/* 상단 품목 안내문 (Intro Text - 품명줄과 1번 줄 사이에 위치) */}
+                                {cIdx === 0 && (
+                                  <tr style={{ background: '#f0fdf4', borderBottom: '2px solid #bbf7d0' }}>
+                                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 800, color: '#15803d', fontSize: '11px' }}>안내</td>
+                                    <td colSpan={5} style={{ padding: '6px 8px' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                            📝 상단 품목 안내문 (INTRO TEXT - 품목 1번 상단 표시)
+                                          </span>
+                                          {basicForm.lcDescription && (
+                                            <span style={{ fontSize: '10.5px', color: '#059669', fontWeight: 600 }}>🔗 L/C Description 자동 연동됨</span>
+                                          )}
+                                        </div>
+                                        <textarea
+                                          rows={2}
+                                          value={effectiveIntroText}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            setCustomCiExtra(p => ({ ...p, introText: val }));
+                                          }}
+                                          placeholder="L/C 물품 설명(Description)에서 자동 바인딩되거나 품목 상단에 기재할 서두 안내문구를 직접 수정 가능합니다."
+                                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #86efac', borderRadius: '4px', fontSize: '12.5px', color: '#14532d', outline: 'none', resize: 'vertical', minHeight: '44px', background: '#fff', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                                        />
+                                      </div>
+                                    </td>
+                                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                                      {effectiveIntroText && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setCustomCiExtra(p => ({ ...p, introText: '' }))}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
+                                          title="안내문 비우기"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )}
+
                                 {(() => {
                                   const itemsList = c.items || [];
                                   return itemsList.map((it: any, itIdx: number) => {
