@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.332',
+    version: 'v2.8.332',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 테이블 마우스 드래그 앤 드롭 행 순서 변경 지원 및 화살표 버튼 제거',
+    content: '• 패킹리스트 테이블의 동작 컬럼에서 위/아래(▲/▼) 화살표 버튼을 제거하고, 마우스로 행을 직접 잡고 끌어서 원하는 위치로 이동시킬 수 있는 직관적인 드래그 앤 드롭(Drag & Drop) 기능 구현\n• 드래그 이동 시 후속 PKG NO 자동 재계산 및 클라우드 실시간 자동 저장 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.331',
     version: 'v2.8.331',
     date: '2026-08-22',

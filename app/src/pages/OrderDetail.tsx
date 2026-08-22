@@ -229,6 +229,61 @@ export const OrderDetail: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [selectedPackingItems, setSelectedPackingItems] = useState<{ [containerIdx: number]: number[] }>({});
+  const [draggedPackingItem, setDraggedPackingItem] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
+  const [dragOverItemIdx, setDragOverItemIdx] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
+
+  const handlePackingItemDragStart = (e: React.DragEvent, containerIdx: number, itemIdx: number) => {
+    setDraggedPackingItem({ containerIdx, itemIdx });
+    e.dataTransfer.setData('text/plain', JSON.stringify({ containerIdx, itemIdx }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handlePackingItemDragOver = (e: React.DragEvent, containerIdx: number, itemIdx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragOverItemIdx || dragOverItemIdx.containerIdx !== containerIdx || dragOverItemIdx.itemIdx !== itemIdx) {
+      setDragOverItemIdx({ containerIdx, itemIdx });
+    }
+  };
+
+  const handlePackingItemDrop = (e: React.DragEvent, targetContainerIdx: number, targetItemIdx: number) => {
+    e.preventDefault();
+    setDragOverItemIdx(null);
+    if (!draggedPackingItem) return;
+    if (draggedPackingItem.containerIdx !== targetContainerIdx) return;
+    
+    const fromIdx = draggedPackingItem.itemIdx;
+    const toIdx = targetItemIdx;
+    if (fromIdx === toIdx) {
+      setDraggedPackingItem(null);
+      return;
+    }
+
+    const nextContainers = basicForm.packingList.containers.map((c: any, idx: number) => {
+      if (idx !== targetContainerIdx) {
+        return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+      }
+      const items = (c.items || []).map((it: any) => ({ ...it }));
+      const [moved] = items.splice(fromIdx, 1);
+      items.splice(toIdx, 0, moved);
+      recalculateContainerPkgNos(items);
+      return { ...c, items };
+    });
+
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    setDraggedPackingItem(null);
+
+    if (order?.id) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, {
+        packingList: {
+          ...basicForm.packingList,
+          containers: nextContainers
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
+    }
+  };
 
 
   const toggleAllPackingItemsInContainer = (containerIdx: number, totalCount: number) => {
@@ -2638,20 +2693,6 @@ export const OrderDetail: React.FC = () => {
   };
 
 
-  const moveStep2Item = (containerIdx: number, itemIdx: number, direction: 'up' | 'down') => {
-    const nextContainers = [...basicForm.packingList.containers];
-    const items = nextContainers[containerIdx].items || [];
-    if (direction === 'up' && itemIdx === 0) return;
-    if (direction === 'down' && itemIdx === items.length - 1) return;
-    
-    const targetIdx = direction === 'up' ? itemIdx - 1 : itemIdx + 1;
-    const temp = items[itemIdx];
-    items[itemIdx] = items[targetIdx];
-    items[targetIdx] = temp;
-    
-    nextContainers[containerIdx].items = items;
-    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-  };
 
   const recalculateContainerPkgNos = (items: any[]) => {
     let curNo = 1;
@@ -8883,8 +8924,25 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     const groupIndexes = Array.from({ length: spanCount }, (_, o) => itIdx + o);
                                     const isGroupSelected = groupIndexes.some(idx => (selectedPackingItems[cIdx] || []).includes(idx));
 
+                                    const isBeingDragged = draggedPackingItem?.containerIdx === cIdx && draggedPackingItem?.itemIdx === itIdx;
+                                    const isDragOver = dragOverItemIdx?.containerIdx === cIdx && dragOverItemIdx?.itemIdx === itIdx;
+
                                     return (
-                                      <tr key={itIdx} style={{ borderBottom: (isSecondary && itIdx < itemsList.length - 1 && (itemsList[itIdx + 1]._sharedWithPrev || itemsList[itIdx + 1]._isMergedMember)) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)', background: isGroupSelected ? '#eff6ff' : undefined }}>
+                                      <tr 
+                                        key={itIdx} 
+                                        draggable={isEditing}
+                                        onDragStart={e => handlePackingItemDragStart(e, cIdx, itIdx)}
+                                        onDragOver={e => handlePackingItemDragOver(e, cIdx, itIdx)}
+                                        onDragLeave={() => setDragOverItemIdx(null)}
+                                        onDrop={e => handlePackingItemDrop(e, cIdx, itIdx)}
+                                        style={{ 
+                                          borderBottom: (isSecondary && itIdx < itemsList.length - 1 && (itemsList[itIdx + 1]._sharedWithPrev || itemsList[itIdx + 1]._isMergedMember)) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)', 
+                                          background: isDragOver ? '#e0f2fe' : (isBeingDragged ? '#f1f5f9' : (isGroupSelected ? '#eff6ff' : undefined)),
+                                          opacity: isBeingDragged ? 0.4 : 1,
+                                          borderTop: isDragOver ? '2px solid #0284c7' : undefined,
+                                          transition: 'background 0.15s ease'
+                                        }}
+                                      >
                                         {/* 1. Checkbox */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
@@ -9167,24 +9225,31 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                         {/* 10. 동작 Actions (Individual per row) */}
                                         <td style={{ padding: '4px', textAlign: 'center' }}>
                                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
-                                            <button 
-                                              type="button"
-                                              disabled={itIdx === 0 || !isEditing}
-                                              onClick={() => moveStep2Item(cIdx, itIdx, 'up')}
-                                              title="위로 이동"
-                                              style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === 0 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            {/* Drag handle for row reordering */}
+                                            <div 
+                                              draggable={isEditing}
+                                              onDragStart={e => handlePackingItemDragStart(e, cIdx, itIdx)}
+                                              title="마우스로 잡고 위/아래로 드래그하여 순서 변경"
+                                              style={{
+                                                cursor: isEditing ? 'grab' : 'not-allowed',
+                                                padding: '2px 5px',
+                                                color: '#64748b',
+                                                fontSize: '15px',
+                                                fontWeight: 900,
+                                                userSelect: 'none',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: '#f1f5f9',
+                                                borderRadius: '4px',
+                                                border: '1px solid #cbd5e1',
+                                                height: '28px',
+                                                width: '26px',
+                                                boxSizing: 'border-box'
+                                              }}
                                             >
-                                              ▲
-                                            </button>
-                                            <button 
-                                              type="button"
-                                              disabled={itIdx === (c.items || []).length - 1 || !isEditing}
-                                              onClick={() => moveStep2Item(cIdx, itIdx, 'down')}
-                                              title="아래로 이동"
-                                              style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                            >
-                                              ▼
-                                            </button>
+                                              ⠿
+                                            </div>
                                             {(parseInt(it.pkg, 10) > 1 || parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10) > 1 || spanCount > 1 || isSecondary) && (
                                               <button
                                                 type="button"
