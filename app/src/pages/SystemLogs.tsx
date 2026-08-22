@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.321',
+    version: 'v2.8.321',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '도착보고서 & 쉬핑마크 라벨 2종 전용 다운로드 카드 레이아웃 이메일 발송 템플릿 통합 반영 및 5개 버튼 간소화',
+    content: '• 도착보고 카드 상단 액션 버튼을 필수 5개 버튼([➕ 패킹 행 추가], [🖨️ 도착보고 인쇄], [🏷️ 쉬핑마크 인쇄], [✉️ 메일 발송], [💬 카톡 발송])으로 완전 표준화\n• [✉️ 메일 발송] 및 [💬 카톡 발송] 클릭 시 도착보고서 PDF와 쉬핑마크 라벨 PDF를 백그라운드에서 자동 동시 발행 및 Firebase Storage 영구 보관 연동\n• Outlook 및 모든 이메일 클라이언트에서 도착보고서 PDF 및 쉬핑마크 라벨 PDF 원본 다운로드 전용 2종 카드 버튼 템플릿 완벽 렌더링 지원\n• 거래처 관리 마스터의 CC(참조) 이메일 목록 자동 연동 및 발신자/수신자 정보 완전 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.320',
     version: 'v2.8.320',
     date: '2026-08-22',
