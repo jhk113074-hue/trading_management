@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.372',
+    version: 'v2.8.372',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Commercial Invoice (CI 탭) 품명 및 사양 자유 수정 및 영구 저장 완벽 연동',
+    content: '• 수주/발주 품목에서 CI 서식으로 불러온 후에도 품명(Description of Goods)을 사용자가 원하는 형태로 자유롭게 직접 수정/편집 가능\\n• 수정된 품명 및 CI 데이터가 오더 저장(기본정보/패킹플랜) 시 Firestore에 안전하게 영구 저장되어 인쇄 및 Excel 다운로드에 100% 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.371',
     version: 'v2.8.371',
     date: '2026-08-22',

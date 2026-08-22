@@ -2443,6 +2443,9 @@ export const OrderDetail: React.FC = () => {
         fclSpecs: (basicForm.fclSpecs || []).map(c => ({ type: c.type, qty: c.qty, containerNo: c.containerNo || '', sealNo: c.sealNo || '' })),
 
         packingList: basicForm.packingList || null,
+        customCiItems: customCiItems || [],
+        customCiExtra: customCiExtra || {},
+        customPlRemarks: customPlRemarks || '',
         actualContainerSimulation: basicForm.actualContainerSimulation || null,
         commonShippingMark: commonShippingMark,
         activeSourcingTab: sourcingTabToSave,
