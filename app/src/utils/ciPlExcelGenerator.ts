@@ -1,7 +1,7 @@
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-interface ExcelItem {
+export interface ExcelItem {
   name: string;
   qty: number;
   unit: string;
@@ -13,9 +13,10 @@ interface ExcelItem {
   cbm?: number;
   packageType?: string;
   packagesCount?: number;
+  isFreight?: boolean;
 }
 
-interface CiPlData {
+export interface CiPlData {
   orderId: string;
   piNumber: string;
   customerName: string;
@@ -43,20 +44,33 @@ interface CiPlData {
   totalGrossWeight?: number;
   totalCbm?: number;
   customShipperText?: string;
+  introText?: string;
+  containerInfo?: string;
+  vatTrn?: string;
+  manufacturerName?: string;
+  manufacturerAddress?: string;
+  hsCodeSummary?: string;
 }
 
 export const exportCiPlToExcel = async (data: CiPlData) => {
   const workbook = new ExcelJS.Workbook();
 
   const thinBorder = { style: 'thin' as ExcelJS.BorderStyle, color: { argb: 'FFCBD5E1' } };
-  const thickBorder = { style: 'medium' as ExcelJS.BorderStyle, color: { argb: 'FF475569' } };
+  const thickBorder = { style: 'medium' as ExcelJS.BorderStyle, color: { argb: 'FF000000' } };
   const doubleBorder = { style: 'double' as ExcelJS.BorderStyle, color: { argb: 'FF000000' } };
+
+  const cleanCiName = (rawName: string) => {
+    return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+  };
+
+  const isYS = data.issuingCompany === 'YS';
+  const companyName = isYS ? 'YS' : 'YS ACC';
+  const headerAddress = '111-201, 76, WOLMYEONG-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28569, REPUBLIC OF KOREA\nTEL: +82 70 4141 2927 / FAX: +82 303 3444 1130';
 
   // Helper function to build a styled sheet
   const buildSheet = (sheetName: string, isInvoice: boolean) => {
     const ws = workbook.addWorksheet(sheetName);
 
-    // Page settings to fit to one page wide and look professional when printing
     ws.pageSetup.paperSize = 9; // A4
     ws.pageSetup.orientation = 'portrait';
     ws.pageSetup.fitToPage = true;
@@ -70,226 +84,133 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
     // Columns config (8 columns: A to H)
     ws.columns = [
-      { width: 14 }, // A: Shipping Mark
-      { width: 26 }, // B: Description
-      { width: 12 }, // C: HS CODE / Package Qty
-      { width: 10 }, // D: Qty / Net Weight
-      { width: 7 },  // E: Unit / Unit Type
-      { width: 12 }, // F: Unit Price / Gross Weight
-      { width: 14 }, // G: Amount / CBM
-      { width: 10 }, // H: Buffer / Sign space
+      { width: 15 }, // A: Shipping Mark
+      { width: 34 }, // B: Description
+      { width: 14 }, // C: HS Code / Packaging
+      { width: 12 }, // D: Qty / Net Weight
+      { width: 8 },  // E: Unit
+      { width: 14 }, // F: Unit Price / Gross Weight
+      { width: 16 }, // G: Amount / CBM
+      { width: 8 },  // H: Extra
     ];
 
-    // Title Row
-    ws.mergeCells('A1:H2');
-    const titleCell = ws.getCell('A1');
-    titleCell.value = isInvoice ? 'COMMERCIAL INVOICE' : 'PACKING LIST';
-    titleCell.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF1E3A8A' } };
+    // Row 1-2: Letterhead Header
+    ws.mergeCells('A1:H1');
+    const headerNameCell = ws.getCell('A1');
+    headerNameCell.value = companyName;
+    headerNameCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF000000' } };
+    headerNameCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    ws.mergeCells('A2:H2');
+    const headerAddrCell = ws.getCell('A2');
+    headerAddrCell.value = headerAddress;
+    headerAddrCell.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+    headerAddrCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+    ws.getRow(2).height = 24;
+
+    // Row 3: Title
+    ws.mergeCells('A3:H3');
+    const titleCell = ws.getCell('A3');
+    titleCell.value = isInvoice ? 'Commercial Invoice' : 'Packing List';
+    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF000000' } };
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.getRow(1).height = 20;
-    ws.getRow(2).height = 20;
+    ws.getRow(3).height = 26;
 
-    // Line beneath Title
-    for (let c = 1; c <= 8; c++) {
-      ws.getCell(3, c).border = { bottom: thickBorder };
-    }
-    ws.getRow(3).height = 6;
-
-    // Row 4: Header Blocks (Shipper Info vs Invoice No)
-    ws.getRow(4).height = 16;
+    // Header 5x2 Info Grid (Row 4 to 8)
+    // Row 4: Shipper (A4:D4) vs Inv No (E4:H4)
     ws.mergeCells('A4:D4');
-    ws.getCell('A4').value = '1. Shipper / Exporter';
-    ws.getCell('A4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    ws.getCell('A4').value = `Shipper / Beneficiary\n${data.customShipperText || `${companyName}\n${headerAddress}`}`;
+    ws.getCell('A4').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('A4').alignment = { wrapText: true, vertical: 'top' };
 
     ws.mergeCells('E4:H4');
-    ws.getCell('E4').value = isInvoice ? '2. Invoice No. & Date' : '2. Packing List No. & Date';
-    ws.getCell('E4').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('E4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    ws.getCell('E4').value = `Invoice No. & Date: ${data.invoiceNo} / ${data.invoiceDate}\nL/C No. & Date: ${data.lcNo || 'N/A'} ${data.lcDate ? `& ${data.lcDate}` : ''}`;
+    ws.getCell('E4').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('E4').alignment = { wrapText: true, vertical: 'top' };
+    ws.getRow(4).height = 36;
 
-    // Apply borders to label header row 4
-    for (let c = 1; c <= 4; c++) {
-      ws.getCell(4, c).border = { top: thinBorder, left: c === 1 ? thinBorder : undefined, bottom: thinBorder };
-    }
-    for (let c = 5; c <= 8; c++) {
-      ws.getCell(4, c).border = { top: thinBorder, left: c === 5 ? thinBorder : undefined, bottom: thinBorder, right: c === 8 ? thinBorder : undefined };
-    }
-
-    // Row 5 to 7: Shipper details on Left, Inv details on Right
-    ws.mergeCells('A5:D7');
-    const companyName = data.issuingCompany === 'YSACC' ? 'YSACC CO., LTD.' : 'YS CO., LTD.';
-    ws.getCell('A5').value = data.customShipperText || `${companyName}\nSuite 408, Dae-il Bldg, 12, Mapo-daero 4-gil,\nMapo-gu, Seoul, 04175, Korea`;
-    ws.getCell('A5').font = { name: 'Arial', size: 9.5 };
+    // Row 5: Applicant (A5:D5) vs LC Bank (E5:H5)
+    ws.mergeCells('A5:D5');
+    ws.getCell('A5').value = `Applicant\n${data.customerName}\n${data.customerAddress || ''}`;
+    ws.getCell('A5').font = { name: 'Arial', size: 8.5 };
     ws.getCell('A5').alignment = { wrapText: true, vertical: 'top' };
 
     ws.mergeCells('E5:H5');
-    ws.getCell('E5').value = `${data.invoiceNo} / ${data.invoiceDate}`;
-    ws.getCell('E5').font = { name: 'Arial', size: 9.5, bold: true };
-    ws.getCell('E5').alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getCell('E5').value = `L/C Issuing Bank\n${data.lcIssuingBank || 'N/A'}`;
+    ws.getCell('E5').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('E5').alignment = { wrapText: true, vertical: 'top' };
+    ws.getRow(5).height = 36;
+
+    // Row 6: Notify Party (A6:D6) vs Remarks (E6:H6)
+    ws.mergeCells('A6:D6');
+    ws.getCell('A6').value = `Notify Party\n${data.notifyParty || data.customerName || 'Same as Applicant'}`;
+    ws.getCell('A6').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('A6').alignment = { wrapText: true, vertical: 'top' };
 
     ws.mergeCells('E6:H6');
-    ws.getCell('E6').value = `L/C No. & Date: ${data.lcNo || 'N/A'} ${data.lcDate ? `/ ${data.lcDate}` : ''}`;
-    ws.getCell('E6').font = { name: 'Arial', size: 9 };
-    ws.getCell('E6').alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getCell('E6').value = `Remarks\n${data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}`;
+    ws.getCell('E6').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('E6').alignment = { wrapText: true, vertical: 'top' };
+    ws.getRow(6).height = 30;
+
+    // Row 7: Ports (A7:D7) vs Payment Terms (E7:H7)
+    ws.mergeCells('A7:D7');
+    ws.getCell('A7').value = `Port of Loading: ${data.portOfLoading || '-'}    |    Port of Discharge: ${data.portOfDischarge || '-'}`;
+    ws.getCell('A7').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('A7').alignment = { vertical: 'middle' };
 
     ws.mergeCells('E7:H7');
-    ws.getCell('E7').value = `L/C Issuing Bank: ${data.lcIssuingBank || 'N/A'}`;
-    ws.getCell('E7').font = { name: 'Arial', size: 9 };
-    ws.getCell('E7').alignment = { vertical: 'middle', horizontal: 'center' };
+    ws.getCell('E7').value = `Payment Terms: ${data.paymentTerms || '-'}`;
+    ws.getCell('E7').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('E7').alignment = { vertical: 'middle' };
+    ws.getRow(7).height = 20;
 
-    // Apply borders around the Shipper & Invoice No box
-    for (let r = 5; r <= 7; r++) {
-      ws.getCell(`A${r}`).border = { left: thinBorder };
-      ws.getCell(`D${r}`).border = { right: thinBorder };
-      ws.getCell(`E${r}`).border = { left: thinBorder };
-      ws.getCell(`H${r}`).border = { right: thinBorder };
-    }
-    for (let c = 1; c <= 4; c++) ws.getCell(7, c).border = { bottom: thinBorder, left: c === 1 ? thinBorder : undefined, right: c === 4 ? thinBorder : undefined };
-    for (let c = 5; c <= 8; c++) ws.getCell(7, c).border = { bottom: thinBorder, left: c === 5 ? thinBorder : undefined, right: c === 8 ? thinBorder : undefined };
-
-    // Row 8: Applicant Header
-    ws.getRow(8).height = 16;
+    // Row 8: Vessel & Sailing (A8:D8) vs Delivery Terms (E8:H8)
     ws.mergeCells('A8:D8');
-    ws.getCell('A8').value = '3. Consignee / Applicant (주문 바이어)';
-    ws.getCell('A8').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('A8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    ws.getCell('A8').value = `Vessel: ${data.vesselName || '-'}    |    Sailing on or about: ${data.etd || '-'}`;
+    ws.getCell('A8').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('A8').alignment = { vertical: 'middle' };
 
     ws.mergeCells('E8:H8');
-    ws.getCell('E8').value = '4. Notify Party (통지처)';
-    ws.getCell('E8').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('E8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    ws.getCell('E8').value = `Delivery Terms: ${data.deliveryTerms || '-'}`;
+    ws.getCell('E8').font = { name: 'Arial', size: 8.5 };
+    ws.getCell('E8').alignment = { vertical: 'middle' };
+    ws.getRow(8).height = 20;
 
-    // Apply borders to row 8
-    for (let c = 1; c <= 4; c++) ws.getCell(8, c).border = { top: thinBorder, left: c === 1 ? thinBorder : undefined, bottom: thinBorder };
-    for (let c = 5; c <= 8; c++) ws.getCell(8, c).border = { top: thinBorder, left: c === 5 ? thinBorder : undefined, bottom: thinBorder, right: c === 8 ? thinBorder : undefined };
-
-    // Row 9 to 11: Applicant info vs Notify info
-    ws.mergeCells('A9:D11');
-    ws.getCell('A9').value = `${data.customerName}\n${data.customerAddress || ''}`;
-    ws.getCell('A9').font = { name: 'Arial', size: 9.5 };
-    ws.getCell('A9').alignment = { wrapText: true, vertical: 'top' };
-
-    ws.mergeCells('E9:H11');
-    ws.getCell('E9').value = data.notifyParty || 'SAME AS APPLICANT';
-    ws.getCell('E9').font = { name: 'Arial', size: 9.5 };
-    ws.getCell('E9').alignment = { wrapText: true, vertical: 'top' };
-
-    for (let r = 9; r <= 11; r++) {
-      ws.getCell(`A${r}`).border = { left: thinBorder };
-      ws.getCell(`D${r}`).border = { right: thinBorder };
-      ws.getCell(`E${r}`).border = { left: thinBorder };
-      ws.getCell(`H${r}`).border = { right: thinBorder };
-    }
-    for (let c = 1; c <= 4; c++) ws.getCell(11, c).border = { bottom: thinBorder, left: c === 1 ? thinBorder : undefined, right: c === 4 ? thinBorder : undefined };
-    for (let c = 5; c <= 8; c++) ws.getCell(11, c).border = { bottom: thinBorder, left: c === 5 ? thinBorder : undefined, right: c === 8 ? thinBorder : undefined };
-
-    // Row 12: Shipping Marks vs Remarks
-    ws.getRow(12).height = 16;
-    ws.mergeCells('A12:D12');
-    ws.getCell('A12').value = '5. Shipping Marks & Numbers (화인)';
-    ws.getCell('A12').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('A12').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
-
-    ws.mergeCells('E12:H12');
-    ws.getCell('E12').value = '6. Additional Remarks / Special Instructions';
-    ws.getCell('E12').font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
-    ws.getCell('E12').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
-
-    for (let c = 1; c <= 4; c++) ws.getCell(12, c).border = { top: thinBorder, left: c === 1 ? thinBorder : undefined, bottom: thinBorder };
-    for (let c = 5; c <= 8; c++) ws.getCell(12, c).border = { top: thinBorder, left: c === 5 ? thinBorder : undefined, bottom: thinBorder, right: c === 8 ? thinBorder : undefined };
-
-    // Row 13 to 16: Marks vs Remarks content
-    ws.mergeCells('A13:D16');
-    ws.getCell('A13').value = data.shippingMarks || 'N/M';
-    ws.getCell('A13').font = { name: 'Courier New', size: 9.5, bold: true };
-    ws.getCell('A13').alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
-
-    ws.mergeCells('E13:H16');
-    ws.getCell('E13').value = data.remarks || '-';
-    ws.getCell('E13').font = { name: 'Arial', size: 9 };
-    ws.getCell('E13').alignment = { wrapText: true, vertical: 'top' };
-
-    for (let r = 13; r <= 16; r++) {
-      ws.getCell(`A${r}`).border = { left: thinBorder };
-      ws.getCell(`D${r}`).border = { right: thinBorder };
-      ws.getCell(`E${r}`).border = { left: thinBorder };
-      ws.getCell(`H${r}`).border = { right: thinBorder };
-    }
-    for (let c = 1; c <= 4; c++) ws.getCell(16, c).border = { bottom: thinBorder, left: c === 1 ? thinBorder : undefined, right: c === 4 ? thinBorder : undefined };
-    for (let c = 5; c <= 8; c++) ws.getCell(16, c).border = { bottom: thinBorder, left: c === 5 ? thinBorder : undefined, right: c === 8 ? thinBorder : undefined };
-
-    // Row 17: Port labels
-    ws.getRow(17).height = 15;
-    ws.getCell('A17').value = 'Port of Loading';
-    ws.getCell('C17').value = 'Port of Discharge';
-    ws.getCell('E17').value = 'Carrier / Vessel';
-    ws.getCell('G17').value = 'Incoterms & Payments';
-
-    // Styles for ports label row
-    ['A17', 'C17', 'E17', 'G17'].forEach(cellRef => {
-      const cell = ws.getCell(cellRef);
-      cell.font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FF64748B' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
-    });
-    ws.mergeCells('A17:B17');
-    ws.mergeCells('C17:D17');
-    ws.mergeCells('E17:F17');
-    ws.mergeCells('G17:H17');
-
-    for (let c = 1; c <= 8; c++) {
-      ws.getCell(17, c).border = { top: thinBorder, left: c === 1 || c === 3 || c === 5 || c === 7 ? thinBorder : undefined, right: c === 2 || c === 4 || c === 6 || c === 8 ? thinBorder : undefined, bottom: thinBorder };
+    // Apply borders to header info grid (rows 4-8)
+    for (let r = 4; r <= 8; r++) {
+      for (let c = 1; c <= 8; c++) {
+        ws.getCell(r, c).border = {
+          top: thinBorder,
+          bottom: thinBorder,
+          left: (c === 1 || c === 5) ? thinBorder : undefined,
+          right: (c === 4 || c === 8) ? thinBorder : undefined
+        };
+      }
     }
 
-    // Row 18: Port values
-    ws.getRow(18).height = 20;
-    ws.mergeCells('A18:B18');
-    ws.getCell('A18').value = data.portOfLoading || '-';
-
-    ws.mergeCells('C18:D18');
-    ws.getCell('C18').value = data.portOfDischarge || '-';
-
-    ws.mergeCells('E18:F18');
-    ws.getCell('E18').value = `${data.vesselName || ''} (ETD: ${data.etd || ''})`;
-
-    ws.mergeCells('G18:H18');
-    ws.getCell('G18').value = `${data.deliveryTerms || ''} / ${data.paymentTerms || ''}`;
-
-    for (let c = 1; c <= 8; c++) {
-      const cell = ws.getCell(18, c);
-      cell.font = { name: 'Arial', size: 9, bold: true };
-      cell.alignment = { vertical: 'middle' };
-      cell.border = { bottom: thickBorder, left: c === 1 || c === 3 || c === 5 || c === 7 ? thinBorder : undefined, right: c === 2 || c === 4 || c === 6 || c === 8 ? thinBorder : undefined };
-    }
-
-    // Row 19: Spacer
-    ws.getRow(19).height = 10;
-
-    // Row 20: Table Headers
-    ws.getRow(20).height = 24;
+    // Row 9: Table Headers
+    ws.getRow(9).height = 24;
     const tableHeaders = isInvoice
-      ? ['No.', 'Description of Goods', 'HS Code', 'Quantity', 'Unit', 'Unit Price ($)', 'Amount ($)', '']
-      : ['No.', 'Description of Goods', 'Packages / Packing Qty', 'Net Weight (Kg)', '', 'Gross Weight (Kg)', 'CBM', ''];
+      ? ['Shipping Mark', 'Description of Goods', 'HS Code', 'Quantity', 'Unit', 'Unit Price ($)', 'Amount ($)', '']
+      : ['Shipping Marks', 'Description of Goods', 'Quantity / Packages', '', 'Net Wt (Kg)', 'Gross Wt (Kg)', 'CBM', ''];
 
     tableHeaders.forEach((th, index) => {
       const colLetter = String.fromCharCode(65 + index);
-      const cell = ws.getCell(`${colLetter}20`);
+      const cell = ws.getCell(`${colLetter}9`);
       cell.value = th;
-      cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
+      cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF000000' } };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = { top: thickBorder, bottom: thickBorder, left: thinBorder, right: thinBorder };
     });
 
     if (isInvoice) {
-      ws.mergeCells('G20:H20');
-      ws.getCell('G20').alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.mergeCells('G9:H9');
     } else {
-      ws.mergeCells('C20:D20');
-      ws.mergeCells('E20:F20');
-      ws.getCell('C20').alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getCell('E20').alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.mergeCells('C9:D9');
     }
 
-    let itemRowIdx = 21;
+    let itemRowIdx = 10;
     let totalQtySum = 0;
     let totalAmountSum = 0;
     let totalPkgsSum = 0;
@@ -301,56 +222,74 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ? (data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items)
       : (data.plItems && data.plItems.length > 0 ? data.plItems : data.items);
 
-    sheetItems.forEach((item, index) => {
+    // If introText present on CI, render it on first item row
+    if (isInvoice && data.introText) {
+      ws.getRow(itemRowIdx).height = 20;
+      ws.mergeCells(`B${itemRowIdx}:H${itemRowIdx}`);
+      ws.getCell(`B${itemRowIdx}`).value = data.introText;
+      ws.getCell(`B${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+      ws.getCell(`B${itemRowIdx}`).alignment = { vertical: 'middle' };
+      for (let c = 1; c <= 8; c++) ws.getCell(itemRowIdx, c).border = { bottom: thinBorder, left: thinBorder, right: thinBorder };
+      itemRowIdx++;
+    }
+
+    const startItemRow = itemRowIdx;
+
+    sheetItems.forEach((rawItem) => {
+      const item = { ...rawItem, name: cleanCiName(rawItem.name) };
       ws.getRow(itemRowIdx).height = 20;
 
-      // Base Values
-      ws.getCell(`A${itemRowIdx}`).value = index + 1;
-      ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
-
+      // Column B: Description
       ws.getCell(`B${itemRowIdx}`).value = item.name;
-      ws.getCell(`B${itemRowIdx}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      ws.getCell(`B${itemRowIdx}`).alignment = { vertical: 'middle' };
 
       if (isInvoice) {
+        // Column C: HS Code
         ws.getCell(`C${itemRowIdx}`).value = item.hsCode || '-';
         ws.getCell(`C${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        ws.getCell(`D${itemRowIdx}`).value = item.qty;
+        // Column D: Qty
+        ws.getCell(`D${itemRowIdx}`).value = item.qty || 0;
         ws.getCell(`D${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`D${itemRowIdx}`).numFmt = '#,##0';
 
-        ws.getCell(`E${itemRowIdx}`).value = item.unit;
+        // Column E: Unit
+        ws.getCell(`E${itemRowIdx}`).value = item.unit || 'PCS';
         ws.getCell(`E${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        ws.getCell(`F${itemRowIdx}`).value = item.unitPrice;
+        // Column F: Unit Price
+        ws.getCell(`F${itemRowIdx}`).value = item.unitPrice || 0;
         ws.getCell(`F${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`F${itemRowIdx}`).numFmt = '$#,##0.00';
 
+        // Column G-H: Amount
         ws.mergeCells(`G${itemRowIdx}:H${itemRowIdx}`);
-        ws.getCell(`G${itemRowIdx}`).value = item.amount;
+        const lineAmt = item.amount || ((item.qty || 0) * (item.unitPrice || 0));
+        ws.getCell(`G${itemRowIdx}`).value = lineAmt;
         ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`G${itemRowIdx}`).numFmt = '$#,##0.00';
 
-        totalQtySum += item.qty;
-        totalAmountSum += item.amount;
+        totalQtySum += item.qty || 0;
+        totalAmountSum += lineAmt;
       } else {
-        const pkgs = item.packagesCount || item.qty;
+        // Packing List Columns
         ws.mergeCells(`C${itemRowIdx}:D${itemRowIdx}`);
-        ws.getCell(`C${itemRowIdx}`).value = `${pkgs} ${item.packageType || 'Pallet'} (${item.qty} ${item.unit})`;
+        const pkgs = item.packagesCount && item.packagesCount > 0 ? item.packagesCount : 1;
+        ws.getCell(`C${itemRowIdx}`).value = `${pkgs} ${item.packageType || 'PL'} (${(item.qty || 0).toLocaleString()} ${item.unit || 'EA'})`;
         ws.getCell(`C${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        ws.mergeCells(`E${itemRowIdx}:F${itemRowIdx}`);
         ws.getCell(`E${itemRowIdx}`).value = item.netWeight || 0;
         ws.getCell(`E${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`E${itemRowIdx}`).numFmt = '#,##0.00';
 
-        ws.getCell(`G${itemRowIdx}`).value = item.grossWeight || 0;
-        ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`G${itemRowIdx}`).numFmt = '#,##0.00';
+        ws.getCell(`F${itemRowIdx}`).value = item.grossWeight || 0;
+        ws.getCell(`F${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        ws.getCell(`F${itemRowIdx}`).numFmt = '#,##0.00';
 
-        ws.getCell(`H${itemRowIdx}`).value = item.cbm || 0;
-        ws.getCell(`H${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`H${itemRowIdx}`).numFmt = '#,##0.000';
+        ws.mergeCells(`G${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`G${itemRowIdx}`).value = item.cbm || 0;
+        ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        ws.getCell(`G${itemRowIdx}`).numFmt = '#,##0.000';
 
         totalPkgsSum += pkgs;
         totalNetW += item.netWeight || 0;
@@ -358,91 +297,146 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         totalCbmV += item.cbm || 0;
       }
 
-      // Apply borders to line item columns
       for (let c = 1; c <= 8; c++) {
-        ws.getCell(itemRowIdx, c).border = {
-          bottom: thinBorder,
-          left: thinBorder,
-          right: thinBorder
-        };
+        ws.getCell(itemRowIdx, c).border = { bottom: thinBorder, left: thinBorder, right: thinBorder };
         ws.getCell(itemRowIdx, c).font = { name: 'Arial', size: 9 };
       }
 
       itemRowIdx++;
     });
 
-    // Total Summary Row
+    const endItemRow = itemRowIdx - 1;
+
+    // Merge Shipping Mark in Column A across all item rows
+    if (endItemRow >= startItemRow) {
+      ws.mergeCells(`A${startItemRow}:A${endItemRow}`);
+      ws.getCell(`A${startItemRow}`).value = data.shippingMarks || 'N/M';
+      ws.getCell(`A${startItemRow}`).font = { name: 'Arial', size: 8.5, bold: true };
+      ws.getCell(`A${startItemRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    }
+
+    // Total Row
     ws.getRow(itemRowIdx).height = 22;
     if (isInvoice) {
       ws.mergeCells(`A${itemRowIdx}:C${itemRowIdx}`);
       ws.getCell(`A${itemRowIdx}`).value = 'TOTAL AMOUNT';
-      ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'left', vertical: 'middle' };
+      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 9.5, bold: true };
 
       ws.getCell(`D${itemRowIdx}`).value = totalQtySum;
       ws.getCell(`D${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+      ws.getCell(`D${itemRowIdx}`).font = { name: 'Arial', size: 9.5, bold: true };
       ws.getCell(`D${itemRowIdx}`).numFmt = '#,##0';
 
       ws.getCell(`E${itemRowIdx}`).value = '';
-
       ws.getCell(`F${itemRowIdx}`).value = '';
 
       ws.mergeCells(`G${itemRowIdx}:H${itemRowIdx}`);
       ws.getCell(`G${itemRowIdx}`).value = totalAmountSum;
       ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+      ws.getCell(`G${itemRowIdx}`).font = { name: 'Arial', size: 10, bold: true };
       ws.getCell(`G${itemRowIdx}`).numFmt = '$#,##0.00';
     } else {
       ws.mergeCells(`A${itemRowIdx}:B${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = 'TOTAL SUMMARY';
+      ws.getCell(`A${itemRowIdx}`).value = 'TOTAL';
       ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.mergeCells(`C${itemRowIdx}:D${itemRowIdx}`);
-      ws.getCell(`C${itemRowIdx}`).value = `${totalPkgsSum} Pallets`;
+      ws.getCell(`C${itemRowIdx}`).value = `${totalPkgsSum} PLT`;
       ws.getCell(`C${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-      ws.mergeCells(`E${itemRowIdx}:F${itemRowIdx}`);
       ws.getCell(`E${itemRowIdx}`).value = totalNetW;
       ws.getCell(`E${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`E${itemRowIdx}`).numFmt = '#,##0.00';
 
-      ws.getCell(`G${itemRowIdx}`).value = totalGrossW;
-      ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`G${itemRowIdx}`).numFmt = '#,##0.00';
+      ws.getCell(`F${itemRowIdx}`).value = totalGrossW;
+      ws.getCell(`F${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+      ws.getCell(`F${itemRowIdx}`).numFmt = '#,##0.00';
 
-      ws.getCell(`H${itemRowIdx}`).value = totalCbmV;
-      ws.getCell(`H${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`H${itemRowIdx}`).numFmt = '#,##0.000';
+      ws.mergeCells(`G${itemRowIdx}:H${itemRowIdx}`);
+      ws.getCell(`G${itemRowIdx}`).value = totalCbmV;
+      ws.getCell(`G${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+      ws.getCell(`G${itemRowIdx}`).numFmt = '#,##0.000';
     }
 
-    // Styles for Total Summary
     for (let c = 1; c <= 8; c++) {
       const cell = ws.getCell(itemRowIdx, c);
-      cell.font = { name: 'Arial', size: 9.5, bold: true };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
-      cell.border = {
-        top: thickBorder,
-        bottom: doubleBorder,
-        left: thinBorder,
-        right: thinBorder
-      };
+      cell.border = { top: thickBorder, bottom: doubleBorder, left: thinBorder, right: thinBorder };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
     }
 
-    itemRowIdx += 2;
+    itemRowIdx++;
 
-    // HS Codes clause for CI
+    // Extra CI Sections A, B, C & Container Info
     if (isInvoice) {
-      ws.getRow(itemRowIdx).height = 15;
+      // Slash divider line
+      ws.getRow(itemRowIdx).height = 14;
       ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED:';
-      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FF475569' } };
+      ws.getCell(`A${itemRowIdx}`).value = '////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
+      ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FF64748B' } };
       itemRowIdx++;
 
+      // Container count line
+      if (data.containerInfo) {
+        ws.getRow(itemRowIdx).height = 16;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = data.containerInfo;
+        ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 9, bold: true };
+        itemRowIdx++;
+      }
+
+      // Section A
       ws.getRow(itemRowIdx).height = 15;
       ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      const hsCodesText = data.items.map(it => `${it.name}: ${it.hsCode || 'N/A'}`).join(', ');
-      ws.getCell(`A${itemRowIdx}`).value = hsCodesText;
+      ws.getCell(`A${itemRowIdx}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
+      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+      itemRowIdx++;
+
+      ws.getRow(itemRowIdx).height = 24;
+      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+      ws.getCell(`A${itemRowIdx}`).value = data.hsCodeSummary || (() => {
+        const distinct: { [name: string]: string } = {};
+        sheetItems.forEach(it => {
+          if (!it.isFreight && it.hsCode) {
+            const base = it.name.split('(')[0].trim();
+            if (!distinct[base]) distinct[base] = it.hsCode;
+          }
+        });
+        const entries = Object.entries(distinct);
+        if (entries.length > 0) return entries.map(([n, c], i) => `${i + 1}) ${n.toUpperCase()}: ${c}`).join('\n');
+        return '1) GENERAL GOODS: 3923.29-00';
+      })();
       ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
-      itemRowIdx += 2;
+      ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
+      itemRowIdx++;
+
+      // Section B
+      if (data.vatTrn) {
+        ws.getRow(itemRowIdx).height = 15;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = `B) VAT registration(TRN) number : ${data.vatTrn}`;
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+        itemRowIdx++;
+      }
+
+      // Section C
+      ws.getRow(itemRowIdx).height = 15;
+      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+      ws.getCell(`A${itemRowIdx}`).value = 'C) MANUFACTURER/PRODUCER';
+      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+      itemRowIdx++;
+
+      ws.getRow(itemRowIdx).height = 24;
+      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+      ws.getCell(`A${itemRowIdx}`).value = `1. NAME : ${data.manufacturerName || 'JEONGDO CO.,LTD'}\n2. ADDRESS : ${data.manufacturerAddress || '67 GWINONG 1-GIL, DEOKSAN-MYEON, JINCHEON-GUN, CHUNGCHEONGBUK-DO, SOUTH KOREA'}`;
+      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
+      itemRowIdx++;
     }
+
+    itemRowIdx += 1;
 
     // Signature Area
     ws.getRow(itemRowIdx).height = 15;
@@ -454,7 +448,6 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
     ws.getRow(itemRowIdx).height = 20;
     ws.mergeCells(`F${itemRowIdx}:H${itemRowIdx}`);
-    ws.getCell(`F${itemRowIdx}`).value = '';
     ws.getCell(`F${itemRowIdx}`).border = { bottom: thinBorder };
     itemRowIdx++;
 
@@ -462,7 +455,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     ws.mergeCells(`F${itemRowIdx}:H${itemRowIdx}`);
     ws.getCell(`F${itemRowIdx}`).value = companyName;
     ws.getCell(`F${itemRowIdx}`).font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF1E3A8A' } };
-    ws.getCell('F' + itemRowIdx).alignment = { horizontal: 'center' };
+    ws.getCell(`F${itemRowIdx}`).alignment = { horizontal: 'center' };
   };
 
   buildSheet('Commercial Invoice', true);

@@ -223,6 +223,15 @@ export const OrderDetail: React.FC = () => {
     }
   }, [searchParams, order?.status]);
   const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
+  const [customCiItems, setCustomCiItems] = useState<any[]>([]);
+  const [customCiExtra, setCustomCiExtra] = useState<{
+    introText?: string;
+    containerInfo?: string;
+    vatTrn?: string;
+    manufacturerName?: string;
+    manufacturerAddress?: string;
+    hsCodeSummary?: string;
+  }>({});
   const [showPoDetails, setShowPoDetails] = useState(false);
   const exportExcelRef = useRef<(() => void) | null>(null);
   const isEditing = true;
@@ -1691,6 +1700,32 @@ export const OrderDetail: React.FC = () => {
         }
         skipNextDirtyCheck.current = true;
         setOrder(data);
+        if ((data as any).customCiItems && (data as any).customCiItems.length > 0) {
+          setCustomCiItems((data as any).customCiItems);
+        } else if (data.items && data.items.length > 0) {
+          setCustomCiItems(data.items.map((it: any) => ({
+            name: (it.name || '').replace(/^\[.*?\]\s*/, '').trim(),
+            hsCode: it.hsCode || '',
+            qty: Number(it.qty) || 0,
+            unit: it.unit || 'PCS',
+            unitPrice: Number(it.unitPrice) || 0,
+            amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+            isFreight: false
+          })));
+        }
+
+        if ((data as any).customCiExtra) {
+          setCustomCiExtra((data as any).customCiExtra);
+        } else {
+          setCustomCiExtra({
+            introText: `INSULATION SKIN COVER, FIBERGLASS MAT AS PER PROFORMA INVOICE NO.${data.piNumber || data.quotationId || ''} DATED ${data.poDate || ''} ${data.incoterms || 'FOB'}, ${data.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}`,
+            containerInfo: data.containerVolumeQuantities || '40HC X 2 NO & 20GP X 1 NO',
+            vatTrn: '100605437100003',
+            manufacturerName: 'JEONGDO CO.,LTD',
+            manufacturerAddress: '67 GWINONG 1-GIL, DEOKSAN-MYEON, JINCHEON-GUN, CHUNGCHEONGBUK-DO, SOUTH KOREA',
+            hsCodeSummary: '1) INSULATION SKIN: 3923.29-00\n2) FIBERGLASS MAT: 7019.15-00'
+          });
+        }
         if ((data as any).po_issued_documents) {
           setIssuedDocs((data as any).po_issued_documents);
         }
@@ -2767,6 +2802,8 @@ export const OrderDetail: React.FC = () => {
       }));
 
       const updatePayload: any = {
+        customCiItems: customCiItems,
+        customCiExtra: customCiExtra,
         packingList: cleanPackingList,
         updatedAt: serverTimestamp()
       };
@@ -10834,7 +10871,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 let plCbm = 0;
                 let pkCount = 0;
 
-                // Bind weights and cbm from packingList containers if available
                 if (basicForm.packingList?.containers) {
                   basicForm.packingList.containers.forEach((c: any) => {
                     (c.items || []).forEach((it: any) => {
@@ -10846,94 +10882,105 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   });
                 }
 
-                  // Format shipping mark to string format using basic string concats instead of escaped ticks
-                  const compMark = commonShippingMark.company || 'YSACC';
-                  const portCountryMark = (commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '');
-                  const originMark = commonShippingMark.origin || 'MADE IN KOREA';
-                  const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
+                const compMark = commonShippingMark.company || 'YSACC';
+                const portCountryMark = (commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '');
+                const originMark = commonShippingMark.origin || 'MADE IN KOREA';
+                const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
 
-                  exportExcelRef.current = () => {
-                    const ciItemsPayload = (orderItems || []).map(it => {
+                const cleanCiName = (rawName: string) => {
+                  return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+                };
+
+                const currentCiItems = customCiItems && customCiItems.length > 0
+                  ? customCiItems
+                  : (orderItems || []).map(it => {
                       const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
                       return {
-                        name: it.name || '',
+                        name: cleanCiName(it.name || ''),
+                        hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
                         qty: Number(it.qty) || 0,
-                        unit: it.unit || 'EA',
+                        unit: it.unit || 'PCS',
                         unitPrice: Number(it.unitPrice) || 0,
                         amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
-                        hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
-                        netWeight: 0,
-                        grossWeight: 0,
-                        cbm: 0,
-                        packageType: 'PL',
-                        packagesCount: 1
+                        isFreight: false
                       };
                     });
 
-                    const plItemsPayload = (() => {
-                      if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
-                        const allItems: any[] = [];
-                        basicForm.packingList.containers.forEach((c: any) => {
-                          (c.items || []).forEach((it: any) => {
-                            const matchedPO = (orderItems || []).find((oi: any) => 
-                              (it.itemCode && oi.productCode === it.itemCode) ||
-                              (oi.name && it.description && it.description.includes(oi.name)) ||
-                              (oi.productCode && it.description && it.description.includes(oi.productCode))
-                            );
-                            allItems.push({
-                              name: it.description || it.itemName || matchedPO?.name || '',
-                              qty: Number(it.qty) || 0,
-                              unit: it.unit || matchedPO?.unit || 'EA',
-                              unitPrice: matchedPO?.unitPrice || 0,
-                              amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
-                              hsCode: it.hsCode || matchedPO?.hsCode || '',
-                              netWeight: Number(it.netWeight) || 0,
-                              grossWeight: Number(it.grossWeight) || 0,
-                              cbm: Number(it.cbm) || 0,
-                              packageType: it.packageType || 'Pallet',
-                              packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
-                            });
-                          });
+                const plItemsPayload = (() => {
+                  if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
+                    const allItems: any[] = [];
+                    basicForm.packingList.containers.forEach((c: any) => {
+                      (c.items || []).forEach((it: any) => {
+                        const matchedPO = (orderItems || []).find((oi: any) => 
+                          (it.itemCode && oi.productCode === it.itemCode) ||
+                          (oi.name && it.description && it.description.includes(oi.name)) ||
+                          (oi.productCode && it.description && it.description.includes(oi.productCode))
+                        );
+                        allItems.push({
+                          name: cleanCiName(it.description || it.itemName || matchedPO?.name || ''),
+                          qty: Number(it.qty) || 0,
+                          unit: it.unit || matchedPO?.unit || 'EA',
+                          unitPrice: matchedPO?.unitPrice || 0,
+                          amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
+                          hsCode: it.hsCode || matchedPO?.hsCode || '',
+                          netWeight: Number(it.netWeight) || 0,
+                          grossWeight: Number(it.grossWeight) || 0,
+                          cbm: Number(it.cbm) || 0,
+                          packageType: it.packageType || 'Pallet',
+                          packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
                         });
-                        if (allItems.length > 0) return allItems;
-                      }
-                      return ciItemsPayload;
-                    })();
-
-                    const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
-                    const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
-                    const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
-
-                    exportCiPlToExcel({
-                      orderId: order.id,
-                      piNumber: basicForm.piNumber,
-                      customerName: customApplicantVal,
-                      customerAddress: '',
-                      issuingCompany: basicForm.issuingCompany,
-                      invoiceNo: basicForm.ciNumber || basicForm.piNumber || order.id,
-                      invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
-                      lcNo: basicForm.lcNo,
-                      lcDate: basicForm.lcIssuingDate,
-                      lcIssuingBank: basicForm.lcIssuingBank,
-                      notifyParty: customNotifyVal, 
-                      remarks: basicForm.remark,
-                      portOfLoading: basicForm.portOfLoading,
-                      portOfDischarge: basicForm.portOfDischarge,
-                      vesselName: basicForm.vesselBooking,
-                      etd: basicForm.etd,
-                      paymentTerms: basicForm.paymentTerms,
-                      deliveryTerms: basicForm.incoterms,
-                      shippingMarks: formattedMarkText || 'N/M',
-                      customShipperText: customShipperVal,
-                      items: plItemsPayload,
-                      ciItems: ciItemsPayload,
-                      plItems: plItemsPayload,
-                      totalPackages: pkCount,
-                      totalNetWeight: plNet,
-                      totalGrossWeight: plGross,
-                      totalCbm: plCbm
+                      });
                     });
-                  };
+                    if (allItems.length > 0) return allItems;
+                  }
+                  return currentCiItems;
+                })();
+
+                const totalCiAmount = currentCiItems.reduce((sum, it) => sum + (Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)) || 0), 0);
+                const totalCiQty = currentCiItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
+                exportExcelRef.current = () => {
+                  const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
+                  const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
+                  const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
+
+                  exportCiPlToExcel({
+                    orderId: order.id,
+                    piNumber: basicForm.piNumber,
+                    customerName: customApplicantVal,
+                    customerAddress: '',
+                    issuingCompany: basicForm.issuingCompany,
+                    invoiceNo: basicForm.ciNumber || basicForm.piNumber || order.id,
+                    invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
+                    lcNo: basicForm.lcNo,
+                    lcDate: basicForm.lcIssuingDate,
+                    lcIssuingBank: basicForm.lcIssuingBank,
+                    notifyParty: customNotifyVal, 
+                    remarks: basicForm.remark,
+                    portOfLoading: basicForm.portOfLoading,
+                    portOfDischarge: basicForm.portOfDischarge,
+                    vesselName: basicForm.vesselBooking,
+                    etd: basicForm.etd,
+                    paymentTerms: basicForm.paymentTerms,
+                    deliveryTerms: basicForm.incoterms,
+                    shippingMarks: formattedMarkText || 'N/M',
+                    customShipperText: customShipperVal,
+                    items: plItemsPayload,
+                    ciItems: currentCiItems,
+                    plItems: plItemsPayload,
+                    totalPackages: pkCount,
+                    totalNetWeight: plNet,
+                    totalGrossWeight: plGross,
+                    totalCbm: plCbm,
+                    introText: customCiExtra.introText,
+                    containerInfo: customCiExtra.containerInfo,
+                    vatTrn: customCiExtra.vatTrn,
+                    manufacturerName: customCiExtra.manufacturerName,
+                    manufacturerAddress: customCiExtra.manufacturerAddress,
+                    hsCodeSummary: customCiExtra.hsCodeSummary
+                  });
+                };
+
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -11008,9 +11055,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
-                          <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
+                            <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Remarks (특약사항/비고)</span>
+                            <input type="text" placeholder='예: "FREIGHT COLLECT" 또는 "FREIGHT PREPAID"' value={basicForm.remark} onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                          </div>
                         </div>
                       </div>
 
@@ -11079,49 +11132,281 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       </div>
                     </div>
 
-                    {/* 품목 HS CODE 및 상세 조작 테이블 */}
-                    <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                        <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>📦 선적 품목 및 HS CODE 확인</span>
-                        <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>마스터에 등록된 HS Code가 기본 바인딩되며 개별 수정 가능합니다.</span>
+                    {/* CI 선적 품목 & 운임/추가비용 목록 (전체 수정 및 행 추가 가능) */}
+                    <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e3a8a' }}>📦 Commercial Invoice 선적 품목 & 운임 편집</span>
+                          <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '10px' }}>(품명에서 당사 품목코드는 자동 제거되며, 모든 항목은 자유롭게 추가/수정/삭제 가능합니다)</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomCiItems(prev => [
+                                ...prev,
+                                { name: '', hsCode: '', qty: 1, unit: 'PCS', unitPrice: 0, amount: 0, isFreight: false }
+                              ]);
+                            }}
+                            style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            ➕ 일반 품목 추가
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomCiItems(prev => [
+                                ...prev,
+                                { name: 'CIF CHARGES FOR 20GP', hsCode: '', qty: 1, unit: 'LOT', unitPrice: 5700, amount: 5700, isFreight: true }
+                              ]);
+                            }}
+                            style={{ padding: '4px 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            ➕ 운임(Freight/CIF) 추가
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm('수주 품목 목록 데이터를 기준으로 CI 품목 목록을 다시 초기화하시겠습니까?')) {
+                                setCustomCiItems((orderItems || []).map(it => {
+                                  const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+                                  return {
+                                    name: cleanCiName(it.name || ''),
+                                    hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
+                                    qty: Number(it.qty) || 0,
+                                    unit: it.unit || 'PCS',
+                                    unitPrice: Number(it.unitPrice) || 0,
+                                    amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+                                    isFreight: false
+                                  };
+                                }));
+                              }
+                            }}
+                            style={{ padding: '4px 10px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            🔄 수주 품목에서 초기화
+                          </button>
+                        </div>
                       </div>
                       
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', textAlign: 'left' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
                         <thead>
-                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)' }}>
-                            <th style={{ padding: '8px', color: 'var(--text-secondary)', fontWeight: 700 }}>품명 (Description of Goods)</th>
-                            <th style={{ padding: '8px', color: 'var(--text-secondary)', fontWeight: 700, width: '150px' }}>HS CODE</th>
-                            <th style={{ padding: '8px', color: 'var(--text-secondary)', fontWeight: 700, width: '100px', textAlign: 'right' }}>수량 (Qty)</th>
-                            <th style={{ padding: '8px', color: 'var(--text-secondary)', fontWeight: 700, width: '120px', textAlign: 'right' }}>단가 (Unit Price)</th>
-                            <th style={{ padding: '8px', color: 'var(--text-secondary)', fontWeight: 700, width: '120px', textAlign: 'right' }}>금액 (Amount)</th>
+                          <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                            <th style={{ padding: '8px 4px', width: '35px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>No</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569' }}>품명 (Description of Goods)</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569', width: '130px' }}>HS CODE</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569', width: '90px', textAlign: 'right' }}>수량 (Qty)</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569', width: '75px', textAlign: 'center' }}>단위</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569', width: '110px', textAlign: 'right' }}>단가 ($)</th>
+                            <th style={{ padding: '8px', fontWeight: 700, color: '#475569', width: '120px', textAlign: 'right' }}>금액 ($)</th>
+                            <th style={{ padding: '8px', width: '45px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>삭제</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {orderItems.map((item, idx) => {
-                            const matchedProd = products.find(p => p.productCode === item.itemId || p.id === item.itemId);
-                            return (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '8px', fontWeight: 600, color: '#0f172a' }}>{item.name}</td>
-                                <td style={{ padding: '6px 8px' }}>
-                                  <input 
-                                    type="text" 
-                                    value={item.hsCode || matchedProd?.hsCode || ''} 
-                                    onChange={e => {
-                                      const nextCode = e.target.value;
-                                      setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, hsCode: nextCode } : it));
-                                    }} 
-                                    placeholder="HS Code 입력"
-                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '13px', fontWeight: 500, color: '#1e293b', height: '32px', boxSizing: 'border-box', outline: 'none' }} 
-                                  />
-                                </td>
-                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{item.qty} {item.unit}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', color: '#0f766e' }}>$ {Number(item.unitPrice).toFixed(2)}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#0369a1' }}>$ {Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                              </tr>
-                            );
-                          })}
+                          {currentCiItems.map((item, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: item.isFreight ? '#f0fdf4' : undefined }}>
+                              <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <textarea
+                                  rows={1}
+                                  value={item.name}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, name: val } : it));
+                                  }}
+                                  placeholder="품명 및 사양 입력"
+                                  style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', boxSizing: 'border-box', outline: 'none', resize: 'vertical', minHeight: '32px' }}
+                                />
+                              </td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <input 
+                                  type="text" 
+                                  value={item.hsCode || ''} 
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, hsCode: val } : it));
+                                  }} 
+                                  placeholder="HS CODE"
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 500, color: '#1e293b', height: '32px', boxSizing: 'border-box', outline: 'none' }} 
+                                />
+                              </td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <input
+                                  type="number"
+                                  value={item.qty}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setCustomCiItems(prev => prev.map((it, i) => {
+                                      if (i === idx) {
+                                        const newAmt = parseFloat((val * (it.unitPrice || 0)).toFixed(2));
+                                        return { ...it, qty: val, amount: newAmt };
+                                      }
+                                      return it;
+                                    }));
+                                  }}
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                              </td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <input
+                                  type="text"
+                                  value={item.unit || 'PCS'}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, unit: val } : it));
+                                  }}
+                                  style={{ padding: '4px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12px', fontWeight: 600, textAlign: 'center', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                              </td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.unitPrice}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setCustomCiItems(prev => prev.map((it, i) => {
+                                      if (i === idx) {
+                                        const newAmt = parseFloat(((it.qty || 0) * val).toFixed(2));
+                                        return { ...it, unitPrice: val, amount: newAmt };
+                                      }
+                                      return it;
+                                    }));
+                                  }}
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                              </td>
+                              <td style={{ padding: '4px 6px' }}>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.amount}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, amount: val } : it));
+                                  }}
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', color: '#0284c7', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                              </td>
+                              <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCustomCiItems(prev => prev.filter((_, i) => i !== idx));
+                                  }}
+                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer' }}
+                                  title="행 삭제"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {/* Total Row */}
+                          <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
+                            <td colSpan={3} style={{ padding: '8px', textAlign: 'center', color: '#1e293b' }}>TOTAL AMOUNT</td>
+                            <td style={{ padding: '8px 6px', textAlign: 'right', color: '#1e293b' }}>{totalCiQty.toLocaleString()}</td>
+                            <td></td>
+                            <td></td>
+                            <td style={{ padding: '8px 6px', textAlign: 'right', color: '#0369a1', fontSize: '14px' }}>${totalCiAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td></td>
+                          </tr>
                         </tbody>
                       </table>
+                    </div>
+
+                    {/* CI 하단 부가 섹션 (Intro, A, B, C & Container Info) */}
+                    <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                        📑 CI 하단 부가 정보 & 신고 문구 설정 (Sections A, B, C)
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>상단 품목 안내문 (Intro Text)</span>
+                          <textarea
+                            rows={2}
+                            value={customCiExtra.introText || ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setCustomCiExtra(p => ({ ...p, introText: val }));
+                            }}
+                            placeholder="예: INSULATION SKIN COVER, FIBERGLASS MAT... AS PER PROFORMA INVOICE NO..."
+                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>컨테이너 규격 및 수량 (Container Info)</span>
+                          <input
+                            type="text"
+                            value={customCiExtra.containerInfo || ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setCustomCiExtra(p => ({ ...p, containerInfo: val }));
+                            }}
+                            placeholder="예: 40HC X 2 NO & 20GP X 1 NO"
+                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S)</span>
+                        <textarea
+                          rows={2}
+                          value={customCiExtra.hsCodeSummary || ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomCiExtra(p => ({ ...p, hsCodeSummary: val }));
+                          }}
+                          placeholder="예: 1) INSULATION SKIN: 3923.29-00
+2) FIBERGLASS MAT: 7019.15-00"
+                          style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>B) VAT registration(TRN) number</span>
+                          <input
+                            type="text"
+                            value={customCiExtra.vatTrn || ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setCustomCiExtra(p => ({ ...p, vatTrn: val }));
+                            }}
+                            placeholder="예: 100605437100003"
+                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>C) MANUFACTURER/PRODUCER (제조사 및 주소)</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <input
+                              type="text"
+                              value={customCiExtra.manufacturerName || ''}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setCustomCiExtra(p => ({ ...p, manufacturerName: val }));
+                              }}
+                              placeholder="제조사명 (예: JEONGDO CO.,LTD)"
+                              style={{ width: '40%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+                            />
+                            <input
+                              type="text"
+                              value={customCiExtra.manufacturerAddress || ''}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setCustomCiExtra(p => ({ ...p, manufacturerAddress: val }));
+                              }}
+                              placeholder="제조사 영문 주소"
+                              style={{ width: '60%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -13436,7 +13721,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             unit: it.unit || 'EA',
             unitPrice: Number(it.unitPrice) || 0,
             amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
-            hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
+            hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
             netWeight: 0,
             grossWeight: 0,
             cbm: 0,
@@ -13475,6 +13760,25 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           return ciItemsList;
         })();
 
+        const cleanCiName = (rawName: string) => {
+          return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+        };
+
+        const currentCiItems = customCiItems && customCiItems.length > 0
+          ? customCiItems
+          : (orderItems || []).map(it => {
+              const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+              return {
+                name: cleanCiName(it.name || ''),
+                hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
+                qty: Number(it.qty) || 0,
+                unit: it.unit || 'PCS',
+                unitPrice: Number(it.unitPrice) || 0,
+                amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+                isFreight: false
+              };
+            });
+
         return (
           <CiPlPreviewModal
             isOpen={isCiPlPreviewOpen}
@@ -13500,9 +13804,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               shippingMarks: shippingMarkText,
               customShipperText: basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany),
               items: plItemsList,
-              ciItems: ciItemsList,
+              ciItems: currentCiItems,
               plItems: plItemsList,
-              totalPackages: totalPkgCount
+              totalPackages: totalPkgCount,
+              introText: customCiExtra.introText,
+              containerInfo: customCiExtra.containerInfo,
+              vatTrn: customCiExtra.vatTrn,
+              manufacturerName: customCiExtra.manufacturerName,
+              manufacturerAddress: customCiExtra.manufacturerAddress,
+              hsCodeSummary: customCiExtra.hsCodeSummary
             }}
           />
         );

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.339',
+    version: 'v2.8.339',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Commercial Invoice 실무 양식 완벽 반영 (운임비용/품목 자유 편집/HS CODE 요약/TRN/제조사/순수 품명 출력)',
+    content: '• Commercial Invoice(CI)에서 당사 품목코드([Pxxxx]) 자동 제거 및 순수 영문 품명/사양 출력 지원\n• 운임(Freight/CIF) 및 일반 품목 자유 추가/수정/삭제 및 단가·수량 실시간 금액 계산 지원\n• CI 실무 필수 양식 완벽 구현: 상단 품목 요약문, 컨테이너 정보, A) HS CODE 요약, B) VAT(TRN) 번호, C) 제조사/생산자 정보 및 서명선\n• Excel 내보내기 및 모달 미리보기에 실무 서식 완벽 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.338',
     version: 'v2.8.338',
     date: '2026-08-22',
