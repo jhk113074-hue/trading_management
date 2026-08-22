@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.356',
+    version: 'v2.8.356',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '웹 화면 CI/PL 기본 정보 입력 섹션을 실제 서식과 1:1 일치하는 5단 그리드로 전면 개편',
+    content: '• 기존 2개로 분리되었던 기본정보/주소정보 박스를 실제 Commercial Invoice 서식과 동일한 5단 구조(Shipper vs InvNo/Date, Applicant vs Bank, Notify vs Remarks, 3분할 항구/결제조건, 3분할 선박/ETD/인코텀즈)로 완벽 일치화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.355',
     version: 'v2.8.355',
     date: '2026-08-22',

@@ -11240,70 +11240,138 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      {/* CI/PL Header Info Form */}
-                      <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>📋 선적 서류 기본 정보</div>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invoice / PL 번호</span>
-                            <input type="text" value={basicForm.ciNumber || ''} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>작성일자 (Invoice Date)</span>
-                            <DateInput value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                        </div>
+                    {/* Commercial Invoice / Packing List 서식형 헤더 (5x2 구조) */}
+                    <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                        <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>
+                          📑 Commercial Invoice & Packing List 서식 기본 정보
+                        </span>
+                        <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                          (실제 Commercial Invoice 서식과 1:1로 동일하게 배치된 5단 그리드 입력창입니다)
+                        </span>
+                      </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>선적항 (Port of Loading)</span>
-                            <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(p => ({ ...p, portOfLoading: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>도착항 (Port of Discharge)</span>
-                            <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(p => ({ ...p, portOfDischarge: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>선박명 (Vessel Name)</span>
-                            <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>출항예정일 (ETD)</span>
-                            <DateInput value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>인코텀즈 (Delivery Terms)</span>
-                            <input type="text" value={basicForm.incoterms} onChange={e => setBasicForm(p => ({ ...p, incoterms: e.target.value as any }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>결제조건 (Payment Terms)</span>
-                            <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(p => ({ ...p, paymentTerms: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
-                          </div>
-                        </div>
-
+                      {/* Row 1 (50% : 50%) - Shipper vs Invoice No & Date / LC No & Date */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        {/* Left: Shipper */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
-                          <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                            SHIPPER / BENEFICIARY (송신인/제조사) (상하 크기조절 가능)
+                          </span>
+                          <textarea 
+                            value={basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany)} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  shipper: textVal
+                                }
+                              }));
+                            }}
+                            rows={4} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '86px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                          />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                📝 Remarks (특약사항 / 수출 인증 문구 Certification)
-                              </span>
+                        {/* Right: Invoice No/Date & LC No/Date */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>INVOICE / PL 번호</span>
+                              <input type="text" value={basicForm.ciNumber || ''} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                             </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>작성일자 (INVOICE DATE)</span>
+                              <DateInput value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>L/C 번호 (L/C NO.)</span>
+                              <input type="text" placeholder="L/C No (예: N/A 또는 번호)" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>L/C 발행일자 (L/C DATE)</span>
+                              <DateInput value={basicForm.lcIssuingDate || ''} onChange={e => setBasicForm(p => ({ ...p, lcIssuingDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                              {/* Dropdown Selector */}
+                      {/* Row 2 (50% : 50%) - Applicant vs LC Issuing Bank */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        {/* Left: Applicant */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                            APPLICANT (바이어 주소) (상하 크기조절 가능)
+                          </span>
+                          <textarea 
+                            value={basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer)} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  applicant: textVal
+                                }
+                              }));
+                            }}
+                            rows={3} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                          />
+                        </div>
+
+                        {/* Right: LC Issuing Bank */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                            L/C ISSUING BANK (개설은행 정보) (상하 크기조절 가능)
+                          </span>
+                          <textarea 
+                            rows={3}
+                            placeholder="L/C 개설은행 정보 (예: EMIRATES NBD BANK PJSC, DUBAI, U.A.E.)" 
+                            value={basicForm.lcIssuingBank || ''} 
+                            onChange={e => setBasicForm(p => ({ ...p, lcIssuingBank: e.target.value }))} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3 (50% : 50%) - Notify Party vs Remarks */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        {/* Left: Notify Party */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                            NOTIFY PARTY (통지처) (상하 크기조절 가능)
+                          </span>
+                          <textarea 
+                            rows={3}
+                            placeholder="Same as Applicant" 
+                            value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'Same as Applicant')} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                lcRemark: textVal,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  notifyParty: textVal
+                                }
+                              }));
+                            }}
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                          />
+                        </div>
+
+                        {/* Right: Remarks with Presets */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                              📝 REMARKS (특약사항 / 수출 인증 문구)
+                            </span>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                               <select
                                 value=""
                                 onChange={e => {
@@ -11317,18 +11385,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     setBasicForm(p => ({ ...p, remark: content }));
                                   }
                                 }}
-                                style={{
-                                  height: '30px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #cbd5e1',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  color: '#1e293b',
-                                  padding: '0 8px',
-                                  background: '#fff',
-                                  outline: 'none',
-                                  cursor: 'pointer'
-                                }}
+                                style={{ height: '28px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '11.5px', fontWeight: 600, color: '#1e293b', padding: '0 6px', background: '#fff', outline: 'none', cursor: 'pointer' }}
                               >
                                 <option value="">-- 📋 표준문구 선택 ({remarkPresets.length}개) --</option>
                                 {remarkPresets.map(p => (
@@ -11337,8 +11394,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   </option>
                                 ))}
                               </select>
-
-                              {/* Quick Save Current Content as Preset */}
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -11363,120 +11418,59 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     alert('표준문구 저장 중 오류가 발생했습니다.');
                                   }
                                 }}
-                                style={{
-                                  height: '30px',
-                                  padding: '0 8px',
-                                  background: '#f1f5f9',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '4px',
-                                  fontSize: '11.5px',
-                                  fontWeight: 700,
-                                  color: '#0f766e',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px'
-                                }}
+                                style={{ height: '28px', padding: '0 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#0f766e', cursor: 'pointer' }}
                                 title="현재 입력된 내용을 새 표준문구로 추가합니다"
                               >
-                                ➕ 현재문구 등록
+                                ➕ 등록
                               </button>
-
-                              {/* Manage Presets Modal Button */}
                               <button
                                 type="button"
                                 onClick={() => setIsRemarkPresetModalOpen(true)}
-                                style={{
-                                  height: '30px',
-                                  padding: '0 10px',
-                                  background: '#3b82f6',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
+                                style={{ height: '28px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
                               >
-                                ⚙️ 표준문구 관리
+                                ⚙️ 관리
                               </button>
                             </div>
                           </div>
-
                           <textarea 
-                            rows={5}
-                            placeholder="예: WE HEREBY CERTIFY THAT:\n(A) THIS INVOICE IS AUTHENTIC.\n(B) IT IS THE ONLY INVOICE ISSUED BY US FOR THE GOODS DESCRIBED HEREIN.\n*PO NO.: SCPO-012381-1" 
+                            rows={3}
+                            placeholder="예: FREIGHT PREPAID 또는 WE HEREBY CERTIFY THAT..." 
                             value={basicForm.remark} 
                             onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} 
-                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '96px', fontFamily: 'inherit', lineHeight: '1.45', background: '#fff' }} 
+                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '60px', fontFamily: 'inherit', background: '#fff' }} 
                           />
                         </div>
                       </div>
 
-                      {/* Buyer & Shipper Address Box */}
-                      <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>🏢 거래 당사자 주소 정보</div>
-
+                      {/* Row 4 (33.3% : 33.3% : 33.3%) - Port of Loading | Port of Discharge | Payment Terms */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shipper (송신인/제조사) (상하 크기조절 가능)</span>
-                          <textarea 
-                            value={basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany)} 
-                            onChange={e => {
-                              const textVal = e.target.value;
-                              setBasicForm(p => ({
-                                ...p,
-                                packingList: {
-                                  ...(p.packingList || {}),
-                                  shipper: textVal
-                                }
-                              }));
-                            }}
-                            rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '64px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
-                          />
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>선적항 (PORT OF LOADING)</span>
+                          <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(p => ({ ...p, portOfLoading: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant (바이어 주소) (상하 크기조절 가능)</span>
-                          <textarea 
-                            value={basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer)} 
-                            onChange={e => {
-                              const textVal = e.target.value;
-                              setBasicForm(p => ({
-                                ...p,
-                                packingList: {
-                                  ...(p.packingList || {}),
-                                  applicant: textVal
-                                }
-                              }));
-                            }}
-                            rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '64px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
-                          />
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>도착항 (PORT OF DISCHARGE)</span>
+                          <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(p => ({ ...p, portOfDischarge: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notify Party (통지처) (상하 크기조절 가능)</span>
-                          <textarea 
-                            rows={2}
-                            placeholder="Same as Applicant" 
-                            value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'Same as Applicant')} 
-                            onChange={e => {
-                              const textVal = e.target.value;
-                              setBasicForm(p => ({
-                                ...p,
-                                lcRemark: textVal,
-                                packingList: {
-                                  ...(p.packingList || {}),
-                                  notifyParty: textVal
-                                }
-                              }));
-                            }}
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '52px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
-                          />
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>결제조건 (PAYMENT TERMS)</span>
+                          <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(p => ({ ...p, paymentTerms: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        </div>
+                      </div>
+
+                      {/* Row 5 (33.3% : 33.3% : 33.3%) - Vessel/Flight | ETD | Delivery Terms */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>선박명 / 운송수단 (VESSEL / FLIGHT)</span>
+                          <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>출항예정일 (ETD)</span>
+                          <DateInput value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>인코텀즈 (DELIVERY TERMS)</span>
+                          <input type="text" value={basicForm.incoterms} onChange={e => setBasicForm(p => ({ ...p, incoterms: e.target.value as any }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13px', fontWeight: 600, padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                         </div>
                       </div>
                     </div>
