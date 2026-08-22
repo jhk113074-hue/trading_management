@@ -4514,20 +4514,446 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     }
   };
 
-  const handleSendArrivalShippingEmail = (supplierName: string) => {
-    if (!order) return;
+  const autoEnsureArrivalAndShippingDocs = async (supplierName: string): Promise<{ arrivalPdfUrl: string; shippingPdfUrl: string; poNum: string }> => {
+    if (!order) return { arrivalPdfUrl: '', shippingPdfUrl: '', poNum: '' };
+
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
-    const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
-    const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
-      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).slice(-1)[0];
-    const shippingDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active')
-      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).slice(-1)[0];
+    let currentIssuedDocs = [...((order as any)?.po_issued_documents || issuedDocs || [])];
+    
+    let arrivalDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active');
+    let shippingDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active');
 
-    const arrivalPdfUrl = arrivalDoc?.fileUrl || '';
-    const shippingPdfUrl = shippingDoc?.fileUrl || '';
+    let arrivalPdfUrl = arrivalDoc?.fileUrl || '';
+    let shippingPdfUrl = shippingDoc?.fileUrl || '';
+
+    try {
+      await handleSaveBasic(false);
+    } catch (e) {
+      console.warn("Auto save before doc ensure:", e);
+    }
+
+    const repData = (order.supplierArrivalReports || {})[supplierName] || {};
+    let grandTotalPlt = 0;
+    if (basicForm.packingList?.containers) {
+      basicForm.packingList.containers.forEach((c: any) => {
+        (c.items || []).forEach((cIt: any) => {
+          grandTotalPlt += Number(cIt.pkg) || 0;
+        });
+      });
+    }
+    if (grandTotalPlt === 0) grandTotalPlt = (order.items || []).length || 1;
+
+    let packingItemsList = repData.packingItems || [];
+    if (packingItemsList.length === 0 && basicForm.packingList?.containers) {
+      let matchingItems: any[] = [];
+      basicForm.packingList.containers.forEach((container: any) => {
+        const itemsForSupplier = (container.items || []).filter((it: any) => 
+          (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+        );
+        matchingItems = [...matchingItems, ...itemsForSupplier];
+      });
+      matchingItems.forEach((it: any, idx: number) => {
+        let desc = (it.description || '').replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+        if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+        const pNo = it.pkgNo || String(idx + 1);
+        packingItemsList.push({
+          marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
+          descOfGoods: desc,
+          qty: Number(it.pkg) || 0,
+          packageType: 'PL',
+          netWeight: Number(it.netWeight) || 0,
+          grossWeight: Number(it.grossWeight) || 0,
+          measurement: it.cbm ? `${it.cbm} CBM` : ''
+        });
+      });
+    }
+
+    // 1. Generate & upload Arrival Report PDF if needed
+    if (!arrivalPdfUrl) {
+      try {
+        const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
+        const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
+        const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+
+        const printHtml = `
+          <html>
+            <head>
+              <title>도착보고 - ${poNum}</title>
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+                body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
+                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
+                .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
+                .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
+                .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
+                .desc-table td.right { text-align: right; }
+                .desc-table td.center { text-align: center; }
+                .total-row td { background: #f1f5f9; font-weight: bold; border-top: 2px double #000; }
+              </style>
+            </head>
+            <body>
+              <div class="header-container">
+                <div class="title-korean">도착 보고서 (Arrival Report)</div>
+                <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
+                  <strong>Doc No:</strong> ${poNum}<br/>
+                  <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
+                </div>
+              </div>
+              <table class="info-table">
+                <tr>
+                  <td style="width: 50%;">
+                    <strong>1) Shipper</strong><br/>
+                    ${(repData.shipper || supplierName).replace(/\n/g, '<br/>')}
+                  </td>
+                  <td style="width: 50%;">
+                    <strong>8) Booking No.</strong><br/>
+                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${repData.bookingNo || '-'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>2) Consignee</strong><br/>
+                    ${(repData.consignee || '').replace(/\n/g, '<br/>')}
+                  </td>
+                  <td>
+                    <strong>9) Remarks</strong><br/>
+                    <span style="color: #4b5563; font-weight: 600;">${(repData.remarks || `ORIGIN : MADE IN KOREA`).replace(/\n/g, '<br/>')}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>3) Notify Party</strong><br/>
+                    ${repData.notifyParty || 'SAME AS ABOVE'}
+                  </td>
+                  <td style="text-align: center; vertical-align: middle;">
+                    <strong>입고지</strong><br/>
+                    <strong>${(repData.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                      <div>
+                        <strong>4) Port of Loading</strong><br/>
+                        ${repData.portOfLoading || basicForm.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
+                      </div>
+                      <div>
+                        <strong>5) Final Destination</strong><br/>
+                        ${repData.finalDestination || basicForm.portOfDischarge || ''}
+                      </div>
+                    </div>
+                  </td>
+                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
+                    위 제품 상차시 내용물 및 포장에<br/>
+                    파손이 없고 적절한 방법으로<br/>
+                    운송하였음을 확인합니다.<br/><br/>
+                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
+                    기사님 연락처 : <br/><br/>
+                    차 넘 버 : 
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                      <div>
+                        <strong>6) Carrier</strong><br/>
+                        ${repData.carrier || basicForm.vesselBooking || ''}
+                      </div>
+                      <div>
+                        <strong>7) sailing on or about</strong><br/>
+                        ${repData.sailingOnOrAbout || basicForm.etd || ''}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <table class="desc-table">
+                <thead>
+                  <tr>
+                    <th style="width: 25%">10) Marks</th>
+                    <th style="width: 25%">11) Description of Goods</th>
+                    <th style="width: 10%">12) Qty</th>
+                    <th style="width: 10%">13) Package</th>
+                    <th style="width: 15%" colspan="2">14) Weight (kg)</th>
+                    <th style="width: 15%">16) Measurement</th>
+                  </tr>
+                  <tr>
+                    <th></th><th></th><th></th><th></th>
+                    <th style="font-size: 9px; width: 7.5%">Net</th>
+                    <th style="font-size: 9px; width: 7.5%">Gross</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${packingItemsList.map((it: any) => `
+                    <tr>
+                      <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
+                        ${(it.marks || '').replace(/\n/g, '<br/>')}
+                      </td>
+                      <td style="font-size: 11px; line-height: 1.5;">
+                        ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                      </td>
+                      <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
+                      <td class="center">${it.packageType || 'PL'}</td>
+                      <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                      <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                      <td class="center">${it.measurement || '-'}</td>
+                    </tr>
+                  `).join('')}
+                  <tr class="total-row">
+                    <td class="center">TOTAL</td>
+                    <td></td>
+                    <td class="center">${totalQty.toLocaleString()}</td>
+                    <td class="center"></td>
+                    <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
+                    <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </body>
+          </html>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '820px';
+        iframe.style.height = '1200px';
+        iframe.style.border = '0';
+        iframe.style.zIndex = '-9999';
+        iframe.style.visibility = 'hidden';
+        document.body.appendChild(iframe);
+
+        const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+        if (iframeDoc) {
+          iframeDoc.open();
+          iframeDoc.write(printHtml);
+          iframeDoc.close();
+          await new Promise(resolve => setTimeout(resolve, 600));
+
+          const printBody = iframeDoc.body;
+          const canvas = await html2canvas(printBody, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            width: 800,
+            height: printBody.scrollHeight,
+            windowWidth: 800,
+            windowHeight: printBody.scrollHeight
+          });
+
+          document.body.removeChild(iframe);
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+          const imgWidth = 595.28;
+          const pageHeight = 841.89;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          let pageCount = 1;
+          while (heightLeft >= 100) {
+            position = - (pageHeight * pageCount);
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            pageCount++;
+          }
+
+          const pdfBlob = pdf.output('blob');
+          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).length + 1;
+          const safeFileName = `도착보고서_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
+
+          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
+          arrivalPdfUrl = await getDownloadURL(snapshot.ref);
+
+          const newDoc = {
+            id: new Date().getTime().toString(),
+            po_number: poNum,
+            supplier_name: supplierName,
+            version: version,
+            fileName: safeFileName,
+            fileUrl: arrivalPdfUrl,
+            issuedAt: new Date().toISOString(),
+            issuedBy: auth.currentUser?.displayName || 'System',
+            totalAmount: 0,
+            status: 'active'
+          };
+
+          currentIssuedDocs = currentIssuedDocs.map((doc: any) => {
+            if (doc.po_number === poNum && doc.fileName.startsWith('도착보고서')) {
+              return { ...doc, status: 'superseded' };
+            }
+            return doc;
+          });
+          currentIssuedDocs.push(newDoc);
+        }
+      } catch (err) {
+        console.error("Auto arrival report generation failed:", err);
+      }
+    }
+
+    // 2. Generate & upload Shipping Marks PDF if needed
+    if (!shippingPdfUrl) {
+      try {
+        const shapeVal = commonShippingMark.shape;
+        const compVal = commonShippingMark.company;
+        const portVal = commonShippingMark.port;
+        const countryVal = commonShippingMark.country;
+        const originVal = commonShippingMark.origin;
+
+        const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
+          const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const len = (company || '').length || 1;
+          const strokeColor = '#3b82f6';
+          const calcLargeFontSize = (baseSize: number) => {
+            if (len <= 4) return baseSize;
+            if (len <= 7) return Math.round(baseSize * 0.82);
+            if (len <= 10) return Math.round(baseSize * 0.65);
+            if (len <= 14) return Math.round(baseSize * 0.48);
+            return Math.round(baseSize * 0.38);
+          };
+
+          if (shape === 'circle') {
+            const fSize = calcLargeFontSize(70);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+          } else if (shape === 'square') {
+            const fSize = calcLargeFontSize(70);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+          } else if (shape === 'triangle') {
+            const fSize = calcLargeFontSize(60);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+          } else {
+            const fSize = calcLargeFontSize(68);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+          }
+        };
+
+        const palletList: string[] = [];
+        packingItemsList.forEach((it: any, idx: number) => {
+          const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+          if (pNo.includes('-')) {
+            const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
+            if (!isNaN(start) && !isNaN(end) && end >= start) {
+              for (let k = start; k <= end; k++) palletList.push(String(k));
+            } else {
+              palletList.push(pNo);
+            }
+          } else {
+            palletList.push(pNo);
+          }
+        });
+        if (palletList.length === 0) palletList.push('1');
+
+        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 45%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text1 { font-size: 30pt; font-weight: 700; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; } .info-text2 { font-size: 36pt; font-weight: 900; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
+
+        for (const pNum of palletList) {
+          const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
+          htmlContent += '<div class="page"><div class="shape-container">' + shapeHtml + '</div><div class="info-container"><div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div><div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div><div class="info-text1">' + originVal + '</div></div></div>';
+        }
+        htmlContent += '</body></html>';
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '1122px';
+        iframe.style.height = '793px';
+        iframe.style.border = '0';
+        iframe.style.zIndex = '-9999';
+        iframe.style.visibility = 'hidden';
+        document.body.appendChild(iframe);
+
+        const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+        if (iframeDoc) {
+          iframeDoc.open();
+          iframeDoc.write(htmlContent);
+          iframeDoc.close();
+          await new Promise(resolve => setTimeout(resolve, 600));
+
+          const pages = iframeDoc.body.querySelectorAll('.page');
+          const pdf = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+
+          for (let i = 0; i < pages.length; i++) {
+            const pageEl = pages[i] as HTMLElement;
+            const canvas = await html2canvas(pageEl, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              logging: false,
+              width: pageEl.offsetWidth,
+              height: pageEl.offsetHeight,
+              windowWidth: pageEl.offsetWidth,
+              windowHeight: pageEl.offsetHeight
+            });
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, 0, 841.89, 595.28);
+          }
+
+          document.body.removeChild(iframe);
+
+          const pdfBlob = pdf.output('blob');
+          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).length + 1;
+          const safeFileName = `쉬핑마크라벨_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
+
+          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
+          shippingPdfUrl = await getDownloadURL(snapshot.ref);
+
+          const newDoc = {
+            id: new Date().getTime().toString(),
+            po_number: poNum,
+            supplier_name: supplierName,
+            version: version,
+            fileName: safeFileName,
+            fileUrl: shippingPdfUrl,
+            issuedAt: new Date().toISOString(),
+            issuedBy: auth.currentUser?.displayName || 'System',
+            totalAmount: 0,
+            status: 'active'
+          };
+
+          currentIssuedDocs = currentIssuedDocs.map((doc: any) => {
+            if (doc.po_number === poNum && doc.fileName.startsWith('쉬핑마크라벨')) {
+              return { ...doc, status: 'superseded' };
+            }
+            return doc;
+          });
+          currentIssuedDocs.push(newDoc);
+        }
+      } catch (err) {
+        console.error("Auto shipping marks label generation failed:", err);
+      }
+    }
+
+    try {
+      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
+      await updateDoc(docRef, { po_issued_documents: currentIssuedDocs });
+      setIssuedDocs(currentIssuedDocs);
+    } catch (e) {
+      console.warn("Update issued docs to firestore failed:", e);
+    }
+
+    return { arrivalPdfUrl, shippingPdfUrl, poNum };
+  };
+
+  const handleSendArrivalShippingEmail = async (supplierName: string) => {
+    if (!order) return;
+    const { arrivalPdfUrl, shippingPdfUrl, poNum } = await autoEnsureArrivalAndShippingDocs(supplierName);
 
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
@@ -4553,7 +4979,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
     const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
 
-    let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}`;
+    let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정'}`;
 
     setPoEmailModalData({
       supplierName: `${supplierName}_arrival`,
@@ -4570,31 +4996,25 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     });
   };
 
-  const handleCopyArrivalShippingKatalkMessage = (supplierName: string) => {
+  const handleCopyArrivalShippingKatalkMessage = async (supplierName: string) => {
     if (!order) return;
 
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
     const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
 
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
-
-    const activeDocs = issuedDocs.length > 0 ? issuedDocs : ((order as any)?.po_issued_documents || []);
-    const arrivalDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active')
-      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).slice(-1)[0];
-    const shippingDoc = activeDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active')
-      || activeDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).slice(-1)[0];
-
-    const arrivalPdfUrl = arrivalDoc?.fileUrl || '';
-    const shippingPdfUrl = shippingDoc?.fileUrl || '';
+    const { arrivalPdfUrl, shippingPdfUrl, poNum } = await autoEnsureArrivalAndShippingDocs(supplierName);
 
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
     const items = groupedSupplierItems[supplierName] || [];
-    const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
+    const matchedSupplierObj = suppliersList.find((s: any) => 
+      (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+    );
+    const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+    const toEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
 
-    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (도착보고서 발행 버튼을 먼저 클릭해주세요)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (쉬핑마크 라벨 발행 버튼을 먼저 클릭해주세요)'}`;
+    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정'}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).catch(() => {});
@@ -9628,525 +10048,323 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           packingItems: packingItemsList
                         };
 
-                        const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
-                        const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
-                        const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+                        const handlePrintArrivalReportInline = () => {
+                          const renderShippingMarkCellHtml = (markStr: string) => {
+                            if (!markStr) return '';
+                            const lines = markStr.split('\n').map(l => l.trim()).filter(Boolean);
+                            if (lines.length === 0) return '';
+                            let shapeType = 'diamond';
+                            let firstLine = lines[0];
+                            if (firstLine.includes('◯') || firstLine.includes('O')) shapeType = 'circle';
+                            else if (firstLine.includes('▢') || firstLine.includes('ㅁ')) shapeType = 'square';
+                            else if (firstLine.includes('△') || firstLine.includes('▲')) shapeType = 'triangle';
+                            else shapeType = 'diamond';
+                            
+                            const compName = lines.length > 1 ? lines[1] : '';
+                            const otherLines = lines.slice(2);
+                            const shapeHtml = getShippingMarkShapeImgHtml(shapeType, compName);
 
-
-
-                        const printHtml = `
-                          <html>
-                            <head>
-                              <title>도착보고 - ${poNum}</title>
-                              <style>
-                                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-                                body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
-                                .no-print { display: none !important; }
-                                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
-                                .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
-                                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                                .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
-                                .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                                .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
-                                .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
-                                .desc-table td.right { text-align: right; }
-                                .desc-table td.center { text-align: center; }
-                                .total-row td { background: #f1f5f9; font-weight: bold; border-top: 2px double #000; }
-                              </style>
-                            </head>
-                            <body>
-                              <div class="header-container">
-                                <div class="title-korean">도착 보고서 (Arrival Report)</div>
-                                <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
-                                  <strong>Doc No:</strong> ${poNum}<br/>
-                                  <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
+                            return `
+                              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px 0;">
+                                ${shapeHtml}
+                                <div style="font-size: 8.5px; font-weight: bold; line-height: 1.25; text-align: center;">
+                                  ${otherLines.map(l => `<div>${l}</div>`).join('')}
                                 </div>
                               </div>
+                            `;
+                          };
 
-                              <table class="info-table">
-                                <tr>
-                                  <td style="width: 50%;">
-                                    <strong>1) Shipper</strong><br/>
-                                    ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}<br/>
-                                    ${items[0]?.supplierContact || ''}
-                                  </td>
-                                  <td style="width: 50%;">
-                                    <strong>8) Booking No.</strong><br/>
-                                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <strong>2) Consignee</strong><br/>
-                                    ${rep.consignee.replace(/\n/g, '<br/>')}
-                                  </td>
-                                  <td>
-                                    <strong>9) Remarks</strong><br/>
-                                    <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || `ORIGIN : MADE IN KOREA<br/><span style="color: #ef4444;">입고일: 연도-월-일 오전 10시까지</span>`).replace(/\n/g, '<br/>')}</span>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <strong>3) Notify Party</strong><br/>
-                                    ${rep.notifyParty || 'SAME AS ABOVE'}
-                                  </td>
-                                  <td style="text-align: center; vertical-align: middle;">
-                                    <strong>입고지</strong><br/>
-                                    <strong>${(rep.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                                      <div>
-                                        <strong>4) Port of Loading</strong><br/>
-                                        ${rep.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
-                                      </div>
-                                      <div>
-                                        <strong>5) Final Destination</strong><br/>
-                                        ${rep.finalDestination || 'HAMAD PORT, QATAR'}
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
-                                    위 제품 상차시 내용물 및 포장에<br/>
-                                    파손이 없고 적절한 방법으로<br/>
-                                    운송하였음을 확인합니다.<br/><br/>
-                                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
-                                    기사님 연락처 : <br/><br/>
-                                    차 넘 버 : 
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                                      <div>
-                                        <strong>6) Carrier</strong><br/>
-                                        ${rep.carrier || 'HMM HANUL 022W'}
-                                      </div>
-                                      <div>
-                                        <strong>7) sailing on or about</strong><br/>
-                                        ${rep.sailingOnOrAbout || '2025-12-31'}
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              </table>
+                          const printHtml = `
+                            <html>
+                              <head>
+                                <title>도착보고 - ${poNum}</title>
+                                <style>
+                                  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+                                  body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
+                                  .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+                                  @media print { .no-print { display: none !important; } }
+                                  .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
+                                  .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
+                                  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                                  .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
+                                  .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                                  .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
+                                  .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
+                                  .desc-table td.right { text-align: right; }
+                                  .desc-table td.center { text-align: center; }
+                                  .total-row td { background: #f1f5f9; font-weight: bold; border-top: 2px double #000; }
+                                </style>
+                              </head>
+                              <body>
+                                <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+                                <div class="header-container">
+                                  <div class="title-korean">도착 보고서 (Arrival Report)</div>
+                                  <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
+                                    <strong>Doc No:</strong> ${poNum}<br/>
+                                    <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
+                                  </div>
+                                </div>
 
-                              <table class="desc-table">
-                                <thead>
+                                <table class="info-table">
                                   <tr>
-                                    <th style="width: 25%">10) Marks</th>
-                                    <th style="width: 25%">11) Description of Goods</th>
-                                    <th style="width: 10%">12) Qty</th>
-                                    <th style="width: 10%">13) Package</th>
-                                    <th style="width: 15%" colspan="2">14) Weight (kg)</th>
-                                    <th style="width: 15%">16) Measurement</th>
+                                    <td style="width: 50%;">
+                                      <strong>1) Shipper</strong><br/>
+                                      ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}<br/>
+                                      ${items[0]?.supplierContact || ''}
+                                    </td>
+                                    <td style="width: 50%;">
+                                      <strong>8) Booking No.</strong><br/>
+                                      <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
+                                    </td>
                                   </tr>
                                   <tr>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th style="font-size: 9px; width: 7.5%">Net</th>
-                                    <th style="font-size: 9px; width: 7.5%">Gross</th>
-                                    <th></th>
+                                    <td>
+                                      <strong>2) Consignee</strong><br/>
+                                      ${rep.consignee.replace(/\n/g, '<br/>')}
+                                    </td>
+                                    <td>
+                                      <strong>9) Remarks</strong><br/>
+                                      <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || `ORIGIN : MADE IN KOREA`).replace(/\n/g, '<br/>')}</span>
+                                    </td>
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  ${packingItemsList.map((it: any) => `
+                                  <tr>
+                                    <td>
+                                      <strong>3) Notify Party</strong><br/>
+                                      ${rep.notifyParty || 'SAME AS ABOVE'}
+                                    </td>
+                                    <td style="text-align: center; vertical-align: middle;">
+                                      <strong>입고지</strong><br/>
+                                      <strong>${(rep.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                                        <div>
+                                          <strong>4) Port of Loading</strong><br/>
+                                          ${rep.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
+                                        </div>
+                                        <div>
+                                          <strong>5) Final Destination</strong><br/>
+                                          ${rep.finalDestination || 'HAMAD PORT, QATAR'}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
+                                      위 제품 상차시 내용물 및 포장에<br/>
+                                      파손이 없고 적절한 방법으로<br/>
+                                      운송하였음을 확인합니다.<br/><br/>
+                                      기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
+                                      기사님 연락처 : <br/><br/>
+                                      차 넘 버 : 
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                                        <div>
+                                          <strong>6) Carrier</strong><br/>
+                                          ${rep.carrier || 'HMM HANUL 022W'}
+                                        </div>
+                                        <div>
+                                          <strong>7) sailing on or about</strong><br/>
+                                          ${rep.sailingOnOrAbout || '2025-12-31'}
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <table class="desc-table">
+                                  <thead>
                                     <tr>
-                                      <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                                        ${renderShippingMarkCellHtml(it.marks)}
-                                      </td>
-                                      <td style="font-size: 11px; line-height: 1.5;">
-                                        ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
-                                      </td>
-                                      <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
-                                      <td class="center">${it.packageType || 'PL'}</td>
-                                      <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                                      <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
-                                      <td class="center">${it.measurement || '-'}</td>
+                                      <th style="width: 25%">10) Marks</th>
+                                      <th style="width: 25%">11) Description of Goods</th>
+                                      <th style="width: 10%">12) Qty</th>
+                                      <th style="width: 10%">13) Package</th>
+                                      <th style="width: 15%" colspan="2">14) Weight (kg)</th>
+                                      <th style="width: 15%">16) Measurement</th>
                                     </tr>
-                                  `).join('')}
-                                  <tr>
-                                    <td style="border-top: none; border-bottom: none; height: 50px;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                  </tr>
-                                  <tr class="total-row">
-                                    <td class="center">TOTAL</td>
-                                    <td></td>
-                                    <td class="center">${totalQty.toLocaleString()}</td>
-                                    <td class="center"></td>
-                                    <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
-                                    <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
-                                    <td></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </body>
-                          </html>
-                        `;
+                                    <tr>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th></th>
+                                      <th style="font-size: 9px; width: 7.5%">Net</th>
+                                      <th style="font-size: 9px; width: 7.5%">Gross</th>
+                                      <th></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    ${packingItemsList.map((it: any) => `
+                                      <tr>
+                                        <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
+                                          ${renderShippingMarkCellHtml(it.marks)}
+                                        </td>
+                                        <td style="font-size: 11px; line-height: 1.5;">
+                                          ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                                        </td>
+                                        <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
+                                        <td class="center">${it.packageType || 'PL'}</td>
+                                        <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                                        <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                                        <td class="center">${it.measurement || '-'}</td>
+                                      </tr>
+                                    `).join('')}
+                                    <tr class="total-row">
+                                      <td class="center">TOTAL</td>
+                                      <td></td>
+                                      <td class="center">${totalQty.toLocaleString()}</td>
+                                      <td class="center"></td>
+                                      <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
+                                      <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
+                                      <td></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </body>
+                            </html>
+                          `;
 
-                        const confirmed = window.confirm(`도착보고서를 발행 및 클라우드(문서함)에 저장하시겠습니까?\n\nPO번호: ${poNum}\n거래처: ${supplierName}`);
-                        if (!confirmed) return;
-
-                        try {
-                          const iframe = document.createElement('iframe');
-                          iframe.style.position = 'fixed';
-                          iframe.style.top = '0';
-                          iframe.style.left = '0';
-                          iframe.style.width = '820px';
-                          iframe.style.height = '1200px';
-                          iframe.style.border = '0';
-                          iframe.style.zIndex = '-9999';
-                          iframe.style.visibility = 'hidden';
-                          document.body.appendChild(iframe);
-
-                          const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
-                          if (!iframeDoc) throw new Error('Failed to access sandbox iframe context');
-
-                          iframeDoc.open();
-                          iframeDoc.write(printHtml);
-                          iframeDoc.close();
-
-                          await new Promise(resolve => setTimeout(resolve, 800));
-
-                          const printBody = iframeDoc.body;
-                          const canvas = await html2canvas(printBody, {
-                            scale: 2,
-                            useCORS: true,
-                            allowTaint: true,
-                            logging: false,
-                            width: 800,
-                            height: printBody.scrollHeight,
-                            windowWidth: 800,
-                            windowHeight: printBody.scrollHeight
-                          });
-
-                          document.body.removeChild(iframe);
-
-                          const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                          const pdf = new jsPDF({
-                            orientation: 'p',
-                            unit: 'pt',
-                            format: 'a4'
-                          });
-
-                          const imgWidth = 595.28;
-                          const pageHeight = 841.89;
-                          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                          let heightLeft = imgHeight;
-                          let position = 0;
-
-                          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                          heightLeft -= pageHeight;
-
-                          let pageCount = 1;
-                          while (heightLeft >= 100) {
-                            position = - (pageHeight * pageCount);
-                            pdf.addPage();
-                            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                            heightLeft -= pageHeight;
-                            pageCount++;
-                          }
-
-                          const pdfBlob = pdf.output('blob');
-
-                          const currentIssuedDocs = (order as any)?.po_issued_documents || [];
-                          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).length + 1;
-                          const safeFileName = `도착보고서_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
-                          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
-
-                          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
-                          const downloadURL = await getDownloadURL(snapshot.ref);
-
-                          const newDoc = {
-                            id: new Date().getTime().toString(),
-                            po_number: poNum,
-                            supplier_name: supplierName,
-                            version: version,
-                            fileName: safeFileName,
-                            fileUrl: downloadURL,
-                            issuedAt: new Date().toISOString(),
-                            issuedBy: auth.currentUser?.displayName || 'System',
-                            totalAmount: 0,
-                            status: 'active'
-                          };
-
-                          const updatedDocs = currentIssuedDocs.map((doc: any) => {
-                            if (doc.po_number === poNum && doc.fileName.startsWith('도착보고서')) {
-                              return { ...doc, status: 'superseded' };
-                            }
-                            return doc;
-                          });
-                          updatedDocs.push(newDoc);
-
-                          const currentLogs = (order as any).history_logs || [];
-                          const newLog = {
-                            timestamp: new Date().toISOString(),
-                            actionType: 'arrival_report_issue',
-                            user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
-                            description: `공급업체 "${supplierName}" 도착보고서 발행완료 (버전 v${version}, 파일명: ${safeFileName})`
-                          };
-                          const nextHistoryLogs = [newLog, ...currentLogs];
-
-                          const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
-                          await updateDoc(docRef, {
-                            po_issued_documents: updatedDocs,
-                            history_logs: nextHistoryLogs
-                          });
-
-                          alert('✅ 도착보고서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
-                          setIssuedDocs(updatedDocs);
-
-                        } catch (err: any) {
-                          console.error(err);
-                          alert('도착보고서 발행 중 오류가 발생했습니다: ' + err.message);
-                        }
-                      };
-
-                      const handleIssueAndSaveShippingMarks = async () => {
-                        try {
-                          await handleSaveBasic(false);
-                        } catch (err) {
-                          console.error("Auto-save before marks issue failed:", err);
-                        }
-                        const shapeVal = commonShippingMark.shape;
-                        const compVal = commonShippingMark.company;
-                        const portVal = commonShippingMark.port;
-                        const countryVal = commonShippingMark.country;
-                        const originVal = commonShippingMark.origin;
-
-                        const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
-                          const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                          const len = (company || '').length || 1;
-                          const strokeColor = '#3b82f6'; // Clean blue color
-
-                          const calcLargeFontSize = (baseSize: number) => {
-                            if (len <= 4) return baseSize;
-                            if (len <= 7) return Math.round(baseSize * 0.82);
-                            if (len <= 10) return Math.round(baseSize * 0.65);
-                            if (len <= 14) return Math.round(baseSize * 0.48);
-                            return Math.round(baseSize * 0.38);
-                          };
-
-                          if (shape === 'circle') {
-                            const fSize = calcLargeFontSize(70);
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-                          } else if (shape === 'square') {
-                            const fSize = calcLargeFontSize(70);
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-                          } else if (shape === 'triangle') {
-                            const fSize = calcLargeFontSize(60);
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-                          } else { // diamond
-                            const fSize = calcLargeFontSize(68);
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                          const printWin = window.open('', '_blank', 'width=1000,height=800,resizable=yes,scrollbars=yes');
+                          if (printWin) {
+                            printWin.document.open();
+                            printWin.document.write(printHtml);
+                            printWin.document.close();
                           }
                         };
 
-                        let htmlContent = '<html>' +
-                          '<head>' +
-                            '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
-                            '<style>' +
-                              '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
-                              '@page { size: A4 landscape; margin: 0; }' +
-                              'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
-                              '.page {' +
-                                'width: 297mm;' +
-                                'height: 210mm;' +
-                                'box-sizing: border-box;' +
-                                'padding: 12mm;' +
-                                'display: flex;' +
-                                'flex-direction: column;' +
-                                'align-items: center;' +
-                                'justify-content: space-around;' +
-                                'page-break-after: always;' +
-                              '}' +
-                              '.shape-container {' +
-                                'width: 100%;' +
-                                'height: 45%;' +
-                                'display: flex;' +
-                                'align-items: center;' +
-                                'justify-content: center;' +
-                              '}' +
-                              '.info-container {' +
-                                'width: 100%;' +
-                                'height: 48%;' +
-                                'display: flex;' +
-                                'flex-direction: column;' +
-                                'align-items: center;' +
-                                'justify-content: center;' +
-                                'text-align: center;' +
-                              '}' +
-                              '.info-text1 {' +
-                                'font-size: 30pt;' +
-                                'font-weight: 700;' +
-                                'margin: 10px 0;' +
-                                'text-transform: uppercase;' +
-                                'color: #000;' +
-                                'letter-spacing: 0.5px;' +
-                              '}' +
-                              '.info-text2 {' +
-                                'font-size: 36pt;' +
-                                'font-weight: 900;' +
-                                'margin: 10px 0;' +
-                                'text-transform: uppercase;' +
-                                'color: #000;' +
-                                'letter-spacing: 0.5px;' +
-                              '}' +
-                            '</style>' +
-                          '</head>' +
-                          '<body>';
+                        const handlePrintShippingMarksInline = () => {
+                          const shapeVal = commonShippingMark.shape;
+                          const compVal = commonShippingMark.company;
+                          const portVal = commonShippingMark.port;
+                          const countryVal = commonShippingMark.country;
+                          const originVal = commonShippingMark.origin;
 
-                        const palletList: string[] = [];
-                        packingItemsList.forEach((it: any, idx: number) => {
-                          const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
-                          if (pNo.includes('-')) {
-                            const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
-                            if (!isNaN(start) && !isNaN(end) && end >= start) {
-                              for (let k = start; k <= end; k++) {
-                                palletList.push(String(k));
+                          const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
+                            const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            const len = (company || '').length || 1;
+                            const strokeColor = '#3b82f6';
+
+                            const calcLargeFontSize = (baseSize: number) => {
+                              if (len <= 4) return baseSize;
+                              if (len <= 7) return Math.round(baseSize * 0.82);
+                              if (len <= 10) return Math.round(baseSize * 0.65);
+                              if (len <= 14) return Math.round(baseSize * 0.48);
+                              return Math.round(baseSize * 0.38);
+                            };
+
+                            if (shape === 'circle') {
+                              const fSize = calcLargeFontSize(70);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            } else if (shape === 'square') {
+                              const fSize = calcLargeFontSize(70);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            } else if (shape === 'triangle') {
+                              const fSize = calcLargeFontSize(60);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            } else {
+                              const fSize = calcLargeFontSize(68);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            }
+                          };
+
+                          const palletList: string[] = [];
+                          packingItemsList.forEach((it: any, idx: number) => {
+                            const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+                            if (pNo.includes('-')) {
+                              const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
+                              if (!isNaN(start) && !isNaN(end) && end >= start) {
+                                for (let k = start; k <= end; k++) {
+                                  palletList.push(String(k));
+                                }
+                              } else {
+                                palletList.push(pNo);
                               }
                             } else {
                               palletList.push(pNo);
                             }
-                          } else {
-                            palletList.push(pNo);
-                          }
-                        });
-                        if (palletList.length === 0) {
-                          palletList.push('1');
-                        }
-
-                        for (const pNum of palletList) {
-                          const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
-
-                          htmlContent += '<div class="page">' +
-                            '<div class="shape-container">' + shapeHtml + '</div>' +
-                            '<div class="info-container">' +
-                              '<div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
-                              '<div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div>' +
-                              '<div class="info-text1">' + originVal + '</div>' +
-                            '</div>' +
-                          '</div>';
-                        }
-
-                        htmlContent += '</body></html>';
-
-                        const confirmed = window.confirm(`쉬핑마크 라벨을 발행 및 클라우드(문서함)에 저장하시겠습니까?\n\nPO번호: ${poNum}\n거래처: ${supplierName}`);
-                        if (!confirmed) return;
-
-                        try {
-                          const iframe = document.createElement('iframe');
-                          iframe.style.position = 'fixed';
-                          iframe.style.top = '0';
-                          iframe.style.left = '0';
-                          iframe.style.width = '1122px';
-                          iframe.style.height = '793px';
-                          iframe.style.border = '0';
-                          iframe.style.zIndex = '-9999';
-                          iframe.style.visibility = 'hidden';
-                          document.body.appendChild(iframe);
-
-                          const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
-                          if (!iframeDoc) throw new Error('Failed to access sandbox iframe context');
-
-                          iframeDoc.open();
-                          iframeDoc.write(htmlContent);
-                          iframeDoc.close();
-
-                          await new Promise(resolve => setTimeout(resolve, 800));
-
-                          const pages = iframeDoc.body.querySelectorAll('.page');
-                          const pdf = new jsPDF({
-                            orientation: 'l',
-                            unit: 'pt',
-                            format: 'a4'
                           });
+                          if (palletList.length === 0) palletList.push('1');
 
-                          for (let i = 0; i < pages.length; i++) {
-                            const pageEl = pages[i] as HTMLElement;
-                            const canvas = await html2canvas(pageEl, {
-                              scale: 2,
-                              useCORS: true,
-                              allowTaint: true,
-                              logging: false,
-                              width: pageEl.offsetWidth,
-                              height: pageEl.offsetHeight,
-                              windowWidth: pageEl.offsetWidth,
-                              windowHeight: pageEl.offsetHeight
-                            });
+                          let htmlContent = '<html>' +
+                            '<head>' +
+                              '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
+                              '<style>' +
+                                '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
+                                '@page { size: A4 landscape; margin: 0; }' +
+                                'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
+                                '.no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }' +
+                                '@media print { .no-print { display: none !important; } }' +
+                                '.page {' +
+                                  'width: 297mm;' +
+                                  'height: 210mm;' +
+                                  'box-sizing: border-box;' +
+                                  'padding: 12mm;' +
+                                  'display: flex;' +
+                                  'flex-direction: column;' +
+                                  'align-items: center;' +
+                                  'justify-content: space-around;' +
+                                  'page-break-after: always;' +
+                                '}' +
+                                '.shape-container {' +
+                                  'width: 100%;' +
+                                  'height: 45%;' +
+                                  'display: flex;' +
+                                  'align-items: center;' +
+                                  'justify-content: center;' +
+                                '}' +
+                                '.info-container {' +
+                                  'width: 100%;' +
+                                  'height: 48%;' +
+                                  'display: flex;' +
+                                  'flex-direction: column;' +
+                                  'align-items: center;' +
+                                  'justify-content: center;' +
+                                  'text-align: center;' +
+                                '}' +
+                                '.info-text1 {' +
+                                  'font-size: 30pt;' +
+                                  'font-weight: 700;' +
+                                  'margin: 10px 0;' +
+                                  'text-transform: uppercase;' +
+                                  'color: #000;' +
+                                  'letter-spacing: 0.5px;' +
+                                '}' +
+                                '.info-text2 {' +
+                                  'font-size: 36pt;' +
+                                  'font-weight: 900;' +
+                                  'margin: 10px 0;' +
+                                  'text-transform: uppercase;' +
+                                  'color: #000;' +
+                                  'letter-spacing: 0.5px;' +
+                                '}' +
+                              '</style>' +
+                            '</head>' +
+                            '<body>' +
+                            '<button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>';
 
-                            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                            if (i > 0) {
-                              pdf.addPage();
-                            }
-                            pdf.addImage(imgData, 'JPEG', 0, 0, 841.89, 595.28);
+                          for (const pNum of palletList) {
+                            const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
+                            htmlContent += '<div class="page">' +
+                              '<div class="shape-container">' + shapeHtml + '</div>' +
+                              '<div class="info-container">' +
+                                '<div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
+                                '<div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div>' +
+                                '<div class="info-text1">' + originVal + '</div>' +
+                              '</div>' +
+                            '</div>';
                           }
 
-                          document.body.removeChild(iframe);
+                          htmlContent += '</body></html>';
 
-                          const pdfBlob = pdf.output('blob');
-
-                          const currentIssuedDocs = (order as any)?.po_issued_documents || [];
-                          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).length + 1;
-                          const safeFileName = `쉬핑마크라벨_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
-                          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
-
-                          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
-                          const downloadURL = await getDownloadURL(snapshot.ref);
-
-                          const newDoc = {
-                            id: new Date().getTime().toString(),
-                            po_number: poNum,
-                            supplier_name: supplierName,
-                            version: version,
-                            fileName: safeFileName,
-                            fileUrl: downloadURL,
-                            issuedAt: new Date().toISOString(),
-                            issuedBy: auth.currentUser?.displayName || 'System',
-                            totalAmount: 0,
-                            status: 'active'
-                          };
-
-                          const updatedDocs = currentIssuedDocs.map((doc: any) => {
-                            if (doc.po_number === poNum && doc.fileName.startsWith('쉬핑마크라벨')) {
-                              return { ...doc, status: 'superseded' };
-                            }
-                            return doc;
-                          });
-                          updatedDocs.push(newDoc);
-
-                          const currentLogs = (order as any).history_logs || [];
-                          const newLog = {
-                            timestamp: new Date().toISOString(),
-                            actionType: 'shipping_mark_issue',
-                            user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
-                            description: `공급업체 "${supplierName}" 쉬핑마크 라벨 발행완료 (버전 v${version}, 파일명: ${safeFileName})`
-                          };
-                          const nextHistoryLogs = [newLog, ...currentLogs];
-
-                          const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
-                          await updateDoc(docRef, {
-                            po_issued_documents: updatedDocs,
-                            history_logs: nextHistoryLogs
-                          });
-
-                          alert('✅ 쉬핑마크 라벨이 성공적으로 발행 및 클라우드에 저장되었습니다.');
-                          setIssuedDocs(updatedDocs);
-
-                        } catch (err: any) {
-                          console.error(err);
-                          alert('쉬핑마크 라벨 발행 중 오류가 발생했습니다: ' + err.message);
-                        }
-                      };
+                          const printWin = window.open('', '_blank', 'width=1000,height=800,resizable=yes,scrollbars=yes');
+                          if (printWin) {
+                            printWin.document.open();
+                            printWin.document.write(htmlContent);
+                            printWin.document.close();
+                          }
+                        };
 
                       return (
                         <div key={supplierName} style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '16px' }}>
@@ -10169,29 +10387,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 ➕ 패킹 행 추가
                               </button>
                               <button 
-                                onClick={handleSaveArrivalReportInline}
-                                disabled={!isEditing}
-                                style={{ padding: '5px 10px', background: '#2563eb', border: 'none', color: '#fff', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '14.5px' }}
-                              >
-                                💾 저장
-                              </button>
-                              <button 
                                 onClick={handlePrintArrivalReportInline}
                                 style={{ padding: '5px 10px', background: '#8b5cf6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                               >
-                                🖨️ 인쇄 / PDF
+                                🖨️ 도착보고 인쇄
                               </button>
                               <button 
-                                onClick={handleIssueAndSaveArrivalReport}
-                                style={{ padding: '5px 10px', background: '#d97706', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                onClick={handlePrintShippingMarksInline}
+                                style={{ padding: '5px 10px', background: '#0284c7', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                               >
-                                📥 도착보고서 발행 및 저장
-                              </button>
-                              <button 
-                                onClick={handleIssueAndSaveShippingMarks}
-                                style={{ padding: '5px 10px', background: '#059669', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
-                              >
-                                📥 쉬핑마크 라벨 발행 및 저장
+                                🏷️ 쉬핑마크 인쇄
                               </button>
                               <button 
                                 onClick={() => handleSendArrivalShippingEmail(supplierName)}
@@ -10208,7 +10413,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   alignItems: 'center',
                                   gap: '4px'
                                 }}
-                                title="도착보고서 및 쉬핑마크 라벨 2개 파일 유첨 메일 발송"
+                                title="도착보고서 및 쉬핑마크 라벨 2개 파일 자동 발행 및 유첨 메일 발송"
                               >
                                 {((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.emailSent || sentEmailSuppliers[`${supplierName}_arrival`]) ? (
                                   <>
@@ -10237,23 +10442,20 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   alignItems: 'center',
                                   gap: '4px'
                                 }}
-                                title="도착보고서 및 쉬핑마크 2개 원본 링크 포함 카카오톡 메시지 복사"
+                                title="도착보고서 및 쉬핑마크 2개 자동 발행 및 원본 링크 포함 카카오톡 메시지 공유"
                               >
                                 {((order as any)?.po_dispatch_status?.[`${supplierName}_arrival`]?.katalkCopied || copiedKatalkSuppliers[`${supplierName}_arrival`]) ? (
                                   <>
-                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#191919" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#854d0e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span>카톡 발송</span>
                                   </>
                                 ) : (
                                   <>
-                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#191919"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
+                                    <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#3c1e1e"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.364 6.048l-.888 3.287c-.082.306.26.549.52.375l3.963-2.642c.341.033.689.047 1.041.047 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
                                     <span>카톡 발송</span>
                                   </>
                                 )}
                               </button>
-                            </div>
-                          </div>
-
                           {/* Card Body - Inline Table for Editing Packing Items */}
                           <div style={{ padding: '12px 16px', background: '#fff' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14.5px' }}>
