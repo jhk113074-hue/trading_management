@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.334',
+    version: 'v2.8.334',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: '도착보고서 품목 설명의 수량 단위 오류(kg -> 실제 단위 EA 등) 수정',
+    content: '• 도착보고서 품목 설명(Description of Goods) 생성 시 발주 품목의 실제 수량 단위(EA, ROLL, SET 등)를 그대로 정확히 반영하도록 로직 수정 (불필요하게 kg으로 강제 치환되던 오류 해결)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.333',
     version: 'v2.8.333',
     date: '2026-08-22',

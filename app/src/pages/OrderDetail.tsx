@@ -2726,8 +2726,17 @@ export const OrderDetail: React.FC = () => {
         matchingItems.forEach((it: any, idx: number) => {
           let desc = it.description || '';
           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          const matchedPO = (orderItems || []).find((oi: any) => 
+            (it.itemCode && oi.productCode === it.itemCode) ||
+            (oi.name && desc.includes(oi.name)) ||
+            (oi.productCode && desc.includes(oi.productCode))
+          );
+          const itemUnit = it.unit || matchedPO?.unit || 'EA';
+          
+          // Replace any erroneous hardcoded "kg" suffix on quantities with the actual unit
+          desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
           if (it.qty && !desc.includes(String(it.qty))) {
-            desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+            desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
           }
           const pNo = it.pkgNo || String(idx + 1);
 
@@ -5120,7 +5129,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       });
       matchingItems.forEach((it: any, idx: number) => {
         let desc = (it.description || '').replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
-        if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+        const matchedPO = (orderItems || []).find((oi: any) => 
+          (it.itemCode && oi.productCode === it.itemCode) ||
+          (oi.name && desc.includes(oi.name)) ||
+          (oi.productCode && desc.includes(oi.productCode))
+        );
+        const itemUnit = it.unit || matchedPO?.unit || 'EA';
+        desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
+        if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
         const pNo = it.pkgNo || String(idx + 1);
         packingItemsList.push({
           marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
@@ -9675,10 +9691,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         const nextList = packingItemsList.map((it: any, idx: number) => {
                           let desc = it.descOfGoods || '';
                           let marks = it.marks || '';
-                          if (/\bEA\b/i.test(desc)) {
-                            desc = desc.replace(/\bEA\b/gi, 'kg');
+                          
+                          const matchedPO = (orderItems || []).find((oi: any) => 
+                            (it.itemCode && oi.productCode === it.itemCode) ||
+                            (oi.name && desc.includes(oi.name)) ||
+                            (oi.productCode && desc.includes(oi.productCode))
+                          );
+                          const itemUnit = it.unit || matchedPO?.unit || 'EA';
+
+                          // Fix any old hardcoded "kg" in item quantity description to the actual unit (EA)
+                          const fixedDesc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
+                          if (fixedDesc !== desc) {
+                            desc = fixedDesc;
                             mutated = true;
                           }
+
                           if (marks.includes('PKG NO.')) {
                             marks = marks.replace(/PKG NO\./gi, 'PALLET NO.');
                             mutated = true;
@@ -9712,15 +9739,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             
                             const actualQty = matchedQty || '';
                             if (actualQty && !desc.includes(String(actualQty))) {
-                              desc = `${desc} ${actualQty} kg`.replace(/\s+/g, ' ');
+                              desc = `${desc} ${actualQty} ${itemUnit}`.replace(/\s+/g, ' ');
                             }
                             
                             if (desc !== it.descOfGoods) {
                               mutated = true;
-                              return { ...it, descOfGoods: desc, marks };
+                              return { ...it, descOfGoods: desc, marks, pkgNo: pNo };
                             }
                           }
-                          return mutated ? { ...it, descOfGoods: desc, marks } : it;
+                          return mutated ? { ...it, descOfGoods: desc, marks, pkgNo: pNo } : it;
                         });
                         if (mutated) {
                           packingItemsList = nextList;
@@ -9740,10 +9767,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           let desc = it.description || '';
                           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
                           
+                          const matchedPO = (orderItems || []).find((oi: any) => 
+                            (it.itemCode && oi.productCode === it.itemCode) ||
+                            (oi.name && desc.includes(oi.name)) ||
+                            (oi.productCode && desc.includes(oi.productCode))
+                          );
+                          const itemUnit = it.unit || matchedPO?.unit || 'EA';
+                          desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
+
                           if (it.qty && !desc.includes(String(it.qty))) {
-                            desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
-                          } else if (/\bEA\b/i.test(desc)) {
-                            desc = desc.replace(/\bEA\b/gi, 'kg');
+                            desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
                           }
 
                           const pNo = it.pkgNo || String(idx + 1);
@@ -10285,8 +10318,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   matchingItems.forEach((it: any, idx: number) => {
                                     let desc = it.description || '';
                                     desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+                                    const matchedPO = (orderItems || []).find((oi: any) => 
+                                      (it.itemCode && oi.productCode === it.itemCode) ||
+                                      (oi.name && desc.includes(oi.name)) ||
+                                      (oi.productCode && desc.includes(oi.productCode))
+                                    );
+                                    const itemUnit = it.unit || matchedPO?.unit || 'EA';
+                                    desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
                                     if (it.qty && !desc.includes(String(it.qty))) {
-                                      desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+                                      desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
                                     }
                                     const pNo = it.pkgNo || String(idx + 1);
                                     refreshedList.push({
