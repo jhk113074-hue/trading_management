@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.361',
+    version: 'v2.8.361',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '패킹리스트(Packing List) 및 CI 전반 `(완제 Pallet)` 등 내부 표기 완전 자동 제거',
+    content: '• 패킹 및 컨테이너로딩플랜 UI 편집 화면 및 CI/PL 인쇄/Excel 내보내기 전반에서 `(완제 Pallet)`, `(완제)`, `(완제품)`, `(반제품)` 등 내부 식별 문구를 자동으로 정제하여 바이어용 순수 품명(예: JP-30)만 깔끔하게 표시',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.360',
     version: 'v2.8.360',
     date: '2026-08-22',

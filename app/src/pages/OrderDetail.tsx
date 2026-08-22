@@ -9263,7 +9263,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                 placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                                 rows={2}
                                                 style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                                value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
+                                                value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
                                                 onChange={e => {
                                                   const val = e.target.value;
                                                   const nextContainers = [...basicForm.packingList.containers];
@@ -11060,7 +11060,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const formattedMarkText = `${shapeSymbol}\n${compMark}\n${portCountryMark}\n${palletNoText}\n${originMark}`;
 
                 const cleanCiName = (rawName: string) => {
-                  return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+                  return (rawName || '')
+                    .replace(/^\[.*?\]\s*/, '')
+                    .replace(/\(완제\s*Pallet\)/gi, '')
+                    .replace(/\(완제품\)/gi, '')
+                    .replace(/\(반제품\)/gi, '')
+                    .replace(/\(SAMPLE\)/gi, '')
+                    .replace(/\s*\(완제\)/gi, '')
+                    .replace(/완제\s*Pallet/gi, '')
+                    .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
+                    .trim();
                 };
 
                 const forwarderTotalUsd = forwardersList.reduce((sum, fw) => {
@@ -14147,6 +14156,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             .replace(/\(완제품\)/gi, '')
             .replace(/\(반제품\)/gi, '')
             .replace(/\(SAMPLE\)/gi, '')
+            .replace(/\s*\(완제\)/gi, '')
+            .replace(/완제\s*Pallet/gi, '')
+            .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
             .trim();
         };
 
