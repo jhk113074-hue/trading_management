@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.352',
+    version: 'v2.8.352',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Packing List 및 CI 상단 5x2 그리드 분할 정렬 완벽 반영 및 품명 내부코드 정제',
+    content: '• CI 및 PL 상단 5x2 그리드에서 선적항/도착항/결제조건 및 모선/ETD/인코텀즈 1/2 분할 정렬 및 충분한 행 높이 반영\n• 품명에서 (완제 Pallet), (반제품) 등 사내 내부 식별 코드를 자동으로 정제하여 바이어 제출용 서식으로 생성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.351',
     version: 'v2.8.351',
     date: '2026-08-22',

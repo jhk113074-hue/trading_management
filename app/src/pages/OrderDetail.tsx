@@ -11127,7 +11127,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                   const isYSComp = (basicForm.issuingCompany as string) === 'YS' || (basicForm.issuingCompany as string) === '영성ACC';
                   const activeCompDoc = myCompaniesList.find(c => isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS')) : (c.id === 'YSACC' || !c.nameEn?.includes('YS')));
-                  const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/letterhead_ys.png' : '/letterhead_ysacc.png');
+                  const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
 
                   exportCiPlToExcel({
                     letterheadUrl,
@@ -14091,7 +14091,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         })();
 
         const cleanCiName = (rawName: string) => {
-          return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+          return (rawName || '')
+            .replace(/^\[.*?\]\s*/, '')
+            .replace(/\(완제\s*Pallet\)/gi, '')
+            .replace(/\(완제품\)/gi, '')
+            .replace(/\(반제품\)/gi, '')
+            .replace(/\(SAMPLE\)/gi, '')
+            .trim();
         };
 
         const currentCiItems = customCiItems && customCiItems.length > 0
@@ -14111,7 +14117,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
         const isYSComp = (basicForm.issuingCompany as string) === 'YS' || (basicForm.issuingCompany as string) === '영성ACC';
         const activeCompDoc = myCompaniesList.find(c => isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS')) : (c.id === 'YSACC' || !c.nameEn?.includes('YS')));
-        const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/letterhead_ys.png' : '/letterhead_ysacc.png');
+        const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
 
         return (
           <>
