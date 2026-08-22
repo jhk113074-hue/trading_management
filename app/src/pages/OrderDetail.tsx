@@ -4453,16 +4453,76 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     try {
       const ccList = emailData.cc.split(',').map(e => e.trim()).filter(Boolean).map(e => ({ email: e }));
-      const pdfUrl = poEmailModalData.pdfUrl;
-
-      const htmlContent = `<div style="font-family: sans-serif; max-width: 640px; padding: 24px; border: 1px solid #cbd5e1; border-radius: 8px;"><h3 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0;">📋 YSACC 발주서 발행 알림</h3><pre style="font-family: sans-serif; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${emailData.content}</pre>${pdfUrl ? '<div style="margin-top: 12px; padding: 12px; background: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;"><p style="margin: 0 0 6px 0; font-weight: bold; color: #1e3a8a; font-size: 13px;">📄 발주서 PDF 원본 다운로드</p><a href="' + pdfUrl + '" style="color: #2563eb; word-break: break-all; font-size: 12px;">' + pdfUrl + '</a></div>' : ''}</div>`;
-
+      const isArrival = poEmailModalData.supplierName.endsWith('_arrival') || !!poEmailModalData.pdfAttachments;
+      const cleanSupplierName = poEmailModalData.supplierName.replace(/_arrival$/, '');
       const senderEmail = userProfile?.email || 'jhkim1130@ysacc.co.kr';
       const senderName = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (YSACC)`;
 
+      let attachments: { title: string; url: string }[] = [];
+      if (poEmailModalData.pdfAttachments && poEmailModalData.pdfAttachments.length > 0) {
+        attachments = poEmailModalData.pdfAttachments.filter(a => a.url);
+      } else if (poEmailModalData.pdfUrl) {
+        attachments = [{ title: isArrival ? '도착보고서 PDF' : '발주서 PDF', url: poEmailModalData.pdfUrl }];
+      }
+
+      const attachmentsCardsHtml = attachments.map(att => `
+        <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px;">
+          <tr>
+            <td style="padding: 14px 16px; vertical-align: middle;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; margin-bottom: 3px;">
+                📄 ${att.title} 원본 다운로드
+              </div>
+              <div style="font-size: 12px; color: #64748b;">
+                클릭하시면 최신 정식 PDF 원본을 즉시 확인 및 다운로드하실 수 있습니다.
+              </div>
+            </td>
+            <td style="padding: 14px 16px; text-align: right; vertical-align: middle; width: 140px;">
+              <a href="${att.url}" target="_blank" style="display: inline-block; padding: 8px 16px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 12.5px; border-radius: 4px;">
+                📥 PDF 다운로드
+              </a>
+            </td>
+          </tr>
+        </table>
+      `).join('');
+
+      const htmlContent = `
+        <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 680px; margin: 0 auto; padding: 24px; background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #3b82f6; padding-bottom: 12px; margin-bottom: 20px;">
+            <tr>
+              <td style="font-size: 17px; font-weight: 800; color: #1e3a8a; vertical-align: middle;">
+                ${isArrival ? '🚚 YSACC 도착보고서 & 쉬핑마크 라벨 발행 알림' : '📄 YSACC 발주서 발행 알림'}
+              </td>
+              <td style="text-align: right; font-size: 13px; font-weight: 700; color: #64748b; vertical-align: middle;">
+                YSACC 무역관리시스템
+              </td>
+            </tr>
+          </table>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 16px 20px; margin-bottom: 20px;">
+            <pre style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-size: 13.5px; line-height: 1.6; color: #334155; white-space: pre-wrap; margin: 0;">${emailData.content}</pre>
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 12.5px; color: #2563eb; font-weight: 700;">
+              ※ 아래 첨부파일 영역의 [📥 PDF 다운로드] 버튼을 클릭하시면 각 원본 문서를 바로 확인 및 다운로드하실 수 있습니다.
+            </div>
+          </div>
+
+          ${attachments.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">
+                📎 정식 전자 문서 다운로드
+              </div>
+              ${attachmentsCardsHtml}
+            </div>
+          ` : ''}
+
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 12px; color: #94a3b8; line-height: 1.5; text-align: center;">
+            본 메일은 (주)와이에스에이씨(YSACC) 무역관리시스템에서 공식 발송되었습니다. 관련 문의는 발신담당자에게 연락해 주시기 바랍니다.
+          </div>
+        </div>
+      `;
+
       const payload: any = {
         sender: { name: senderName, email: senderEmail },
-        to: [{ email: emailData.to, name: poEmailModalData.supplierName }],
+        to: [{ email: emailData.to, name: cleanSupplierName }],
         cc: ccList.length > 0 ? ccList : undefined,
         subject: emailData.subject,
         htmlContent: htmlContent,
@@ -4501,7 +4561,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           setOrder(prev => prev ? ({ ...prev, po_dispatch_status: updatedDispatchStatus }) : prev);
         }
 
-        alert(`✅ [${poEmailModalData.supplierName}] 발주서 이메일 발송 완료!\n\n발신자: ${senderEmail}\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
+        alert(`✅ [${cleanSupplierName}] ${isArrival ? '도착보고서 및 쉬핑마크 라벨' : '발주서'} 이메일 발송 완료!\n\n발신자: ${senderEmail}\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
