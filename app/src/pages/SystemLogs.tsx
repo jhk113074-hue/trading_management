@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.371',
+    version: 'v2.8.371',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'CI / PL 서식 상단 5x2 정보 헤더 볼드체(굵은 글씨) 스타일 정밀 정돈',
+    content: '• CI 및 PL 서식 상단 5x2 헤더 그리드에서 항목 라벨(제목) 및 당사/고객사 회사명만 굵은 글씨(Bold)로 유지하고, 나머지 세부 데이터 값(선적항, 양하항, 결제조건, 모선명, 출항일, 인도조건, 번호 및 일자 등)은 일반 폰트(Regular)로 전환하여 시각적 가독성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.370',
     version: 'v2.8.370',
     date: '2026-08-22',

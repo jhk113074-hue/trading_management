@@ -663,14 +663,17 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 26;
       currRow += 2;
 
-      // 5x2 Header Grid for PL
+      // 5x2 Header Grid for PL (Titles & Company Name Bold, Values Regular)
       const r1 = currRow;
       ws.mergeCells(`A${r1}:F${r1}`);
-      const shipperVal = data.customShipperText || `${companyName}\n${headerAddress}`;
+      const shipperLines = (data.customShipperText || `${companyName}\n${headerAddress}`).split('\n');
+      const shipperCompany = shipperLines[0] || companyName;
+      const shipperRest = shipperLines.slice(1).join('\n');
       ws.getCell(`A${r1}`).value = {
         richText: [
           { text: 'Shipper/Exporter\n', font: { name: 'Arial', size: 9, bold: true } },
-          { text: shipperVal, font: { name: 'Arial', size: 8.5 } }
+          { text: shipperCompany + (shipperRest ? '\n' : ''), font: { name: 'Arial', size: 9, bold: true } },
+          { text: shipperRest, font: { name: 'Arial', size: 8.5 } }
         ]
       };
       ws.getCell(`A${r1}`).alignment = { wrapText: true, vertical: 'top' };
@@ -679,7 +682,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`G${r1}`).value = {
         richText: [
           { text: 'Packing List No. & Date\n', font: { name: 'Arial', size: 9, bold: true } },
-          { text: `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}\n\n`, font: { name: 'Arial', size: 9, bold: true } },
+          { text: `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}\n\n`, font: { name: 'Arial', size: 9 } },
           { text: 'L/C No. & Date\n', font: { name: 'Arial', size: 9, bold: true } },
           { text: `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`, font: { name: 'Arial', size: 8.5 } }
         ]
@@ -693,7 +696,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`A${r2}`).value = {
         richText: [
           { text: 'Applicant/Consignee\n', font: { name: 'Arial', size: 9, bold: true } },
-          { text: (data.customerName || '-') + '\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: (data.customerName || '-') + (data.customerAddress ? '\n' : ''), font: { name: 'Arial', size: 9, bold: true } },
           { text: data.customerAddress || '', font: { name: 'Arial', size: 8.5 } }
         ]
       };
@@ -703,7 +706,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`G${r2}`).value = {
         richText: [
           { text: 'L/C Issuing Bank\n', font: { name: 'Arial', size: 9, bold: true } },
-          { text: data.lcIssuingBank || 'N/A', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.lcIssuingBank || 'N/A', font: { name: 'Arial', size: 8.5 } }
         ]
       };
       ws.getCell(`G${r2}`).alignment = { wrapText: true, vertical: 'top' };
@@ -715,7 +718,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`A${r3}`).value = {
         richText: [
           { text: 'Notify Party\n', font: { name: 'Arial', size: 9, bold: true } },
-          { text: data.notifyParty || data.customerName || 'Same as Applicant', font: { name: 'Arial', size: 8.5, bold: true } }
+          { text: (data.notifyParty || data.customerName || 'Same as Applicant') + (data.notifyParty ? '' : (data.customerAddress ? '\n' : '')), font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.notifyParty ? '' : (data.customerAddress || ''), font: { name: 'Arial', size: 8.5 } }
         ]
       };
       ws.getCell(`A${r3}`).alignment = { wrapText: true, vertical: 'top' };
@@ -747,7 +751,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`A${r4}`).value = {
         richText: [
           { text: 'Port of Loading\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.portOfLoading || '-', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.portOfLoading || '-', font: { name: 'Arial', size: 9 } }
         ]
       };
       ws.getCell(`A${r4}`).alignment = { wrapText: true, vertical: 'top' };
@@ -756,7 +760,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`E${r4}`).value = {
         richText: [
           { text: 'Port of Discharge\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.portOfDischarge || '-', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.portOfDischarge || '-', font: { name: 'Arial', size: 9 } }
         ]
       };
       ws.getCell(`E${r4}`).alignment = { wrapText: true, vertical: 'top' };
@@ -765,7 +769,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`I${r4}`).value = {
         richText: [
           { text: 'Payment Terms\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.paymentTerms || '-', font: { name: 'Arial', size: 8.5, bold: true } }
+          { text: data.paymentTerms || '-', font: { name: 'Arial', size: 8.5 } }
         ]
       };
       ws.getCell(`I${r4}`).alignment = { wrapText: true, vertical: 'top' };
@@ -777,7 +781,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`A${r5}`).value = {
         richText: [
           { text: 'Vessel Name & Voyage No.\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.vesselName || '-', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.vesselName || '-', font: { name: 'Arial', size: 9 } }
         ]
       };
       ws.getCell(`A${r5}`).alignment = { wrapText: true, vertical: 'top' };
@@ -786,7 +790,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`E${r5}`).value = {
         richText: [
           { text: 'Sailing on or about\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.etd || '-', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.etd || '-', font: { name: 'Arial', size: 9 } }
         ]
       };
       ws.getCell(`E${r5}`).alignment = { wrapText: true, vertical: 'top' };
@@ -795,7 +799,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`I${r5}`).value = {
         richText: [
           { text: 'Delivery Terms\n', font: { name: 'Arial', size: 8.5, bold: true } },
-          { text: data.deliveryTerms || '-', font: { name: 'Arial', size: 9, bold: true } }
+          { text: data.deliveryTerms || '-', font: { name: 'Arial', size: 9 } }
         ]
       };
       ws.getCell(`I${r5}`).alignment = { wrapText: true, vertical: 'top' };
