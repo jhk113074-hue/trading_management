@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.375',
+    version: 'v2.8.375',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '서류관리 탭 명칭 간소화(CI/PL 작성) 및 탭 우선 배치 순서 변경',
+    content: '• "CI / PL 작성 및 Excel 내보내기" 탭 명칭을 간결하게 "CI/PL 작성"으로 변경\\n• 서류관리 진입 시 "CI/PL 작성" 탭을 1순위(첫 번째 탭)로 우선 배치하고, "서류 업로드 및 수출신고" 탭을 2순위로 순서 재배치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.374',
     version: 'v2.8.374',
     date: '2026-08-22',

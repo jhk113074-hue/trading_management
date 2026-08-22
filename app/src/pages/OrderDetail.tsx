@@ -204,7 +204,7 @@ export const OrderDetail: React.FC = () => {
   const activeStep = normalizeStep(searchParams.get("step"));
   const activeSourcingTab = (searchParams.get("sourcingTab") || "소싱발주") as '소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제' | '대금결제관리';
   const activeLogisticsTab = (searchParams.get("logisticsTab") || "선적관리") as '선적관리' | '패킹리스트' | '도착보고_쉬핑마크';
-  const activeDocumentTab = (searchParams.get("documentTab") || "서류업로드") as '서류업로드' | 'CI_PL작성';
+  const activeDocumentTab = (searchParams.get("documentTab") || "CI_PL작성") as 'CI_PL작성' | '서류업로드';
   const activeSettlementTab = (searchParams.get("settlementTab") || "세금계산서") as '세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황';
 
   const initialStepSetRef = useRef(false);
@@ -10740,8 +10740,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               {/* 서류관리 하위 탭 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
-                  { id: '서류업로드', label: '서류 업로드 및 수출신고' },
-                  { id: 'CI_PL작성', label: 'CI / PL 작성 및 Excel 내보내기' }
+                  { id: 'CI_PL작성', label: 'CI/PL 작성' },
+                  { id: '서류업로드', label: '서류 업로드 및 수출신고' }
                 ].map(tab => {
                   const isActive = activeDocumentTab === tab.id;
                   return (
