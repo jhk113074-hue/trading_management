@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.348',
+    version: 'v2.8.348',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '상품DB 기본 HS CODE 연동 및 거래처별 커스텀 HS CODE 자유 수정/초기화 보장',
+    content: '• 상품 마스터 DB에서 기본 HS CODE를 자동으로 가져오되, 사용자가 거래처/인보이스별로 HS CODE를 자유롭게 수정, 변경, 지우기 가능하도록 상태 업데이트 핸들러 개선\n• 수정된 품목별 HS CODE가 Section A) 및 정식 Excel에 실시간 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.347',
     version: 'v2.8.347',
     date: '2026-08-22',

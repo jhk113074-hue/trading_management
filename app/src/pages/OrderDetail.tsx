@@ -1264,10 +1264,21 @@ export const OrderDetail: React.FC = () => {
   useEffect(() => {
     if (!products || products.length === 0) return;
     setCustomCiItems(prev => {
-      if (!prev || prev.length === 0) return prev;
+      const baseList = (prev && prev.length > 0)
+        ? prev
+        : ((orderItems && orderItems.length > 0 ? orderItems : (order?.items || [])).map((it: any) => ({
+            name: (it.name || '').replace(/^\[.*?\]\s*/, '').trim(),
+            hsCode: it.hsCode || getProductHsCode(it, products, basicForm.customer),
+            qty: Number(it.qty) || 0,
+            unit: it.unit || 'PCS',
+            unitPrice: Number(it.unitPrice) || 0,
+            amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+            isFreight: false
+          })));
+
       let hasChanges = false;
-      const updated = prev.map(it => {
-        if (!it.isFreight && (!it.hsCode || String(it.hsCode).trim() === '')) {
+      const updated = baseList.map(it => {
+        if (!it.isFreight && (it.hsCode === undefined || it.hsCode === '')) {
           const dbHs = getProductHsCode(it, products, basicForm.customer);
           if (dbHs) {
             hasChanges = true;
@@ -1276,7 +1287,7 @@ export const OrderDetail: React.FC = () => {
         }
         return it;
       });
-      return hasChanges ? updated : prev;
+      return (hasChanges || prev.length === 0) ? updated : prev;
     });
 
     setOrderItems(prev => {
@@ -1294,7 +1305,7 @@ export const OrderDetail: React.FC = () => {
       });
       return hasChanges ? updated : prev;
     });
-  }, [products, basicForm.customer]);
+  }, [products, basicForm.customer, orderItems, order]);
 
   const [editingFreight, setEditingFreight] = useState<{ idx: number; value: string } | null>(null);
 
@@ -11479,105 +11490,100 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           </tr>
                         </thead>
                         <tbody>
-                          {currentCiItems.map((item, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: item.isFreight ? '#f0fdf4' : undefined }}>
-                              <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <textarea
-                                  rows={1}
-                                  value={item.name}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, name: val } : it));
-                                  }}
-                                  placeholder="품명 및 사양 입력"
-                                  style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', boxSizing: 'border-box', outline: 'none', resize: 'vertical', minHeight: '32px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <input 
-                                  type="text" 
-                                  value={item.hsCode !== undefined && item.hsCode !== '' ? item.hsCode : getProductHsCode(item, products, basicForm.customer)} 
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, hsCode: val } : it));
-                                  }} 
-                                  placeholder="HS CODE"
-                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 500, color: '#1e293b', height: '32px', boxSizing: 'border-box', outline: 'none' }} 
-                                />
-                              </td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <input
-                                  type="number"
-                                  value={item.qty}
-                                  onChange={e => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    setCustomCiItems(prev => prev.map((it, i) => {
-                                      if (i === idx) {
-                                        const newAmt = parseFloat((val * (it.unitPrice || 0)).toFixed(2));
-                                        return { ...it, qty: val, amount: newAmt };
-                                      }
-                                      return it;
-                                    }));
-                                  }}
-                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
-                                />
-                              </td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <input
-                                  type="text"
-                                  value={item.unit || 'PCS'}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, unit: val } : it));
-                                  }}
-                                  style={{ padding: '4px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12px', fontWeight: 600, textAlign: 'center', height: '32px', boxSizing: 'border-box', outline: 'none' }}
-                                />
-                              </td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={item.unitPrice}
-                                  onChange={e => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    setCustomCiItems(prev => prev.map((it, i) => {
-                                      if (i === idx) {
-                                        const newAmt = parseFloat(((it.qty || 0) * val).toFixed(2));
-                                        return { ...it, unitPrice: val, amount: newAmt };
-                                      }
-                                      return it;
-                                    }));
-                                  }}
-                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
-                                />
-                              </td>
-                              <td style={{ padding: '4px 6px' }}>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={item.amount}
-                                  onChange={e => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, amount: val } : it));
-                                  }}
-                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', color: '#0284c7', height: '32px', boxSizing: 'border-box', outline: 'none' }}
-                                />
-                              </td>
-                              <td style={{ padding: '4px 4px', textAlign: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCustomCiItems(prev => prev.filter((_, i) => i !== idx));
-                                  }}
-                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer' }}
-                                  title="행 삭제"
-                                >
-                                  🗑️
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {currentCiItems.map((item, idx) => {
+                            const handleUpdateRow = (patch: Partial<any>) => {
+                              setCustomCiItems(prev => {
+                                const base = (prev && prev.length > 0) ? prev : currentCiItems;
+                                return base.map((it, i) => i === idx ? { ...it, ...patch } : it);
+                              });
+                            };
+
+                            const itemHs = item.hsCode !== undefined ? item.hsCode : getProductHsCode(item, products, basicForm.customer);
+
+                            return (
+                              <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: item.isFreight ? '#f0fdf4' : undefined }}>
+                                <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <textarea
+                                    rows={1}
+                                    value={item.name || ''}
+                                    onChange={e => handleUpdateRow({ name: e.target.value })}
+                                    placeholder="품명 및 사양 입력"
+                                    style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', boxSizing: 'border-box', outline: 'none', resize: 'vertical', minHeight: '32px' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input 
+                                    type="text" 
+                                    value={itemHs} 
+                                    onChange={e => handleUpdateRow({ hsCode: e.target.value })} 
+                                    placeholder="HS CODE (상품DB 기본값 또는 거래처별 수정)"
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', height: '32px', boxSizing: 'border-box', outline: 'none' }} 
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={e => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      const newAmt = parseFloat((val * (item.unitPrice || 0)).toFixed(2));
+                                      handleUpdateRow({ qty: val, amount: newAmt });
+                                    }}
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="text"
+                                    value={item.unit || 'PCS'}
+                                    onChange={e => handleUpdateRow({ unit: e.target.value })}
+                                    style={{ padding: '4px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12px', fontWeight: 600, textAlign: 'center', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={item.unitPrice}
+                                    onChange={e => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      const newAmt = parseFloat(((item.qty || 0) * val).toFixed(2));
+                                      handleUpdateRow({ unitPrice: val, amount: newAmt });
+                                    }}
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 600, textAlign: 'right', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={item.amount}
+                                    onChange={e => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      handleUpdateRow({ amount: val });
+                                    }}
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', color: '#0284c7', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCustomCiItems(prev => {
+                                        const base = (prev && prev.length > 0) ? prev : currentCiItems;
+                                        return base.filter((_, i) => i !== idx);
+                                      });
+                                    }}
+                                    style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer' }}
+                                    title="행 삭제"
+                                  >
+                                    🗑️
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                           {/* Total Row */}
                           <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
                             <td colSpan={3} style={{ padding: '8px', textAlign: 'center', color: '#1e293b' }}>TOTAL AMOUNT</td>
