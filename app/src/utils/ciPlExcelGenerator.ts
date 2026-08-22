@@ -36,6 +36,8 @@ interface CiPlData {
   deliveryTerms?: string; // Incoterms
   shippingMarks?: string;
   items: ExcelItem[];
+  ciItems?: ExcelItem[];
+  plItems?: ExcelItem[];
   totalPackages?: number;
   totalNetWeight?: number;
   totalGrossWeight?: number;
@@ -295,7 +297,11 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     let totalGrossW = 0;
     let totalCbmV = 0;
 
-    data.items.forEach((item, index) => {
+    const sheetItems = isInvoice 
+      ? (data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items)
+      : (data.plItems && data.plItems.length > 0 ? data.plItems : data.items);
+
+    sheetItems.forEach((item, index) => {
       ws.getRow(itemRowIdx).height = 20;
 
       // Base Values

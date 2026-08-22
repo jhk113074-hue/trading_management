@@ -36,6 +36,8 @@ interface CiPlPreviewModalProps {
     deliveryTerms?: string;
     shippingMarks?: string;
     items: PreviewItem[];
+    ciItems?: PreviewItem[];
+    plItems?: PreviewItem[];
     totalPackages?: number;
     totalNetWeight?: number;
     totalGrossWeight?: number;
@@ -67,12 +69,16 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
   const companyName = data.issuingCompany === 'YSACC' ? 'YSACC CO., LTD.' : 'YS CO., LTD.';
   const shipperAddress = `${companyName}\nSuite 408, Dae-il Bldg, 12, Mapo-daero 4-gil,\nMapo-gu, Seoul, 04175, Korea`;
 
-  const totalQty = data.items.reduce((sum, item) => sum + (item.qty || 0), 0);
-  const totalAmount = data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const totalPackages = data.totalPackages || data.items.reduce((sum, item) => sum + (item.packagesCount || 0), 0) || 1;
-  const totalNet = data.totalNetWeight || data.items.reduce((sum, item) => sum + (item.netWeight || 0), 0);
-  const totalGross = data.totalGrossWeight || data.items.reduce((sum, item) => sum + (item.grossWeight || 0), 0);
-  const totalCbm = data.totalCbm || data.items.reduce((sum, item) => sum + (item.cbm || 0), 0);
+  const ciItems = data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items;
+  const plItems = data.plItems && data.plItems.length > 0 ? data.plItems : data.items;
+
+  const totalQtyCI = ciItems.reduce((sum, item) => sum + (item.qty || 0), 0);
+  const totalAmountCI = ciItems.reduce((sum, item) => sum + (item.amount || ((item.qty || 0) * (item.unitPrice || 0)) || 0), 0);
+
+  const totalPackagesPL = data.totalPackages || plItems.reduce((sum, item) => sum + (item.packagesCount || 0), 0) || 1;
+  const totalNetPL = data.totalNetWeight || plItems.reduce((sum, item) => sum + (item.netWeight || 0), 0);
+  const totalGrossPL = data.totalGrossWeight || plItems.reduce((sum, item) => sum + (item.grossWeight || 0), 0);
+  const totalCbmPL = data.totalCbm || plItems.reduce((sum, item) => sum + (item.cbm || 0), 0);
 
   // Mouse Drag Events using window events with useRef to prevent closures
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -348,10 +354,10 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((item, idx) => (
+                  {ciItems.map((item, idx) => (
                     <tr key={idx}>
                       {idx === 0 && (
-                        <td rowSpan={data.items.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle' }}>
+                        <td rowSpan={ciItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle' }}>
                           {data.shippingMarks || 'N/M'}
                         </td>
                       )}
@@ -361,16 +367,16 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       </td>
                       <td style={{ ...tdItemStyle, textAlign: 'right' }}>{Number(item.qty).toLocaleString()} {item.unit}</td>
                       <td style={{ ...tdItemStyle, textAlign: 'right' }}>${Number(item.unitPrice).toFixed(2)}</td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 'bold' }}>${Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 'bold' }}>${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
                   {/* CI Total row */}
                   <tr style={{ fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
                     <td style={{ ...tdItemStyle, textAlign: 'center' }}>TOTAL AMOUNT</td>
                     <td style={tdItemStyle}></td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalQty.toLocaleString()}</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalQtyCI.toLocaleString()}</td>
                     <td style={tdItemStyle}></td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '12px' }}>${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '12px' }}>${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 </tbody>
               </table>
@@ -388,10 +394,10 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((item, idx) => (
+                  {plItems.map((item, idx) => (
                     <tr key={idx}>
                       {idx === 0 && (
-                        <td rowSpan={data.items.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 6px' }}>
+                        <td rowSpan={plItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 6px' }}>
                           {data.shippingMarks || 'N/M'}
                         </td>
                       )}
@@ -418,10 +424,10 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   <tr style={{ fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
                     <td style={{ ...tdItemStyle, textAlign: 'center' }}>TOTAL</td>
                     <td style={tdItemStyle}></td>
-                    <td style={{ ...tdItemStyle, textAlign: 'center' }}>{totalPackages} PLT</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalNet.toLocaleString()} KGS</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalGross.toLocaleString()} KGS</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{Number(totalCbm).toFixed(3)} CBM</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'center' }}>{totalPackagesPL} PLT</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalNetPL.toLocaleString()} KGS</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalGrossPL.toLocaleString()} KGS</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{Number(totalCbmPL).toFixed(3)} CBM</td>
                   </tr>
                 </tbody>
               </table>
@@ -432,7 +438,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               <div style={{ marginTop: '10px', border: '1px solid #000', padding: '8px', fontSize: '10px' }}>
                 <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED</div>
                 <div style={{ color: '#334155' }}>
-                  {data.items.map(it => `${it.name}: ${it.hsCode || 'N/A'}`).join(' | ')}
+                  {ciItems.map(it => `${it.name}: ${it.hsCode || 'N/A'}`).join(' | ')}
                 </div>
               </div>
             )}

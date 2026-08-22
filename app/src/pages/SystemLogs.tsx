@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.338',
+    version: 'v2.8.338',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Commercial Invoice 품목 데이터 수주정보 기반 연동 및 패킹 팔레트 중복 출력 제거',
+    content: '• Commercial Invoice(CI)는 수주 품목 정보(발주 품목 목록)를 기준으로 통합 수량/단가/금액을 출력하도록 개편하여 동일 제품이 패킹 팔레트 개수만큼 반복 출력되던 현상 해결\n• Packing List(PL)는 기존과 같이 실제 컨테이너 패킹 내역을 정확하게 유지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.337',
     version: 'v2.8.337',
     date: '2026-08-22',

@@ -10853,44 +10853,52 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
 
                   exportExcelRef.current = () => {
-                    const itemsPayload = orderItems.map(it => {
+                    const ciItemsPayload = (orderItems || []).map(it => {
                       const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
-                      
-                      // Match container item specs if packing list exists
-                      let itemNetWeight = matchedProd?.palletWeight || 0;
-                      let itemGrossWeight = matchedProd?.palletGrossWeight || 0;
-                      let itemCbm = 0.5;
-                      let itemPkgCount = it.qty;
-                      let itemPkgType = matchedProd?.packageType || 'Pallet';
-
-                      if (basicForm.packingList?.containers) {
-                        basicForm.packingList.containers.forEach((c: any) => {
-                          (c.items || []).forEach((plIt: any) => {
-                            if (plIt.description?.includes(it.name) || plIt.pkgNo?.includes(it.itemId)) {
-                              itemNetWeight = Number(plIt.netWeight) || 0;
-                              itemGrossWeight = Number(plIt.grossWeight) || 0;
-                              itemCbm = Number(plIt.cbm) || 0;
-                              itemPkgCount = Number(plIt.pkg) || 0;
-                              itemPkgType = plIt.packageType || 'Pallet';
-                            }
-                          });
-                        });
-                      }
-
                       return {
                         name: it.name || '',
-                        qty: it.qty || 0,
-                        unit: it.unit || 'kg',
-                        unitPrice: it.unitPrice || 0,
-                        amount: it.amount || 0,
+                        qty: Number(it.qty) || 0,
+                        unit: it.unit || 'EA',
+                        unitPrice: Number(it.unitPrice) || 0,
+                        amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
                         hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
-                        netWeight: itemNetWeight,
-                        grossWeight: itemGrossWeight,
-                        cbm: itemCbm,
-                        packageType: itemPkgType,
-                        packagesCount: itemPkgCount
+                        netWeight: 0,
+                        grossWeight: 0,
+                        cbm: 0,
+                        packageType: 'PL',
+                        packagesCount: 1
                       };
                     });
+
+                    const plItemsPayload = (() => {
+                      if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
+                        const allItems: any[] = [];
+                        basicForm.packingList.containers.forEach((c: any) => {
+                          (c.items || []).forEach((it: any) => {
+                            const matchedPO = (orderItems || []).find((oi: any) => 
+                              (it.itemCode && oi.productCode === it.itemCode) ||
+                              (oi.name && it.description && it.description.includes(oi.name)) ||
+                              (oi.productCode && it.description && it.description.includes(oi.productCode))
+                            );
+                            allItems.push({
+                              name: it.description || it.itemName || matchedPO?.name || '',
+                              qty: Number(it.qty) || 0,
+                              unit: it.unit || matchedPO?.unit || 'EA',
+                              unitPrice: matchedPO?.unitPrice || 0,
+                              amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
+                              hsCode: it.hsCode || matchedPO?.hsCode || '',
+                              netWeight: Number(it.netWeight) || 0,
+                              grossWeight: Number(it.grossWeight) || 0,
+                              cbm: Number(it.cbm) || 0,
+                              packageType: it.packageType || 'Pallet',
+                              packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
+                            });
+                          });
+                        });
+                        if (allItems.length > 0) return allItems;
+                      }
+                      return ciItemsPayload;
+                    })();
 
                     const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
                     const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
@@ -10917,7 +10925,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       deliveryTerms: basicForm.incoterms,
                       shippingMarks: formattedMarkText || 'N/M',
                       customShipperText: customShipperVal,
-                      items: itemsPayload,
+                      items: plItemsPayload,
+                      ciItems: ciItemsPayload,
+                      plItems: plItemsPayload,
                       totalPackages: pkCount,
                       totalNetWeight: plNet,
                       totalGrossWeight: plGross,
@@ -13418,7 +13428,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const palletNoText = totalPkgCount > 1 ? `PALLET NO. : 1-${totalPkgCount} / ${totalPkgCount}` : `PALLET NO. : 1 / 1`;
         const shippingMarkText = `${shapeSymbol}\n${commonShippingMark.company || 'YSACC'}\n${commonShippingMark.port || order.portOfDischarge || ''}, ${commonShippingMark.country || order.destinationCountry || ''}\n${palletNoText}\n${commonShippingMark.origin || 'MADE IN KOREA'}`;
 
-        const previewItems = (() => {
+        const ciItemsList = (orderItems || []).map(it => {
+          const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+          return {
+            name: it.name || '',
+            qty: Number(it.qty) || 0,
+            unit: it.unit || 'EA',
+            unitPrice: Number(it.unitPrice) || 0,
+            amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+            hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
+            netWeight: 0,
+            grossWeight: 0,
+            cbm: 0,
+            packageType: 'PL',
+            packagesCount: 1
+          };
+        });
+
+        const plItemsList = (() => {
           if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
             const allItems: any[] = [];
             basicForm.packingList.containers.forEach((c: any) => {
@@ -13439,29 +13466,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   grossWeight: Number(it.grossWeight) || 0,
                   cbm: Number(it.cbm) || 0,
                   packageType: it.packageType || 'Pallet',
-                  packagesCount: Number(it.pkg) || 0
+                  packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
                 });
               });
             });
             if (allItems.length > 0) return allItems;
           }
-
-          return orderItems.map(it => {
-            const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
-            return {
-              name: it.name || '',
-              qty: it.qty || 0,
-              unit: it.unit || 'EA',
-              unitPrice: it.unitPrice || 0,
-              amount: it.amount || 0,
-              hsCode: it.hsCode || matchedProd?.hsCode || '',
-              netWeight: matchedProd?.palletWeight || 0,
-              grossWeight: matchedProd?.palletGrossWeight || 0,
-              cbm: 0.5,
-              packageType: matchedProd?.packageType || 'Pallet',
-              packagesCount: 1
-            };
-          });
+          return ciItemsList;
         })();
 
         return (
@@ -13488,7 +13499,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               deliveryTerms: basicForm.incoterms,
               shippingMarks: shippingMarkText,
               customShipperText: basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany),
-              items: previewItems,
+              items: plItemsList,
+              ciItems: ciItemsList,
+              plItems: plItemsList,
               totalPackages: totalPkgCount
             }}
           />
