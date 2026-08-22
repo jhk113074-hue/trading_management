@@ -11052,10 +11052,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   });
                 }
 
+                const shapeSymbol = commonShippingMark.shape === 'triangle' ? '△' : commonShippingMark.shape === 'square' ? '□' : commonShippingMark.shape === 'circle' ? '○' : '◇';
                 const compMark = commonShippingMark.company || 'YSACC';
-                const portCountryMark = (commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '');
+                const portCountryMark = [commonShippingMark.port || order.portOfDischarge || '', commonShippingMark.country || order.destinationCountry || ''].filter(Boolean).join(', ');
+                const palletNoText = pkCount > 1 ? `PALLET NO. : 1-${pkCount} / ${pkCount}` : `PALLET NO. : 1 / 1`;
                 const originMark = commonShippingMark.origin || 'MADE IN KOREA';
-                const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
+                const formattedMarkText = `${shapeSymbol}\n${compMark}\n${portCountryMark}\n${palletNoText}\n${originMark}`;
 
                 const cleanCiName = (rawName: string) => {
                   return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();

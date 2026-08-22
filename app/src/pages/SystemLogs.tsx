@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.359',
+    version: 'v2.8.359',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Excel CI/PL 쉬핑마크(Shipping Mark) 최신 포맷(도형기호, 회사명, 항구, PALLET NO, 원산지) 완벽 반영',
+    content: '• Excel 내보내기 시 Shipping Mark 영역에 설정된 도형 기호(◇, ○, □, △), 바이어/회사명, 도착항/국가, 포장 개수 기반 PALLET NO(예: PALLET NO. : 1-39 / 39), MADE IN KOREA가 온전히 포함되도록 연동 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.358',
     version: 'v2.8.358',
     date: '2026-08-22',
