@@ -4517,22 +4517,23 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
+    const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
     const items = groupedSupplierItems[supplierName] || [];
-    const matchedSupplierObj = suppliers.find(s => 
+    const matchedSupplierObj = suppliersList.find((s: any) => 
       (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
       (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
       (s.name && supplierName.includes(s.name)) ||
       (supplierName && s.name && (s.name.includes(supplierName)))
     );
-    const primaryContact = matchedSupplierObj?.contacts?.find(c => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+    const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
     const toEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
 
     const ccFromContacts = (matchedSupplierObj?.contacts || [])
-      .filter(c => c.isCc && c.email)
-      .map(c => c.email!.trim());
+      .filter((c: any) => c.isCc && c.email)
+      .map((c: any) => c.email!.trim());
     const explicitCcList = (matchedSupplierObj?.defaultCcEmails || '')
       .split(',')
-      .map(x => x.trim())
+      .map((x: string) => x.trim())
       .filter(Boolean);
     const combinedSupplierCc = Array.from(new Set([...ccFromContacts, ...explicitCcList]));
     const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
