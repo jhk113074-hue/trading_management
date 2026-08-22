@@ -148,10 +148,11 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     ws.getCell('A6').alignment = { wrapText: true, vertical: 'top' };
 
     ws.mergeCells('E6:H6');
-    ws.getCell('E6').value = `Remarks\n${data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}`;
+    ws.getCell('E6').value = `Remarks\n${data.remarks || '"FREIGHT PREPAID"'}`;
     ws.getCell('E6').font = { name: 'Arial', size: 8.5 };
     ws.getCell('E6').alignment = { wrapText: true, vertical: 'top' };
-    ws.getRow(6).height = 30;
+    const remarkLines = (data.remarks || '').split('\n').length;
+    ws.getRow(6).height = Math.max(30, remarkLines * 12 + 10);
 
     // Row 7: Ports (A7:D7) vs Payment Terms (E7:H7)
     ws.mergeCells('A7:D7');
@@ -379,9 +380,12 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       // Container count line
       if (data.containerInfo) {
+        const cInfoFormatted = data.containerInfo.toUpperCase().startsWith('CONTAINER')
+          ? data.containerInfo
+          : `CONTAINER : ${data.containerInfo}`;
         ws.getRow(itemRowIdx).height = 16;
         ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-        ws.getCell(`A${itemRowIdx}`).value = data.containerInfo;
+        ws.getCell(`A${itemRowIdx}`).value = cInfoFormatted;
         ws.getCell(`A${itemRowIdx}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 9, bold: true };
         itemRowIdx++;
@@ -395,7 +399,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
         itemRowIdx++;
 
-        ws.getRow(itemRowIdx).height = 24;
+        const hsLines = (data.hsCodeSummary || '').split('\n').length;
+        ws.getRow(itemRowIdx).height = Math.max(20, hsLines * 13 + 4);
         ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
         ws.getCell(`A${itemRowIdx}`).value = data.hsCodeSummary;
         ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };

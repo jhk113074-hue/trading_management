@@ -543,7 +543,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                 </div>
                 {data.containerInfo && (
                   <div style={{ textAlign: 'right', fontWeight: 800, margin: '2px 0 6px 0', fontSize: '10px' }}>
-                    {data.containerInfo}
+                    {data.containerInfo.toUpperCase().startsWith('CONTAINER') ? data.containerInfo : `CONTAINER : ${data.containerInfo}`}
                   </div>
                 )}
                 

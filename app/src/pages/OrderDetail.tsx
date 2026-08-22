@@ -11205,8 +11205,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Remarks (특약사항/비고)</span>
-                            <input type="text" placeholder='예: "FREIGHT COLLECT" 또는 "FREIGHT PREPAID"' value={basicForm.remark} onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Remarks (특약사항/비고 / Certification)</span>
+                            <textarea 
+                              rows={2}
+                              placeholder='예: "FREIGHT COLLECT" 또는 WE HEREBY CERTIFY THAT... / *PO NO.: SCPO-012381-1' 
+                              value={basicForm.remark} 
+                              onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} 
+                              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }} 
+                            />
                           </div>
                         </div>
                       </div>

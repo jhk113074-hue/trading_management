@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.344',
+    version: 'v2.8.344',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Commercial Invoice 실무 서식 완전 일치화 (다줄 Certification Remarks, CONTAINER 프리픽스, Section A/B/C 가변 높이)',
+    content: '• Remarks 입력란 다줄(Textarea) 확장 및 Excel/미리보기 내 Certification 문구 자동 줄바꿈/동적 높이 지원\n• CONTAINER : {SPEC} 표준 접두어 자동 생성 및 Section A/B/C 규격 정밀 일치화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.343',
     version: 'v2.8.343',
     date: '2026-08-22',
