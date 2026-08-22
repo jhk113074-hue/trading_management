@@ -8574,7 +8574,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           {(() => {
                             const comp = commonShippingMark.company || 'YSACC';
                             const portCountry = `${commonShippingMark.port || ''}, ${commonShippingMark.country || ''}`;
-                            const pltNo = 'PALLET NO. : 1 / 5';
+                            let grandTotalPlt = 0;
+                            if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
+                              basicForm.packingList.containers.forEach((c: any) => {
+                                (c.items || []).forEach((cIt: any) => {
+                                  grandTotalPlt += Number(cIt.pkg) || 0;
+                                });
+                              });
+                            }
+                            if (grandTotalPlt === 0) grandTotalPlt = (order?.items || []).length || 5;
+                            const pltNo = `PALLET NO. : ${grandTotalPlt} / ${grandTotalPlt}`;
                             const origin = commonShippingMark.origin || 'MADE IN KOREA';
                             
                             let shapeSvg = null;
@@ -10671,7 +10680,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const shapeSymbol = commonShippingMark.shape === 'triangle' ? '△' : commonShippingMark.shape === 'square' ? '□' : commonShippingMark.shape === 'circle' ? '○' : '◇';
                 const compMark = commonShippingMark.company || 'YSACC';
                 const portCountryMark = [commonShippingMark.port || order.portOfDischarge || '', commonShippingMark.country || order.destinationCountry || ''].filter(Boolean).join(', ');
-                const palletNoText = pkCount > 0 ? `PALLET NO. : ${pkCount}` : '';
+                const palletNoText = pkCount > 0 ? `PALLET NO. : ${pkCount} / ${pkCount}` : '';
                 const originMark = commonShippingMark.origin || 'MADE IN KOREA';
                 const formattedMarkText = `${shapeSymbol}\n${compMark}\n${portCountryMark}\n${palletNoText}\n${originMark}`;
 
@@ -14140,7 +14149,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         }
         if (totalPkgCount === 0) totalPkgCount = (order.items || []).length || 1;
 
-        const palletNoText = totalPkgCount > 0 ? `PALLET NO. : ${totalPkgCount}` : '';
+        const palletNoText = totalPkgCount > 0 ? `PALLET NO. : ${totalPkgCount} / ${totalPkgCount}` : '';
         const shippingMarkText = `${shapeSymbol}\n${commonShippingMark.company || 'YSACC'}\n${commonShippingMark.port || order.portOfDischarge || ''}, ${commonShippingMark.country || order.destinationCountry || ''}\n${palletNoText}\n${commonShippingMark.origin || 'MADE IN KOREA'}`;
 
         const ciItemsList = (orderItems || []).map(it => {
