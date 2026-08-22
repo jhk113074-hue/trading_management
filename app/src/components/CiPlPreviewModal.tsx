@@ -15,6 +15,27 @@ export interface PreviewItem {
   isFreight?: boolean;
 }
 
+export interface ContainerItemData {
+  pkgNo?: string;
+  description?: string;
+  name?: string;
+  qty?: number | string;
+  netWeight?: number | string;
+  grossWeight?: number | string;
+  cbm?: number | string;
+  packageType?: string;
+  dimensions?: string;
+  manufacturer?: string;
+  _sharedWithPrev?: boolean;
+  _isMergedMember?: boolean;
+}
+
+export interface ContainerData {
+  containerNo?: string;
+  sealNo?: string;
+  items?: ContainerItemData[];
+}
+
 export interface CiPlPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -42,6 +63,7 @@ export interface CiPlPreviewModalProps {
     items: PreviewItem[];
     ciItems?: PreviewItem[];
     plItems?: PreviewItem[];
+    containers?: ContainerData[];
     totalPackages?: number;
     totalNetWeight?: number;
     totalGrossWeight?: number;
@@ -518,53 +540,88 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                 </tbody>
               </table>
             ) : (
-              // PACKING LIST ITEMS TABLE
+              // AUTHENTIC PACKING LIST ITEMS TABLE
               <table style={tableStyle}>
                 <thead>
                   <tr>
-                    <th style={{ ...thStyle, width: '18%' }}>Shipping Marks</th>
-                    <th style={{ ...thStyle, width: '36%' }}>Description of Goods</th>
-                    <th style={{ ...thStyle, width: '18%' }}>Quantity / Packages</th>
-                    <th style={{ ...thStyle, width: '10%' }}>Net Weight</th>
-                    <th style={{ ...thStyle, width: '10%' }}>Gross Weight</th>
-                    <th style={{ ...thStyle, width: '8%' }}>CBM</th>
+                    <th style={{ ...thStyle, width: '22%' }}>Shipping Marks</th>
+                    <th style={{ ...thStyle, width: '48%' }}>
+                      Description of Goods<br/>
+                      <span style={{ fontSize: '9px', fontWeight: 500 }}>Quantity / Number of Packages</span>
+                    </th>
+                    <th style={{ ...thStyle, width: '10%' }}>Net Weight<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(KGS)</span></th>
+                    <th style={{ ...thStyle, width: '10%' }}>Gross Weight<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(KGS)</span></th>
+                    <th style={{ ...thStyle, width: '10%' }}>Measurement<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(CBM)</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {plItems.map((item, idx) => (
-                    <tr key={idx}>
-                      {idx === 0 && (
-                        <td rowSpan={plItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px' }}>
-                          {data.shippingMarks || 'N/M'}
-                        </td>
-                      )}
-                      <td style={tdItemStyle}>
-                        <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'center' }}>
-                        {item.packagesCount && item.packagesCount > 0 
-                          ? `${item.packagesCount} ${item.packageType || 'Pallet'} (${Number(item.qty).toLocaleString()} ${item.unit || 'EA'})`
-                          : `(${Number(item.qty).toLocaleString()} ${item.unit || 'EA'})`}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
-                        {item.netWeight ? `${Number(item.netWeight).toLocaleString()} KGS` : '-'}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
-                        {item.grossWeight ? `${Number(item.grossWeight).toLocaleString()} KGS` : '-'}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
-                        {item.cbm ? `${Number(item.cbm).toFixed(3)} CBM` : '-'}
+                  {/* Top Intro Section if present */}
+                  {data.introText && (
+                    <tr>
+                      <td style={{ ...tdItemStyle, borderBottom: 'none' }}></td>
+                      <td colSpan={4} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa', whiteSpace: 'pre-line' }}>
+                        {data.introText}
                       </td>
                     </tr>
-                  ))}
+                  )}
+
+                  {(() => {
+                    const containersList = (data.containers && data.containers.length > 0)
+                      ? data.containers
+                      : [{ containerNo: '', sealNo: '', items: plItems.map((it, idx) => ({ pkgNo: String(idx + 1), description: it.name, netWeight: it.netWeight, grossWeight: it.grossWeight, cbm: it.cbm, qty: it.qty })) }];
+
+                    return containersList.map((cData, cIdx) => {
+                      const cItems = cData.items || [];
+                      if (cItems.length === 0) return null;
+
+                      let leftMarkText = '';
+                      if (cIdx === 0) {
+                        leftMarkText = `SHIPPING MARKS:\n${data.shippingMarks || 'N/M'}\n\nCONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
+                      } else {
+                        leftMarkText = `CONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
+                      }
+
+                      return cItems.map((it, itIdx) => {
+                        const pkgNum = it.pkgNo || String(itIdx + 1);
+                        const cleanName = cleanCiName(it.description || (it as any).name || '');
+                        const netW = Number(it.netWeight) || 0;
+                        const grossW = Number(it.grossWeight) || 0;
+                        const cbm = Number(it.cbm) || 0;
+                        const weightSuffix = netW > 0 ? `-${netW.toLocaleString()}KG` : '';
+                        const descText = `P#${pkgNum} ${cleanName}${weightSuffix}`;
+
+                        return (
+                          <tr key={`${cIdx}-${itIdx}`}>
+                            {itIdx === 0 && (
+                              <td rowSpan={cItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                                {leftMarkText.trim()}
+                              </td>
+                            )}
+                            <td style={{ ...tdItemStyle, fontWeight: 700 }}>
+                              {descText}
+                            </td>
+                            <td style={{ ...tdItemStyle, textAlign: 'right' }}>
+                              {netW > 0 ? netW.toLocaleString() : '-'}
+                            </td>
+                            <td style={{ ...tdItemStyle, textAlign: 'right' }}>
+                              {grossW > 0 ? grossW.toLocaleString() : '-'}
+                            </td>
+                            <td style={{ ...tdItemStyle, textAlign: 'right' }}>
+                              {cbm > 0 ? cbm.toFixed(2) : '-'}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    });
+                  })()}
+
                   {/* PL Total row */}
                   <tr style={{ fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-                    <td style={{ ...tdItemStyle, textAlign: 'center' }}>TOTAL</td>
-                    <td style={tdItemStyle}></td>
-                    <td style={{ ...tdItemStyle, textAlign: 'center' }}>{totalPackagesPL} PLT</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalNetPL.toLocaleString()} KGS</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{totalGrossPL.toLocaleString()} KGS</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right' }}>{Number(totalCbmPL).toFixed(3)} CBM</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }}>TOTAL</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }}>{totalPackagesPL} GT</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalNetPL.toLocaleString()} KGS</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalGrossPL.toLocaleString()} KGS</td>
+                    <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{Number(totalCbmPL).toFixed(2)} CBM</td>
                   </tr>
                 </tbody>
               </table>

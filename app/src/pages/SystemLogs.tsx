@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.362',
+    version: 'v2.8.362',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '패킹리스트(Packing List) 정식 규격 서식(컨테이너별 팔레트 상세/서명/집계) 완벽 구축',
+    content: '• 요청하신 공식 Packing List 양식에 맞춰 [Shipping Marks | Description of Goods & Quantity / Packages | Net Weight (KGS) | Gross Weight (KGS) | Measurement (CBM)] 5열 구조 구축\\n• 컨테이너별 좌측 셀(Shipping Mark / Container No / Seal No) 병합 및 각 행별 `P#1 JP-30-800KG` 패키지 상세 내역, Total GT / KGS / CBM 집계 완벽 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.361',
     version: 'v2.8.361',
     date: '2026-08-22',
