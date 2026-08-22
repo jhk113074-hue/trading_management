@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.341',
+    version: 'v2.8.341',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'L/C Description 상단 안내문 자동 바인딩 및 CI 선적품목 기반 Section A) HS CODE 실시간 자동 연동',
+    content: '• 상단 L/C 상세 정보의 [물품 설명 (LC Description)]이 CI 하단의 [상단 품목 안내문 (Intro Text)]으로 실시간 자동 연동\n• [CI 선적 품목 편집 테이블]의 품명 및 HS CODE가 [Section A) HS CODE 요약 리스트]에 즉시 자동 생성되어 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.340',
     version: 'v2.8.340',
     date: '2026-08-22',

@@ -10939,6 +10939,33 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const totalCiAmount = currentCiItems.reduce((sum, it) => sum + (Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)) || 0), 0);
                 const totalCiQty = currentCiItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
 
+                // Auto-link LC Description to Intro Text
+                const effectiveIntroText = (customCiExtra.introText !== undefined && customCiExtra.introText !== '') 
+                  ? customCiExtra.introText 
+                  : (basicForm.lcDescription || '');
+
+                // Auto-generate Section A (HS Code summary) from CI items table above
+                const computedHsSummary = (() => {
+                  const distinct: { [name: string]: string } = {};
+                  currentCiItems.forEach(it => {
+                    if (!it.isFreight && it.hsCode) {
+                      const cleanTitle = (it.name || '').split('(')[0].replace(/^\[.*?\]\s*/, '').trim();
+                      if (cleanTitle && !distinct[cleanTitle]) {
+                        distinct[cleanTitle] = it.hsCode;
+                      }
+                    }
+                  });
+                  const entries = Object.entries(distinct);
+                  if (entries.length > 0) {
+                    return entries.map(([name, code], i) => `${i + 1}) ${name}: ${code}`).join('\n');
+                  }
+                  return '';
+                })();
+
+                const effectiveHsSummary = (customCiExtra.hsCodeSummary !== undefined && customCiExtra.hsCodeSummary !== '')
+                  ? customCiExtra.hsCodeSummary
+                  : computedHsSummary;
+
                 exportExcelRef.current = () => {
                   const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
                   const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
@@ -10972,12 +10999,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     totalNetWeight: plNet,
                     totalGrossWeight: plGross,
                     totalCbm: plCbm,
-                    introText: customCiExtra.introText,
+                    introText: effectiveIntroText,
                     containerInfo: customCiExtra.containerInfo,
                     vatTrn: customCiExtra.vatTrn,
                     manufacturerName: customCiExtra.manufacturerName,
                     manufacturerAddress: customCiExtra.manufacturerAddress,
-                    hsCodeSummary: customCiExtra.hsCodeSummary
+                    hsCodeSummary: effectiveHsSummary
                   });
                 };
 
@@ -11323,15 +11350,20 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>상단 품목 안내문 (Intro Text)</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>상단 품목 안내문 (Intro Text)</span>
+                            {basicForm.lcDescription && (
+                              <span style={{ fontSize: '10.5px', color: '#3b82f6', fontWeight: 600 }}>🔗 L/C Description 연동됨</span>
+                            )}
+                          </div>
                           <textarea
                             rows={2}
-                            value={customCiExtra.introText || ''}
+                            value={effectiveIntroText}
                             onChange={e => {
                               const val = e.target.value;
                               setCustomCiExtra(p => ({ ...p, introText: val }));
                             }}
-                            placeholder="예: INSULATION SKIN COVER, FIBERGLASS MAT... AS PER PROFORMA INVOICE NO..."
+                            placeholder="L/C 물품 설명(Description)에서 자동 바인딩되거나 직접 수정 가능합니다."
                             style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }}
                           />
                         </div>
@@ -11352,16 +11384,18 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S)</span>
+                          <span style={{ fontSize: '10.5px', color: '#0f766e', fontWeight: 600 }}>🔗 상단 CI 품목 및 HS CODE 자동 연동</span>
+                        </div>
                         <textarea
                           rows={2}
-                          value={customCiExtra.hsCodeSummary || ''}
+                          value={effectiveHsSummary}
                           onChange={e => {
                             const val = e.target.value;
                             setCustomCiExtra(p => ({ ...p, hsCodeSummary: val }));
                           }}
-                          placeholder="예: 1) INSULATION SKIN: 3923.29-00
-2) FIBERGLASS MAT: 7019.15-00"
+                          placeholder="상단 선적 품목 목록의 품명과 HS CODE를 바탕으로 자동 생성되며 직접 수정도 가능합니다."
                           style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }}
                         />
                       </div>
@@ -13807,12 +13841,23 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               ciItems: currentCiItems,
               plItems: plItemsList,
               totalPackages: totalPkgCount,
-              introText: customCiExtra.introText,
+              introText: (customCiExtra.introText !== undefined && customCiExtra.introText !== '') ? customCiExtra.introText : (basicForm.lcDescription || ''),
               containerInfo: customCiExtra.containerInfo,
               vatTrn: customCiExtra.vatTrn,
               manufacturerName: customCiExtra.manufacturerName,
               manufacturerAddress: customCiExtra.manufacturerAddress,
-              hsCodeSummary: customCiExtra.hsCodeSummary
+              hsCodeSummary: (customCiExtra.hsCodeSummary !== undefined && customCiExtra.hsCodeSummary !== '') ? customCiExtra.hsCodeSummary : (() => {
+                const distinct: { [name: string]: string } = {};
+                currentCiItems.forEach(it => {
+                  if (!it.isFreight && it.hsCode) {
+                    const cleanTitle = (it.name || '').split('(')[0].replace(/^\[.*?\]\s*/, '').trim();
+                    if (cleanTitle && !distinct[cleanTitle]) distinct[cleanTitle] = it.hsCode;
+                  }
+                });
+                const entries = Object.entries(distinct);
+                if (entries.length > 0) return entries.map(([name, code], i) => `${i + 1}) ${name}: ${code}`).join('\n');
+                return '';
+              })()
             }}
           />
         );
