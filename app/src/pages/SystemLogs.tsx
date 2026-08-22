@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.324',
+    version: 'v2.8.324',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹 및 컨테이너 로딩 플랜 Step 1/Step 2 이원화 구조 완전 통합 및 단일화 완료',
+    content: '• 기존 2단계(Step 1 제품별 팔레트화 설정 + Step 2 컨테이너 적재)로 분리되어 있던 복잡한 화면 구조를 [📦 컨테이너 로딩 플랜 및 패킹리스트] 단일 통합 테이블 구조로 전격 일원화\n• 불필요한 별도 설정 테이블을 제거하고, 컨테이너 패킹리스트 테이블 내에서 수량, 포장방식(Pallet/단품 등), 규격(WxLxH), 제조사, 중량/CBM, 분할/합치기/복사/삭제를 즉시 원스톱으로 처리할 수 있도록 최적화\n• [⚡ 제품별 1줄 요약 배정], [📋 1장씩 개별 전개 배정], [🔗 동일 품목 합치기], [✂️ 1장씩 분할] 등 모든 패킹 유틸리티 완벽 연동 유지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.323',
     version: 'v2.8.323',
     date: '2026-08-22',
