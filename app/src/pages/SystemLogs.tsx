@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.353',
+    version: 'v2.8.353',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'CI 선적 품목 포워딩 운송비 기본 자동 포함 및 자유 수정 지원',
+    content: '• 포워딩/운송사 & 운송비에 등록된 운송사명 및 발주금액(USD)을 기반으로 CI 품목 목록에 운송비 항목(CIF CHARGES)을 기본 자동 표시\n• 운임추가 버튼 제거 및 운송비 품명·단위·금액 자유 수정 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.352',
     version: 'v2.8.352',
     date: '2026-08-22',

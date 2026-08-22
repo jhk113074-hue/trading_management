@@ -1272,8 +1272,14 @@ export const OrderDetail: React.FC = () => {
 
   useEffect(() => {
     if (!products || products.length === 0) return;
+    const forwarderTotalUsd = forwardersList.reduce((sum, fw) => {
+      return sum + (parseFloat(fw.budgetAmountUsd as any) || Number(fw.amountUsd) || (fw.freightCurrency === 'USD' ? Number(fw.freightAmount) : 0) || 0);
+    }, 0);
+    const forwarderName = forwardersList.map(fw => fw.name).filter(Boolean).join(', ') || 'CONTAINER';
+    const defaultFreightTitle = `CIF CHARGES FOR ${forwarderName}`;
+
     setCustomCiItems(prev => {
-      const baseList = (prev && prev.length > 0)
+      let baseList = (prev && prev.length > 0)
         ? prev
         : ((orderItems && orderItems.length > 0 ? orderItems : (order?.items || [])).map((it: any) => ({
             name: (it.name || '').replace(/^\[.*?\]\s*/, '').trim(),
@@ -1284,6 +1290,22 @@ export const OrderDetail: React.FC = () => {
             amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
             isFreight: false
           })));
+
+      const hasFreight = baseList.some(it => it.isFreight);
+      if (!hasFreight) {
+        baseList = [
+          ...baseList,
+          {
+            name: defaultFreightTitle,
+            hsCode: '',
+            qty: 1,
+            unit: 'LOT',
+            unitPrice: forwarderTotalUsd,
+            amount: forwarderTotalUsd,
+            isFreight: true
+          }
+        ];
+      }
 
       let hasChanges = false;
       const updated = baseList.map(it => {
@@ -1296,7 +1318,7 @@ export const OrderDetail: React.FC = () => {
         }
         return it;
       });
-      return (hasChanges || prev.length === 0) ? updated : prev;
+      return (hasChanges || prev.length === 0 || !hasFreight) ? updated : prev;
     });
 
     setOrderItems(prev => {
@@ -1314,7 +1336,7 @@ export const OrderDetail: React.FC = () => {
       });
       return hasChanges ? updated : prev;
     });
-  }, [products, basicForm.customer, orderItems, order]);
+  }, [products, basicForm.customer, orderItems, order, forwardersList]);
 
   const [editingFreight, setEditingFreight] = useState<{ idx: number; value: string } | null>(null);
 
@@ -11039,9 +11061,31 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
                 };
 
-                const currentCiItems = customCiItems && customCiItems.length > 0
-                  ? customCiItems
-                  : (orderItems || []).map(it => {
+                const forwarderTotalUsd = forwardersList.reduce((sum, fw) => {
+                  return sum + (parseFloat(fw.budgetAmountUsd as any) || Number(fw.amountUsd) || (fw.freightCurrency === 'USD' ? Number(fw.freightAmount) : 0) || 0);
+                }, 0);
+                const forwarderName = forwardersList.map(fw => fw.name).filter(Boolean).join(', ') || 'CONTAINER';
+                const defaultFreightTitle = `CIF CHARGES FOR ${forwarderName}`;
+                const defaultFreightItem = {
+                  name: defaultFreightTitle,
+                  hsCode: '',
+                  qty: 1,
+                  unit: 'LOT',
+                  unitPrice: forwarderTotalUsd,
+                  amount: forwarderTotalUsd,
+                  isFreight: true
+                };
+
+                const currentCiItems = (() => {
+                  if (customCiItems && customCiItems.length > 0) {
+                    const hasFreight = customCiItems.some(it => it.isFreight);
+                    if (!hasFreight) {
+                      return [...customCiItems, defaultFreightItem];
+                    }
+                    return customCiItems;
+                  }
+                  return [
+                    ...(orderItems || []).map(it => {
                       return {
                         name: cleanCiName(it.name || ''),
                         hsCode: getProductHsCode(it, products, basicForm.customer),
@@ -11051,7 +11095,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
                         isFreight: false
                       };
-                    });
+                    }),
+                    defaultFreightItem
+                  ];
+                })();
 
                 const plItemsPayload = (() => {
                   if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
@@ -11457,21 +11504,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           <button
                             type="button"
                             onClick={() => {
-                              setCustomCiItems(prev => [
-                                ...prev,
-                                { name: 'CIF CHARGES FOR 20GP', hsCode: '', qty: 1, unit: 'LOT', unitPrice: 5700, amount: 5700, isFreight: true }
-                              ]);
-                            }}
-                            style={{ padding: '4px 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            ➕ 운임(Freight/CIF) 추가
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm('수주 품목 목록 데이터를 기준으로 CI 품목 목록을 다시 초기화하시겠습니까?')) {
-                                setCustomCiItems((orderItems || []).map(it => {
-                                  return {
+                              if (confirm('수주 품목 및 포워딩 운송비 데이터를 기준으로 CI 품목 및 운임 목록을 다시 초기화하시겠습니까?')) {
+                                setCustomCiItems([
+                                  ...(orderItems || []).map(it => ({
                                     name: cleanCiName(it.name || ''),
                                     hsCode: getProductHsCode(it, products, basicForm.customer),
                                     qty: Number(it.qty) || 0,
@@ -11479,13 +11514,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     unitPrice: Number(it.unitPrice) || 0,
                                     amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
                                     isFreight: false
-                                  };
-                                }));
+                                  })),
+                                  defaultFreightItem
+                                ]);
                               }
                             }}
                             style={{ padding: '4px 10px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                           >
-                            🔄 수주 품목에서 초기화
+                            🔄 수주 품목 & 운송비 초기화
                           </button>
                         </div>
                       </div>
