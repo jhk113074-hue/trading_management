@@ -21,6 +21,8 @@ export interface MyCompany {
   bankForeignName?: string;
   bankKrwInfo?: string;
   bankForeignInfo?: string;
+  letterheadUrl?: string;
+  letterheadName?: string;
 
   // ── 세금계산서 필수 항목 보강 (옵션 필드, 기존 문서 영향 없음) ──
   representative?: string; // 대표자 성명
@@ -259,7 +261,7 @@ export const MyCompanySettings: React.FC = () => {
 
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: 'bizLicense' | 'bankKrw' | 'bankForeign') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: 'bizLicense' | 'bankKrw' | 'bankForeign' | 'letterhead') => {
     if (!e.target.files || !e.target.files[0] || !editForm) return;
     const file = e.target.files[0];
     const storageRef = ref(storage, `companies/YSACC/my_companies_files/${editForm.id}/${fieldKey}_${Date.now()}_${file.name}`);
@@ -287,7 +289,7 @@ export const MyCompanySettings: React.FC = () => {
     }
   };
 
-  const handleFileDelete = async (fieldKey: 'bizLicense' | 'bankKrw' | 'bankForeign') => {
+  const handleFileDelete = async (fieldKey: 'bizLicense' | 'bankKrw' | 'bankForeign' | 'letterhead') => {
     if (!editForm) return;
     if (!window.confirm('기존 첨부파일을 삭제하시겠습니까?')) return;
     
@@ -324,6 +326,8 @@ export const MyCompanySettings: React.FC = () => {
         bankForeignName: editForm.bankForeignName || '',
         bankKrwInfo: editForm.bankKrwInfo || '',
         bankForeignInfo: editForm.bankForeignInfo || '',
+        letterheadUrl: editForm.letterheadUrl || '',
+        letterheadName: editForm.letterheadName || '',
         representative: editForm.representative || '',
         email: editForm.email || '',
         bizType: editForm.bizType || '',
@@ -565,6 +569,32 @@ export const MyCompanySettings: React.FC = () => {
                           style={{ width: '180px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '12px', color: '#1e293b', boxSizing: 'border-box', outline: 'none', marginTop: '4px' }}
                         />
                       </div>
+
+                      {/* 레터헤드 (Letter Head) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 750, color: '#1e3a8a' }}>레터헤드 (Letter Head)</span>
+                          {editForm.letterheadUrl && (
+                            <button onClick={() => handleFileDelete('letterhead')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>🗑️</button>
+                          )}
+                        </div>
+                        {editForm.letterheadUrl ? (
+                          <div onClick={() => setModelessFile({ name: editForm.letterheadName || '레터헤드', url: editForm.letterheadUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #93c5fd', borderRadius: '8px', overflow: 'hidden', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                            {renderFileThumbnail(editForm.letterheadUrl, editForm.letterheadName || '레터헤드')}
+                          </div>
+                        ) : (
+                          <div>
+                            <input type="file" accept="image/*,.pdf" id={`letterhead_${comp.id}`} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'letterhead')} />
+                            <label htmlFor={`letterhead_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed #93c5fd', borderRadius: '8px', background: '#eff6ff', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#2563eb', cursor: 'pointer', flexDirection: 'column', gap: '4px', fontWeight: 600 }}>
+                              <span>📑</span>
+                              <span>{uploadingField === 'letterhead' ? '업로드 중...' : '레터헤드 등록'}</span>
+                            </label>
+                          </div>
+                        )}
+                        <div style={{ width: '180px', fontSize: '11px', color: '#64748b', textAlign: 'center', marginTop: '2px' }}>
+                          CI/PL/PI 상단 공식 서식에 사용
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -675,6 +705,22 @@ export const MyCompanySettings: React.FC = () => {
                         {comp.bankForeignInfo && (
                           <div style={{ width: '180px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px', fontSize: '12px', color: '#1e293b', fontWeight: 700, boxSizing: 'border-box', wordBreak: 'break-all', textAlign: 'center' }}>
                             {comp.bankForeignInfo}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 레터헤드 (Letter Head) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a', letterSpacing: '0.02em', textTransform: 'uppercase' }}>레터헤드 (Letter Head)</div>
+                        {comp.letterheadUrl ? (
+                          <a href={comp.letterheadUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.letterheadName || '레터헤드', url: comp.letterheadUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                            <div style={{ width: '180px', height: '130px', border: '1px solid #93c5fd', borderRadius: '4px', overflow: 'hidden', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {renderFileThumbnail(comp.letterheadUrl, comp.letterheadName || '레터헤드')}
+                            </div>
+                          </a>
+                        ) : (
+                          <div style={{ width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '4px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#94a3b8' }}>
+                            등록 안됨
                           </div>
                         )}
                       </div>

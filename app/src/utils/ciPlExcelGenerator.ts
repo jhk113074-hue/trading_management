@@ -17,6 +17,7 @@ export interface ExcelItem {
 }
 
 export interface CiPlData {
+  letterheadUrl?: string;
   bottomFreeText?: string;
   orderId: string;
   piNumber: string;
@@ -69,7 +70,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
   const headerAddress = '111-201, 76, WOLMYEONG-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28569, REPUBLIC OF KOREA\nTEL: +82 70 4141 2927 / FAX: +82 303 3444 1130';
 
   // Helper function to build a styled sheet
-  const buildSheet = (sheetName: string, isInvoice: boolean) => {
+  const buildSheet = async (sheetName: string, isInvoice: boolean) => {
     const ws = workbook.addWorksheet(sheetName);
 
     ws.pageSetup.paperSize = 9; // A4
@@ -95,19 +96,47 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       { width: 8 },  // H: Extra
     ];
 
-    // Row 1-2: Letterhead Header
-    ws.mergeCells('A1:H1');
-    const headerNameCell = ws.getCell('A1');
-    headerNameCell.value = companyName;
-    headerNameCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF000000' } };
-    headerNameCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    // Row 1-4: Letterhead Image (or fallback text)
+    let imageAdded = false;
+    const logoUrl = data.letterheadUrl || (isYS ? '/letterhead_ys.png' : '/letterhead_ysacc.png');
+    if (logoUrl) {
+      try {
+        const response = await fetch(logoUrl);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const imageId = workbook.addImage({
+            buffer: arrayBuffer,
+            extension: 'png',
+          });
+          ws.addImage(imageId, 'A1:H4');
+          ws.getRow(1).height = 20;
+          ws.getRow(2).height = 20;
+          ws.getRow(3).height = 20;
+          ws.getRow(4).height = 25;
+          ws.mergeCells('A4:H4');
+          ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+          imageAdded = true;
+        }
+      } catch (err) {
+        console.warn('Failed to load letterhead image for Excel:', err);
+      }
+    }
 
-    ws.mergeCells('A2:H2');
-    const headerAddrCell = ws.getCell('A2');
-    headerAddrCell.value = headerAddress;
-    headerAddrCell.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
-    headerAddrCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-    ws.getRow(2).height = 24;
+    if (!imageAdded) {
+      // Fallback text header
+      ws.mergeCells('A1:H1');
+      const headerNameCell = ws.getCell('A1');
+      headerNameCell.value = companyName;
+      headerNameCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF000000' } };
+      headerNameCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      ws.mergeCells('A2:H2');
+      const headerAddrCell = ws.getCell('A2');
+      headerAddrCell.value = headerAddress;
+      headerAddrCell.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+      headerAddrCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      ws.getRow(2).height = 24;
+    }
 
     // Row 3: Title
     ws.mergeCells('A3:H3');

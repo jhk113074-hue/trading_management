@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.349',
+    version: 'v2.8.349',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '자사 정보관리 레터헤드(Letter Head) 등록 기능 추가 및 CI / PL 상단 서식 자동 연동',
+    content: '• 자사 정보관리(영성ACC / YSACC)에 레터헤드(Letter Head) 이미지 파일 업로드/관리 기능 추가\n• Commercial Invoice(CI) 및 Packing List(PL) 상단에 등록된 자사 공식 레터헤드 이미지를 자동 바인딩하여 엑셀 및 미리보기에 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.348',
     version: 'v2.8.348',
     date: '2026-08-22',
