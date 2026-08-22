@@ -14596,6 +14596,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               letterheadUrl,
               includeLetterhead,
               piNumber: basicForm.piNumber,
+              invoiceNo: basicForm.ciNumber || basicForm.piNumber || order.id,
               invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
               customerName: basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer),
               customerAddress: '',

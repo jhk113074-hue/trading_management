@@ -510,15 +510,17 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
             {/* Items Grid */}
             {activeTab === 'CI' ? (
-              // COMMERCIAL INVOICE ITEMS TABLE
+              // COMMERCIAL INVOICE ITEMS TABLE (7 Columns Perfectly Synchronized with Excel)
               <table style={tableStyle}>
                 <thead>
                   <tr>
-                    <th style={{ ...thStyle, width: '18%' }}>Shipping Mark</th>
-                    <th style={{ ...thStyle, width: '42%' }}>Description of Goods</th>
-                    <th style={{ ...thStyle, width: '14%' }}>Quantity<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(PCS)</span></th>
-                    <th style={{ ...thStyle, width: '13%' }}>Unit Price<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(USD)</span></th>
-                    <th style={{ ...thStyle, width: '13%' }}>Amount<br/><span style={{ fontSize: '9px', fontWeight: 500 }}>(USD)</span></th>
+                    <th style={{ ...thStyle, width: '15%' }}>Shipping Mark</th>
+                    <th style={{ ...thStyle, width: '35%' }}>Description of Goods</th>
+                    <th style={{ ...thStyle, width: '14%' }}>HS Code</th>
+                    <th style={{ ...thStyle, width: '9%' }}>Quantity</th>
+                    <th style={{ ...thStyle, width: '7%' }}>Unit</th>
+                    <th style={{ ...thStyle, width: '10%' }}>Unit Price ($)</th>
+                    <th style={{ ...thStyle, width: '10%' }}>Amount ($)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -528,7 +530,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       <td rowSpan={ciItems.length + 1} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px' }}>
                         {data.shippingMarks || 'N/M'}
                       </td>
-                      <td colSpan={4} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa' }}>
+                      <td colSpan={6} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa' }}>
                         {data.introText}
                       </td>
                     </tr>
@@ -543,15 +545,28 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       <td style={tdItemStyle}>
                         <div style={{ fontWeight: item.isFreight ? 800 : 700 }}>{item.name}</div>
                       </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>{Number(item.qty).toLocaleString()}</td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>US${Number(item.unitPrice).toFixed(2)}</td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 'bold' }}>US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td style={{ ...tdItemStyle, textAlign: 'center', fontSize: '9.5px', color: '#334155' }}>
+                        {item.isFreight ? '' : (item.hsCode || '-')}
+                      </td>
+                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
+                        {item.isFreight ? '' : Number(item.qty).toLocaleString()}
+                      </td>
+                      <td style={{ ...tdItemStyle, textAlign: 'center' }}>
+                        {item.isFreight ? '' : (item.unit || 'PCS')}
+                      </td>
+                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
+                        {item.isFreight ? '' : `US$${Number(item.unitPrice).toFixed(2)}`}
+                      </td>
+                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 'bold' }}>
+                        US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
                     </tr>
                   ))}
                   {/* CI Total row */}
-                  <tr style={{ fontWeight: 'bold' }}>
-                    <td style={{ ...tdItemStyle, textAlign: 'left', fontWeight: 900, paddingLeft: '8px' }} colSpan={2}>TOTAL AMOUNT</td>
+                  <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
+                    <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }} colSpan={3}>TOTAL AMOUNT</td>
                     <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalQtyCI.toLocaleString()}</td>
+                    <td style={tdItemStyle}></td>
                     <td style={tdItemStyle}></td>
                     <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '11px', fontWeight: 900 }}>US${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>

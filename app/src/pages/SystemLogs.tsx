@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.374',
+    version: 'v2.8.374',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'CI 인쇄 미리보기 화면과 생성된 Excel 서식 간 컬럼 및 데이터 100% 일치 동기화',
+    content: '• 미리보기 모달의 CI 테이블을 Excel 서식과 동일한 7개 컬럼(Shipping Mark, Description, HS Code, Quantity, Unit, Unit Price, Amount)으로 개편\\n• 인보이스 번호(Invoice No.)가 PI 번호로 대체 표시되던 현상을 수정하여 Excel과 1:1 완벽 일치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.373',
     version: 'v2.8.373',
     date: '2026-08-22',
