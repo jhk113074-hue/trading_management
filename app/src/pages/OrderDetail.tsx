@@ -9922,8 +9922,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         const portVal = commonShippingMark.port;
                         const countryVal = commonShippingMark.country;
                         const originVal = commonShippingMark.origin;
-                        const startVal = 1;
-                        const totalVal = packingItemsList.length;
 
                         const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
                           const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
