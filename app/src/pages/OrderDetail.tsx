@@ -228,6 +228,27 @@ export const OrderDetail: React.FC = () => {
   const isEditing = true;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [selectedPackingItems, setSelectedPackingItems] = useState<{ [containerIdx: number]: number[] }>({});
+
+  const togglePackingItemSelect = (containerIdx: number, itemIdx: number) => {
+    setSelectedPackingItems(prev => {
+      const cur = prev[containerIdx] || [];
+      const next = cur.includes(itemIdx) ? cur.filter(i => i !== itemIdx) : [...cur, itemIdx];
+      return { ...prev, [containerIdx]: next };
+    });
+  };
+
+  const toggleAllPackingItemsInContainer = (containerIdx: number, totalCount: number) => {
+    setSelectedPackingItems(prev => {
+      const cur = prev[containerIdx] || [];
+      if (cur.length === totalCount) {
+        return { ...prev, [containerIdx]: [] };
+      } else {
+        const all = Array.from({ length: totalCount }, (_, i) => i);
+        return { ...prev, [containerIdx]: all };
+      }
+    });
+  };
   const [katalkModalMsg, setKatalkModalMsg] = useState<string | null>(null);
   const [katalkModalSupplier, setKatalkModalSupplier] = useState<string>('');
   const [sentEmailSuppliers, setSentEmailSuppliers] = useState<Record<string, boolean>>({});
@@ -2639,41 +2660,78 @@ export const OrderDetail: React.FC = () => {
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
   };
 
-  const splitStep2Item = (containerIdx: number, itemIdx: number) => {
+  const splitStep2Item = (containerIdx: number, specificItemIdx?: number) => {
     const nextContainers = [...(basicForm.packingList?.containers || [])];
     if (!nextContainers[containerIdx]) return;
-    const items = [...(nextContainers[containerIdx].items || [])];
-    const target = items[itemIdx];
-    if (!target) return;
+    let items = [...(nextContainers[containerIdx].items || [])];
+    if (items.length === 0) return;
 
-    let count = parseInt(target.pkg, 10);
-    if (!count || count <= 1) {
-      count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
-    }
+    const selectedIndexes = specificItemIdx !== undefined 
+      ? [specificItemIdx] 
+      : (selectedPackingItems[containerIdx]?.length > 0 
+          ? [...selectedPackingItems[containerIdx]] 
+          : items.map((_, i) => i).filter(i => {
+              const count = parseInt(items[i].pkg, 10) || parseInt(calculatePkgFromPkgNo(items[i].pkgNo) || '1', 10);
+              return count > 1;
+            })
+        );
 
-    if (count <= 1) {
-      alert('⚠️ 단일 1개 패키지 항목은 더 이상 분할할 수 없습니다.');
+    if (selectedIndexes.length === 0) {
+      alert('분할할 항목을 체크박스로 선택하거나, 2개 이상 패키지를 가진 항목이 없습니다.');
       return;
     }
 
-    const singleQty = (parseFloat(target.qty) || 0) / count;
-    const singleNet = (parseFloat(target.netWeight) || 0) / count;
-    const singleGross = (parseFloat(target.grossWeight) || 0) / count;
-    const singleCbm = (parseFloat(target.cbm) || 0) / count;
+    selectedIndexes.sort((a, b) => b - a);
 
-    const splitRows: any[] = [];
-    for (let i = 0; i < count; i++) {
-      splitRows.push({
-        ...target,
-        pkg: '1',
-        qty: String(Math.round(singleQty * 100) / 100),
-        netWeight: String(Math.round(singleNet)),
-        grossWeight: String(Math.round(singleGross)),
-        cbm: String(singleCbm.toFixed(3))
-      });
+    let splitOccurred = false;
+    for (const itemIdx of selectedIndexes) {
+      const target = items[itemIdx];
+      if (!target) continue;
+
+      let count = parseInt(target.pkg, 10);
+      if (!count || count <= 1) {
+        count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
+      }
+
+      if (count <= 1) continue;
+
+      let chunkSize = 1;
+      if (count > 2) {
+        const input = window.prompt(`[${target.description || '품목'}]\n현재 총 ${count}개의 PKG입니다.\n몇 개 단위로 분할하시겠습니까?\n(예: 1 입력시 1개씩 ${count}줄로 분할, 10 입력시 10개씩 분할)`, '1');
+        if (input === null) continue;
+        chunkSize = Math.max(1, parseInt(input || '1', 10) || 1);
+      }
+
+      const totalQty = parseFloat(target.qty) || 0;
+      const totalNet = parseFloat(target.netWeight) || 0;
+      const totalGross = parseFloat(target.grossWeight) || 0;
+      const totalCbm = parseFloat(target.cbm) || 0;
+
+      const splitRows: any[] = [];
+      let remainingCount = count;
+
+      while (remainingCount > 0) {
+        const curChunk = Math.min(remainingCount, chunkSize);
+        const ratio = curChunk / count;
+        splitRows.push({
+          ...target,
+          pkg: String(curChunk),
+          qty: String(Math.round(totalQty * ratio * 100) / 100),
+          netWeight: String(Math.round(totalNet * ratio)),
+          grossWeight: String(Math.round(totalGross * ratio)),
+          cbm: String((totalCbm * ratio).toFixed(3))
+        });
+        remainingCount -= curChunk;
+      }
+
+      items.splice(itemIdx, 1, ...splitRows);
+      splitOccurred = true;
     }
 
-    items.splice(itemIdx, 1, ...splitRows);
+    if (!splitOccurred) {
+      alert('분할 가능한 (2개 이상) 항목이 없습니다.');
+      return;
+    }
 
     let curNo = 1;
     items.forEach((it: any) => {
@@ -2690,6 +2748,8 @@ export const OrderDetail: React.FC = () => {
 
     nextContainers[containerIdx].items = items;
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+    alert('✂️ 선택한 항목이 분할되었습니다.');
   };
 
   const mergeStep2Items = (containerIdx: number) => {
@@ -2698,6 +2758,62 @@ export const OrderDetail: React.FC = () => {
     const items = [...(nextContainers[containerIdx].items || [])];
     if (items.length <= 1) {
       alert('합칠 품목이 2개 이상 있어야 합니다.');
+      return;
+    }
+
+    const selectedIndexes = selectedPackingItems[containerIdx] || [];
+
+    if (selectedIndexes.length > 1) {
+      const sortedIdxs = [...selectedIndexes].sort((a, b) => a - b);
+      const selectedItems = sortedIdxs.map(idx => items[idx]);
+      const firstItem = selectedItems[0];
+
+      let totalPkg = 0;
+      let totalQty = 0;
+      let totalNet = 0;
+      let totalGross = 0;
+      let totalCbm = 0;
+
+      selectedItems.forEach(it => {
+        let p = parseInt(it.pkg, 10);
+        if (!p || p <= 0) p = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+        totalPkg += p;
+        totalQty += parseFloat(it.qty) || 0;
+        totalNet += parseFloat(it.netWeight) || 0;
+        totalGross += parseFloat(it.grossWeight) || 0;
+        totalCbm += parseFloat(it.cbm) || 0;
+      });
+
+      const mergedItem = {
+        ...firstItem,
+        pkg: String(totalPkg),
+        qty: String(Math.round(totalQty * 100) / 100),
+        netWeight: String(Math.round(totalNet)),
+        grossWeight: String(Math.round(totalGross)),
+        cbm: String(totalCbm.toFixed(3))
+      };
+
+      const remainingItems = items.filter((_, idx) => !selectedIndexes.includes(idx));
+      const insertAt = Math.min(...selectedIndexes);
+      remainingItems.splice(insertAt, 0, mergedItem);
+
+      let curNo = 1;
+      remainingItems.forEach((it: any) => {
+        let c = parseInt(it.pkg, 10);
+        if (!c || c <= 0) c = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+        if (c > 1) {
+          it.pkgNo = `${curNo}-${curNo + c - 1}`;
+          curNo += c;
+        } else {
+          it.pkgNo = String(curNo);
+          curNo++;
+        }
+      });
+
+      nextContainers[containerIdx].items = remainingItems;
+      setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+      setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+      alert(`🔗 선택된 ${selectedIndexes.length}개 항목이 1개 PKG(합계 ${totalPkg}개)로 합쳐졌습니다.`);
       return;
     }
 
@@ -2755,50 +2871,8 @@ export const OrderDetail: React.FC = () => {
 
     nextContainers[containerIdx].items = merged;
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
     alert('🔗 동일 품목들이 제품별 1줄 범위 형태로 합쳐졌습니다.');
-  };
-
-  const expandAllStep2Items = (containerIdx: number) => {
-    const nextContainers = [...(basicForm.packingList?.containers || [])];
-    if (!nextContainers[containerIdx]) return;
-    const items = [...(nextContainers[containerIdx].items || [])];
-    if (items.length === 0) return;
-
-    const expanded: any[] = [];
-    items.forEach((target: any) => {
-      let count = parseInt(target.pkg, 10);
-      if (!count || count <= 1) count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
-
-      if (count > 1) {
-        const singleQty = (parseFloat(target.qty) || 0) / count;
-        const singleNet = (parseFloat(target.netWeight) || 0) / count;
-        const singleGross = (parseFloat(target.grossWeight) || 0) / count;
-        const singleCbm = (parseFloat(target.cbm) || 0) / count;
-
-        for (let i = 0; i < count; i++) {
-          expanded.push({
-            ...target,
-            pkg: '1',
-            qty: String(Math.round(singleQty * 100) / 100),
-            netWeight: String(Math.round(singleNet)),
-            grossWeight: String(Math.round(singleGross)),
-            cbm: String(singleCbm.toFixed(3))
-          });
-        }
-      } else {
-        expanded.push({ ...target, pkg: '1' });
-      }
-    });
-
-    let curNo = 1;
-    expanded.forEach((it: any) => {
-      it.pkgNo = String(curNo);
-      curNo++;
-    });
-
-    nextContainers[containerIdx].items = expanded;
-    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-    alert('✂️ 모든 품목이 1장씩 개별 행으로 분할 전개되었습니다.');
   };
 
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
@@ -8928,24 +9002,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 <button
                                   type="button"
                                   disabled={!isEditing}
                                   onClick={() => mergeStep2Items(cIdx)}
-                                  title="동일 품목들을 1줄(범위)로 병합합니다"
-                                  style={{ padding: '4px 10px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                  title="선택된 항목 또는 동일 품목들을 1줄(범위)로 합칩니다"
+                                  style={{ padding: '4px 12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  🔗 동일 품목 합치기
+                                  🔗 PKG 합치기 {(selectedPackingItems[cIdx]?.length || 0) > 1 ? `(${selectedPackingItems[cIdx].length})` : ''}
                                 </button>
                                 <button
                                   type="button"
                                   disabled={!isEditing}
-                                  onClick={() => expandAllStep2Items(cIdx)}
-                                  title="모든 품목을 1장씩 개별 행으로 펼칩니다"
-                                  style={{ padding: '4px 10px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                  onClick={() => splitStep2Item(cIdx)}
+                                  title="선택된 항목 또는 패키지 수가 많은 항목을 분할합니다"
+                                  style={{ padding: '4px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  ✂️ 전체 1장씩 분할
+                                  ✂️ PKG 분할 {(selectedPackingItems[cIdx]?.length || 0) > 0 ? `(${selectedPackingItems[cIdx].length})` : ''}
                                 </button>
                                 <button
                                   type="button"
@@ -8989,12 +9063,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', background: '#fff', border: '1px solid var(--border-color)' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '2px solid var(--border-default)' }}>
+                                  <th style={{ padding: '6px 4px', textAlign: 'center', width: '36px' }}>
+                                    <input 
+                                      type="checkbox" 
+                                      disabled={!isEditing}
+                                      checked={(c.items || []).length > 0 && (selectedPackingItems[cIdx] || []).length === (c.items || []).length}
+                                      onChange={() => toggleAllPackingItemsInContainer(cIdx, (c.items || []).length)}
+                                      style={{ cursor: isEditing ? 'pointer' : 'not-allowed', width: '15px', height: '15px' }}
+                                    />
+                                  </th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '10%', whiteSpace: 'nowrap' }}>포장형태</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '13%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
@@ -9003,7 +9086,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               </thead>
                               <tbody>
                                 {(c.items || []).map((it: any, itIdx: number) => (
-                                  <tr key={itIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                  <tr key={itIdx} style={{ borderBottom: '1px solid var(--border-color)', background: (selectedPackingItems[cIdx] || []).includes(itIdx) ? '#eff6ff' : undefined }}>
+                                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                                      <input 
+                                        type="checkbox"
+                                        disabled={!isEditing}
+                                        checked={(selectedPackingItems[cIdx] || []).includes(itIdx)}
+                                        onChange={() => togglePackingItemSelect(cIdx, itIdx)}
+                                        style={{ cursor: isEditing ? 'pointer' : 'not-allowed', width: '15px', height: '15px' }}
+                                      />
+                                    </td>
                                     <td style={{ padding: '4px' }}>
                                       <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'center', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.pkgNo || ''} onChange={e => {
                                         const val = e.target.value;
@@ -9069,9 +9161,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                height: '28px',
+                                                height: '24px',
                                                 width: '24px',
-                                                boxSizing: 'border-box',
                                                 flexShrink: 0
                                               }}
                                             >
@@ -9080,6 +9171,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                           );
                                         })()}
                                       </div>
+                                    </td>
+                                    <td style={{ padding: '4px' }}>
+                                      <input
+                                        type="text"
+                                        placeholder="제조사명"
+                                        disabled={!isEditing}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                        value={it.supplier || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].supplier = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
                                     </td>
                                     <td style={{ padding: '4px' }}>
                                       <input
@@ -9114,7 +9220,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].packageType = val;
                                                 
-                                                // Auto-fill dimensions when selecting package type
                                                 const matchedMethod = methods_any.find((m: any) => m.packageType === val);
                                                 if (matchedMethod) {
                                                   const isPlt = val.toLowerCase().includes('pallet');
@@ -9136,102 +9241,114 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                   '단품 박스',
                                                   '혼적 Pallet'
                                                 ].filter(Boolean)));
-                                                if (it.packageType && !pTypeOptions.includes(it.packageType)) {
-                                                  pTypeOptions.push(it.packageType);
-                                                }
-                                                return pTypeOptions.map((pType: any) => (
-                                                  <option key={pType} value={pType}>{pType}</option>
+                                                
+                                                return pTypeOptions.map((pt: any) => (
+                                                  <option key={pt} value={pt}>{pt}</option>
                                                 ));
                                               })()}
                                             </select>
                                         );
                                       })()}
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
+                                    <td style={{ padding: '4px', textAlign: 'center' }}>
                                       {(() => {
                                         const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
                                         const dims = cleanDims.split('x');
-                                        const width = dims[0] || '';
-                                        const length = dims[1] || '';
-                                        const height = dims[2] || '';
+                                        const widthVal = dims[0] || '0';
+                                        const lengthVal = dims[1] || '0';
+                                        const heightVal = dims[2] || '0';
+
+                                        const handleItemDimChange = (dimKey: 'w' | 'l' | 'h', inputVal: string) => {
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          let w = widthVal;
+                                          let l = lengthVal;
+                                          let h = heightVal;
+                                          if (dimKey === 'w') w = inputVal;
+                                          if (dimKey === 'l') l = inputVal;
+                                          if (dimKey === 'h') h = inputVal;
+                                          nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
+                                          
+                                          const numW = parseFloat(w) || 0;
+                                          const numL = parseFloat(l) || 0;
+                                          const numH = parseFloat(h) || 0;
+                                          if (numW > 0 && numL > 0 && numH > 0) {
+                                            const calcCbm = ((numW * numL * numH) / 1000000000);
+                                            let count = parseInt(it.pkg, 10);
+                                            if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+                                            nextContainers[cIdx].items[itIdx].cbm = String((calcCbm * count).toFixed(3));
+                                          }
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        };
 
                                         return (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
                                             <input 
-                                              type="number"
-                                              placeholder="W"
-                                              disabled={!isEditing}
-                                              value={width}
-                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                              onChange={e => {
-                                                const w = e.target.value;
-                                                const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].dimensions = `${w || '0'}x${length || '0'}x${height || '0'}`;
-                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                              }}
+                                              type="number" 
+                                              placeholder="W" 
+                                              disabled={!isEditing} 
+                                              value={widthVal} 
+                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                              onChange={e => handleItemDimChange('w', e.target.value)} 
                                             />
                                             <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
                                             <input 
-                                              type="number"
-                                              placeholder="L"
-                                              disabled={!isEditing}
-                                              value={length}
-                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                              onChange={e => {
-                                                const l = e.target.value;
-                                                const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].dimensions = `${width || '0'}x${l || '0'}x${height || '0'}`;
-                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                              }}
+                                              type="number" 
+                                              placeholder="L" 
+                                              disabled={!isEditing} 
+                                              value={lengthVal} 
+                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                              onChange={e => handleItemDimChange('l', e.target.value)} 
                                             />
                                             <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
                                             <input 
-                                              type="number"
-                                              placeholder="H"
-                                              disabled={!isEditing}
-                                              value={height}
-                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                              onChange={e => {
-                                                const h = e.target.value;
-                                                const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].dimensions = `${width || '0'}x${length || '0'}x${h || '0'}`;
-                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                              }}
+                                              type="number" 
+                                              placeholder="H" 
+                                              disabled={!isEditing} 
+                                              value={heightVal} 
+                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                              onChange={e => handleItemDimChange('h', e.target.value)} 
                                             />
                                           </div>
                                         );
                                       })()}
                                     </td>
                                     <td style={{ padding: '4px' }}>
-                                      <input type="text" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '98%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.supplier || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].supplier = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.netWeight || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].netWeight = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.grossWeight || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].grossWeight = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '2px 4px' }}>
                                       <input
-                                        type="text"
-                                        step="0.01"
+                                        type="number"
+                                        placeholder="NET WT"
                                         disabled={!isEditing}
-                                        placeholder="예: =1.1*1.2*1.3"
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                        value={it.netWeight || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].netWeight = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '4px' }}>
+                                      <input
+                                        type="number"
+                                        placeholder="GROSS WT"
+                                        disabled={!isEditing}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                        value={it.grossWeight || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '4px' }}>
+                                      <input
+                                        type="number"
+                                        step="0.001"
+                                        placeholder="CBM"
+                                        disabled={!isEditing}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                         value={it.cbm || ''}
                                         onChange={e => {
                                           const val = e.target.value;
@@ -9239,41 +9356,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                           nextContainers[cIdx].items[itIdx].cbm = val;
                                           setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                         }}
-                                        onKeyDown={e => {
-                                          if (e.key === 'Enter') {
-                                            const raw = (e.target as HTMLInputElement).value;
-                                            if (raw.startsWith('=')) {
-                                              try {
-                                                const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
-                                                // eslint-disable-next-line no-new-func
-                                                const result = Function('"use strict"; return (' + expr + ')')();
-                                                if (typeof result === 'number' && isFinite(result)) {
-                                                  const rounded = parseFloat(result.toFixed(4));
-                                                  const nextContainers = [...basicForm.packingList.containers];
-                                                  nextContainers[cIdx].items[itIdx].cbm = rounded;
-                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                                }
-                                              } catch {}
-                                            }
-                                          }
-                                        }}
-                                        onBlur={e => {
-                                          const raw = e.target.value;
-                                          if (raw.startsWith('=')) {
-                                            try {
-                                              const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
-                                              // eslint-disable-next-line no-new-func
-                                              const result = Function('"use strict"; return (' + expr + ')')();
-                                              if (typeof result === 'number' && isFinite(result)) {
-                                                const rounded = parseFloat(result.toFixed(4));
-                                                const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].cbm = rounded;
-                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                              }
-                                            } catch {}
-                                          }
-                                        }}
-                                        style={{ padding: '4px 6px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                       />
                                     </td>
                                     <td style={{ padding: '4px', textAlign: 'center' }}>
@@ -9301,7 +9383,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                             type="button"
                                             disabled={!isEditing}
                                             onClick={() => splitStep2Item(cIdx, itIdx)}
-                                            title="이 품목을 1장씩 분할"
+                                            title="이 품목을 지정 단위 또는 1장씩 분할"
                                             style={{ width: '28px', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                           >
                                             ✂️
@@ -9338,9 +9420,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     </td>
                                   </tr>
                                 ))}
-                                {c.items?.length === 0 ? (
+{c.items?.length === 0 ? (
                                   <tr>
-                                    <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <td colSpan={11} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                       등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
                                     </td>
                                   </tr>
@@ -9369,15 +9451,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                                     return (
                                       <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid var(--border-default)', borderBottom: '2px solid var(--border-default)' }}>
-                                        <td style={{ padding: '6px 4px', textAlign: 'center', color: '#334155' }}>합계</td>
-                                        <td style={{ padding: '6px 4px', color: 'var(--text-secondary)' }}>-</td>
-                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalQty.toLocaleString()}</td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'center', color: '#334155', fontWeight: 800 }}>합계</td>
+                                        <td style={{ padding: '6px 4px', color: 'var(--text-secondary)' }}>총 {(c.items || []).length}개 항목</td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalQty.toLocaleString()}</td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px' }}></td>
-                                        <td style={{ padding: '6px 4px' }}></td>
-                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalNetWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalGrossWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0369a1', paddingRight: '12px' }}>{totalCbm.toFixed(3)}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalNetWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalGrossWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0369a1', paddingRight: '8px' }}>{totalCbm.toFixed(3)}</td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                       </tr>
                                     );

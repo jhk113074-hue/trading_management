@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.325',
+    version: 'v2.8.325',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 체크박스 선택 기반 [PKG 합치기] / [PKG 분할] 및 제조사 컬럼 위치 개편',
+    content: '• 패킹리스트 테이블에 전체/개별 선택 체크박스(Checkbox) 신설하여 다중 항목 선택 후 원클릭 조작 지원\n• 테이블 컬럼 순서를 [품목명/사양] 바로 다음에 [Manufacturer (제조사)]가 오도록 재배치하여 품목 정보 확인 동선 최적화\n• [✂️ 전체 1장씩 분할] 버튼을 정리하고, [🔗 PKG 합치기] 및 [✂️ PKG 분할] 버튼으로 명칭 및 기능 전면 고도화\n• PKG 수량이 많거나 큰 경우(예: 38 PLT 등) 원하는 분할 단위(예: 1개씩, 10개씩 등)를 입력하여 스마트하게 균등 분할할 수 있도록 분할 로직 개편',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.324',
     version: 'v2.8.324',
     date: '2026-08-22',
