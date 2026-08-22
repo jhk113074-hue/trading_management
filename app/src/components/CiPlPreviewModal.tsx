@@ -592,6 +592,46 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       const cItems = cData.items || [];
                       if (cItems.length === 0) return null;
 
+                      // Group cItems by package
+                      interface ModalPkgGroup {
+                        pkgNo: string;
+                        items: { name: string; qty: number; unit?: string }[];
+                        netWeight: number;
+                        grossWeight: number;
+                        cbm: number;
+                        pkgCount: number;
+                      }
+
+                      const packageGroups: ModalPkgGroup[] = [];
+                      let curGroup: ModalPkgGroup | null = null;
+
+                      cItems.forEach((it: any, itIdx: number) => {
+                        const isSecondary = !!(it._sharedWithPrev || it._isMergedMember || (itIdx > 0 && it.pkgNo && curGroup && it.pkgNo === curGroup.pkgNo));
+                        const cleanName = cleanCiName(it.description || (it as any).name || '');
+                        const itQty = Number(it.qty) || 0;
+                        const itUnit = it.unit || 'PCS';
+                        const itNet = Number(it.netWeight) || 0;
+                        const itGross = Number(it.grossWeight) || 0;
+                        const itCbm = Number(it.cbm) || 0;
+
+                        if (isSecondary && curGroup) {
+                          curGroup.items.push({ name: cleanName, qty: itQty, unit: itUnit });
+                          if (itNet > 0 && curGroup.netWeight === 0) curGroup.netWeight += itNet;
+                          if (itGross > 0 && curGroup.grossWeight === 0) curGroup.grossWeight += itGross;
+                          if (itCbm > 0 && curGroup.cbm === 0) curGroup.cbm += itCbm;
+                        } else {
+                          curGroup = {
+                            pkgNo: it.pkgNo || String(packageGroups.length + 1),
+                            items: [{ name: cleanName, qty: itQty, unit: itUnit }],
+                            netWeight: itNet,
+                            grossWeight: itGross,
+                            cbm: itCbm,
+                            pkgCount: Number(it.pkg) || 1
+                          };
+                          packageGroups.push(curGroup);
+                        }
+                      });
+
                       let leftMarkText = '';
                       if (cIdx === 0) {
                         leftMarkText = `SHIPPING MARKS:\n${data.shippingMarks || 'N/M'}\n\nCONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
@@ -599,24 +639,36 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         leftMarkText = `CONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
                       }
 
-                      return cItems.map((it, itIdx) => {
-                        const pkgNum = it.pkgNo || String(itIdx + 1);
-                        const cleanName = cleanCiName(it.description || (it as any).name || '');
-                        const netW = Number(it.netWeight) || 0;
-                        const grossW = Number(it.grossWeight) || 0;
-                        const cbm = Number(it.cbm) || 0;
-                        const weightSuffix = netW > 0 ? `-${netW.toLocaleString()}KG` : '';
-                        const descText = `P#${pkgNum} ${cleanName}${weightSuffix}`;
+                      return packageGroups.map((pkg, pkgIdx) => {
+                        const pkgNum = pkg.pkgNo;
+                        const netW = pkg.netWeight;
+                        const grossW = pkg.grossWeight;
+                        const cbm = pkg.cbm;
 
                         return (
-                          <tr key={`${cIdx}-${itIdx}`}>
-                            {itIdx === 0 && (
-                              <td rowSpan={cItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                          <tr key={`${cIdx}-${pkgIdx}`}>
+                            {pkgIdx === 0 && (
+                              <td rowSpan={packageGroups.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
                                 {leftMarkText.trim()}
                               </td>
                             )}
                             <td style={{ ...tdItemStyle, fontWeight: 700 }}>
-                              {descText}
+                              {pkg.items.length === 1 ? (
+                                `P#${pkgNum} ${pkg.items[0].name}${netW > 0 ? `-${netW.toLocaleString()}KG` : ''}`
+                              ) : (
+                                <div>
+                                  <div style={{ fontWeight: 800, color: '#1e3a8a', marginBottom: '2px' }}>
+                                    P#{pkgNum}{netW > 0 ? ` (${netW.toLocaleString()}KG)` : ''}
+                                  </div>
+                                  <div style={{ paddingLeft: '6px', fontSize: '9px', lineHeight: '1.4' }}>
+                                    {pkg.items.map((it, i) => (
+                                      <div key={i} style={{ color: '#334155' }}>
+                                        • {it.name}{it.qty > 0 ? ` (${it.qty.toLocaleString()} ${it.unit || 'PCS'})` : ''}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td style={{ ...tdItemStyle, textAlign: 'right' }}>
                               {netW > 0 ? netW.toLocaleString() : '-'}

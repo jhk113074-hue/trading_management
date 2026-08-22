@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.369',
+    version: 'v2.8.369',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Packing List 서식 및 PL 편집 탭 내 합쳐진 혼적 PKG 통합 표현 완벽 동기화',
+    content: '• 패킹 및 컨테이너로딩플랜에서 합쳐진(혼적) PKG 데이터를 CI/PL 작성 화면의 [PL 탭], 인쇄 미리보기 모달, Excel 2번째 시트(Packing List)에 100% 동일하게 1개 패키지 단위로 묶어서 표현\\n• PL 탭 테이블에서 혼적 패키지는 번호 및 중량/용적 셀을 병합(rowSpan)하여 일관된 시각화 제공',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.368',
     version: 'v2.8.368',
     date: '2026-08-22',

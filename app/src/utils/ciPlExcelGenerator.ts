@@ -865,7 +865,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       }
 
-      // Container Breakdown & Item rows
+      // Container Breakdown & Item rows with Merged Package Grouping
       let totalNetW = 0;
       let totalGrossW = 0;
       let totalCbmV = 0;
@@ -879,26 +879,76 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         const cItems = cData.items || [];
         if (cItems.length === 0) return;
 
+        // Group cItems by package (identifying merged/shared packages)
+        interface PlPkgGroup {
+          pkgNo: string;
+          items: { name: string; qty: number; unit?: string }[];
+          netWeight: number;
+          grossWeight: number;
+          cbm: number;
+          pkgCount: number;
+        }
+
+        const packageGroups: PlPkgGroup[] = [];
+        let curGroup: PlPkgGroup | null = null;
+
+        cItems.forEach((it: any, itIdx: number) => {
+          const isSecondary = !!(it._sharedWithPrev || it._isMergedMember || (itIdx > 0 && it.pkgNo && curGroup && it.pkgNo === curGroup.pkgNo));
+          const cleanName = cleanCiName(it.description || (it as any).name || '');
+          const itQty = Number(it.qty) || 0;
+          const itUnit = it.unit || 'PCS';
+          const itNet = Number(it.netWeight) || 0;
+          const itGross = Number(it.grossWeight) || 0;
+          const itCbm = Number(it.cbm) || 0;
+
+          if (isSecondary && curGroup) {
+            curGroup.items.push({ name: cleanName, qty: itQty, unit: itUnit });
+            if (itNet > 0 && curGroup.netWeight === 0) curGroup.netWeight += itNet;
+            if (itGross > 0 && curGroup.grossWeight === 0) curGroup.grossWeight += itGross;
+            if (itCbm > 0 && curGroup.cbm === 0) curGroup.cbm += itCbm;
+          } else {
+            curGroup = {
+              pkgNo: it.pkgNo || String(packageGroups.length + 1),
+              items: [{ name: cleanName, qty: itQty, unit: itUnit }],
+              netWeight: itNet,
+              grossWeight: itGross,
+              cbm: itCbm,
+              pkgCount: Number(it.pkg) || 1
+            };
+            packageGroups.push(curGroup);
+          }
+        });
+
         const cStartRow = currRow;
 
-        cItems.forEach((it, itIdx) => {
+        packageGroups.forEach((pkg) => {
           const r = currRow;
-          const pkgNum = it.pkgNo || String(itIdx + 1);
-          const cleanName = cleanCiName(it.description || (it as any).name || '');
-          const netW = Number(it.netWeight) || 0;
-          const grossW = Number(it.grossWeight) || 0;
-          const cbm = Number(it.cbm) || 0;
+          const pkgNum = pkg.pkgNo;
+          const netW = pkg.netWeight;
+          const grossW = pkg.grossWeight;
+          const cbm = pkg.cbm;
 
           totalNetW += netW;
           totalGrossW += grossW;
           totalCbmV += cbm;
-          totalPkgCount += 1;
+          totalPkgCount += pkg.pkgCount;
 
-          // Description formatted like P#1 JP-30-800KG
-          const weightSuffix = netW > 0 ? `-${netW.toLocaleString()}KG` : '';
-          const descText = `P#${pkgNum} ${cleanName}${weightSuffix}`;
-
-          ws.getRow(r).height = 20;
+          let descText = '';
+          if (pkg.items.length === 1) {
+            const weightSuffix = netW > 0 ? `-${netW.toLocaleString()}KG` : '';
+            descText = `P#${pkgNum} ${pkg.items[0].name}${weightSuffix}`;
+            ws.getRow(r).height = 20;
+          } else {
+            // Combined package with multiple items
+            const lines: string[] = [];
+            lines.push(`P#${pkgNum}${netW > 0 ? ` (${netW.toLocaleString()}KG)` : ''}`);
+            pkg.items.forEach(it => {
+              const qtyStr = it.qty > 0 ? ` (${it.qty.toLocaleString()} ${it.unit || 'PCS'})` : '';
+              lines.push(`  • ${it.name}${qtyStr}`);
+            });
+            descText = lines.join('\n');
+            ws.getRow(r).height = Math.max(22, lines.length * 15 + 6);
+          }
 
           ws.mergeCells(`D${r}:H${r}`);
           ws.getCell(`D${r}`).value = descText;

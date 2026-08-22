@@ -11972,105 +11972,150 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </tr>
                               </thead>
                               <tbody>
-                                {(c.items || []).map((it: any, itIdx: number) => {
-                                  return (
-                                    <tr key={itIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                      <td style={{ padding: '4px', textAlign: 'center' }}>
-                                        <input
-                                          type="text"
-                                          value={it.pkgNo || String(itIdx + 1)}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].pkgNo = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ width: '38px', textAlign: 'center', padding: '3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px 6px' }}>
-                                        <input
-                                          type="text"
-                                          value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].description = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          placeholder="품명 및 사양"
-                                          style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px' }}>
-                                        <input
-                                          type="number"
-                                          value={it.qty || 0}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].qty = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px' }}>
-                                        <input
-                                          type="number"
-                                          value={it.netWeight || 0}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].netWeight = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px' }}>
-                                        <input
-                                          type="number"
-                                          value={it.grossWeight || 0}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].grossWeight = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px' }}>
-                                        <input
-                                          type="number"
-                                          step="0.001"
-                                          value={it.cbm || 0}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items[itIdx].cbm = val;
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-                                        />
-                                      </td>
-                                      <td style={{ padding: '4px', textAlign: 'center' }}>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, i: number) => i !== itIdx);
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer' }}
-                                        >
-                                          🗑️
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
+                                {(() => {
+                                  const itemsList = c.items || [];
+                                  return itemsList.map((it: any, itIdx: number) => {
+                                    const isSecondary = !!(it._sharedWithPrev || it._isMergedMember || (itIdx > 0 && it.pkgNo && it.pkgNo === itemsList[itIdx - 1]?.pkgNo));
+
+                                    // Calculate rowSpan if head of group
+                                    let spanCount = 1;
+                                    if (!isSecondary) {
+                                      for (let k = itIdx + 1; k < itemsList.length; k++) {
+                                        if (itemsList[k]._sharedWithPrev || itemsList[k]._isMergedMember || (itemsList[k].pkgNo && itemsList[k].pkgNo === it.pkgNo)) {
+                                          spanCount++;
+                                        } else {
+                                          break;
+                                        }
+                                      }
+                                    }
+
+                                    return (
+                                      <tr key={itIdx} style={{ borderBottom: (isSecondary && itIdx < itemsList.length - 1 && (itemsList[itIdx + 1]._sharedWithPrev || itemsList[itIdx + 1]._isMergedMember || itemsList[itIdx + 1].pkgNo === it.pkgNo)) ? '1px dashed #cbd5e1' : '1px solid #cbd5e1' }}>
+                                        {/* PKG # */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: '1px solid #cbd5e1' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                              <input
+                                                type="text"
+                                                value={it.pkgNo || String(itIdx + 1)}
+                                                onChange={e => {
+                                                  const val = e.target.value;
+                                                  const nextContainers = [...basicForm.packingList.containers];
+                                                  for (let g = 0; g < spanCount; g++) {
+                                                    nextContainers[cIdx].items[itIdx + g].pkgNo = val;
+                                                  }
+                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                }}
+                                                style={{ width: '38px', textAlign: 'center', padding: '3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
+                                              />
+                                              {spanCount > 1 && (
+                                                <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 800 }}>[혼적 {spanCount}건]</span>
+                                              )}
+                                            </div>
+                                          </td>
+                                        )}
+
+                                        {/* Description */}
+                                        <td style={{ padding: '4px 6px' }}>
+                                          <input
+                                            type="text"
+                                            value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].description = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                            placeholder="품명 및 사양"
+                                            style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+                                          />
+                                        </td>
+
+                                        {/* Qty */}
+                                        <td style={{ padding: '4px' }}>
+                                          <input
+                                            type="number"
+                                            value={it.qty || 0}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].qty = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                            style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+                                          />
+                                        </td>
+
+                                        {/* NET WT */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
+                                            <input
+                                              type="number"
+                                              value={it.netWeight || 0}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].netWeight = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* GROSS WT */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
+                                            <input
+                                              type="number"
+                                              value={it.grossWeight || 0}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* CBM */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
+                                            <input
+                                              type="number"
+                                              step="0.001"
+                                              value={it.cbm || 0}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].cbm = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Delete */}
+                                        <td style={{ padding: '4px', textAlign: 'center' }}>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, i: number) => i !== itIdx);
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                            style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer' }}
+                                          >
+                                            🗑️
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
                               </tbody>
                             </table>
                           </div>
