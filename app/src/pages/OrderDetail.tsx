@@ -9107,14 +9107,50 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       // Fetch/Initialize arrival report state for this supplier in the order doc
                       const repData = (order.supplierArrivalReports || {})[supplierName] || {};
                       
+                      // Calculate total order PKG count
+                      let grandTotalPlt = 0;
+                      if (basicForm.packingList?.containers) {
+                        basicForm.packingList.containers.forEach((c: any) => {
+                          (c.items || []).forEach((cIt: any) => {
+                            grandTotalPlt += Number(cIt.pkg) || 0;
+                          });
+                        });
+                      }
+                      if (grandTotalPlt === 0) grandTotalPlt = items.length || 1;
+
                       // Auto-pull items from the master packing list if not edited yet
                       let packingItemsList = repData.packingItems || [];
 
                       // Clean up existing/loaded packing items
                       if (packingItemsList.length > 0) {
                         let mutated = false;
-                        const nextList = packingItemsList.map((it: any) => {
+                        const nextList = packingItemsList.map((it: any, idx: number) => {
                           let desc = it.descOfGoods || '';
+                          let marks = it.marks || '';
+                          if (/\bEA\b/i.test(desc)) {
+                            desc = desc.replace(/\bEA\b/gi, 'kg');
+                            mutated = true;
+                          }
+                          if (marks.includes('PKG NO.')) {
+                            marks = marks.replace(/PKG NO\./gi, 'PALLET NO.');
+                            mutated = true;
+                          }
+                          if (marks.includes('1 / 1') && grandTotalPlt > 1) {
+                            let foundPkgNo = String(idx + 1);
+                            if (basicForm.packingList?.containers) {
+                              for (const c of basicForm.packingList.containers) {
+                                const found = (c.items || []).find((cIt: any) => 
+                                  (cIt.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+                                );
+                                if (found && found.pkgNo) {
+                                  foundPkgNo = found.pkgNo;
+                                  break;
+                                }
+                              }
+                            }
+                            marks = getDefaultShippingMark(foundPkgNo, String(grandTotalPlt));
+                            mutated = true;
+                          }
                           if (/\((완제|자투리|혼적|독립|단품)[^)]*\)/.test(desc) || (it.qty && !desc.includes(String(it.qty)))) {
                             desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
                             
@@ -9134,20 +9170,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             const actualQty = matchedQty || '';
                             if (actualQty && !desc.includes(String(actualQty))) {
                               desc = `${desc} ${actualQty} kg`.replace(/\s+/g, ' ');
-                            } else if (/\bEA\b/i.test(desc)) {
-                              desc = desc.replace(/\bEA\b/gi, 'kg');
                             }
                             
                             if (desc !== it.descOfGoods) {
                               mutated = true;
-                              return { ...it, descOfGoods: desc };
+                              return { ...it, descOfGoods: desc, marks };
                             }
-                          } else if (/\bEA\b/i.test(desc)) {
-                            desc = desc.replace(/\bEA\b/gi, 'kg');
-                            mutated = true;
-                            return { ...it, descOfGoods: desc };
                           }
-                          return it;
+                          return mutated ? { ...it, descOfGoods: desc, marks } : it;
                         });
                         if (mutated) {
                           packingItemsList = nextList;
@@ -9163,7 +9193,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           matchingItems = [...matchingItems, ...itemsForSupplier];
                         });
 
-                        const totalCount = matchingItems.length;
                         matchingItems.forEach((it: any, idx: number) => {
                           let desc = it.description || '';
                           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
@@ -9174,8 +9203,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             desc = desc.replace(/\bEA\b/gi, 'kg');
                           }
 
+                          const pNo = it.pkgNo || String(idx + 1);
+
                           packingItemsList.push({
-                            marks: getDefaultShippingMark(String(idx + 1), String(totalCount)),
+                            marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
                             descOfGoods: desc,
                             qty: Number(it.pkg) || 0,
                             packageType: 'PL',
@@ -9976,14 +10007,34 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           '</head>' +
                           '<body>';
 
-                        for (let i = startVal; i <= totalVal; i++) {
+                        const palletList: string[] = [];
+                        packingItemsList.forEach((it: any, idx: number) => {
+                          const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+                          if (pNo.includes('-')) {
+                            const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
+                            if (!isNaN(start) && !isNaN(end) && end >= start) {
+                              for (let k = start; k <= end; k++) {
+                                palletList.push(String(k));
+                              }
+                            } else {
+                              palletList.push(pNo);
+                            }
+                          } else {
+                            palletList.push(pNo);
+                          }
+                        });
+                        if (palletList.length === 0) {
+                          palletList.push('1');
+                        }
+
+                        for (const pNum of palletList) {
                           const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
 
                           htmlContent += '<div class="page">' +
                             '<div class="shape-container">' + shapeHtml + '</div>' +
                             '<div class="info-container">' +
                               '<div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
-                              '<div class="info-text2">PALLET NO. : ' + i + '/' + totalVal + '</div>' +
+                              '<div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div>' +
                               '<div class="info-text1">' + originVal + '</div>' +
                             '</div>' +
                           '</div>';
