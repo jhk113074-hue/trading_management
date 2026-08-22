@@ -273,6 +273,9 @@ export const OrderDetail: React.FC = () => {
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
     setDraggedPackingItem(null);
 
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
     if (order?.id) {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       setDoc(orderRef, {
@@ -280,6 +283,7 @@ export const OrderDetail: React.FC = () => {
           ...basicForm.packingList,
           containers: nextContainers
         },
+        supplierArrivalReports: nextReports,
         updatedAt: serverTimestamp()
       }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
     }
@@ -2694,6 +2698,66 @@ export const OrderDetail: React.FC = () => {
 
 
 
+  const syncArrivalReportsFromContainers = (containers: any[], currentReports: any) => {
+    let grandTotalPlt = 0;
+    containers.forEach((c: any) => {
+      (c.items || []).forEach((cIt: any) => {
+        const count = parseInt(cIt.pkg, 10);
+        if (count > 0) grandTotalPlt += count;
+      });
+    });
+    if (grandTotalPlt === 0) grandTotalPlt = 1;
+
+    const updatedReports: any = { ...(currentReports || {}) };
+
+    allOrderSuppliers.forEach((supplierName: string) => {
+      let matchingItems: any[] = [];
+      containers.forEach((container: any) => {
+        const itemsForSupplier = (container.items || []).filter((it: any) => 
+          (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+        );
+        matchingItems = [...matchingItems, ...itemsForSupplier];
+      });
+
+      if (matchingItems.length > 0) {
+        const repData = updatedReports[supplierName] || {};
+        const newPackingItems: any[] = [];
+
+        matchingItems.forEach((it: any, idx: number) => {
+          let desc = it.description || '';
+          desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          if (it.qty && !desc.includes(String(it.qty))) {
+            desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+          }
+          const pNo = it.pkgNo || String(idx + 1);
+
+          newPackingItems.push({
+            pkgNo: pNo,
+            pkg: it.pkg,
+            _sharedWithPrev: it._sharedWithPrev,
+            _sharedGroupHead: it._sharedGroupHead,
+            _isMergedGroup: it._isMergedGroup,
+            _isMergedMember: it._isMergedMember,
+            marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
+            descOfGoods: desc,
+            qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
+            packageType: 'PL',
+            netWeight: Number(it.netWeight) || 0,
+            grossWeight: Number(it.grossWeight) || 0,
+            measurement: it.cbm ? `${it.cbm} CBM` : ''
+          });
+        });
+
+        updatedReports[supplierName] = {
+          ...repData,
+          packingItems: newPackingItems
+        };
+      }
+    });
+
+    return { grandTotalPlt, updatedReports };
+  };
+
   const recalculateContainerPkgNos = (items: any[]) => {
     let curNo = 1;
     let i = 0;
@@ -2814,6 +2878,9 @@ export const OrderDetail: React.FC = () => {
     }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
 
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
     if (order?.id) {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       setDoc(orderRef, {
@@ -2821,11 +2888,12 @@ export const OrderDetail: React.FC = () => {
           ...basicForm.packingList,
           containers: nextContainers
         },
+        supplierArrivalReports: nextReports,
         updatedAt: serverTimestamp()
       }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
     }
 
-    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 1개의 패키지(PKG NO.)로 묶여 합쳐졌습니다. (품명 및 수량 개별 유지, 후속 PKG 번호 자동 업데이트)`);
+    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 1개의 패키지(PKG NO.)로 묶여 합쳐졌습니다. (쉬핑마크 및 도착보고서 총 PKG 수량/번호 자동 갱신)`);
   };
 
   const splitStep2Item = (containerIdx: number, specificItemIdx?: number) => {
@@ -2881,6 +2949,9 @@ export const OrderDetail: React.FC = () => {
       setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
       setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
 
+      const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+      setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
       if (order?.id) {
         const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
         setDoc(orderRef, {
@@ -2888,11 +2959,12 @@ export const OrderDetail: React.FC = () => {
             ...basicForm.packingList,
             containers: nextContainers
           },
+          supplierArrivalReports: nextReports,
           updatedAt: serverTimestamp()
         }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
       }
 
-      alert('✂️ 묶여 있던 패키지가 개별 고유 패키지로 분할되었습니다.');
+      alert('✂️ 묶여 있던 패키지가 개별 고유 패키지로 분할되었습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
       return;
     }
 
@@ -2993,6 +3065,9 @@ export const OrderDetail: React.FC = () => {
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
 
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
     if (order?.id) {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       setDoc(orderRef, {
@@ -3000,11 +3075,12 @@ export const OrderDetail: React.FC = () => {
           ...basicForm.packingList,
           containers: nextContainers
         },
+        supplierArrivalReports: nextReports,
         updatedAt: serverTimestamp()
       }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
     }
 
-    alert('✂️ 선택한 항목이 분할되었습니다.');
+    alert('✂️ 선택한 항목이 분할되었습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
   };
 
   const resetStep2PkgNumbers = (containerIdx: number) => {
@@ -3087,6 +3163,9 @@ export const OrderDetail: React.FC = () => {
     }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
 
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
     if (order?.id) {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       setDoc(orderRef, {
@@ -3094,11 +3173,12 @@ export const OrderDetail: React.FC = () => {
           ...basicForm.packingList,
           containers: nextContainers
         },
+        supplierArrivalReports: nextReports,
         updatedAt: serverTimestamp()
       }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
     }
 
-    alert('↩️ 소싱/발주 품목 데이터를 기준으로 패킹리스트가 원래대로 다시 불러와졌습니다.');
+    alert('↩️ 소싱/발주 품목 데이터를 기준으로 패킹리스트가 원래대로 다시 불러와졌습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
   };
 
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
@@ -9603,20 +9683,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             marks = marks.replace(/PKG NO\./gi, 'PALLET NO.');
                             mutated = true;
                           }
-                          if (marks.includes('1 / 1') && grandTotalPlt > 1) {
-                            let foundPkgNo = String(idx + 1);
-                            if (basicForm.packingList?.containers) {
-                              for (const c of basicForm.packingList.containers) {
-                                const found = (c.items || []).find((cIt: any) => 
-                                  (cIt.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
-                                );
-                                if (found && found.pkgNo) {
-                                  foundPkgNo = found.pkgNo;
-                                  break;
-                                }
-                              }
+                          const pNo = it.pkgNo || (marks.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+                          if (marks.includes('PALLET NO.')) {
+                            const expectedLine = `PALLET NO. : ${pNo} / ${grandTotalPlt}`;
+                            if (!marks.includes(expectedLine)) {
+                              marks = marks.replace(/PALLET NO\.\s*:\s*[^\n]+/i, expectedLine);
+                              mutated = true;
                             }
-                            marks = getDefaultShippingMark(foundPkgNo, String(grandTotalPlt));
+                          } else {
+                            marks = getDefaultShippingMark(pNo, String(grandTotalPlt));
                             mutated = true;
                           }
                           if (/\((완제|자투리|혼적|독립|단품)[^)]*\)/.test(desc) || (it.qty && !desc.includes(String(it.qty)))) {

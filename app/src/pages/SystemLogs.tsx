@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.333',
+    version: 'v2.8.333',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹 합치기/분할/이동 시 쉬핑마크 PKG 총수량 및 번호 실시간 자동 갱신',
+    content: '• 패킹리스트에서 [🔗 PKG 합치기], [✂️ PKG 분할], [↩️ PKG 원복], 또는 드래그 앤 드롭으로 순서 변경 시, 변경된 전체 PKG 총 수량(분모) 및 각 품목별 PKG 번호(분자)가 도착보고서 및 쉬핑마크(PALLET NO. : X / Y)에 실시간으로 즉시 자동 동기화되도록 연동 로직 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.332',
     version: 'v2.8.332',
     date: '2026-08-22',
