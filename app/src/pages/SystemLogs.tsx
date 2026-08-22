@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.320',
+    version: 'v2.8.320',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '쉬핑마크 다이아몬드 도형 자동 스케일링, 파렛트 번호(PALLET NO.) 및 총수량 실시간 연동 완료',
+    content: '• 쉬핑마크 라벨 및 인쇄물에서 긴 거래처명(예: R.N. SOLICO.)이 다이아몬드 및 외곽 도형 밖으로 벗어나지 않도록 글자수 기반 동적 폰트 크기 자동 계산 및 700px 와이드 다이아몬드 SVG 뷰박스 적용\n• 도착보고서 10) Marks 및 쉬핑마크 라벨의 파렛트 표기를 전체 주문 패킹리스트의 총 파렛트 수량(grandTotalPlt)과 실제 파렛트 번호(it.pkgNo)에 맞추어 PALLET NO. : [현재번호] / [총수량]으로 100% 자동 연동\n• 파렛트 번호 범위(예: 2-3, 4-5) 지정 시 개별 라벨 1장씩 분할 생성하여 출력 및 PDF 저장 지원\n• 도착보고서 인쇄 및 PDF 저장 시 Shipper 대표 담당자(손지연 선임, 02-3463-6732, jyson@twohchem.com) 자동 로딩 및 Remarks 날짜 연동 안정화\n• 공급사 이메일 및 카카오톡 공유 모달에 도착보고서 및 쉬핑마크 라벨 개별 다운로드 링크 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.316',
     version: 'v2.8.316',
     date: '2026-08-22',
