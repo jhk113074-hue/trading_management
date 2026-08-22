@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.358',
+    version: 'v2.8.358',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Excel A4 Letterhead 폭(108pt) 일치 및 텍스트 잘림 없는 여유로운 행 높이 보장',
+    content: '• 전체 인쇄 폭을 Letterhead 이미지 규격(A1~L4, 총 108.0pt)과 100% 동일하게 맞춰 우측 여백 초과 현상 완벽 해결\n• Unit Price, Gross Wt 등 테이블 헤더 글자가 잘리지 않도록 컬럼폭 정밀 배분\n• Shipper(64pt), Applicant(52pt), Remarks(54pt+), Payment Terms(38pt) 등 다단 텍스트가 시원하게 다 보이도록 충분한 칸 높이 확보',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.357',
     version: 'v2.8.357',
     date: '2026-08-22',

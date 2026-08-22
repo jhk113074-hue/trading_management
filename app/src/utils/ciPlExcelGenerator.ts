@@ -90,27 +90,28 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.pageSetup.fitToWidth = 1;
       ws.pageSetup.fitToHeight = 0; // Natural pagination if content exceeds 1 page
       ws.pageSetup.margins = {
-        left: 0.28, right: 0.28,
-        top: 0.3, bottom: 0.3,
+        left: 0.35, right: 0.35,
+        top: 0.4, bottom: 0.4,
         header: 0.0, footer: 0.0
       };
 
-      // 12 Equal Base Columns (9.5 width each = 114 total A4 width)
-      // Enables exact 2-column equal split (6 cols + 6 cols = 57 + 57)
-      // and exact 3-column equal split (4 cols + 4 cols + 4 cols = 38 + 38 + 38)
+      // 12 Mathematically Perfect Base Columns for A4 Letterhead width 108.0
+      // 2 equal halves: A..F = 54.0, G..L = 54.0 (50% : 50%)
+      // 3 equal thirds: A..D = 36.0, E..H = 36.0, I..L = 36.0 (33.3% : 33.3% : 33.3%)
+      // Generous column widths for table headers without text truncation
       ws.columns = [
-        { width: 9.5 }, // A (Shipping Mark 1/2)
-        { width: 9.5 }, // B (Shipping Mark 2/2)
-        { width: 9.5 }, // C (Desc 1/4)
-        { width: 9.5 }, // D (Desc 2/4)
-        { width: 9.5 }, // E (Desc 3/4)
-        { width: 9.5 }, // F (Desc 4/4)
-        { width: 9.5 }, // G (HS Code 1/2)
-        { width: 9.5 }, // H (HS Code 2/2)
-        { width: 9.5 }, // I (Quantity / Net Wt)
-        { width: 9.5 }, // J (Unit)
-        { width: 9.5 }, // K (Unit Price / Gross Wt)
-        { width: 9.5 }, // L (Amount / CBM)
+        { width: 8.0 },  // A (Shipping Mark 1/2) -> A+B = 16.0
+        { width: 8.0 },  // B (Shipping Mark 2/2) -> A..D = 36.0 (Box 1)
+        { width: 10.0 }, // C (Desc 1/4)
+        { width: 10.0 }, // D (Desc 2/4)
+        { width: 9.0 },  // E (Desc 3/4)          -> E+F = 18.0, C..F = 38.0
+        { width: 9.0 },  // F (Desc 4/4)          -> A..F = 54.0 (Left 50%)
+        { width: 9.0 },  // G (HS Code 1/2)       -> G+H = 18.0
+        { width: 9.0 },  // H (HS Code 2/2)       -> E..H = 36.0 (Box 2)
+        { width: 9.5 },  // I (Quantity / Net Wt)
+        { width: 5.5 },  // J (Unit)
+        { width: 10.5 }, // K (Unit Price / Gross Wt)
+        { width: 10.5 }, // L (Amount / CBM)      -> I..L = 36.0 (Box 3), G..L = 54.0 (Right 50%)
       ];
 
       let currRow = 1;
@@ -163,18 +164,18 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow = 5;
       }
 
-      // 2. Document Title (Bold 16pt)
+      // 2. Document Title (Bold 15pt)
       ws.mergeCells(`A${currRow}:L${currRow}`);
       const titleCell = ws.getCell(`A${currRow}`);
       titleCell.value = isInvoice ? 'Commercial Invoice' : 'Packing List';
       titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FF000000' } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 24;
-      currRow++;
+      ws.getRow(currRow).height = 26;
+      currRow += 2;
 
-      // 3. 5x2 Header Grid with Bold Section Headers & Bold Values
-      // Row 1-3: Exactly 2 Equal Columns (A..F = 50%, G..L = 50%)
-      // Row 4-5: Exactly 3 Equal Columns (A..D = 33.3%, E..H = 33.3%, I..L = 33.3%)
+      // 3. 5x2 Header Grid with Bold Section Headers & Generous Row Heights
+      // Row 1-3: Exactly 2 Equal Columns (A..F = 54.0, G..L = 54.0)
+      // Row 4-5: Exactly 3 Equal Columns (A..D = 36.0, E..H = 36.0, I..L = 36.0)
 
       // Row 1 (50% : 50%): Shipper vs Inv No & Date / LC No & Date
       const r1 = currRow;
@@ -207,7 +208,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ]
       };
       ws.getCell(`G${r1}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r1).height = 54;
+      ws.getRow(r1).height = 64; // Generous height for 4 lines of shipper and invoice/LC info
       currRow++;
 
       // Row 2 (50% : 50%): Applicant vs LC Issuing Bank
@@ -230,7 +231,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ]
       };
       ws.getCell(`G${r2}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r2).height = 44;
+      ws.getRow(r2).height = 52; // Generous height for applicant address
       currRow++;
 
       // Row 3 (50% : 50%): Notify Party vs Remarks
@@ -253,7 +254,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       };
       ws.getCell(`G${r3}`).alignment = { wrapText: true, vertical: 'top' };
       const remarkLines = (data.remarks || '').split('\n').length;
-      ws.getRow(r3).height = Math.max(50, remarkLines * 13 + 18);
+      ws.getRow(r3).height = Math.max(54, remarkLines * 14 + 18);
       currRow++;
 
       // Apply borders to Row 1-3 (2 equal columns A:F and G:L)
@@ -296,7 +297,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ]
       };
       ws.getCell(`I${r4}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r4).height = 30;
+      ws.getRow(r4).height = 38; // Generous height for 2 lines of payment terms
       currRow++;
 
       // Row 5 (33.3% : 33.3% : 33.3%): Vessel / Flight | ETD | Delivery Terms
@@ -327,7 +328,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ]
       };
       ws.getCell(`I${r5}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r5).height = 30;
+      ws.getRow(r5).height = 34;
       currRow++;
 
       // Apply borders to Row 4-5 (3 equal columns A:D, E:H, I:L)
@@ -342,15 +343,17 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         }
       }
 
+      currRow++; // Spacer row
+
       // 4. Item Table Header (12 Columns) - Bold Headers
       const thRow = currRow;
-      ws.getRow(thRow).height = 22;
+      ws.getRow(thRow).height = 24;
 
       const setTh = (range: string, val: string) => {
         ws.mergeCells(range);
         const cell = ws.getCell(range.split(':')[0]);
         cell.value = val;
-        cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       };
 
@@ -359,38 +362,38 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         setTh(`C${thRow}:F${thRow}`, 'Description of Goods');
         setTh(`G${thRow}:H${thRow}`, 'HS Code');
         ws.getCell(`I${thRow}`).value = 'Quantity';
-        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`J${thRow}`).value = 'Unit';
-        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`K${thRow}`).value = 'Unit Price ($)';
-        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`L${thRow}`).value = 'Amount ($)';
-        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`L${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       } else {
         setTh(`A${thRow}:B${thRow}`, 'Shipping Mark');
         setTh(`C${thRow}:F${thRow}`, 'Description of Goods');
         setTh(`G${thRow}:H${thRow}`, 'Packaging');
         ws.getCell(`I${thRow}`).value = 'Net Wt (Kg)';
-        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`J${thRow}`).value = 'Unit';
-        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`K${thRow}`).value = 'Gross Wt (Kg)';
-        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`L${thRow}`).value = 'CBM (M3)';
-        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getCell(`L${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       }
 
@@ -535,7 +538,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       // 5. TOTAL AMOUNT ROW (Bold 10pt)
       const totalRow = currRow;
-      ws.getRow(totalRow).height = 22;
+      ws.getRow(totalRow).height = 24;
 
       ws.mergeCells(`A${totalRow}:H${totalRow}`);
       const totTitleCell = ws.getCell(`A${totalRow}`);
