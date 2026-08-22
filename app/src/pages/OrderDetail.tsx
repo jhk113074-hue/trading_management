@@ -4430,7 +4430,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
     const subject = `[${companyTitleName} 발주서 발행 알림] ${poNum} - ${supplierName}`;
-    const textContent = `[${companyTitleName} 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}\n------------------------------------\n📄 발주서 PDF 원본 다운로드:\n${pdfUrl || '(발행된 발주서가 없습니다. 먼저 발주서를 발행해 주세요.)'}`;
+    const textContent = `[${companyTitleName} 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}`;
 
     setPoEmailModalData({
       supplierName,
@@ -5039,7 +5039,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
     const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
 
-    let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정'}`;
+    let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}`;
 
     setPoEmailModalData({
       supplierName: `${supplierName}_arrival`,
