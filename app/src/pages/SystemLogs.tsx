@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.327',
+    version: 'v2.8.327',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 [↩️ PKG 원복] 실행 시 기존 소싱/발주 품목 데이터 원본 즉시 재연동',
+    content: '• [↩️ PKG 원복] 클릭 시, 주문의 소싱/발주(PO) 품목 원본 데이터를 즉시 다시 불러와 모든 상품(품명, 사양, 주문수량, 제조사, 규격, 중량/CBM)을 초기 상태의 개별 행 및 순차 고유 PKG 번호로 완전 복원하도록 기능 개편',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.326',
     version: 'v2.8.326',
     date: '2026-08-22',

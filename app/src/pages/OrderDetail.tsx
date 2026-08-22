@@ -2825,20 +2825,74 @@ export const OrderDetail: React.FC = () => {
   const resetStep2PkgNumbers = (containerIdx: number) => {
     const nextContainers = [...(basicForm.packingList?.containers || [])];
     if (!nextContainers[containerIdx]) return;
-    const items = [...(nextContainers[containerIdx].items || [])];
-    if (items.length === 0) return;
 
-    items.forEach((it: any, idx: number) => {
-      delete it._sharedGroupHead;
-      delete it._sharedWithPrev;
-      it.pkgNo = String(idx + 1);
-      it.pkg = '1';
+    if (!orderItems || orderItems.length === 0) {
+      alert('가져올 소싱/발주 품목 데이터가 없습니다.');
+      return;
+    }
+
+    const reloadedItems: any[] = [];
+    orderItems.forEach((item, itemIdx) => {
+      const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+      const itemCode = match ? match[1] : ((item as any).productCode || '-');
+      const itemName = match ? match[2] : (item.name || '');
+      const qty = item.qty || 0;
+
+      const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+      const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+        id: 'default_single',
+        packageType: '단품',
+        unitWidth: p?.unitWidth || 0,
+        unitLength: p?.unitLength || 0,
+        unitHeight: p?.unitHeight || 0,
+        unitWeight: p?.unitWeight || 0,
+        unitGrossWeight: p?.unitGrossWeight || 0,
+        palletWidth: p?.palletWidth || 0,
+        palletLength: p?.palletLength || 0,
+        palletHeight: p?.palletHeight || 0,
+        palletWeight: p?.palletWeight || 0,
+        palletGrossWeight: p?.palletGrossWeight || 0
+      };
+
+      const isPlt = (matchedMethod.packageType || '').toLowerCase().includes('pallet');
+      const w = isPlt ? (matchedMethod.palletWidth || p?.palletWidth || matchedMethod.unitWidth || 0) : (matchedMethod.unitWidth || p?.unitWidth || 0);
+      const l = isPlt ? (matchedMethod.palletLength || p?.palletLength || matchedMethod.unitLength || 0) : (matchedMethod.unitLength || p?.unitLength || 0);
+      const h = isPlt ? (matchedMethod.palletHeight || p?.palletHeight || matchedMethod.unitHeight || 0) : (matchedMethod.unitHeight || p?.unitHeight || 0);
+
+      const netW = isPlt ? (matchedMethod.palletWeight || p?.palletWeight || matchedMethod.unitWeight || 0) : (matchedMethod.unitWeight || p?.unitWeight || 0);
+      const grossW = isPlt ? (matchedMethod.palletGrossWeight || p?.palletGrossWeight || matchedMethod.unitGrossWeight || 0) : (matchedMethod.unitGrossWeight || p?.unitGrossWeight || 0);
+      const cbm = (w > 0 && l > 0 && h > 0) ? Number(((w * l * h) / 1000000000).toFixed(4)) : 0;
+
+      const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
+                              p?.suppliers?.[0]?.supplierName || 
+                              p?.supplierName || 
+                              '';
+      const supplierName = item.supplier || defaultSupplier || '';
+
+      reloadedItems.push({
+        pkgNo: String(itemIdx + 1),
+        pkg: '1',
+        qty: String(qty),
+        description: `[${itemCode}] ${itemName}`,
+        packageType: matchedMethod.packageType || '단품',
+        dimensions: `${w}x${l}x${h}`,
+        supplier: supplierName,
+        netWeight: String(Math.round(netW)),
+        grossWeight: String(Math.round(grossW)),
+        cbm: String(cbm.toFixed(3))
+      });
     });
 
-    nextContainers[containerIdx].items = items;
-    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    nextContainers[containerIdx].items = reloadedItems;
+    setBasicForm(prev => ({
+      ...prev,
+      packingList: {
+        ...prev.packingList,
+        containers: nextContainers
+      }
+    }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
-    alert('↩️ 모든 품목의 PKG 번호가 1, 2, 3... 개별 고유 번호로 원복되었습니다.');
+    alert('↩️ 소싱/발주 품목 데이터를 기준으로 패킹리스트가 원래대로 다시 불러와졌습니다.');
   };
 
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
