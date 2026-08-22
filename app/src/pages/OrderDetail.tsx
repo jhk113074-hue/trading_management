@@ -276,17 +276,7 @@ export const OrderDetail: React.FC = () => {
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
-    if (order?.id) {
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      setDoc(orderRef, {
-        packingList: {
-          ...basicForm.packingList,
-          containers: nextContainers
-        },
-        supplierArrivalReports: nextReports,
-        updatedAt: serverTimestamp()
-      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
-    }
+    savePackingListToFirestore(nextContainers, nextReports);
   };
 
 
@@ -2741,12 +2731,12 @@ export const OrderDetail: React.FC = () => {
           const pNo = it.pkgNo || String(idx + 1);
 
           newPackingItems.push({
-            pkgNo: pNo,
-            pkg: it.pkg,
-            _sharedWithPrev: it._sharedWithPrev,
-            _sharedGroupHead: it._sharedGroupHead,
-            _isMergedGroup: it._isMergedGroup,
-            _isMergedMember: it._isMergedMember,
+            pkgNo: pNo || String(idx + 1),
+            pkg: it.pkg || '1',
+            _sharedWithPrev: !!it._sharedWithPrev,
+            _sharedGroupHead: !!it._sharedGroupHead,
+            _isMergedGroup: !!it._isMergedGroup,
+            _isMergedMember: !!it._isMergedMember,
             marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
             descOfGoods: desc,
             qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
@@ -2765,6 +2755,30 @@ export const OrderDetail: React.FC = () => {
     });
 
     return { grandTotalPlt, updatedReports };
+  };
+
+  const savePackingListToFirestore = async (nextContainers: any[], nextReports?: any) => {
+    if (!order?.id) return;
+    try {
+      const cleanContainers = JSON.parse(JSON.stringify(nextContainers));
+      const cleanPackingList = JSON.parse(JSON.stringify({
+        ...basicForm.packingList,
+        containers: cleanContainers
+      }));
+
+      const updatePayload: any = {
+        packingList: cleanPackingList,
+        updatedAt: serverTimestamp()
+      };
+      if (nextReports) {
+        updatePayload.supplierArrivalReports = JSON.parse(JSON.stringify(nextReports));
+      }
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, updatePayload, { merge: true });
+    } catch (err) {
+      console.error('Failed to save packing list to Firestore:', err);
+    }
   };
 
   const recalculateContainerPkgNos = (items: any[]) => {
@@ -2890,19 +2904,7 @@ export const OrderDetail: React.FC = () => {
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
-    if (order?.id) {
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      setDoc(orderRef, {
-        packingList: {
-          ...basicForm.packingList,
-          containers: nextContainers
-        },
-        supplierArrivalReports: nextReports,
-        updatedAt: serverTimestamp()
-      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
-    }
-
-    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 1개의 패키지(PKG NO.)로 묶여 합쳐졌습니다. (쉬핑마크 및 도착보고서 총 PKG 수량/번호 자동 갱신)`);
+    savePackingListToFirestore(nextContainers, nextReports);
   };
 
   const splitStep2Item = (containerIdx: number, specificItemIdx?: number) => {
@@ -2961,19 +2963,7 @@ export const OrderDetail: React.FC = () => {
       const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
       setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
-      if (order?.id) {
-        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-        setDoc(orderRef, {
-          packingList: {
-            ...basicForm.packingList,
-            containers: nextContainers
-          },
-          supplierArrivalReports: nextReports,
-          updatedAt: serverTimestamp()
-        }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
-      }
-
-      alert('✂️ 묶여 있던 패키지가 개별 고유 패키지로 분할되었습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
+      savePackingListToFirestore(nextContainers, nextReports);
       return;
     }
 
@@ -3077,19 +3067,7 @@ export const OrderDetail: React.FC = () => {
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
-    if (order?.id) {
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      setDoc(orderRef, {
-        packingList: {
-          ...basicForm.packingList,
-          containers: nextContainers
-        },
-        supplierArrivalReports: nextReports,
-        updatedAt: serverTimestamp()
-      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
-    }
-
-    alert('✂️ 선택한 항목이 분할되었습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
+    savePackingListToFirestore(nextContainers, nextReports);
   };
 
   const resetStep2PkgNumbers = (containerIdx: number) => {
@@ -3175,19 +3153,7 @@ export const OrderDetail: React.FC = () => {
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
-    if (order?.id) {
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      setDoc(orderRef, {
-        packingList: {
-          ...basicForm.packingList,
-          containers: nextContainers
-        },
-        supplierArrivalReports: nextReports,
-        updatedAt: serverTimestamp()
-      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
-    }
-
-    alert('↩️ 소싱/발주 품목 데이터를 기준으로 패킹리스트가 원래대로 다시 불러와졌습니다. (쉬핑마크 및 도착보고서 자동 갱신)');
+    savePackingListToFirestore(nextContainers, nextReports);
   };
 
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {

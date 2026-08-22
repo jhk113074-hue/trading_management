@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.336',
+    version: 'v2.8.336',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: '패키지 합치기/분할 후 원상복귀 현상 완벽 해결 및 클라우드 영구 저장 보장',
+    content: '• 패킹리스트에서 [🔗 PKG 합치기] 실행 시 Firestore 저장 과정에서 발생할 수 있는 데이터 포맷 불일치(undefined 필드)를 완전히 제거하고 안전한 클라우드 실시간 동기화 파이프라인 구축\n• 합치기 완료 후 화면 롤백 현상 원천 차단 및 영구 저장 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.335',
     version: 'v2.8.335',
     date: '2026-08-22',
