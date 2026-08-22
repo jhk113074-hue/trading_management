@@ -484,13 +484,8 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                 <tr>
                   <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
                     <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Shipper / Beneficiary:</div>
-                    <div style={{ whiteSpace: 'pre-line', fontWeight: 700, fontSize: '10px', color: '#0f172a' }}>
-                      {data.customShipperText || (
-                        <>
-                          <div style={{ fontWeight: 800, fontSize: '11px', color: '#000' }}>{companyName}</div>
-                          <div style={{ fontWeight: 500, fontSize: '9px', color: '#334155', marginTop: '2px' }}>{headerAddress}</div>
-                        </>
-                      )}
+                    <div style={{ whiteSpace: 'pre-line', fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.customShipperText || `${companyName}\n${headerAddress}`}
                     </div>
                   </td>
                   <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
@@ -498,7 +493,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       <div style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '9.5px', color: '#1e293b' }}>Invoice No. & Date:</div>
                       <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#000' }}>{data.invoiceDate}</div>
                     </div>
-                    <div style={{ fontWeight: 800, fontSize: '12px', marginTop: '2px', color: '#000' }}>{data.invoiceNo || data.piNumber || '-'}</div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', marginTop: '2px', color: '#000' }}>{`${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`}</div>
                     <div style={{ borderTop: '1px solid #cbd5e1', marginTop: '6px', paddingTop: '4px' }}>
                       <div style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '9.5px', color: '#1e293b' }}>L/C No. & Date:</div>
                       <div style={{ fontSize: '10px', fontWeight: 600 }}>{data.lcNo || 'N/A'} {data.lcDate ? `& ${data.lcDate}` : ''}</div>
@@ -510,8 +505,9 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                 <tr>
                   <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
                     <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Applicant:</div>
-                    <div style={{ fontWeight: 800, fontSize: '11px', color: '#000' }}>{data.customerName || '-'}</div>
-                    <div style={{ whiteSpace: 'pre-line', marginTop: '2px', fontSize: '9.5px', color: '#334155', fontWeight: 500 }}>{data.customerAddress || ''}</div>
+                    <div style={{ whiteSpace: 'pre-line', fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {(data.customerName || '-') + (data.customerAddress ? '\n' + data.customerAddress : '')}
+                    </div>
                   </td>
                   <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
                     <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>L/C Issuing Bank:</div>
@@ -600,7 +596,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         </td>
                       )}
                       <td style={tdItemStyle}>
-                        <div style={{ fontWeight: item.isFreight ? 800 : 700 }}>{item.name}</div>
+                        <div style={{ fontWeight: 400 }}>{item.name}</div>
                       </td>
                       <td style={{ ...tdItemStyle, textAlign: 'center', fontSize: '9.5px', color: '#334155' }}>
                         {item.isFreight ? '' : (item.hsCode || '-')}
@@ -614,7 +610,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       <td style={{ ...tdItemStyle, textAlign: 'right' }}>
                         {item.isFreight ? '' : `US$${Number(item.unitPrice).toFixed(2)}`}
                       </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 'bold' }}>
+                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 400 }}>
                         US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>

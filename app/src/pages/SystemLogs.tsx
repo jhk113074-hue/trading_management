@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.379',
+    version: 'v2.8.379',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'CI / PL 서식(Excel 및 PDF/미리보기) 각 칸들의 제목(Header/Title)만 BOLD 처리 및 내용 가는 글씨체(Regular) 일원화',
+    content: '• Commercial Invoice 및 Packing List의 상단 5x2 정보 그리드, 테이블 헤더, 하단 세부섹션 타이틀만 볼드(Bold)체로 유지\\n• 품명, HS Code, 수량, 단가, 금액, 인보이스번호/날짜, 바이어 주소, 출항정보 등 모든 데이터 셀 내용은 가는 글씨체(Regular)로 완벽하게 통일 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.378',
     version: 'v2.8.378',
     date: '2026-08-22',
