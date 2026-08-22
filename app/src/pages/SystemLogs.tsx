@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.360',
+    version: 'v2.8.360',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '쉬핑마크(Shipping Mark) PALLET NO 포맷 간소화 (PALLET NO. : 39)',
+    content: '• 쉬핑마크의 팔레트 번호 라인을 기존 `1-39 / 39` 대신 요청에 맞춰 총 수량 단일 표기(`PALLET NO. : 39`)로 간소화 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.359',
     version: 'v2.8.359',
     date: '2026-08-22',

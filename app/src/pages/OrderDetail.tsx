@@ -6166,7 +6166,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             else if (shapeVal === 'square') shapeSymbol = '▢';
                             else if (shapeVal === 'triangle') shapeSymbol = '△';
 
-                            const palletText = grandPkg > 1 ? `PALLET NO. : 1-${grandPkg} / ${grandPkg}` : `PALLET NO. : 1 / 1`;
+                            const palletText = grandPkg > 0 ? `PALLET NO. : ${grandPkg}` : '';
                             const markStr = `${shapeSymbol}\n${compVal}\n${portVal}${countryVal ? ', ' + countryVal : ''}\n${palletText}\n${originVal}`;
                             return `<pre style="font-family: inherit; font-size: 9px; line-height: 1.4; font-weight: bold; text-align: center; margin: 0;">${markStr}</pre>`;
                           })()}
@@ -11055,7 +11055,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const shapeSymbol = commonShippingMark.shape === 'triangle' ? '△' : commonShippingMark.shape === 'square' ? '□' : commonShippingMark.shape === 'circle' ? '○' : '◇';
                 const compMark = commonShippingMark.company || 'YSACC';
                 const portCountryMark = [commonShippingMark.port || order.portOfDischarge || '', commonShippingMark.country || order.destinationCountry || ''].filter(Boolean).join(', ');
-                const palletNoText = pkCount > 1 ? `PALLET NO. : 1-${pkCount} / ${pkCount}` : `PALLET NO. : 1 / 1`;
+                const palletNoText = pkCount > 0 ? `PALLET NO. : ${pkCount}` : '';
                 const originMark = commonShippingMark.origin || 'MADE IN KOREA';
                 const formattedMarkText = `${shapeSymbol}\n${compMark}\n${portCountryMark}\n${palletNoText}\n${originMark}`;
 
@@ -14090,7 +14090,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         }
         if (totalPkgCount === 0) totalPkgCount = (order.items || []).length || 1;
 
-        const palletNoText = totalPkgCount > 1 ? `PALLET NO. : 1-${totalPkgCount} / ${totalPkgCount}` : `PALLET NO. : 1 / 1`;
+        const palletNoText = totalPkgCount > 0 ? `PALLET NO. : ${totalPkgCount}` : '';
         const shippingMarkText = `${shapeSymbol}\n${commonShippingMark.company || 'YSACC'}\n${commonShippingMark.port || order.portOfDischarge || ''}, ${commonShippingMark.country || order.destinationCountry || ''}\n${palletNoText}\n${commonShippingMark.origin || 'MADE IN KOREA'}`;
 
         const ciItemsList = (orderItems || []).map(it => {
