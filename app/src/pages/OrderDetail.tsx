@@ -4517,11 +4517,26 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
-    const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
-
     const items = groupedSupplierItems[supplierName] || [];
-    const toEmail = (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '';
-    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
+    const matchedSupplierObj = suppliers.find(s => 
+      (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.name && supplierName.includes(s.name)) ||
+      (supplierName && s.name && (s.name.includes(supplierName)))
+    );
+    const primaryContact = matchedSupplierObj?.contacts?.find(c => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+    const toEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
+
+    const ccFromContacts = (matchedSupplierObj?.contacts || [])
+      .filter(c => c.isCc && c.email)
+      .map(c => c.email!.trim());
+    const explicitCcList = (matchedSupplierObj?.defaultCcEmails || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean);
+    const combinedSupplierCc = Array.from(new Set([...ccFromContacts, ...explicitCcList]));
+    const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+    const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
 
     let contentStr = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정 (클라우드 저장 후 생성)'}`;
 
@@ -9103,13 +9118,19 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             
                             const actualQty = matchedQty || '';
                             if (actualQty && !desc.includes(String(actualQty))) {
-                              desc = `${desc} ${actualQty} EA`.replace(/\s+/g, ' ');
+                              desc = `${desc} ${actualQty} kg`.replace(/\s+/g, ' ');
+                            } else if (/\bEA\b/i.test(desc)) {
+                              desc = desc.replace(/\bEA\b/gi, 'kg');
                             }
                             
                             if (desc !== it.descOfGoods) {
                               mutated = true;
                               return { ...it, descOfGoods: desc };
                             }
+                          } else if (/\bEA\b/i.test(desc)) {
+                            desc = desc.replace(/\bEA\b/gi, 'kg');
+                            mutated = true;
+                            return { ...it, descOfGoods: desc };
                           }
                           return it;
                         });
@@ -9133,7 +9154,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
                           
                           if (it.qty && !desc.includes(String(it.qty))) {
-                            desc = `${desc} ${it.qty} EA`.replace(/\s+/g, ' ');
+                            desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+                          } else if (/\bEA\b/i.test(desc)) {
+                            desc = desc.replace(/\bEA\b/gi, 'kg');
                           }
 
                           packingItemsList.push({
