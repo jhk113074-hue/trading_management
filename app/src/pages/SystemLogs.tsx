@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.373',
+    version: 'v2.8.373',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: 'CI 탭 품명 수정 시 실시간 즉시 저장 및 원본 품명으로 되돌아가는 현상 완벽 차단',
+    content: '• CI 탭 품명 편집 시 즉각적인 Firestore 비동기 저장 및 상태 보존 처리\\n• onSnapshot 및 useEffect 의존성 루프로 인해 편집 도중 원본 품명으로 롤백되던 현상 원천 차단',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.372',
     version: 'v2.8.372',
     date: '2026-08-22',

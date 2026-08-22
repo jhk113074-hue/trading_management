@@ -1275,55 +1275,6 @@ export const OrderDetail: React.FC = () => {
 
   useEffect(() => {
     if (!products || products.length === 0) return;
-    const forwarderTotalUsd = forwardersList.reduce((sum, fw) => {
-      return sum + (parseFloat(fw.budgetAmountUsd as any) || Number(fw.amountUsd) || (fw.freightCurrency === 'USD' ? Number(fw.freightAmount) : 0) || 0);
-    }, 0);
-    const forwarderName = forwardersList.map(fw => fw.name).filter(Boolean).join(', ') || 'CONTAINER';
-    const defaultFreightTitle = `CIF CHARGES FOR ${forwarderName}`;
-
-    setCustomCiItems(prev => {
-      let baseList = (prev && prev.length > 0)
-        ? prev
-        : ((orderItems && orderItems.length > 0 ? orderItems : (order?.items || [])).map((it: any) => ({
-            name: (it.name || '').replace(/^\[.*?\]\s*/, '').trim(),
-            hsCode: it.hsCode || getProductHsCode(it, products, basicForm.customer),
-            qty: Number(it.qty) || 0,
-            unit: it.unit || 'PCS',
-            unitPrice: Number(it.unitPrice) || 0,
-            amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
-            isFreight: false
-          })));
-
-      const hasFreight = baseList.some(it => it.isFreight);
-      if (!hasFreight) {
-        baseList = [
-          ...baseList,
-          {
-            name: defaultFreightTitle,
-            hsCode: '',
-            qty: 1,
-            unit: 'LOT',
-            unitPrice: forwarderTotalUsd,
-            amount: forwarderTotalUsd,
-            isFreight: true
-          }
-        ];
-      }
-
-      let hasChanges = false;
-      const updated = baseList.map(it => {
-        if (!it.isFreight && (it.hsCode === undefined || it.hsCode === '')) {
-          const dbHs = getProductHsCode(it, products, basicForm.customer);
-          if (dbHs) {
-            hasChanges = true;
-            return { ...it, hsCode: dbHs };
-          }
-        }
-        return it;
-      });
-      return (hasChanges || prev.length === 0 || !hasFreight) ? updated : prev;
-    });
-
     setOrderItems(prev => {
       if (!prev || prev.length === 0) return prev;
       let hasChanges = false;
@@ -1339,7 +1290,7 @@ export const OrderDetail: React.FC = () => {
       });
       return hasChanges ? updated : prev;
     });
-  }, [products, basicForm.customer, orderItems, order, forwardersList]);
+  }, [products, basicForm.customer]);
 
   const [editingFreight, setEditingFreight] = useState<{ idx: number; value: string } | null>(null);
 
@@ -1874,9 +1825,9 @@ export const OrderDetail: React.FC = () => {
         setOrder(data);
         if ((data as any).customCiItems && (data as any).customCiItems.length > 0) {
           setCustomCiItems((data as any).customCiItems);
-        } else if (data.items && data.items.length > 0) {
+        } else if (!initialLoadRef.current && data.items && data.items.length > 0) {
           setCustomCiItems(data.items.map((it: any) => ({
-            name: (it.name || '').replace(/^\[.*?\]\s*/, '').trim(),
+            name: (it.name || '').replace(/^\[.*?\]\s*/, '').replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적|TAESUNG|ECOCLEAR)[^)]*\)/gi, '').trim(),
             hsCode: it.hsCode || '',
             qty: Number(it.qty) || 0,
             unit: it.unit || 'PCS',
@@ -2969,6 +2920,19 @@ export const OrderDetail: React.FC = () => {
     });
 
     return { grandTotalPlt, updatedReports };
+  };
+
+  const saveCiItemsToFirestore = async (newCiItems: any[]) => {
+    if (!order?.id) return;
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        customCiItems: newCiItems,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (err) {
+      console.error('Failed to save CI items to Firestore:', err);
+    }
   };
 
   const savePackingListToFirestore = async (nextContainers: any[], nextReports?: any) => {
@@ -11569,10 +11533,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           <button
                             type="button"
                             onClick={() => {
-                              setCustomCiItems(prev => [
-                                ...prev,
+                              const base = (customCiItems && customCiItems.length > 0) ? customCiItems : currentCiItems;
+                              const next = [
+                                ...base,
                                 { name: '', hsCode: '', qty: 1, unit: 'PCS', unitPrice: 0, amount: 0, isFreight: false }
-                              ]);
+                              ];
+                              setCustomCiItems(next);
+                              saveCiItemsToFirestore(next);
                             }}
                             style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
                           >
@@ -11582,7 +11549,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             type="button"
                             onClick={() => {
                               if (confirm('수주 품목 및 포워딩 운송비 데이터를 기준으로 CI 품목 및 운임 목록을 다시 초기화하시겠습니까?')) {
-                                setCustomCiItems([
+                                const next = [
                                   ...(orderItems || []).map(it => ({
                                     name: cleanCiName(it.name || ''),
                                     hsCode: getProductHsCode(it, products, basicForm.customer),
@@ -11593,7 +11560,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     isFreight: false
                                   })),
                                   defaultFreightItem
-                                ]);
+                                ];
+                                setCustomCiItems(next);
+                                saveCiItemsToFirestore(next);
                               }
                             }}
                             style={{ padding: '4px 10px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
@@ -11658,10 +11627,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                           {currentCiItems.map((item, idx) => {
                             const handleUpdateRow = (patch: Partial<any>) => {
-                              setCustomCiItems(prev => {
-                                const base = (prev && prev.length > 0) ? prev : currentCiItems;
-                                return base.map((it, i) => i === idx ? { ...it, ...patch } : it);
-                              });
+                              const base = (customCiItems && customCiItems.length > 0) ? customCiItems : currentCiItems;
+                              const next = base.map((it, i) => i === idx ? { ...it, ...patch } : it);
+                              setCustomCiItems(next);
+                              saveCiItemsToFirestore(next);
                             };
 
                             const itemHs = item.hsCode !== undefined ? item.hsCode : getProductHsCode(item, products, basicForm.customer);
@@ -11736,10 +11705,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setCustomCiItems(prev => {
-                                        const base = (prev && prev.length > 0) ? prev : currentCiItems;
-                                        return base.filter((_, i) => i !== idx);
-                                      });
+                                      const base = (customCiItems && customCiItems.length > 0) ? customCiItems : currentCiItems;
+                                      const next = base.filter((_, i) => i !== idx);
+                                      setCustomCiItems(next);
+                                      saveCiItemsToFirestore(next);
                                     }}
                                     style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer' }}
                                     title="행 삭제"
