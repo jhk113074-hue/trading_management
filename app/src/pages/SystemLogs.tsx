@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.365',
+    version: 'v2.8.365',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Packing List 하단 비고란(PL Remarks / 특약 문구) 편집 및 서식 출력 기능 추가',
+    content: '• PL 서식 편집 탭 하단에 [📝 Packing List 하단 비고 및 추가 특약 문구 (PL Remarks)] 편집란 및 예시 문구(ISPM 15 목재 소독 증명, PO 번호 등) 버튼 추가\\n• 입력된 비고 문구는 Packing List 인쇄 미리보기 및 Excel 2번째 시트 하단에 자동 정렬되어 출력',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.364',
     version: 'v2.8.364',
     date: '2026-08-22',

@@ -1090,6 +1090,7 @@ export const OrderDetail: React.FC = () => {
   // Common shipping mark configuration state
   const [docSubTab, setDocSubTab] = useState<'CI' | 'PL'>('CI');
   const [includeLetterhead, setIncludeLetterhead] = useState(true);
+  const [customPlRemarks, setCustomPlRemarks] = useState<string>('');
   const [commonShippingMark, setCommonShippingMark] = useState({
     shape: 'diamond',
     company: 'YSACC',
@@ -1887,6 +1888,9 @@ export const OrderDetail: React.FC = () => {
 
         if ((data as any).customCiExtra) {
           setCustomCiExtra((data as any).customCiExtra);
+        }
+        if ((data as any).customPlRemarks) {
+          setCustomPlRemarks((data as any).customPlRemarks);
         } else {
           setCustomCiExtra({
             introText: '',
@@ -2976,6 +2980,7 @@ export const OrderDetail: React.FC = () => {
       const updatePayload: any = {
         customCiItems: customCiItems,
         customCiExtra: customCiExtra,
+        customPlRemarks: customPlRemarks,
         packingList: cleanPackingList,
         updatedAt: serverTimestamp()
       };
@@ -11223,6 +11228,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     introText: effectiveIntroText,
                     containerInfo: effectiveContainerInfo,
                     bottomFreeText: customCiExtra.bottomFreeText,
+                    plRemarks: customPlRemarks,
                     vatTrn: customCiExtra.vatTrn,
                     manufacturerName: customCiExtra.manufacturerName,
                     manufacturerAddress: customCiExtra.manufacturerAddress,
@@ -12078,6 +12084,55 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <span>총 GROSS WT: {plGross.toLocaleString()} KG</span>
                             <span>총 CBM: {Number(plCbm).toFixed(2)} CBM</span>
                           </div>
+                        </div>
+
+                        {/* PL 하단 Remark 및 추가 특약 문구 설정 */}
+                        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <div>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', textTransform: 'uppercase' }}>
+                                📝 Packing List 하단 비고 및 추가 특약 문구 (PL Remarks)
+                              </span>
+                              <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px' }}>(Packing List 하단 집계 및 컨테이너 정보 아래에 출력될 추가 비고/특약 사항을 자유롭게 입력)</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const sample = 'REMARK:\n1. ALL CARGO WOODEN PACKAGES ARE TREATED IN ACCORDANCE WITH ISPM 15.\n2. SHIPMENT IN GOOD CONDITION.';
+                                  setCustomPlRemarks(p => p ? `${p}\n${sample}` : sample);
+                                }}
+                                style={{ padding: '3px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#0f766e', cursor: 'pointer' }}
+                              >
+                                + ISPM 15 소독/방역 예시
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const sample = `*PO NO.: ${basicForm.custPo || basicForm.piNumber || ''}`;
+                                  setCustomPlRemarks(p => p ? `${p}\n${sample}` : sample);
+                                }}
+                                style={{ padding: '3px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#3b82f6', cursor: 'pointer' }}
+                              >
+                                + PO 번호 예시
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCustomPlRemarks('')}
+                                style={{ padding: '3px 8px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#dc2626', cursor: 'pointer' }}
+                              >
+                                비우기
+                              </button>
+                            </div>
+                          </div>
+
+                          <textarea
+                            rows={4}
+                            value={customPlRemarks}
+                            onChange={e => setCustomPlRemarks(e.target.value)}
+                            placeholder={'Packing List 하단에 추가로 기재할 비고(Remark) 또는 특약 문구를 입력하세요.\n예:\nREMARK:\n- ALL CARGO WOODEN PACKAGES ARE TREATED IN ACCORDANCE WITH ISPM 15.\n- CLEAN ON BOARD SHIPMENT.'}
+                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '80px', fontFamily: 'inherit', lineHeight: '1.45', background: '#fff' }}
+                          />
                         </div>
                       </div>
                     )}
@@ -14507,6 +14562,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               introText: (customCiExtra.introText !== undefined && customCiExtra.introText !== '') ? customCiExtra.introText : (basicForm.lcDescription || ''),
               containerInfo: (customCiExtra.containerInfo !== undefined && customCiExtra.containerInfo !== '') ? customCiExtra.containerInfo : formatContainerInfoFromSpecs(basicForm.shipmentType, basicForm.fclSpecs),
               bottomFreeText: customCiExtra.bottomFreeText,
+              plRemarks: customPlRemarks,
               vatTrn: customCiExtra.vatTrn,
               manufacturerName: customCiExtra.manufacturerName,
               manufacturerAddress: customCiExtra.manufacturerAddress,

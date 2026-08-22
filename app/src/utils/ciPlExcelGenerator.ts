@@ -69,6 +69,7 @@ export interface CiPlData {
   introText?: string;
   containerInfo?: string;
   bottomFreeText?: string;
+  plRemarks?: string;
   vatTrn?: string;
   manufacturerName?: string;
   manufacturerAddress?: string;
@@ -997,6 +998,25 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 9, bold: true };
         ws.getRow(currRow).height = 18;
         currRow++;
+      }
+
+      if (data.plRemarks && data.plRemarks.trim()) {
+        const lines = data.plRemarks.trim().split('\n');
+        lines.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            ws.getRow(currRow).height = 10;
+            currRow++;
+            return;
+          }
+          const isHeader = /^(REMARK|REMARKS|NOTE|NOTES|[A-Z]\))/i.test(trimmed);
+          ws.mergeCells(`A${currRow}:L${currRow}`);
+          ws.getCell(`A${currRow}`).value = line;
+          ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: isHeader };
+          ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
+          ws.getRow(currRow).height = isHeader ? 18 : 15;
+          currRow++;
+        });
       }
 
       currRow += 2;

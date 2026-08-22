@@ -72,6 +72,7 @@ export interface CiPlPreviewModalProps {
     introText?: string;
     containerInfo?: string;
     bottomFreeText?: string;
+    plRemarks?: string;
     vatTrn?: string;
     manufacturerName?: string;
     manufacturerAddress?: string;
@@ -626,6 +627,25 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </tr>
                 </tbody>
               </table>
+            )}
+
+            {/* PL Bottom Sections (Container Info & PL Remarks) */}
+            {activeTab === 'PL' && (
+              <div style={{ marginTop: '4px', fontSize: '9.5px', color: '#000', lineHeight: 1.4 }}>
+                <div style={{ letterSpacing: '3px', textAlign: 'center', margin: '4px 0', fontSize: '10px', fontWeight: 'bold' }}>
+                  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                </div>
+                {data.containerInfo && (
+                  <div style={{ textAlign: 'right', fontWeight: 800, margin: '2px 0 6px 0', fontSize: '10px' }}>
+                    {data.containerInfo.toUpperCase().startsWith('CONTAINER') ? data.containerInfo : `CONTAINER : ${data.containerInfo}`}
+                  </div>
+                )}
+                {data.plRemarks && data.plRemarks.trim() && (
+                  <div style={{ marginTop: '6px', whiteSpace: 'pre-line', fontSize: '9.5px', lineHeight: '1.4', fontWeight: 600 }}>
+                    {data.plRemarks}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Bottom Extra Sections matching CI template (Only rendered if filled) */}
