@@ -21,6 +21,7 @@ export interface CiPlPreviewModalProps {
   data: {
     letterheadUrl?: string;
     piNumber: string;
+    invoiceNo?: string;
     invoiceDate: string;
     customerName: string;
     customerAddress?: string;
@@ -379,81 +380,89 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               {activeTab === 'CI' ? 'Commercial Invoice' : 'Packing List'}
             </div>
 
-            {/* Header 5x2 Info Grid */}
+            {/* Header 5x2 Info Grid with Bold Typography */}
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }}>
               <tbody>
+                {/* Row 1 (50% : 50%) */}
                 <tr>
-                  <td style={{ ...tdHeaderStyle, width: '50%' }}>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', fontSize: '9.5px' }}>Shipper / Beneficiary</div>
-                    <div style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{data.customShipperText || `${companyName}\n${headerAddress}`}</div>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Shipper / Beneficiary:</div>
+                    <div style={{ whiteSpace: 'pre-line', fontWeight: 700, fontSize: '10px', color: '#0f172a' }}>
+                      {data.customShipperText || (
+                        <>
+                          <div style={{ fontWeight: 800, fontSize: '11px', color: '#000' }}>{companyName}</div>
+                          <div style={{ fontWeight: 500, fontSize: '9px', color: '#334155', marginTop: '2px' }}>{headerAddress}</div>
+                        </>
+                      )}
+                    </div>
                   </td>
-                  <td style={{ ...tdHeaderStyle, width: '50%' }}>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '9.5px' }}>Invoice No. & Date</div>
-                      <div style={{ fontSize: '10px', fontWeight: 700 }}>{data.invoiceDate}</div>
+                      <div style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '9.5px', color: '#1e293b' }}>Invoice No. & Date:</div>
+                      <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#000' }}>{data.invoiceDate}</div>
                     </div>
-                    <div style={{ fontWeight: 'bold', fontSize: '11px', marginTop: '2px' }}>{data.piNumber || '-'}</div>
-                    <div style={{ borderTop: '1px solid #000', marginTop: '6px', paddingTop: '4px' }}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '9.5px' }}>L/C No. & Date</div>
-                      <div>{data.lcNo || 'N/A'} {data.lcDate ? `& ${data.lcDate}` : ''}</div>
+                    <div style={{ fontWeight: 800, fontSize: '12px', marginTop: '2px', color: '#000' }}>{data.invoiceNo || data.piNumber || '-'}</div>
+                    <div style={{ borderTop: '1px solid #cbd5e1', marginTop: '6px', paddingTop: '4px' }}>
+                      <div style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '9.5px', color: '#1e293b' }}>L/C No. & Date:</div>
+                      <div style={{ fontSize: '10px', fontWeight: 600 }}>{data.lcNo || 'N/A'} {data.lcDate ? `& ${data.lcDate}` : ''}</div>
                     </div>
                   </td>
                 </tr>
+
+                {/* Row 2 (50% : 50%) */}
                 <tr>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', fontSize: '9.5px' }}>Applicant</div>
-                    <div style={{ fontWeight: 'bold' }}>{data.customerName}</div>
-                    <div style={{ whiteSpace: 'pre-line', marginTop: '2px' }}>{data.customerAddress || ''}</div>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Applicant:</div>
+                    <div style={{ fontWeight: 800, fontSize: '11px', color: '#000' }}>{data.customerName || '-'}</div>
+                    <div style={{ whiteSpace: 'pre-line', marginTop: '2px', fontSize: '9.5px', color: '#334155', fontWeight: 500 }}>{data.customerAddress || ''}</div>
                   </td>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', fontSize: '9.5px' }}>L/C Issuing Bank</div>
-                    <div style={{ whiteSpace: 'pre-line' }}>{data.lcIssuingBank || 'N/A'}</div>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>L/C Issuing Bank:</div>
+                    <div style={{ whiteSpace: 'pre-line', fontWeight: 700, fontSize: '10px', color: '#0f172a' }}>{data.lcIssuingBank || 'N/A'}</div>
                   </td>
                 </tr>
+
+                {/* Row 3 (50% : 50%) */}
                 <tr>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', fontSize: '9.5px' }}>Notify Party</div>
-                    <div style={{ whiteSpace: 'pre-line' }}>{data.notifyParty || data.customerName || 'Same as Applicant'}</div>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Notify Party:</div>
+                    <div style={{ whiteSpace: 'pre-line', fontWeight: 700, fontSize: '10px', color: '#0f172a' }}>{data.notifyParty || data.customerName || 'Same as Applicant'}</div>
                   </td>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px', fontSize: '9.5px' }}>Remarks</div>
-                    <div style={{ whiteSpace: 'pre-line' }}>{data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}</div>
+                  <td colSpan={3} style={{ ...tdHeaderStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', fontSize: '9.5px', color: '#1e293b' }}>Remarks:</div>
+                    <div style={{ whiteSpace: 'pre-line', fontSize: '9.5px', color: '#334155', fontWeight: 600 }}>{data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}</div>
                   </td>
                 </tr>
+
+                {/* Row 4 (33.3% : 33.3% : 33.3%) */}
                 <tr>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Port of Loading</div>
-                        <div style={{ fontWeight: 'bold', fontSize: '10px' }}>{data.portOfLoading || '-'}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Port of Discharge</div>
-                        <div style={{ fontWeight: 'bold', fontSize: '10px' }}>{data.portOfDischarge || '-'}</div>
-                      </div>
-                    </div>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>Port of Loading:</div>
+                    <div style={{ fontWeight: 800, fontSize: '10.5px', marginTop: '2px', color: '#000' }}>{data.portOfLoading || '-'}</div>
                   </td>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Payment Terms</div>
-                    <div style={{ fontWeight: 'bold' }}>{data.paymentTerms || '-'}</div>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>Port of Discharge:</div>
+                    <div style={{ fontWeight: 800, fontSize: '10.5px', marginTop: '2px', color: '#000' }}>{data.portOfDischarge || '-'}</div>
+                  </td>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.34%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>Payment Terms:</div>
+                    <div style={{ fontWeight: 800, fontSize: '10px', marginTop: '2px', color: '#000' }}>{data.paymentTerms || '-'}</div>
                   </td>
                 </tr>
+
+                {/* Row 5 (33.3% : 33.3% : 33.3%) */}
                 <tr>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Vessel Name & Voyage No.</div>
-                        <div>{data.vesselName || '-'}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Sailing on or about</div>
-                        <div>{data.etd || '-'}</div>
-                      </div>
-                    </div>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>Vessel / Flight:</div>
+                    <div style={{ fontWeight: 800, fontSize: '10.5px', marginTop: '2px', color: '#000' }}>{data.vesselName || '-'}</div>
                   </td>
-                  <td style={tdHeaderStyle}>
-                    <div style={{ fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase' }}>Delivery Terms</div>
-                    <div style={{ fontWeight: 'bold' }}>{data.deliveryTerms || '-'}</div>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>ETD (출항예정일):</div>
+                    <div style={{ fontWeight: 800, fontSize: '10.5px', marginTop: '2px', color: '#000' }}>{data.etd || '-'}</div>
+                  </td>
+                  <td colSpan={2} style={{ ...tdHeaderStyle, width: '33.34%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#1e293b' }}>Delivery Terms (인코텀즈):</div>
+                    <div style={{ fontWeight: 800, fontSize: '10.5px', marginTop: '2px', color: '#000' }}>{data.deliveryTerms || '-'}</div>
                   </td>
                 </tr>
               </tbody>

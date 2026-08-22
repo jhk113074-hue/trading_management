@@ -88,10 +88,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.pageSetup.orientation = 'portrait';
       ws.pageSetup.fitToPage = true;
       ws.pageSetup.fitToWidth = 1;
-      ws.pageSetup.fitToHeight = 0;
+      ws.pageSetup.fitToHeight = 0; // Natural pagination if content exceeds 1 page
       ws.pageSetup.margins = {
-        left: 0.35, right: 0.35,
-        top: 0.4, bottom: 0.4,
+        left: 0.28, right: 0.28,
+        top: 0.3, bottom: 0.3,
         header: 0.0, footer: 0.0
       };
 
@@ -163,59 +163,94 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow = 5;
       }
 
-      // 2. Document Title
+      // 2. Document Title (Bold 16pt)
       ws.mergeCells(`A${currRow}:L${currRow}`);
       const titleCell = ws.getCell(`A${currRow}`);
       titleCell.value = isInvoice ? 'Commercial Invoice' : 'Packing List';
-      titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF000000' } };
+      titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FF000000' } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 28;
-      currRow += 2;
+      ws.getRow(currRow).height = 24;
+      currRow++;
 
-      // 3. 5x2 Header Grid
+      // 3. 5x2 Header Grid with Bold Section Headers & Bold Values
       // Row 1-3: Exactly 2 Equal Columns (A..F = 50%, G..L = 50%)
       // Row 4-5: Exactly 3 Equal Columns (A..D = 33.3%, E..H = 33.3%, I..L = 33.3%)
 
-      // Row 1 (50% / 50%): Shipper (A:F) vs Inv No / LC No (G:L)
+      // Row 1 (50% : 50%): Shipper vs Inv No & Date / LC No & Date
       const r1 = currRow;
       ws.mergeCells(`A${r1}:F${r1}`);
-      const shipperVal = data.customShipperText || `${companyName}\n${headerAddress}`;
-      ws.getCell(`A${r1}`).value = `Shipper / Beneficiary:\n${shipperVal}`;
-      ws.getCell(`A${r1}`).font = { name: 'Arial', size: 8.5 };
+      if (data.customShipperText) {
+        ws.getCell(`A${r1}`).value = {
+          richText: [
+            { text: 'Shipper / Beneficiary:\n', font: { name: 'Arial', size: 9, bold: true } },
+            { text: data.customShipperText, font: { name: 'Arial', size: 8.5 } }
+          ]
+        };
+      } else {
+        ws.getCell(`A${r1}`).value = {
+          richText: [
+            { text: 'Shipper / Beneficiary:\n', font: { name: 'Arial', size: 9, bold: true } },
+            { text: companyName + '\n', font: { name: 'Arial', size: 9, bold: true } },
+            { text: headerAddress, font: { name: 'Arial', size: 8.5 } }
+          ]
+        };
+      }
       ws.getCell(`A${r1}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`G${r1}:L${r1}`);
-      ws.getCell(`G${r1}`).value = `Invoice No. & Date:\n${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}\n\nL/C No. & Date:\n${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`;
-      ws.getCell(`G${r1}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`G${r1}`).value = {
+        richText: [
+          { text: 'Invoice No. & Date:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}\n\n`, font: { name: 'Arial', size: 9, bold: true } },
+          { text: 'L/C No. & Date:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`, font: { name: 'Arial', size: 8.5 } }
+        ]
+      };
       ws.getCell(`G${r1}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r1).height = 58;
+      ws.getRow(r1).height = 54;
       currRow++;
 
-      // Row 2 (50% / 50%): Applicant (A:F) vs LC Bank (G:L)
+      // Row 2 (50% : 50%): Applicant vs LC Issuing Bank
       const r2 = currRow;
       ws.mergeCells(`A${r2}:F${r2}`);
-      const appAddress = data.customerAddress ? `\n${data.customerAddress}` : '';
-      ws.getCell(`A${r2}`).value = `Applicant:\n${data.customerName || '-'}${appAddress}`;
-      ws.getCell(`A${r2}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`A${r2}`).value = {
+        richText: [
+          { text: 'Applicant:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: (data.customerName || '-') + '\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: data.customerAddress || '', font: { name: 'Arial', size: 8.5 } }
+        ]
+      };
       ws.getCell(`A${r2}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`G${r2}:L${r2}`);
-      ws.getCell(`G${r2}`).value = `L/C Issuing Bank:\n${data.lcIssuingBank || 'N/A'}`;
-      ws.getCell(`G${r2}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`G${r2}`).value = {
+        richText: [
+          { text: 'L/C Issuing Bank:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: data.lcIssuingBank || 'N/A', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`G${r2}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r2).height = 48;
+      ws.getRow(r2).height = 44;
       currRow++;
 
-      // Row 3 (50% / 50%): Notify Party (A:F) vs Remarks (G:L)
+      // Row 3 (50% : 50%): Notify Party vs Remarks
       const r3 = currRow;
       ws.mergeCells(`A${r3}:F${r3}`);
-      ws.getCell(`A${r3}`).value = `Notify Party:\n${data.notifyParty || data.customerName || 'Same as Applicant'}`;
-      ws.getCell(`A${r3}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`A${r3}`).value = {
+        richText: [
+          { text: 'Notify Party:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: data.notifyParty || data.customerName || 'Same as Applicant', font: { name: 'Arial', size: 8.5, bold: true } }
+        ]
+      };
       ws.getCell(`A${r3}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`G${r3}:L${r3}`);
-      ws.getCell(`G${r3}`).value = `Remarks:\n${data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}`;
-      ws.getCell(`G${r3}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`G${r3}`).value = {
+        richText: [
+          { text: 'Remarks:\n', font: { name: 'Arial', size: 9, bold: true } },
+          { text: data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"', font: { name: 'Arial', size: 8.5 } }
+        ]
+      };
       ws.getCell(`G${r3}`).alignment = { wrapText: true, vertical: 'top' };
       const remarkLines = (data.remarks || '').split('\n').length;
       ws.getRow(r3).height = Math.max(50, remarkLines * 13 + 18);
@@ -233,42 +268,66 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         }
       }
 
-      // Row 4 (33.3% / 33.3% / 33.3%): Port of Loading (A:D) | Port of Discharge (E:H) | Payment Terms (I:L)
+      // Row 4 (33.3% : 33.3% : 33.3%): Port of Loading | Port of Discharge | Payment Terms
       const r4 = currRow;
       ws.mergeCells(`A${r4}:D${r4}`);
-      ws.getCell(`A${r4}`).value = `Port of Loading:\n${data.portOfLoading || '-'}`;
-      ws.getCell(`A${r4}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`A${r4}`).value = {
+        richText: [
+          { text: 'Port of Loading:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.portOfLoading || '-', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`A${r4}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${r4}:H${r4}`);
-      ws.getCell(`E${r4}`).value = `Port of Discharge:\n${data.portOfDischarge || '-'}`;
-      ws.getCell(`E${r4}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`E${r4}`).value = {
+        richText: [
+          { text: 'Port of Discharge:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.portOfDischarge || '-', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`E${r4}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`I${r4}:L${r4}`);
-      ws.getCell(`I${r4}`).value = `Payment Terms:\n${data.paymentTerms || '-'}`;
-      ws.getCell(`I${r4}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`I${r4}`).value = {
+        richText: [
+          { text: 'Payment Terms:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.paymentTerms || '-', font: { name: 'Arial', size: 8.5, bold: true } }
+        ]
+      };
       ws.getCell(`I${r4}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r4).height = 34;
+      ws.getRow(r4).height = 30;
       currRow++;
 
-      // Row 5 (33.3% / 33.3% / 33.3%): Vessel / Flight (A:D) | ETD (E:H) | Delivery Terms (I:L)
+      // Row 5 (33.3% : 33.3% : 33.3%): Vessel / Flight | ETD | Delivery Terms
       const r5 = currRow;
       ws.mergeCells(`A${r5}:D${r5}`);
-      ws.getCell(`A${r5}`).value = `Vessel / Flight:\n${data.vesselName || '-'}`;
-      ws.getCell(`A${r5}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`A${r5}`).value = {
+        richText: [
+          { text: 'Vessel / Flight:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.vesselName || '-', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`A${r5}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`E${r5}:H${r5}`);
-      ws.getCell(`E${r5}`).value = `ETD:\n${data.etd || '-'}`;
-      ws.getCell(`E${r5}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`E${r5}`).value = {
+        richText: [
+          { text: 'ETD:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.etd || '-', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`E${r5}`).alignment = { wrapText: true, vertical: 'top' };
 
       ws.mergeCells(`I${r5}:L${r5}`);
-      ws.getCell(`I${r5}`).value = `Delivery Terms:\n${data.deliveryTerms || '-'}`;
-      ws.getCell(`I${r5}`).font = { name: 'Arial', size: 8.5 };
+      ws.getCell(`I${r5}`).value = {
+        richText: [
+          { text: 'Delivery Terms:\n', font: { name: 'Arial', size: 8.5, bold: true } },
+          { text: data.deliveryTerms || '-', font: { name: 'Arial', size: 9, bold: true } }
+        ]
+      };
       ws.getCell(`I${r5}`).alignment = { wrapText: true, vertical: 'top' };
-      ws.getRow(r5).height = 34;
+      ws.getRow(r5).height = 30;
       currRow++;
 
       // Apply borders to Row 4-5 (3 equal columns A:D, E:H, I:L)
@@ -283,17 +342,15 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         }
       }
 
-      currRow++; // Spacer row
-
-      // 4. Item Table Header (12 Columns)
+      // 4. Item Table Header (12 Columns) - Bold Headers
       const thRow = currRow;
-      ws.getRow(thRow).height = 24;
+      ws.getRow(thRow).height = 22;
 
       const setTh = (range: string, val: string) => {
         ws.mergeCells(range);
         const cell = ws.getCell(range.split(':')[0]);
         cell.value = val;
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+        cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       };
 
@@ -302,38 +359,38 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         setTh(`C${thRow}:F${thRow}`, 'Description of Goods');
         setTh(`G${thRow}:H${thRow}`, 'HS Code');
         ws.getCell(`I${thRow}`).value = 'Quantity';
-        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`J${thRow}`).value = 'Unit';
-        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`K${thRow}`).value = 'Unit Price ($)';
-        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`L${thRow}`).value = 'Amount ($)';
-        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`L${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       } else {
         setTh(`A${thRow}:B${thRow}`, 'Shipping Mark');
         setTh(`C${thRow}:F${thRow}`, 'Description of Goods');
         setTh(`G${thRow}:H${thRow}`, 'Packaging');
         ws.getCell(`I${thRow}`).value = 'Net Wt (Kg)';
-        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`J${thRow}`).value = 'Unit';
-        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`K${thRow}`).value = 'Gross Wt (Kg)';
-        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`L${thRow}`).value = 'CBM (M3)';
-        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`L${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       }
 
@@ -388,7 +445,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
           ws.mergeCells(`C${r}:F${r}`);
           ws.getCell(`C${r}`).value = cleanName;
-          ws.getCell(`C${r}`).font = { name: 'Arial', size: 9, bold: it.isFreight };
+          ws.getCell(`C${r}`).font = { name: 'Arial', size: 9, bold: true };
           ws.getCell(`C${r}`).alignment = { vertical: 'middle', wrapText: true };
 
           ws.mergeCells(`G${r}:H${r}`);
@@ -411,7 +468,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           if (!it.isFreight) ws.getCell(`K${r}`).numFmt = 'US$#,##0.00';
 
           ws.getCell(`L${r}`).value = amt;
-          ws.getCell(`L${r}`).font = { name: 'Arial', size: 9, bold: true };
+          ws.getCell(`L${r}`).font = { name: 'Arial', size: 9.5, bold: true };
           ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
           ws.getCell(`L${r}`).numFmt = 'US$#,##0.00';
         } else {
@@ -430,7 +487,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
           ws.mergeCells(`C${r}:F${r}`);
           ws.getCell(`C${r}`).value = cleanName;
-          ws.getCell(`C${r}`).font = { name: 'Arial', size: 9 };
+          ws.getCell(`C${r}`).font = { name: 'Arial', size: 9, bold: true };
           ws.getCell(`C${r}`).alignment = { vertical: 'middle', wrapText: true };
 
           ws.mergeCells(`G${r}:H${r}`);
@@ -472,18 +529,18 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.mergeCells(`A${itemStartRow}:B${itemEndRow}`);
         const markCell = ws.getCell(`A${itemStartRow}`);
         markCell.value = data.shippingMarks || 'N/M';
-        markCell.font = { name: 'Arial', size: 8.5 };
+        markCell.font = { name: 'Arial', size: 8.5, bold: true };
         markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       }
 
-      // 5. TOTAL AMOUNT ROW
+      // 5. TOTAL AMOUNT ROW (Bold 10pt)
       const totalRow = currRow;
-      ws.getRow(totalRow).height = 24;
+      ws.getRow(totalRow).height = 22;
 
       ws.mergeCells(`A${totalRow}:H${totalRow}`);
       const totTitleCell = ws.getCell(`A${totalRow}`);
       totTitleCell.value = 'TOTAL AMOUNT';
-      totTitleCell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF000000' } };
+      totTitleCell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF000000' } };
       totTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
       if (isInvoice) {
@@ -506,7 +563,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`I${totalRow}`).numFmt = '#,##0.00';
 
         ws.getCell(`J${totalRow}`).value = 'KG';
-        ws.getCell(`J${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`J${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
         ws.getCell(`J${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.getCell(`K${totalRow}`).value = totalGrossW;
@@ -534,7 +591,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 14;
       currRow++;
 
-      // 7. Container Info
+      // 7. Container Info (Bold)
       if (data.containerInfo) {
         const cInfoFormatted = data.containerInfo.toUpperCase().startsWith('CONTAINER')
           ? data.containerInfo
@@ -547,7 +604,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       }
 
-      // 8. Section A (Only if filled)
+      // 8. Section A (Bold Header)
       if (data.hsCodeSummary && data.hsCodeSummary.trim()) {
         ws.mergeCells(`A${currRow}:L${currRow}`);
         ws.getCell(`A${currRow}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
@@ -564,7 +621,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       }
 
-      // 9. Free-form Bottom Clauses (B, C, D, etc.)
+      // 9. Free-form Bottom Clauses (B, C, D, etc.) - Bold on Clause Headers
       if (data.bottomFreeText && data.bottomFreeText.trim()) {
         const lines = data.bottomFreeText.trim().split('\n');
         lines.forEach(line => {
@@ -613,7 +670,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         }
       }
 
-      // 10. Sign-off / Signature
+      // 10. Sign-off / Signature (Bold Company Name)
       currRow += 2;
       ws.mergeCells(`I${currRow}:L${currRow}`);
       ws.getCell(`I${currRow}`).value = 'Signed by';

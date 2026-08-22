@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.357',
+    version: 'v2.8.357',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Excel 및 서식 제목/회사명/항목별 굵은 글씨(Bold) 적용 및 A4 페이지 최적화',
+    content: '• Excel 및 미리보기 모달의 섹션 타이틀(Shipper, Applicant, Notify, 항구, 결제조건 등), 회사명, 인보이스 번호, 품목명, 합계 등에 리치 텍스트 굵은 글씨(Bold) 완벽 적용\n• 글씨 크기 축소 없이 표준 주문건이 A4 1페이지 내에 최적으로 수용되도록 여백 및 행 간격 최적화 (초과 항목은 다중 페이지로 자연스럽게 연속 출력)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.356',
     version: 'v2.8.356',
     date: '2026-08-22',
