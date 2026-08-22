@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.355',
+    version: 'v2.8.355',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Excel CI/PL 상단 2분할(50:50) 및 3분할(33.3:33.3:33.3) 균등 폭 완벽 수학적 규격화',
+    content: '• 12열 표준 베이스 그리드(각 9.5pt)를 기반으로 상단 Row 1~3(Shipper, Applicant, Notify)은 정확히 50%:50%(6열:6열) 균등 분할 적용\n• Row 4~5(선적항/도착항/결제조건, 모선/ETD/인코텀즈)는 정확히 33.3%:33.3%:33.3%(4열:4열:4열) 균등 폭 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.354',
     version: 'v2.8.354',
     date: '2026-08-22',
