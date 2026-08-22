@@ -2678,6 +2678,168 @@ export const OrderDetail: React.FC = () => {
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
   };
 
+  const splitStep2Item = (containerIdx: number, itemIdx: number) => {
+    const nextContainers = [...(basicForm.packingList?.containers || [])];
+    if (!nextContainers[containerIdx]) return;
+    const items = [...(nextContainers[containerIdx].items || [])];
+    const target = items[itemIdx];
+    if (!target) return;
+
+    let count = parseInt(target.pkg, 10);
+    if (!count || count <= 1) {
+      count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
+    }
+
+    if (count <= 1) {
+      alert('⚠️ 단일 1개 패키지 항목은 더 이상 분할할 수 없습니다.');
+      return;
+    }
+
+    const singleQty = (parseFloat(target.qty) || 0) / count;
+    const singleNet = (parseFloat(target.netWeight) || 0) / count;
+    const singleGross = (parseFloat(target.grossWeight) || 0) / count;
+    const singleCbm = (parseFloat(target.cbm) || 0) / count;
+
+    const splitRows: any[] = [];
+    for (let i = 0; i < count; i++) {
+      splitRows.push({
+        ...target,
+        pkg: '1',
+        qty: String(Math.round(singleQty * 100) / 100),
+        netWeight: String(Math.round(singleNet)),
+        grossWeight: String(Math.round(singleGross)),
+        cbm: String(singleCbm.toFixed(3))
+      });
+    }
+
+    items.splice(itemIdx, 1, ...splitRows);
+
+    let curNo = 1;
+    items.forEach((it: any) => {
+      let c = parseInt(it.pkg, 10);
+      if (!c || c <= 0) c = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+      if (c > 1) {
+        it.pkgNo = `${curNo}-${curNo + c - 1}`;
+        curNo += c;
+      } else {
+        it.pkgNo = String(curNo);
+        curNo++;
+      }
+    });
+
+    nextContainers[containerIdx].items = items;
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+  };
+
+  const mergeStep2Items = (containerIdx: number) => {
+    const nextContainers = [...(basicForm.packingList?.containers || [])];
+    if (!nextContainers[containerIdx]) return;
+    const items = [...(nextContainers[containerIdx].items || [])];
+    if (items.length <= 1) {
+      alert('합칠 품목이 2개 이상 있어야 합니다.');
+      return;
+    }
+
+    const merged: any[] = [];
+    items.forEach((it: any) => {
+      const prev = merged[merged.length - 1];
+      const itDescClean = (it.description || '').trim();
+      const prevDescClean = prev ? (prev.description || '').trim() : '';
+
+      if (
+        prev &&
+        prevDescClean === itDescClean &&
+        (prev.packageType || '') === (it.packageType || '') &&
+        (prev.dimensions || '') === (it.dimensions || '') &&
+        (prev.supplier || '') === (it.supplier || '')
+      ) {
+        let prevPkg = parseInt(prev.pkg, 10);
+        if (!prevPkg || prevPkg <= 0) prevPkg = parseInt(calculatePkgFromPkgNo(prev.pkgNo) || '1', 10);
+
+        let curPkg = parseInt(it.pkg, 10);
+        if (!curPkg || curPkg <= 0) curPkg = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+
+        const totalPkg = prevPkg + curPkg;
+        const prevQty = parseFloat(prev.qty) || 0;
+        const curQty = parseFloat(it.qty) || 0;
+        const prevNet = parseFloat(prev.netWeight) || 0;
+        const curNet = parseFloat(it.netWeight) || 0;
+        const prevGross = parseFloat(prev.grossWeight) || 0;
+        const curGross = parseFloat(it.grossWeight) || 0;
+        const prevCbm = parseFloat(prev.cbm) || 0;
+        const curCbm = parseFloat(it.cbm) || 0;
+
+        prev.pkg = String(totalPkg);
+        prev.qty = String(prevQty + curQty);
+        prev.netWeight = String(Math.round(prevNet + curNet));
+        prev.grossWeight = String(Math.round(prevGross + curGross));
+        prev.cbm = String((prevCbm + curCbm).toFixed(3));
+      } else {
+        merged.push({ ...it });
+      }
+    });
+
+    let curNo = 1;
+    merged.forEach((it: any) => {
+      let c = parseInt(it.pkg, 10);
+      if (!c || c <= 0) c = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+      if (c > 1) {
+        it.pkgNo = `${curNo}-${curNo + c - 1}`;
+        curNo += c;
+      } else {
+        it.pkgNo = String(curNo);
+        curNo++;
+      }
+    });
+
+    nextContainers[containerIdx].items = merged;
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    alert('🔗 동일 품목들이 제품별 1줄 범위 형태로 합쳐졌습니다.');
+  };
+
+  const expandAllStep2Items = (containerIdx: number) => {
+    const nextContainers = [...(basicForm.packingList?.containers || [])];
+    if (!nextContainers[containerIdx]) return;
+    const items = [...(nextContainers[containerIdx].items || [])];
+    if (items.length === 0) return;
+
+    const expanded: any[] = [];
+    items.forEach((target: any) => {
+      let count = parseInt(target.pkg, 10);
+      if (!count || count <= 1) count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
+
+      if (count > 1) {
+        const singleQty = (parseFloat(target.qty) || 0) / count;
+        const singleNet = (parseFloat(target.netWeight) || 0) / count;
+        const singleGross = (parseFloat(target.grossWeight) || 0) / count;
+        const singleCbm = (parseFloat(target.cbm) || 0) / count;
+
+        for (let i = 0; i < count; i++) {
+          expanded.push({
+            ...target,
+            pkg: '1',
+            qty: String(Math.round(singleQty * 100) / 100),
+            netWeight: String(Math.round(singleNet)),
+            grossWeight: String(Math.round(singleGross)),
+            cbm: String(singleCbm.toFixed(3))
+          });
+        }
+      } else {
+        expanded.push({ ...target, pkg: '1' });
+      }
+    });
+
+    let curNo = 1;
+    expanded.forEach((it: any) => {
+      it.pkgNo = String(curNo);
+      curNo++;
+    });
+
+    nextContainers[containerIdx].items = expanded;
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    alert('✂️ 모든 품목이 1장씩 개별 행으로 분할 전개되었습니다.');
+  };
+
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
     setSourcingItems(prev => {
       const updated = [...prev];
@@ -8669,15 +8831,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             📦 Step 2. 패킹리스트 작성 및 검토 (자동/수동 편집 지원)
                           </h4>
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <button
                               type="button"
                               onClick={() => {
-                                // AUTO ALLOCATION LOGIC: Distribute computed pallets into containers
                                 const newContainers: any[] = [];
                                 let currentContainerItems: any[] = [];
-                                 let currentPkgNo = 1;
-                                 // containerIndex removed
+                                let currentPkgNo = 1;
 
                                 orderItems.forEach((item, itemIdx) => {
                                   const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
@@ -8705,40 +8865,45 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     palletGrossWeight: p?.palletGrossWeight || 0
                                   };
 
-                                  const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
+                                  const customQty = (basicForm.packingList as any)?.[`custom_qty_per_pallet_${itemCode}_${itemIdx}`];
+                                  const qtyPerPallet = customQty ? parseInt(customQty, 10) : (matchedMethod.qtyPerPallet || 100);
+
                                   const fullPallets = Math.floor(qty / qtyPerPallet);
                                   const residue = qty % qtyPerPallet;
                                   const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
                                   const isSingleRaw = matchedMethod.packageType === '단품';
-                                  const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
-                                  const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
-                                  const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
 
-                                  // 1. Add full pallets
+                                  const customW = (basicForm.packingList as any)?.[`custom_w_${itemCode}_${itemIdx}`];
+                                  const customL = (basicForm.packingList as any)?.[`custom_l_${itemCode}_${itemIdx}`];
+                                  const customH = (basicForm.packingList as any)?.[`custom_h_${itemCode}_${itemIdx}`];
+                                  const w = customW ? parseFloat(customW) : (isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0));
+                                  const l = customL ? parseFloat(customL) : (isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0));
+                                  const h = customH ? parseFloat(customH) : (isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0));
+
+                                  const customNetW = (basicForm.packingList as any)?.[`custom_net_w_${itemCode}_${itemIdx}`];
+                                  const customGrossW = (basicForm.packingList as any)?.[`custom_gross_w_${itemCode}_${itemIdx}`];
+                                  const netW = customNetW ? parseFloat(customNetW) : (isPlt ? (matchedMethod.palletWeight || 0) : (isSingleRaw ? (matchedMethod.unitWeight || 0) * qtyPerPallet : (matchedMethod.unitWeight || 0)));
+                                  const grossW = customGrossW ? parseFloat(customGrossW) : (isPlt ? (matchedMethod.palletGrossWeight || 0) : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * qtyPerPallet : (matchedMethod.unitGrossWeight || 0)));
+                                  const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
+
+                                  const customSupplier = (basicForm.packingList as any)?.[`custom_supplier_${itemCode}_${itemIdx}`];
+                                  const supplierName = customSupplier || item.supplier || '';
+
+                                  // 1. Add full pallets (제품별 1줄 요약 형태)
                                   if (fullPallets > 0) {
-                                    const netW = isPlt 
-                                      ? (matchedMethod.palletWeight || 0) 
-                                      : (isSingleRaw ? (matchedMethod.unitWeight || 0) * qtyPerPallet : (matchedMethod.unitWeight || 0));
-                                    const grossW = isPlt 
-                                      ? (matchedMethod.palletGrossWeight || 0) 
-                                      : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * qtyPerPallet : (matchedMethod.unitGrossWeight || 0));
-                                    const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
-
-                                    for (let f = 0; f < fullPallets; f++) {
-                                      currentContainerItems.push({
-                                        pkgNo: String(currentPkgNo),
-                                        pkg: '1',
-                                        qty: String(qtyPerPallet),
-                                        description: `[${itemCode}] ${itemName} (완제 Pallet)`,
-                                        packageType: matchedMethod.packageType,
-                                        dimensions: `${w}x${l}x${h}`,
-                                        supplier: item.supplier || '',
-                                        netWeight: String(Math.round(netW)),
-                                        grossWeight: String(Math.round(grossW)),
-                                        cbm: String(cbm.toFixed(3))
-                                      });
-                                      currentPkgNo++;
-                                    }
+                                    currentContainerItems.push({
+                                      pkgNo: fullPallets > 1 ? `${currentPkgNo}-${currentPkgNo + fullPallets - 1}` : String(currentPkgNo),
+                                      pkg: String(fullPallets),
+                                      qty: String(qtyPerPallet * fullPallets),
+                                      description: `[${itemCode}] ${itemName} (완제 Pallet)`,
+                                      packageType: matchedMethod.packageType,
+                                      dimensions: `${w}x${l}x${h}`,
+                                      supplier: supplierName,
+                                      netWeight: String(Math.round(netW * fullPallets)),
+                                      grossWeight: String(Math.round(grossW * fullPallets)),
+                                      cbm: String((cbm * fullPallets).toFixed(3))
+                                    });
+                                    currentPkgNo += fullPallets;
                                   }
 
                                   // 2. Add residue if exists
@@ -8747,67 +8912,64 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
 
                                     if (treatment === 'independent') {
-                                      // Height scaled down
                                       const scale = residue / qtyPerPallet;
                                       const scaledH = Math.max(200, Math.round(h * scale));
-                                      const netW = isPlt
+                                      const resNetW = isPlt
                                         ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
                                         : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
-                                      const grossW = isPlt
+                                      const resGrossW = isPlt
                                         ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
                                         : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
-                                      const cbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
+                                      const resCbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
 
                                       currentContainerItems.push({
                                         pkgNo: String(currentPkgNo),
                                         pkg: '1',
-                                         qty: String(residue),
+                                        qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 독립 Pallet)`,
                                         packageType: matchedMethod.packageType,
                                         dimensions: `${w}x${l}x${scaledH}`,
-                                        supplier: item.supplier || '',
-                                        netWeight: String(Math.round(netW)),
-                                        grossWeight: String(Math.round(grossW)),
-                                        cbm: String(cbm.toFixed(3))
-                                       });
-                                       currentPkgNo++;
+                                        supplier: supplierName,
+                                        netWeight: String(Math.round(resNetW)),
+                                        grossWeight: String(Math.round(resGrossW)),
+                                        cbm: String(resCbm.toFixed(3))
+                                      });
+                                      currentPkgNo++;
                                     } else if (treatment === 'single') {
-                                      // Single carton boxes hand-loaded
                                       const singleW = matchedMethod.unitWidth || 300;
                                       const singleL = matchedMethod.unitLength || 300;
                                       const singleH = matchedMethod.unitHeight || 300;
-                                      const netW = isPlt
+                                      const resNetW = isPlt
                                         ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
                                         : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
-                                      const grossW = isPlt
+                                      const resGrossW = isPlt
                                         ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
                                         : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
-                                      const cbm = Number(((singleW * singleL * singleH) / 1000000000 * residue).toFixed(4));
+                                      const resCbm = Number(((singleW * singleL * singleH) / 1000000000 * residue).toFixed(4));
 
                                       currentContainerItems.push({
                                         pkgNo: `${currentPkgNo}-${currentPkgNo + residue - 1}`,
                                         pkg: String(residue),
-                                         qty: String(residue),
+                                        qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 단품 박스 적재)`,
                                         packageType: '단품 박스',
                                         dimensions: `${singleW}x${singleL}x${singleH}`,
-                                        supplier: item.supplier || '',
-                                        netWeight: String(Math.round(netW)),
-                                        grossWeight: String(Math.round(grossW)),
-                                        cbm: String(cbm.toFixed(3))
-                                       });
-                                       currentPkgNo += residue;
+                                        supplier: supplierName,
+                                        netWeight: String(Math.round(resNetW)),
+                                        grossWeight: String(Math.round(resGrossW)),
+                                        cbm: String(resCbm.toFixed(3))
+                                      });
+                                      currentPkgNo += residue;
                                     } else {
-                                      // Mixed Pallet template
                                       currentContainerItems.push({
                                         pkgNo: String(currentPkgNo),
                                         pkg: '1',
-                                         qty: String(residue),
+                                        qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (혼적 LCL Pallet 대상)`,
                                         packageType: '혼적 Pallet',
                                         dimensions: `${w}x${l}x${h}`,
-                                        supplier: item.supplier || '',
-                                        mixedGroup: (basicForm.packingList as any)?.[ `group_${itemCode}_${itemIdx}` ] || '1',
+                                        supplier: supplierName,
+                                        mixedGroup: (basicForm.packingList as any)?.[`group_${itemCode}_${itemIdx}`] || '1',
                                         netWeight: String(Math.round(isPlt
                                           ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
                                           : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet)))),
@@ -8815,59 +8977,60 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                           ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
                                           : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet)))),
                                         cbm: String(Number(((w * l * h) / 1000000000).toFixed(4)).toFixed(3))
-                                       });
-                                       currentPkgNo++;
+                                      });
+                                      currentPkgNo++;
                                     }
-                                                                    }
+                                  }
                                 });
 
-                                                                // Post-process currentContainerItems to merge '혼적 Pallet' items by supplier
                                 const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
                                 const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
 
                                 const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
-                                 mixedItems.forEach((it: any) => {
-                                   const s = it.supplier || 'DEFAULT';
-                                   const g = it.mixedGroup || '1';
-                                   const key = `${s}_group_${g}`;
-                                   if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
-                                   mixedBySupplierAndGroup[key].push(it);
-                                 });
+                                mixedItems.forEach((it: any) => {
+                                  const s = it.supplier || 'DEFAULT';
+                                  const g = it.mixedGroup || '1';
+                                  const key = `${s}_group_${g}`;
+                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
+                                  mixedBySupplierAndGroup[key].push(it);
+                                });
 
-                                 const mergedMixedItems: any[] = [];
-                                 Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
-                                   const items = mixedBySupplierAndGroup[groupKey];
-                                   if (items.length === 0) return;
-                                   const groupNo = groupKey.split('_group_')[1];
-                                   items.forEach((it: any) => {
-                                     const cleanDesc = (it.description || '').replace(/^\[혼적 - 그룹 \d+\]\s*/i, '');
-                                     it.description = `[혼적 - 그룹 ${groupNo}] ${cleanDesc}`;
-                                     mergedMixedItems.push(it);
-                                   });
-                                 });
+                                const mergedMixedItems: any[] = [];
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  if (items.length === 0) return;
+                                  const groupNo = groupKey.split('_group_')[1];
+                                  items.forEach((it: any) => {
+                                    const cleanDesc = (it.description || '').replace(/^\[혼적 - 그룹 \d+\]\s*/i, '');
+                                    it.description = `[혼적 - 그룹 ${groupNo}] ${cleanDesc}`;
+                                    mergedMixedItems.push(it);
+                                  });
+                                });
 
-                                 currentPkgNo = 1;
-                                 nonMixedItems.forEach((it: any) => {
-                                   it.pkgNo = String(currentPkgNo);
-                                   currentPkgNo++;
-                                 });
+                                currentPkgNo = 1;
+                                nonMixedItems.forEach((it: any) => {
+                                  let c = parseInt(it.pkg, 10);
+                                  if (!c || c <= 0) c = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+                                  if (c > 1) {
+                                    it.pkgNo = `${currentPkgNo}-${currentPkgNo + c - 1}`;
+                                    currentPkgNo += c;
+                                  } else {
+                                    it.pkgNo = String(currentPkgNo);
+                                    currentPkgNo++;
+                                  }
+                                });
 
-                                 Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
-                                   const items = mixedBySupplierAndGroup[groupKey];
-                                   if (items.length === 0) return;
-                                   items.forEach((it: any, itemGroupIdx: number) => {
-                                     it.pkgNo = String(currentPkgNo);
-                                     it.pkg = itemGroupIdx === 0 ? '1' : '0';
-                                   });
-                                   currentPkgNo++;
-                                 });
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  if (items.length === 0) return;
+                                  items.forEach((it: any, itemGroupIdx: number) => {
+                                    it.pkgNo = String(currentPkgNo);
+                                    it.pkg = itemGroupIdx === 0 ? '1' : '0';
+                                  });
+                                  currentPkgNo++;
+                                });
 
-                                 const finalItems = [
-                                   ...nonMixedItems,
-                                   ...mergedMixedItems
-                                 ];
-
-                                
+                                const finalItems = [...nonMixedItems, ...mergedMixedItems];
 
                                 newContainers.push({
                                   containerNo: `CONTAINER-01`,
@@ -8882,11 +9045,227 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     containers: newContainers
                                   }
                                 }));
-                                alert('🔄 모든 품목의 코드와 총수량이 컨테이너 패킹리스트에 직접 배정되었습니다 (혼적 단위 반영).');
+                                alert('⚡ 제품별 1줄 요약(범위) 형태로 패킹리스트가 자동 배정되었습니다.');
                               }}
-                              style={{ padding: '6px 12px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13.5px', cursor: isEditing ? 'pointer' : 'not-allowed', marginLeft: '6px' }}
+                              style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                             >
-                              ⚡ 주문 총수량 직접 배정
+                              ⚡ 제품별 1줄 요약 배정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newContainers: any[] = [];
+                                let currentContainerItems: any[] = [];
+                                let currentPkgNo = 1;
+
+                                orderItems.forEach((item, itemIdx) => {
+                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                  const itemCode = match ? match[1] : '-';
+                                  const itemName = match ? match[2] : (item.name || '');
+                                  const qty = item.qty || 0;
+
+                                  const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                                    id: 'default_single',
+                                    name: '단품',
+                                    unit: p?.unit || 'EA',
+                                    isDefault: true,
+                                    packageType: '단품',
+                                    qtyPerPallet: 100,
+                                    unitWidth: p?.unitWidth || 0,
+                                    unitLength: p?.unitLength || 0,
+                                    unitHeight: p?.unitHeight || 0,
+                                    unitWeight: p?.unitWeight || 0,
+                                    unitGrossWeight: p?.unitGrossWeight || 0,
+                                    palletWidth: p?.palletWidth || 0,
+                                    palletLength: p?.palletLength || 0,
+                                    palletHeight: p?.palletHeight || 0,
+                                    palletWeight: p?.palletWeight || 0,
+                                    palletGrossWeight: p?.palletGrossWeight || 0
+                                  };
+
+                                  const customQty = (basicForm.packingList as any)?.[`custom_qty_per_pallet_${itemCode}_${itemIdx}`];
+                                  const qtyPerPallet = customQty ? parseInt(customQty, 10) : (matchedMethod.qtyPerPallet || 100);
+
+                                  const fullPallets = Math.floor(qty / qtyPerPallet);
+                                  const residue = qty % qtyPerPallet;
+                                  const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
+                                  const isSingleRaw = matchedMethod.packageType === '단품';
+
+                                  const customW = (basicForm.packingList as any)?.[`custom_w_${itemCode}_${itemIdx}`];
+                                  const customL = (basicForm.packingList as any)?.[`custom_l_${itemCode}_${itemIdx}`];
+                                  const customH = (basicForm.packingList as any)?.[`custom_h_${itemCode}_${itemIdx}`];
+                                  const w = customW ? parseFloat(customW) : (isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0));
+                                  const l = customL ? parseFloat(customL) : (isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0));
+                                  const h = customH ? parseFloat(customH) : (isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0));
+
+                                  const customNetW = (basicForm.packingList as any)?.[`custom_net_w_${itemCode}_${itemIdx}`];
+                                  const customGrossW = (basicForm.packingList as any)?.[`custom_gross_w_${itemCode}_${itemIdx}`];
+                                  const netW = customNetW ? parseFloat(customNetW) : (isPlt ? (matchedMethod.palletWeight || 0) : (isSingleRaw ? (matchedMethod.unitWeight || 0) * qtyPerPallet : (matchedMethod.unitWeight || 0)));
+                                  const grossW = customGrossW ? parseFloat(customGrossW) : (isPlt ? (matchedMethod.palletGrossWeight || 0) : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * qtyPerPallet : (matchedMethod.unitGrossWeight || 0)));
+                                  const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
+
+                                  const customSupplier = (basicForm.packingList as any)?.[`custom_supplier_${itemCode}_${itemIdx}`];
+                                  const supplierName = customSupplier || item.supplier || '';
+
+                                  // 1. Add full pallets (개별 1장씩 전개 형태)
+                                  if (fullPallets > 0) {
+                                    for (let f = 0; f < fullPallets; f++) {
+                                      currentContainerItems.push({
+                                        pkgNo: String(currentPkgNo),
+                                        pkg: '1',
+                                        qty: String(qtyPerPallet),
+                                        description: `[${itemCode}] ${itemName} (완제 Pallet)`,
+                                        packageType: matchedMethod.packageType,
+                                        dimensions: `${w}x${l}x${h}`,
+                                        supplier: supplierName,
+                                        netWeight: String(Math.round(netW)),
+                                        grossWeight: String(Math.round(grossW)),
+                                        cbm: String(cbm.toFixed(3))
+                                      });
+                                      currentPkgNo++;
+                                    }
+                                  }
+
+                                  // 2. Add residue if exists
+                                  if (residue > 0) {
+                                    const residueKey = `residue_${itemCode}_${itemIdx}`;
+                                    const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
+
+                                    if (treatment === 'independent') {
+                                      const scale = residue / qtyPerPallet;
+                                      const scaledH = Math.max(200, Math.round(h * scale));
+                                      const resNetW = isPlt
+                                        ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
+                                      const resGrossW = isPlt
+                                        ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
+                                      const resCbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
+
+                                      currentContainerItems.push({
+                                        pkgNo: String(currentPkgNo),
+                                        pkg: '1',
+                                        qty: String(residue),
+                                        description: `[${itemCode}] ${itemName} (자투리 독립 Pallet)`,
+                                        packageType: matchedMethod.packageType,
+                                        dimensions: `${w}x${l}x${scaledH}`,
+                                        supplier: supplierName,
+                                        netWeight: String(Math.round(resNetW)),
+                                        grossWeight: String(Math.round(resGrossW)),
+                                        cbm: String(resCbm.toFixed(3))
+                                      });
+                                      currentPkgNo++;
+                                    } else if (treatment === 'single') {
+                                      const singleW = matchedMethod.unitWidth || 300;
+                                      const singleL = matchedMethod.unitLength || 300;
+                                      const singleH = matchedMethod.unitHeight || 300;
+                                      const resNetW = isPlt
+                                        ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
+                                      const resGrossW = isPlt
+                                        ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
+                                      const singleUnitCbm = Number(((singleW * singleL * singleH) / 1000000000).toFixed(4));
+
+                                      for (let r = 0; r < residue; r++) {
+                                        currentContainerItems.push({
+                                          pkgNo: String(currentPkgNo),
+                                          pkg: '1',
+                                          qty: '1',
+                                          description: `[${itemCode}] ${itemName} (자투리 단품 박스 적재)`,
+                                          packageType: '단품 박스',
+                                          dimensions: `${singleW}x${singleL}x${singleH}`,
+                                          supplier: supplierName,
+                                          netWeight: String(Math.round(resNetW / residue)),
+                                          grossWeight: String(Math.round(resGrossW / residue)),
+                                          cbm: String(singleUnitCbm.toFixed(3))
+                                        });
+                                        currentPkgNo++;
+                                      }
+                                    } else {
+                                      currentContainerItems.push({
+                                        pkgNo: String(currentPkgNo),
+                                        pkg: '1',
+                                        qty: String(residue),
+                                        description: `[${itemCode}] ${itemName} (혼적 LCL Pallet 대상)`,
+                                        packageType: '혼적 Pallet',
+                                        dimensions: `${w}x${l}x${h}`,
+                                        supplier: supplierName,
+                                        mixedGroup: (basicForm.packingList as any)?.[`group_${itemCode}_${itemIdx}`] || '1',
+                                        netWeight: String(Math.round(isPlt
+                                          ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                          : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet)))),
+                                        grossWeight: String(Math.round(isPlt
+                                          ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                          : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet)))),
+                                        cbm: String(Number(((w * l * h) / 1000000000).toFixed(4)).toFixed(3))
+                                      });
+                                      currentPkgNo++;
+                                    }
+                                  }
+                                });
+
+                                const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
+                                const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
+
+                                const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
+                                mixedItems.forEach((it: any) => {
+                                  const s = it.supplier || 'DEFAULT';
+                                  const g = it.mixedGroup || '1';
+                                  const key = `${s}_group_${g}`;
+                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
+                                  mixedBySupplierAndGroup[key].push(it);
+                                });
+
+                                const mergedMixedItems: any[] = [];
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  if (items.length === 0) return;
+                                  const groupNo = groupKey.split('_group_')[1];
+                                  items.forEach((it: any) => {
+                                    const cleanDesc = (it.description || '').replace(/^\[혼적 - 그룹 \d+\]\s*/i, '');
+                                    it.description = `[혼적 - 그룹 ${groupNo}] ${cleanDesc}`;
+                                    mergedMixedItems.push(it);
+                                  });
+                                });
+
+                                currentPkgNo = 1;
+                                nonMixedItems.forEach((it: any) => {
+                                  it.pkgNo = String(currentPkgNo);
+                                  currentPkgNo++;
+                                });
+
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  if (items.length === 0) return;
+                                  items.forEach((it: any, itemGroupIdx: number) => {
+                                    it.pkgNo = String(currentPkgNo);
+                                    it.pkg = itemGroupIdx === 0 ? '1' : '0';
+                                  });
+                                  currentPkgNo++;
+                                });
+
+                                const finalItems = [...nonMixedItems, ...mergedMixedItems];
+
+                                newContainers.push({
+                                  containerNo: `CONTAINER-01`,
+                                  sealNo: '',
+                                  items: finalItems
+                                });
+
+                                setBasicForm(prev => ({
+                                  ...prev,
+                                  packingList: {
+                                    ...prev.packingList,
+                                    containers: newContainers
+                                  }
+                                }));
+                                alert('📋 개별 팔레트 1장씩 전개 형태로 패킹리스트가 자동 배정되었습니다.');
+                              }}
+                              style={{ padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                            >
+                              📋 1장씩 개별 전개 배정
                             </button>
                             <button
                               type="button"
@@ -8900,7 +9279,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 });
                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
                               }}
-                              style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13.5px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                              style={{ padding: '6px 12px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                             >
                               + 컨테이너 추가
                             </button>
@@ -8931,7 +9310,25 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => mergeStep2Items(cIdx)}
+                                  title="동일 품목들을 1줄(범위)로 병합합니다"
+                                  style={{ padding: '4px 10px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                >
+                                  🔗 동일 품목 합치기
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => expandAllStep2Items(cIdx)}
+                                  title="모든 품목을 1장씩 개별 행으로 펼칩니다"
+                                  style={{ padding: '4px 10px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                >
+                                  ✂️ 전체 1장씩 분할
+                                </button>
                                 <button
                                   type="button"
                                   disabled={!isEditing}
@@ -8951,7 +9348,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     });
                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                   }}
-                                  style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '14.5px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                  style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                                 >
                                   + 직접 품목 추가
                                 </button>
@@ -9281,6 +9678,17 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                         >
                                           ▼
                                         </button>
+                                        {(parseInt(it.pkg, 10) > 1 || parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10) > 1) && (
+                                          <button
+                                            type="button"
+                                            disabled={!isEditing}
+                                            onClick={() => splitStep2Item(cIdx, itIdx)}
+                                            title="이 품목을 1장씩 분할"
+                                            style={{ width: '28px', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                          >
+                                            ✂️
+                                          </button>
+                                        )}
                                         <button
                                           type="button"
                                           disabled={!isEditing}

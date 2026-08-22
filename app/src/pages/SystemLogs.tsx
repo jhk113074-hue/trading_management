@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.323',
+    version: 'v2.8.323',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹 및 컨테이너 로딩 플랜 제품별 1줄 요약 배정, 1장씩 전개, 동일 품목 합치기 및 개별 행 분할 기능 구축',
+    content: '• Step 2 컨테이너 패킹리스트에서 수십 장의 동일 품목 팔레트(예: JP-30 38 PLT)를 기본 제품별 1줄 요약(범위 1-38, 수량 30,400, 38 PLT, 중량/CBM 합산) 형태로 배정하도록 개선\n• 패킹 배정 버튼을 [⚡ 제품별 1줄 요약 배정]과 [📋 1장씩 개별 전개 배정] 2종으로 분리 제공하여 상황에 맞춘 유연한 패킹 편성 지원\n• 컨테이너 헤더에 [🔗 동일 품목 합치기](동일 규격 제품군을 1-38 범위 1줄로 병합) 및 [✂️ 전체 1장씩 분할](전체 품목을 1장씩 개별 행으로 전개) 기능 탑재\n• 각 품목 행(Row) 우측 동작 컬럼에 [✂️] 분할 버튼을 제공하여 복수 패키지 항목(pkg > 1 또는 범위 1-38)을 원클릭으로 개별 1장씩 즉시 분할할 수 있도록 구현',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.322',
     version: 'v2.8.322',
     date: '2026-08-22',
