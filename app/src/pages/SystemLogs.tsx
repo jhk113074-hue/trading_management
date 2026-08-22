@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.322',
+    version: 'v2.8.322',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '이메일 본문 내 긴 URL 텍스트 완전 제거 및 정식 다운로드 카드 버튼 전용 렌더링 최적화',
+    content: '• 이메일 발송 시 본문 텍스트에 길게 노출되던 원본 스토리지 URL 문자열을 완전히 제거하여 간결하고 품격 있는 요약 카드 형태로 개선\n• 하단 [📎 정식 전자 문서 다운로드] 전용 카드 버튼을 통해서만 안전하고 편리하게 도착보고서 PDF 및 쉬핑마크 라벨 PDF를 즉시 열람/다운로드하도록 구현\n• 발주서 발행 이메일 및 도착보고서 발행 이메일 양식 일원화 및 최신 버전 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.321',
     version: 'v2.8.321',
     date: '2026-08-22',
