@@ -508,6 +508,66 @@ export const OrderDetail: React.FC = () => {
     return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice };
   };
 
+  const findMatchingProduct = (it: any, prodList: Product[]) => {
+    if (!it || !prodList || prodList.length === 0) return null;
+    const itCode = it.itemId || it.productCode || it.itemCode || '';
+    const rawName = it.name || it.itemName || it.description || '';
+    const cleanName = rawName.replace(/^\[.*?\]\s*/, '').trim().toLowerCase();
+    
+    // 1. Try matching by direct productCode or ID
+    if (itCode) {
+      const byCode = prodList.find(p => p.productCode === itCode || p.id === itCode);
+      if (byCode) return byCode;
+    }
+    
+    // 2. Try matching by extracted [Pxxxx] bracket
+    const pMatch = rawName.match(/\[(P\d+)\]/i);
+    if (pMatch) {
+      const extracted = pMatch[1].toUpperCase();
+      const byExtracted = prodList.find(p => p.productCode?.toUpperCase() === extracted || p.id?.toUpperCase() === extracted);
+      if (byExtracted) return byExtracted;
+    }
+    
+    // 3. Try exact productCode matching anywhere in name
+    const byCodeInName = prodList.find(p => p.productCode && rawName.toUpperCase().includes(p.productCode.toUpperCase()));
+    if (byCodeInName) return byCodeInName;
+
+    // 4. Try exact or partial name match across nameEn, nameKo, description
+    if (cleanName) {
+      const exactName = prodList.find(p => {
+        const pEn = (p.nameEn || '').trim().toLowerCase();
+        const pKo = (p.nameKo || '').trim().toLowerCase();
+        const pDesc = (p.description || '').trim().toLowerCase();
+        const pRaw = ((p as any).name || '').trim().toLowerCase();
+        return pEn === cleanName || pKo === cleanName || pDesc === cleanName || pRaw === cleanName;
+      });
+      if (exactName) return exactName;
+
+      const partialName = prodList.find(p => {
+        const pEn = (p.nameEn || '').trim().toLowerCase();
+        const pKo = (p.nameKo || '').trim().toLowerCase();
+        const pDesc = (p.description || '').trim().toLowerCase();
+        const pRaw = ((p as any).name || '').trim().toLowerCase();
+        return (pEn && (cleanName.includes(pEn) || pEn.includes(cleanName))) ||
+               (pKo && (cleanName.includes(pKo) || pKo.includes(cleanName))) ||
+               (pDesc && (cleanName.includes(pDesc) || pDesc.includes(cleanName))) ||
+               (pRaw && (cleanName.includes(pRaw) || pRaw.includes(cleanName)));
+      });
+      if (partialName) return partialName;
+    }
+    return null;
+  };
+
+  const getProductHsCode = (it: any, prodList: Product[], customerName?: string) => {
+    if (it.hsCode && String(it.hsCode).trim() !== '') return String(it.hsCode).trim();
+    const matched = findMatchingProduct(it, prodList);
+    if (!matched) return '';
+    if (customerName && matched.customerHsCodes && (matched.customerHsCodes as any)[customerName]) {
+      return (matched.customerHsCodes as any)[customerName];
+    }
+    return matched.hsCode || '';
+  };
+
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [sourcingItems, setSourcingItems] = useState<Partial<OrderItem>[]>([]);
@@ -1168,6 +1228,41 @@ export const OrderDetail: React.FC = () => {
     blNumber: '',
     deliveryPlace: ''
   });
+
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+    setCustomCiItems(prev => {
+      if (!prev || prev.length === 0) return prev;
+      let hasChanges = false;
+      const updated = prev.map(it => {
+        if (!it.isFreight && (!it.hsCode || String(it.hsCode).trim() === '')) {
+          const dbHs = getProductHsCode(it, products, basicForm.customer);
+          if (dbHs) {
+            hasChanges = true;
+            return { ...it, hsCode: dbHs };
+          }
+        }
+        return it;
+      });
+      return hasChanges ? updated : prev;
+    });
+
+    setOrderItems(prev => {
+      if (!prev || prev.length === 0) return prev;
+      let hasChanges = false;
+      const updated = prev.map(it => {
+        if (!it.hsCode || String(it.hsCode).trim() === '') {
+          const dbHs = getProductHsCode(it, products, basicForm.customer);
+          if (dbHs) {
+            hasChanges = true;
+            return { ...it, hsCode: dbHs };
+          }
+        }
+        return it;
+      });
+      return hasChanges ? updated : prev;
+    });
+  }, [products, basicForm.customer]);
 
   const [editingFreight, setEditingFreight] = useState<{ idx: number; value: string } | null>(null);
 
@@ -10894,10 +10989,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const currentCiItems = customCiItems && customCiItems.length > 0
                   ? customCiItems
                   : (orderItems || []).map(it => {
-                      const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
                       return {
                         name: cleanCiName(it.name || ''),
-                        hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
+                        hsCode: getProductHsCode(it, products, basicForm.customer),
                         qty: Number(it.qty) || 0,
                         unit: it.unit || 'PCS',
                         unitPrice: Number(it.unitPrice) || 0,
@@ -10948,10 +11042,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 const computedHsSummary = (() => {
                   const distinct: { [name: string]: string } = {};
                   currentCiItems.forEach(it => {
-                    if (!it.isFreight && it.hsCode) {
+                    const hs = it.hsCode || getProductHsCode(it, products, basicForm.customer);
+                    if (!it.isFreight && hs) {
                       const cleanTitle = (it.name || '').split('(')[0].replace(/^\[.*?\]\s*/, '').trim();
                       if (cleanTitle && !distinct[cleanTitle]) {
-                        distinct[cleanTitle] = it.hsCode;
+                        distinct[cleanTitle] = hs;
                       }
                     }
                   });
@@ -11196,10 +11291,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             onClick={() => {
                               if (confirm('수주 품목 목록 데이터를 기준으로 CI 품목 목록을 다시 초기화하시겠습니까?')) {
                                 setCustomCiItems((orderItems || []).map(it => {
-                                  const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
                                   return {
                                     name: cleanCiName(it.name || ''),
-                                    hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
+                                    hsCode: getProductHsCode(it, products, basicForm.customer),
                                     qty: Number(it.qty) || 0,
                                     unit: it.unit || 'PCS',
                                     unitPrice: Number(it.unitPrice) || 0,
@@ -11248,7 +11342,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               <td style={{ padding: '4px 6px' }}>
                                 <input 
                                   type="text" 
-                                  value={item.hsCode || ''} 
+                                  value={item.hsCode !== undefined && item.hsCode !== '' ? item.hsCode : getProductHsCode(item, products, basicForm.customer)} 
                                   onChange={e => {
                                     const val = e.target.value;
                                     setCustomCiItems(prev => prev.map((it, i) => i === idx ? { ...it, hsCode: val } : it));

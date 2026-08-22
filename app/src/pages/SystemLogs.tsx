@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.342',
+    version: 'v2.8.342',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '상품 마스터 DB 기반 Default HS CODE 자동 매핑 및 CI/수주 품목 실시간 동기화',
+    content: '• 상품 마스터 DB(품목코드/품명/영문명/사양/바이어별 HS코드)를 기반으로 기본 HS CODE를 정밀 매핑하여 빈칸 없이 자동 바인딩\n• CI 품목 목록 및 Section A) HS CODE 요약에 상품 DB의 기본 HS CODE가 즉시 표시되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.341',
     version: 'v2.8.341',
     date: '2026-08-22',
