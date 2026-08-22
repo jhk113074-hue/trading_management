@@ -37,6 +37,79 @@ export interface ContainerData {
   items?: ContainerItemData[];
 }
 
+export const generateShippingMarkPngBase64 = (opts: {
+  shape?: string;
+  company?: string;
+  port?: string;
+  country?: string;
+  palletNoText?: string;
+  origin?: string;
+}): string | null => {
+  if (typeof document === 'undefined') return null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 240;
+    canvas.height = 250;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3.5;
+
+    const shape = opts.shape || 'diamond';
+    const comp = opts.company || 'YSACC';
+
+    // Draw shape
+    ctx.beginPath();
+    if (shape === 'circle') {
+      ctx.arc(120, 65, 48, 0, Math.PI * 2);
+    } else if (shape === 'square') {
+      ctx.rect(60, 20, 120, 90);
+    } else if (shape === 'triangle') {
+      ctx.moveTo(120, 15);
+      ctx.lineTo(185, 115);
+      ctx.lineTo(55, 115);
+      ctx.closePath();
+    } else {
+      // Diamond
+      ctx.moveTo(120, 15);
+      ctx.lineTo(195, 65);
+      ctx.lineTo(120, 115);
+      ctx.lineTo(45, 65);
+      ctx.closePath();
+    }
+    ctx.stroke();
+
+    // Company name inside shape
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = comp.length > 12 ? 'bold 13px Arial' : (comp.length > 8 ? 'bold 15px Arial' : 'bold 17px Arial');
+    const shapeCenterY = shape === 'triangle' ? 82 : 65;
+    ctx.fillText(comp, 120, shapeCenterY);
+
+    // Text below shape
+    ctx.font = 'bold 12.5px Arial';
+    ctx.fillStyle = '#000000';
+    const portCountry = [opts.port, opts.country].filter(Boolean).join(', ').toUpperCase() || 'BUSAN, KOREA';
+    const pltNo = opts.palletNoText || 'PALLET NO. : 1 / 1';
+    const origin = opts.origin || 'MADE IN KOREA';
+
+    ctx.fillText(portCountry, 120, 155);
+    ctx.fillText(pltNo, 120, 185);
+    ctx.fillText(origin, 120, 215);
+
+    const dataUrl = canvas.toDataURL('image/png');
+    return dataUrl.split(',')[1];
+  } catch (e) {
+    console.warn('Failed to generate shipping mark PNG:', e);
+    return null;
+  }
+};
+
 export interface CiPlData {
   orderId?: string;
   piNumber: string;
@@ -52,11 +125,18 @@ export interface CiPlData {
   remarks?: string;
   portOfLoading?: string;
   portOfDischarge?: string;
+  destinationCountry?: string;
   vesselName?: string;
   etd?: string;
   paymentTerms?: string;
   deliveryTerms?: string;
   shippingMarks?: string;
+  shippingMarkShape?: string;
+  shippingMarkCompany?: string;
+  shippingMarkPort?: string;
+  shippingMarkCountry?: string;
+  shippingMarkPalletNo?: string;
+  shippingMarkOrigin?: string;
   customShipperText?: string;
   items: PreviewItem[];
   ciItems?: PreviewItem[];
@@ -460,10 +540,37 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       if (itemsList.length > 0) {
         const itemEndRow = currRow - 1;
         ws.mergeCells(`A${itemStartRow}:B${itemEndRow}`);
-        const markCell = ws.getCell(`A${itemStartRow}`);
-        markCell.value = data.shippingMarks || 'N/M';
-        markCell.font = { name: 'Arial', size: 8.5, bold: true };
-        markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        
+        const smBase64 = generateShippingMarkPngBase64({
+          shape: data.shippingMarkShape,
+          company: data.shippingMarkCompany,
+          port: data.shippingMarkPort || data.portOfDischarge,
+          country: data.shippingMarkCountry || data.destinationCountry,
+          palletNoText: data.shippingMarkPalletNo,
+          origin: data.shippingMarkOrigin
+        });
+
+        if (smBase64) {
+          try {
+            const smImgId = workbook.addImage({ base64: smBase64, extension: 'png' });
+            ws.addImage(smImgId, {
+              tl: { col: 0.1, row: itemStartRow - 1 + 0.1 } as any,
+              br: { col: 1.9, row: itemEndRow - 0.1 } as any,
+              editAs: 'oneCell'
+            });
+          } catch (err) {
+            console.warn('Failed to embed shipping mark image in CI sheet:', err);
+            const markCell = ws.getCell(`A${itemStartRow}`);
+            markCell.value = data.shippingMarks || 'N/M';
+            markCell.font = { name: 'Arial', size: 8.5, bold: true };
+            markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          }
+        } else {
+          const markCell = ws.getCell(`A${itemStartRow}`);
+          markCell.value = data.shippingMarks || 'N/M';
+          markCell.font = { name: 'Arial', size: 8.5, bold: true };
+          markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        }
       }
 
       // Total Amount
@@ -989,14 +1096,37 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
         let leftText = '';
         if (cIdx === 0) {
-          leftText = `SHIPPING MARKS:\n${data.shippingMarks || 'N/M'}\n\nCONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
+          leftText = `CONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
         } else {
           leftText = `CONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
         }
 
         cLeftCell.value = leftText.trim();
         cLeftCell.font = { name: 'Arial', size: 8.5, bold: true };
-        cLeftCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cLeftCell.alignment = { horizontal: 'center', vertical: 'bottom', wrapText: true };
+
+        if (cIdx === 0) {
+          const plSmBase64 = generateShippingMarkPngBase64({
+            shape: data.shippingMarkShape,
+            company: data.shippingMarkCompany,
+            port: data.shippingMarkPort || data.portOfDischarge,
+            country: data.shippingMarkCountry || data.destinationCountry,
+            palletNoText: data.shippingMarkPalletNo,
+            origin: data.shippingMarkOrigin
+          });
+          if (plSmBase64) {
+            try {
+              const plSmImgId = workbook.addImage({ base64: plSmBase64, extension: 'png' });
+              ws.addImage(plSmImgId, {
+                tl: { col: 0.1, row: cStartRow - 1 + 0.1 } as any,
+                br: { col: 2.9, row: cStartRow - 1 + Math.min(3.8, cEndRow - cStartRow + 0.8) } as any,
+                editAs: 'oneCell'
+              });
+            } catch (err) {
+              console.warn('Failed to embed shipping mark image in PL sheet:', err);
+            }
+          }
+        }
       });
 
       // Total Row for Packing List

@@ -60,6 +60,12 @@ export interface CiPlPreviewModalProps {
     paymentTerms?: string;
     deliveryTerms?: string;
     shippingMarks?: string;
+    shippingMarkShape?: string;
+    shippingMarkCompany?: string;
+    shippingMarkPort?: string;
+    shippingMarkCountry?: string;
+    shippingMarkPalletNo?: string;
+    shippingMarkOrigin?: string;
     customShipperText?: string;
     items: PreviewItem[];
     ciItems?: PreviewItem[];
@@ -112,6 +118,57 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
   const cleanCiName = (rawName: string) => {
     return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+  };
+
+  const renderGraphicShippingMark = () => {
+    const comp = data.shippingMarkCompany || (data.shippingMarks?.split('\n')?.[1]?.trim()) || 'YSACC';
+    const shape = data.shippingMarkShape || 'diamond';
+    const portCountry = [data.shippingMarkPort || data.portOfDischarge || '', data.shippingMarkCountry || data.deliveryTerms || ''].filter(Boolean).join(', ') || (data.shippingMarks?.split('\n')?.[2]?.trim()) || 'BUSAN, KOREA';
+    const pltNo = data.shippingMarkPalletNo || (data.shippingMarks?.split('\n')?.[3]?.trim()) || 'PALLET NO. : 1 / 1';
+    const origin = data.shippingMarkOrigin || (data.shippingMarks?.split('\n')?.[4]?.trim()) || 'MADE IN KOREA';
+
+    let shapeSvg = null;
+    if (shape === 'circle') {
+      shapeSvg = (
+        <svg width="68" height="68" style={{ display: 'block', margin: '0 auto' }}>
+          <circle cx="34" cy="34" r="30" stroke="black" strokeWidth="2.2" fill="none" />
+          <text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        </svg>
+      );
+    } else if (shape === 'square') {
+      shapeSvg = (
+        <svg width="68" height="50" style={{ display: 'block', margin: '0 auto' }}>
+          <rect x="4" y="4" width="60" height="42" stroke="black" strokeWidth="2.2" fill="none" />
+          <text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        </svg>
+      );
+    } else if (shape === 'triangle') {
+      shapeSvg = (
+        <svg width="68" height="56" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="34,4 4,52 64,52" stroke="black" strokeWidth="2.2" fill="none" />
+          <text x="50%" y="68%" fontSize="10.5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        </svg>
+      );
+    } else {
+      // Diamond
+      shapeSvg = (
+        <svg width="74" height="52" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="37,4 70,26 37,48 4,26" stroke="black" strokeWidth="2.2" fill="none" />
+          <text x="50%" y="54%" fontSize={comp.length > 11 ? '8.5' : (comp.length > 8 ? '9.5' : '11')} fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        </svg>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', lineHeight: 1.25, padding: '6px 2px' }}>
+        {shapeSvg}
+        <div style={{ fontSize: '9px', fontWeight: 800, textAlign: 'center', textTransform: 'uppercase', color: '#000', marginTop: '2px' }}>
+          <div>{portCountry}</div>
+          <div style={{ margin: '2px 0' }}>{pltNo}</div>
+          <div>{origin}</div>
+        </div>
+      </div>
+    );
   };
 
   const ciItems = (data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items).map(it => ({
@@ -527,8 +584,8 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   {/* Top Intro Text if provided */}
                   {data.introText && (
                     <tr>
-                      <td rowSpan={ciItems.length + 1} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px' }}>
-                        {data.shippingMarks || 'N/M'}
+                      <td rowSpan={ciItems.length + 1} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '8px 4px' }}>
+                        {renderGraphicShippingMark()}
                       </td>
                       <td colSpan={6} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa' }}>
                         {data.introText}
@@ -538,8 +595,8 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   {ciItems.map((item, idx) => (
                     <tr key={idx}>
                       {!data.introText && idx === 0 && (
-                        <td rowSpan={ciItems.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px' }}>
-                          {data.shippingMarks || 'N/M'}
+                        <td rowSpan={ciItems.length} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '8px 4px' }}>
+                          {renderGraphicShippingMark()}
                         </td>
                       )}
                       <td style={tdItemStyle}>
@@ -647,12 +704,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         }
                       });
 
-                      let leftMarkText = '';
-                      if (cIdx === 0) {
-                        leftMarkText = `SHIPPING MARKS:\n${data.shippingMarks || 'N/M'}\n\nCONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
-                      } else {
-                        leftMarkText = `CONTAINER NO.:\n${cData.containerNo || ''}\n\nSEAL NO.:\n${cData.sealNo || ''}`;
-                      }
+                      // container mark block
 
                       return packageGroups.map((pkg, pkgIdx) => {
                         const pkgNum = pkg.pkgNo;
@@ -664,7 +716,20 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                           <tr key={`${cIdx}-${pkgIdx}`}>
                             {pkgIdx === 0 && (
                               <td rowSpan={packageGroups.length} style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 'bold', whiteSpace: 'pre-line', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
-                                {leftMarkText.trim()}
+                                {cIdx === 0 && (
+                                  <div style={{ marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px dashed #cbd5e1' }}>
+                                    <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '2px' }}>SHIPPING MARKS:</div>
+                                    {renderGraphicShippingMark()}
+                                  </div>
+                                )}
+                                <div style={{ fontSize: '9.5px', color: '#1e293b' }}>
+                                  CONTAINER NO.:<br/>
+                                  <span style={{ fontSize: '11px', color: '#2563eb' }}>{cData.containerNo || '-'}</span>
+                                </div>
+                                <div style={{ fontSize: '9.5px', color: '#1e293b', marginTop: '6px' }}>
+                                  SEAL NO.:<br/>
+                                  <span style={{ fontSize: '10.5px' }}>{cData.sealNo || '-'}</span>
+                                </div>
                               </td>
                             )}
                             <td style={{ ...tdItemStyle, fontWeight: 700 }}>

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.378',
+    version: 'v2.8.378',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '등록된 쉬핑마크(도형+회사명+항구+수량)를 CI/PL 서식에 실제 그래픽 이미지로 삽입 연동',
+    content: '• 화면 인쇄 미리보기 모달의 CI 및 PL 서식 Shipping Mark 영역에 실제 다이아몬드/도형 및 텍스트가 포함된 그래픽 SVG 렌더링 적용\\n• Excel 다운로드 시에도 Shipping Mark 영역에 고해상도 그래픽 마크 PNG 이미지를 자동 생성하여 엑셀 시트에 완벽하게 삽입',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.377',
     version: 'v2.8.377',
     date: '2026-08-22',
