@@ -2665,12 +2665,11 @@ export const OrderDetail: React.FC = () => {
     let i = 0;
     while (i < items.length) {
       const it = items[i];
-      // Check if this item is the head of a shared package group
-      if (it._sharedGroupHead || (it.pkg === '1' && items[i + 1]?._sharedWithPrev)) {
+      if (it._sharedGroupHead || (it._isMergedGroup && !it._sharedWithPrev)) {
         it.pkgNo = String(curNo);
         it.pkg = '1';
         i++;
-        while (i < items.length && items[i]._sharedWithPrev) {
+        while (i < items.length && (items[i]._sharedWithPrev || items[i]._isMergedMember)) {
           items[i].pkgNo = String(curNo);
           items[i].pkg = '0';
           i++;
@@ -2694,62 +2693,95 @@ export const OrderDetail: React.FC = () => {
   };
 
   const mergeStep2Items = (containerIdx: number) => {
-    const nextContainers = [...(basicForm.packingList?.containers || [])];
-    if (!nextContainers[containerIdx]) return;
-    const items = [...(nextContainers[containerIdx].items || [])];
-    if (items.length <= 1) {
+    const containers = basicForm.packingList?.containers || [];
+    if (!containers[containerIdx]) return;
+    const rawItems = containers[containerIdx].items || [];
+    if (rawItems.length <= 1) {
       alert('합칠 품목이 2개 이상 있어야 합니다.');
       return;
     }
 
     const selectedIndexes = selectedPackingItems[containerIdx] || [];
 
-    if (selectedIndexes.length > 1) {
-      // Keep individual rows with all names and quantities intact, but share the same PKG NO
-      const sortedIdxs = [...selectedIndexes].sort((a, b) => a - b);
-      
-      // Mark the first selected item as group head, and following ones as shared
-      sortedIdxs.forEach((idx, order) => {
-        if (order === 0) {
-          items[idx]._sharedGroupHead = true;
-          delete items[idx]._sharedWithPrev;
-        } else {
-          items[idx]._sharedWithPrev = true;
-          delete items[idx]._sharedGroupHead;
-        }
-      });
-
-      // Move selected items so they are contiguous starting at sortedIdxs[0]
-      const selectedItemsList = sortedIdxs.map(idx => items[idx]);
-      const remainingItems = items.filter((_, idx) => !sortedIdxs.includes(idx));
-      remainingItems.splice(sortedIdxs[0], 0, ...selectedItemsList);
-
-      recalculateContainerPkgNos(remainingItems);
-
-      nextContainers[containerIdx].items = remainingItems;
-      setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-      setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
-      alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 동일한 PKG NO로 묶여 합쳐졌습니다. (품명 및 수량 개별 유지, 후속 PKG 번호 자동 업데이트)`);
+    if (selectedIndexes.length < 2) {
+      alert('체크박스(☑️)로 1개의 PKG로 묶을 2개 이상의 품목을 선택한 후 [PKG 합치기]를 눌러주세요.');
       return;
     }
 
-    // If no checkboxes selected, merge contiguous items with same pkgNo or ask user
-    alert('체크박스(☑️)로 1개의 PKG로 묶을 2개 이상의 품목을 선택한 후 [PKG 합치기]를 눌러주세요.');
+    // Deep clone all items
+    const items = rawItems.map((it: any) => ({ ...it }));
+    const sortedIdxs = [...selectedIndexes].sort((a, b) => a - b);
+
+    // Mark selected items as part of the same shared group
+    sortedIdxs.forEach((idx, order) => {
+      if (order === 0) {
+        items[idx]._sharedGroupHead = true;
+        items[idx]._isMergedGroup = true;
+        delete items[idx]._sharedWithPrev;
+        delete items[idx]._isMergedMember;
+      } else {
+        items[idx]._sharedWithPrev = true;
+        items[idx]._isMergedMember = true;
+        delete items[idx]._sharedGroupHead;
+        delete items[idx]._isMergedGroup;
+      }
+    });
+
+    // Move selected items so they are contiguous starting at sortedIdxs[0]
+    const selectedItemsList = sortedIdxs.map((idx: number) => items[idx]);
+    const remainingItems = items.filter((_: any, idx: number) => !sortedIdxs.includes(idx));
+    remainingItems.splice(sortedIdxs[0], 0, ...selectedItemsList);
+
+    recalculateContainerPkgNos(remainingItems);
+
+    const nextContainers = containers.map((c: any, idx: number) => {
+      if (idx === containerIdx) {
+        return {
+          ...c,
+          items: remainingItems.map((it: any) => ({ ...it }))
+        };
+      }
+      return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+    });
+
+    setBasicForm(prev => ({
+      ...prev,
+      packingList: {
+        ...prev.packingList,
+        containers: nextContainers
+      }
+    }));
+    setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+
+    if (order?.id) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, {
+        packingList: {
+          ...basicForm.packingList,
+          containers: nextContainers
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
+    }
+
+    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 동일한 PKG NO로 묶여 합쳐졌습니다. (품명 및 수량 개별 유지, 후속 PKG 번호 자동 업데이트)`);
   };
 
   const splitStep2Item = (containerIdx: number, specificItemIdx?: number) => {
-    const nextContainers = [...(basicForm.packingList?.containers || [])];
-    if (!nextContainers[containerIdx]) return;
-    let items = [...(nextContainers[containerIdx].items || [])];
-    if (items.length === 0) return;
+    const containers = basicForm.packingList?.containers || [];
+    if (!containers[containerIdx]) return;
+    const rawItems = containers[containerIdx].items || [];
+    if (rawItems.length === 0) return;
+
+    const items = rawItems.map((it: any) => ({ ...it }));
 
     const selectedIndexes = specificItemIdx !== undefined 
       ? [specificItemIdx] 
       : (selectedPackingItems[containerIdx]?.length > 0 
           ? [...selectedPackingItems[containerIdx]] 
-          : items.map((_, i) => i).filter(i => {
+          : items.map((_: any, i: number) => i).filter((i: number) => {
               const count = parseInt(items[i].pkg, 10) || parseInt(calculatePkgFromPkgNo(items[i].pkgNo) || '1', 10);
-              return count > 1 || items[i]._sharedWithPrev || items[i]._sharedGroupHead;
+              return count > 1 || items[i]._sharedWithPrev || items[i]._sharedGroupHead || items[i]._isMergedGroup || items[i]._isMergedMember;
             })
         );
 
@@ -2759,15 +2791,17 @@ export const OrderDetail: React.FC = () => {
     }
 
     // First, unmerge any shared group tags for selected items
-    selectedIndexes.forEach(idx => {
+    selectedIndexes.forEach((idx: number) => {
       if (items[idx]) {
         delete items[idx]._sharedGroupHead;
         delete items[idx]._sharedWithPrev;
+        delete items[idx]._isMergedGroup;
+        delete items[idx]._isMergedMember;
         items[idx].pkg = '1';
       }
     });
 
-    selectedIndexes.sort((a, b) => b - a);
+    selectedIndexes.sort((a: number, b: number) => b - a);
 
     for (const itemIdx of selectedIndexes) {
       const target = items[itemIdx];
@@ -2816,15 +2850,36 @@ export const OrderDetail: React.FC = () => {
 
     recalculateContainerPkgNos(items);
 
-    nextContainers[containerIdx].items = items;
+    const nextContainers = containers.map((c: any, idx: number) => {
+      if (idx === containerIdx) {
+        return {
+          ...c,
+          items: items.map((it: any) => ({ ...it }))
+        };
+      }
+      return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+    });
+
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+
+    if (order?.id) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, {
+        packingList: {
+          ...basicForm.packingList,
+          containers: nextContainers
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
+    }
+
     alert('✂️ 선택한 항목이 분할되었습니다.');
   };
 
   const resetStep2PkgNumbers = (containerIdx: number) => {
-    const nextContainers = [...(basicForm.packingList?.containers || [])];
-    if (!nextContainers[containerIdx]) return;
+    const containers = basicForm.packingList?.containers || [];
+    if (!containers[containerIdx]) return;
 
     if (!orderItems || orderItems.length === 0) {
       alert('가져올 소싱/발주 품목 데이터가 없습니다.');
@@ -2883,7 +2938,16 @@ export const OrderDetail: React.FC = () => {
       });
     });
 
-    nextContainers[containerIdx].items = reloadedItems;
+    const nextContainers = containers.map((c: any, idx: number) => {
+      if (idx === containerIdx) {
+        return {
+          ...c,
+          items: reloadedItems.map((it: any) => ({ ...it }))
+        };
+      }
+      return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+    });
+
     setBasicForm(prev => ({
       ...prev,
       packingList: {
@@ -2892,6 +2956,18 @@ export const OrderDetail: React.FC = () => {
       }
     }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+
+    if (order?.id) {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      setDoc(orderRef, {
+        packingList: {
+          ...basicForm.packingList,
+          containers: nextContainers
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
+    }
+
     alert('↩️ 소싱/발주 품목 데이터를 기준으로 패킹리스트가 원래대로 다시 불러와졌습니다.');
   };
 

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.328',
+    version: 'v2.8.328',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: '패킹리스트 [🔗 PKG 합치기] 실시간 화면 즉시 렌더링 및 자동 저장 반영',
+    content: '• [🔗 PKG 합치기] 및 [✂️ PKG 분할] 실행 시 React 상태 불변성 딥클론(Deep Clone) 처리 및 Firestore 자동 저장을 연동하여 화면에 즉시 변경된 PKG 번호가 렌더링되도록 수정 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.327',
     version: 'v2.8.327',
     date: '2026-08-22',
