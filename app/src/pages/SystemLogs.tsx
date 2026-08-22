@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.354',
+    version: 'v2.8.354',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '거래 당사자 주소창 리사이즈 지원 및 상단 품목 안내문(Intro Text) 위치 조정',
+    content: '• Shipper, Applicant, Notify Party 주소 입력창을 상하 크기조절(Resizable Textarea)이 가능하도록 개편\n• 상단 품목 안내문(Intro Text)을 품목 테이블 헤더와 1번 품목 행 사이로 재배치하여 실제 인보이스 서식과 100% 직관적으로 일치화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.353',
     version: 'v2.8.353',
     date: '2026-08-22',

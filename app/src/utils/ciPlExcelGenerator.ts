@@ -276,6 +276,22 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       currRow++;
       const itemStartRow = currRow;
 
+      // Top Intro Text (rendered between Table Header and Item 1 across B:G)
+      if (data.introText && data.introText.trim()) {
+        const introR = currRow;
+        ws.mergeCells(`B${introR}:G${introR}`);
+        const introCell = ws.getCell(`B${introR}`);
+        introCell.value = data.introText.trim();
+        introCell.font = { name: 'Arial', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+        introCell.alignment = { vertical: 'middle', wrapText: true };
+        const linesCount = data.introText.trim().split('\n').length;
+        ws.getRow(introR).height = Math.max(22, linesCount * 14 + 6);
+        for (let c = 1; c <= 7; c++) {
+          ws.getCell(introR, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+        }
+        currRow++;
+      }
+
       const itemsList = isInvoice
         ? (data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items)
         : (data.plItems && data.plItems.length > 0 ? data.plItems : data.items);
@@ -457,16 +473,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       }
 
-      // 8. Intro Text
-      if (data.introText && data.introText.trim()) {
-        ws.mergeCells(`A${currRow}:G${currRow}`);
-        ws.getCell(`A${currRow}`).value = data.introText.trim();
-        ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
-        ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
-        const linesCount = data.introText.split('\n').length;
-        ws.getRow(currRow).height = Math.max(18, linesCount * 14);
-        currRow++;
-      }
+
 
       // 9. Section A (Only if filled)
       if (data.hsCodeSummary && data.hsCodeSummary.trim()) {

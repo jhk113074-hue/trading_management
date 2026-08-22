@@ -11421,7 +11421,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>🏢 거래 당사자 주소 정보</div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shipper (송신인/제조사)</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shipper (송신인/제조사) (상하 크기조절 가능)</span>
                           <textarea 
                             value={basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany)} 
                             onChange={e => {
@@ -11435,12 +11435,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               }));
                             }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'none', outline: 'none' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '64px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant (바이어 주소)</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant (바이어 주소) (상하 크기조절 가능)</span>
                           <textarea 
                             value={basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer)} 
                             onChange={e => {
@@ -11454,14 +11454,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               }));
                             }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'none', outline: 'none' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '64px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notify Party (통지처)</span>
-                          <input 
-                            type="text" 
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notify Party (통지처) (상하 크기조절 가능)</span>
+                          <textarea 
+                            rows={2}
                             placeholder="Same as Applicant" 
                             value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'Same as Applicant')} 
                             onChange={e => {
@@ -11475,7 +11475,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 }
                               }));
                             }}
-                            style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '52px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
                       </div>
@@ -11540,6 +11540,45 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           </tr>
                         </thead>
                         <tbody>
+                          {/* 상단 품목 안내문 (Intro Text - 품명줄과 1번 줄 사이에 위치) */}
+                          <tr style={{ background: '#f0fdf4', borderBottom: '2px solid #bbf7d0' }}>
+                            <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 800, color: '#15803d', fontSize: '11px' }}>안내</td>
+                            <td colSpan={6} style={{ padding: '6px 8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                    📝 상단 품목 안내문 (INTRO TEXT - 품목 1번 상단 표시)
+                                  </span>
+                                  {basicForm.lcDescription && (
+                                    <span style={{ fontSize: '10.5px', color: '#059669', fontWeight: 600 }}>🔗 L/C Description 자동 연동됨</span>
+                                  )}
+                                </div>
+                                <textarea
+                                  rows={2}
+                                  value={effectiveIntroText}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCustomCiExtra(p => ({ ...p, introText: val }));
+                                  }}
+                                  placeholder="L/C 물품 설명(Description)에서 자동 바인딩되거나 품목 상단에 기재할 서두 안내문구를 직접 수정 가능합니다."
+                                  style={{ width: '100%', padding: '6px 8px', border: '1px solid #86efac', borderRadius: '4px', fontSize: '12.5px', color: '#14532d', outline: 'none', resize: 'vertical', minHeight: '44px', background: '#fff', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                                />
+                              </div>
+                            </td>
+                            <td style={{ padding: '4px', textAlign: 'center' }}>
+                              {effectiveIntroText && (
+                                <button
+                                  type="button"
+                                  onClick={() => setCustomCiExtra(p => ({ ...p, introText: '' }))}
+                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
+                                  title="안내문 비우기"
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+
                           {currentCiItems.map((item, idx) => {
                             const handleUpdateRow = (patch: Partial<any>) => {
                               setCustomCiItems(prev => {
@@ -11653,44 +11692,23 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         📑 CI 하단 부가 정보 & 신고 문구 설정 (Sections A, B, C)
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>상단 품목 안내문 (Intro Text)</span>
-                            {basicForm.lcDescription && (
-                              <span style={{ fontSize: '10.5px', color: '#3b82f6', fontWeight: 600 }}>🔗 L/C Description 연동됨</span>
-                            )}
-                          </div>
-                          <textarea
-                            rows={2}
-                            value={effectiveIntroText}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setCustomCiExtra(p => ({ ...p, introText: val }));
-                            }}
-                            placeholder="L/C 물품 설명(Description)에서 자동 바인딩되거나 직접 수정 가능합니다."
-                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }}
-                          />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>컨테이너 규격 및 수량 (Container Info)</span>
+                          {computedContainerInfo && (
+                            <span style={{ fontSize: '10.5px', color: '#0f766e', fontWeight: 600 }}>🔗 FCL 컨테이너 정보 자동 연동</span>
+                          )}
                         </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>컨테이너 규격 및 수량 (Container Info)</span>
-                            {computedContainerInfo && (
-                              <span style={{ fontSize: '10.5px', color: '#0f766e', fontWeight: 600 }}>🔗 FCL 컨테이너 정보 자동 연동</span>
-                            )}
-                          </div>
-                          <input
-                            type="text"
-                            value={effectiveContainerInfo}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setCustomCiExtra(p => ({ ...p, containerInfo: val }));
-                            }}
-                            placeholder="선적관리 FCL 컨테이너 상세 정보에서 자동 연동되거나 직접 입력 가능합니다."
-                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          value={effectiveContainerInfo}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomCiExtra(p => ({ ...p, containerInfo: val }));
+                          }}
+                          placeholder="선적관리 FCL 컨테이너 상세 정보에서 자동 연동되거나 직접 입력 가능합니다."
+                          style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
+                        />
                       </div>
 
                       {/* Section A (Required / Standard) */}
