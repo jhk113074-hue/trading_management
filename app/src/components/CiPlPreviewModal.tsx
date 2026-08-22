@@ -78,11 +78,16 @@ export interface CiPlPreviewModalProps {
     manufacturerAddress?: string;
     hsCodeSummary?: string;
   };
-  onExportExcel?: () => void;
+  onExportExcel?: (includeLetterhead?: boolean) => void;
 }
 
 export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onClose, data, onExportExcel }) => {
   const [activeTab, setActiveTab] = useState<'CI' | 'PL'>('CI');
+  const [showLetterheadLocal, setShowLetterheadLocal] = useState<boolean>(data.includeLetterhead !== false);
+
+  React.useEffect(() => {
+    setShowLetterheadLocal(data.includeLetterhead !== false);
+  }, [data.includeLetterhead, isOpen]);
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size] = useState({ width: 920, height: 860 });
   const [isMaximized, setIsMaximized] = useState(false);
@@ -288,11 +293,20 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 750, color: '#334155', cursor: 'pointer', background: '#fff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+              <input
+                type="checkbox"
+                checked={showLetterheadLocal}
+                onChange={e => setShowLetterheadLocal(e.target.checked)}
+                style={{ width: '14px', height: '14px', cursor: 'pointer' }}
+              />
+              🏢 Letterhead 포함
+            </label>
             {onExportExcel && (
               <button
                 type="button"
-                onClick={onExportExcel}
+                onClick={() => onExportExcel(showLetterheadLocal)}
                 style={{
                   padding: '4px 10px',
                   background: '#10b981',
@@ -366,37 +380,39 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
             boxSizing: 'border-box'
           }}>
             {/* Top Letterhead */}
-            {data.letterheadUrl ? (
-              <div style={{ marginBottom: '14px', borderBottom: '2px solid #000', paddingBottom: '8px', textAlign: 'center' }}>
-                <img
-                  src={data.letterheadUrl}
-                  alt="Company Letterhead"
-                  style={{ maxWidth: '100%', maxHeight: '110px', objectFit: 'contain' }}
-                  onError={(e) => {
-                    // Fallback to text header if image fails
-                    const target = e.target as HTMLElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `
-                        <div style="text-align: left;">
-                          <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">${companyName}</div>
-                          <div style="font-size: 9.5px; color: #1e293b; white-space: pre-line; margin-top: 2px; line-height: 1.3;">${headerAddress}</div>
-                        </div>
-                      `;
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
-                <div>
-                  <div style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '0.5px' }}>{companyName}</div>
-                  <div style={{ fontSize: '9.5px', color: '#1e293b', whiteSpace: 'pre-line', marginTop: '2px', lineHeight: 1.3 }}>
-                    {headerAddress}
+            {showLetterheadLocal && (
+              data.letterheadUrl ? (
+                <div style={{ marginBottom: '14px', borderBottom: '2px solid #000', paddingBottom: '8px', textAlign: 'center' }}>
+                  <img
+                    src={data.letterheadUrl}
+                    alt="Company Letterhead"
+                    style={{ maxWidth: '100%', maxHeight: '110px', objectFit: 'contain' }}
+                    onError={(e) => {
+                      // Fallback to text header if image fails
+                      const target = e.target as HTMLElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `
+                          <div style="text-align: left;">
+                            <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">${companyName}</div>
+                            <div style="font-size: 9.5px; color: #1e293b; white-space: pre-line; margin-top: 2px; line-height: 1.3;">${headerAddress}</div>
+                          </div>
+                        `;
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '0.5px' }}>{companyName}</div>
+                    <div style={{ fontSize: '9.5px', color: '#1e293b', whiteSpace: 'pre-line', marginTop: '2px', lineHeight: 1.3 }}>
+                      {headerAddress}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             )}
 
             {/* Document Title */}

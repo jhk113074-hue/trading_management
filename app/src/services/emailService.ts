@@ -36,7 +36,7 @@ export const sendPoEmailDirectly = async (params: SendEmailParams): Promise<Send
   if (brevoApiKey) {
     try {
       const brevoPayload = {
-        sender: { name: 'YSACC 무역관리', email: 'jhkim1130@ysacc.co.kr' },
+        sender: { name: 'jhkim1130@ysacc.co.kr', email: 'jhkim1130@ysacc.co.kr' },
         to: [{ email: to }],
         ...(ccArray.length > 0 ? { cc: ccArray.map(email => ({ email })) } : {}),
         subject: subject,

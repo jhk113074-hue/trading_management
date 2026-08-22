@@ -258,7 +258,7 @@ export const OrderDetail: React.FC = () => {
     bottomFreeText?: string;
   }>({});
   const [showPoDetails, setShowPoDetails] = useState(false);
-  const exportExcelRef = useRef<(() => void) | null>(null);
+  const exportExcelRef = useRef<((overrideIncludeLetterhead?: boolean) => void) | null>(null);
   const isEditing = true;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
@@ -5148,7 +5148,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       const isArrival = poEmailModalData.supplierName.endsWith('_arrival') || !!poEmailModalData.pdfAttachments;
       const cleanSupplierName = poEmailModalData.supplierName.replace(/_arrival$/, '');
       const senderEmail = userProfile?.email || 'jhkim1130@ysacc.co.kr';
-      const senderName = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (YSACC)`;
 
       let attachments: { title: string; url: string }[] = [];
       if (poEmailModalData.pdfAttachments && poEmailModalData.pdfAttachments.length > 0) {
@@ -5213,8 +5212,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       `;
 
       const payload: any = {
-        sender: { name: senderName, email: senderEmail },
-        to: [{ email: emailData.to, name: cleanSupplierName }],
+        sender: { name: senderEmail, email: senderEmail },
+        to: [{ email: emailData.to }],
         cc: ccList.length > 0 ? ccList : undefined,
         subject: emailData.subject,
         htmlContent: htmlContent,
@@ -11185,7 +11184,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   ? customCiExtra.containerInfo
                   : computedContainerInfo;
 
-                exportExcelRef.current = () => {
+                exportExcelRef.current = (overrideIncludeLetterhead?: boolean) => {
                   const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
                   const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
                   const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
@@ -11194,9 +11193,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   const activeCompDoc = myCompaniesList.find(c => isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS')) : (c.id === 'YSACC' || !c.nameEn?.includes('YS')));
                   const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
 
+                  const finalIncludeLetterhead = overrideIncludeLetterhead !== undefined ? overrideIncludeLetterhead : includeLetterhead;
+
                   exportCiPlToExcel({
                     letterheadUrl,
-                    includeLetterhead,
+                    includeLetterhead: finalIncludeLetterhead,
                     orderId: order.id,
                     piNumber: basicForm.piNumber,
                     customerName: customApplicantVal,
@@ -14532,7 +14533,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             <CiPlPreviewModal
             isOpen={isCiPlPreviewOpen}
             onClose={() => setIsCiPlPreviewOpen(false)}
-            onExportExcel={() => exportExcelRef.current?.()}
+            onExportExcel={(overrideLh) => exportExcelRef.current?.(overrideLh)}
             data={{
               letterheadUrl,
               includeLetterhead,

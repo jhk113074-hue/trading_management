@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.368',
+    version: 'v2.8.368',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: 'Letterhead(회사 레터헤드) 포함/미포함 체크 토글 실시간 미리보기 및 Excel 연동 버그 수정',
+    content: '• 화면 및 미리보기 모달 상단 [🏢 Letterhead 포함] 체크 해제 시, 미리보기 서식과 엑셀 시트에서 상단 레터헤드 이미지/텍스트가 즉시 완벽 제거되도록 상태 동기화 및 렌더링 조건문 수정 완료',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.367',
+    version: 'v2.8.367',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '발주서/도착보고/쉬핑마크 이메일 발송 시 발신자/수신자 순수 이메일 주소(Address Only) 적용',
+    content: '• 이메일 발송 시 발신자(Sender) 및 수신자(To) 항목에서 직책/이름/회사명 접미사(예: 김주한 관리자 (YSACC))를 배제하고 순수 메일 주소(예: jhkim1130@ysacc.co.kr)만 전송되도록 최적화 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.366',
     version: 'v2.8.366',
     date: '2026-08-22',

@@ -52,7 +52,7 @@ app.post('/api/email/send', async (req, res) => {
     // 1. Try Brevo API
     if (brevoApiKey) {
       const brevoPayload = {
-        sender: { name: 'YSACC 무역관리', email: 'jhkim1130@ysacc.co.kr' },
+        sender: { name: 'jhkim1130@ysacc.co.kr', email: 'jhkim1130@ysacc.co.kr' },
         to: [{ email: to }],
         ...(ccList.length > 0 ? { cc: ccList.map(e => ({ email: e })) } : {}),
         subject: subject,
