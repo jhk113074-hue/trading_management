@@ -230,13 +230,6 @@ export const OrderDetail: React.FC = () => {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [selectedPackingItems, setSelectedPackingItems] = useState<{ [containerIdx: number]: number[] }>({});
 
-  const togglePackingItemSelect = (containerIdx: number, itemIdx: number) => {
-    setSelectedPackingItems(prev => {
-      const cur = prev[containerIdx] || [];
-      const next = cur.includes(itemIdx) ? cur.filter(i => i !== itemIdx) : [...cur, itemIdx];
-      return { ...prev, [containerIdx]: next };
-    });
-  };
 
   const toggleAllPackingItemsInContainer = (containerIdx: number, totalCount: number) => {
     setSelectedPackingItems(prev => {
@@ -2710,13 +2703,40 @@ export const OrderDetail: React.FC = () => {
 
     // Deep clone all items
     const items = rawItems.map((it: any) => ({ ...it }));
-    const sortedIdxs = [...selectedIndexes].sort((a, b) => a - b);
+    const sortedIdxs = [...selectedIndexes].sort((a: number, b: number) => a - b);
+
+    // Calculate aggregated dimensions and weights for the merged package
+    let sumNet = 0;
+    let sumGross = 0;
+    let maxW = 0;
+    let maxL = 0;
+    let maxH = 0;
+
+    sortedIdxs.forEach((idx: number) => {
+      const it = items[idx];
+      sumNet += parseFloat(it.netWeight) || 0;
+      sumGross += parseFloat(it.grossWeight) || 0;
+      const cleanDims = (it.dimensions || '').toLowerCase().replace(/\s+/g, '');
+      const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
+      if ((dims[0] || 0) > maxW) maxW = dims[0];
+      if ((dims[1] || 0) > maxL) maxL = dims[1];
+      if ((dims[2] || 0) > maxH) maxH = dims[2];
+    });
+
+    if (maxW === 0) maxW = 1100;
+    if (maxL === 0) maxL = 1100;
+    if (maxH === 0) maxH = 1600;
+    const groupCbm = ((maxW * maxL * maxH) / 1000000000).toFixed(3);
 
     // Mark selected items as part of the same shared group
-    sortedIdxs.forEach((idx, order) => {
+    sortedIdxs.forEach((idx: number, order: number) => {
       if (order === 0) {
         items[idx]._sharedGroupHead = true;
         items[idx]._isMergedGroup = true;
+        items[idx].dimensions = `${maxW}x${maxL}x${maxH}`;
+        if (sumNet > 0) items[idx].netWeight = String(Math.round(sumNet));
+        if (sumGross > 0) items[idx].grossWeight = String(Math.round(sumGross));
+        items[idx].cbm = String(groupCbm);
         delete items[idx]._sharedWithPrev;
         delete items[idx]._isMergedMember;
       } else {
@@ -2764,7 +2784,7 @@ export const OrderDetail: React.FC = () => {
       }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
     }
 
-    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 동일한 PKG NO로 묶여 합쳐졌습니다. (품명 및 수량 개별 유지, 후속 PKG 번호 자동 업데이트)`);
+    alert(`🔗 선택된 ${selectedIndexes.length}개 품목이 1개의 패키지(PKG NO.)로 묶여 합쳐졌습니다. (품명 및 수량 개별 유지, 후속 PKG 번호 자동 업데이트)`);
   };
 
   const splitStep2Item = (containerIdx: number, specificItemIdx?: number) => {
@@ -8754,294 +8774,379 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </tr>
                               </thead>
                               <tbody>
-                                {(c.items || []).map((it: any, itIdx: number) => (
-                                  <tr key={itIdx} style={{ borderBottom: '1px solid var(--border-color)', background: (selectedPackingItems[cIdx] || []).includes(itIdx) ? '#eff6ff' : undefined }}>
-                                    <td style={{ padding: '4px', textAlign: 'center' }}>
-                                      <input 
-                                        type="checkbox"
-                                        disabled={!isEditing}
-                                        checked={(selectedPackingItems[cIdx] || []).includes(itIdx)}
-                                        onChange={() => togglePackingItemSelect(cIdx, itIdx)}
-                                        style={{ cursor: isEditing ? 'pointer' : 'not-allowed', width: '15px', height: '15px' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'center', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.pkgNo || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].pkgNo = val;
-                                        nextContainers[cIdx].items[itIdx].pkg = calculatePkgFromPkgNo(val);
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                          <textarea
+                                {(() => {
+                                  const itemsList = c.items || [];
+                                  return itemsList.map((it: any, itIdx: number) => {
+                                    const isSecondary = it._sharedWithPrev || it._isMergedMember;
+                                    
+                                    // Calculate how many rows this group spans if this is the head
+                                    let spanCount = 1;
+                                    if (!isSecondary) {
+                                      for (let k = itIdx + 1; k < itemsList.length; k++) {
+                                        if (itemsList[k]._sharedWithPrev || itemsList[k]._isMergedMember) {
+                                          spanCount++;
+                                        } else {
+                                          break;
+                                        }
+                                      }
+                                    }
+
+                                    // Group items indexes for group selection
+                                    const groupIndexes = Array.from({ length: spanCount }, (_, o) => itIdx + o);
+                                    const isGroupSelected = groupIndexes.some(idx => (selectedPackingItems[cIdx] || []).includes(idx));
+
+                                    return (
+                                      <tr key={itIdx} style={{ borderBottom: (isSecondary && itIdx < itemsList.length - 1 && (itemsList[itIdx + 1]._sharedWithPrev || itemsList[itIdx + 1]._isMergedMember)) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)', background: isGroupSelected ? '#eff6ff' : undefined }}>
+                                        {/* 1. Checkbox */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            <input 
+                                              type="checkbox"
+                                              disabled={!isEditing}
+                                              checked={groupIndexes.every(idx => (selectedPackingItems[cIdx] || []).includes(idx))}
+                                              onChange={() => {
+                                                const curSelected = selectedPackingItems[cIdx] || [];
+                                                const allChecked = groupIndexes.every(idx => curSelected.includes(idx));
+                                                let nextSelected: number[];
+                                                if (allChecked) {
+                                                  nextSelected = curSelected.filter(idx => !groupIndexes.includes(idx));
+                                                } else {
+                                                  nextSelected = Array.from(new Set([...curSelected, ...groupIndexes]));
+                                                }
+                                                setSelectedPackingItems(prev => ({ ...prev, [cIdx]: nextSelected }));
+                                              }}
+                                              style={{ cursor: isEditing ? 'pointer' : 'not-allowed', width: '16px', height: '16px' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* 2. PKG NO. */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                              <input 
+                                                type="text" 
+                                                placeholder="예: 1-5" 
+                                                disabled={!isEditing} 
+                                                style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '90%', textAlign: 'center', height: '32px', fontWeight: 'bold', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} 
+                                                value={it.pkgNo || ''} 
+                                                onChange={e => {
+                                                  const val = e.target.value;
+                                                  const nextContainers = [...basicForm.packingList.containers];
+                                                  for (let g = 0; g < spanCount; g++) {
+                                                    nextContainers[cIdx].items[itIdx + g].pkgNo = val;
+                                                    nextContainers[cIdx].items[itIdx + g].pkg = g === 0 ? calculatePkgFromPkgNo(val) : '0';
+                                                  }
+                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                }} 
+                                              />
+                                              {spanCount > 1 && (
+                                                <span style={{ fontSize: '10px', color: '#6366f1', fontWeight: 700 }}>
+                                                  [혼적 {spanCount}건]
+                                                </span>
+                                              )}
+                                            </div>
+                                          </td>
+                                        )}
+
+                                        {/* 3. Description of Goods (Individual per row) */}
+                                        <td style={{ padding: '4px' }}>
+                                          <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                                            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                              <textarea
+                                                disabled={!isEditing}
+                                                placeholder="[상품코드] 상품명 또는 사양 직접 입력"
+                                                rows={2}
+                                                style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
+                                                value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
+                                                onChange={e => {
+                                                  const val = e.target.value;
+                                                  const nextContainers = [...basicForm.packingList.containers];
+                                                  nextContainers[cIdx].items[itIdx].description = val.replace(/^P#\d+\.\s*/i, '');
+                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                }}
+                                              />
+                                            </div>
+                                            <datalist id={`packing_products_datalist_${cIdx}_${itIdx}`}>
+                                              {products.map(p => {
+                                                const displayName = p.nameEn || p.nameKo || '';
+                                                return (
+                                                  <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
+                                                    [{p.productCode}] {displayName}
+                                                  </option>
+                                                );
+                                              })}
+                                            </datalist>
+                                            {(() => {
+                                              const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                              const itemCode = match ? match[1] : '-';
+                                              const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                              return (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (p) {
+                                                      setEditingProd(p);
+                                                      setIsProdModalOpen(true);
+                                                    } else {
+                                                      alert('먼저 등록된 상품 ([상품코드]로 시작하는 형태)을 선택해주세요.');
+                                                    }
+                                                  }}
+                                                  disabled={!p}
+                                                  title="선택된 상품 수정 및 패킹방법 설정"
+                                                  style={{
+                                                    background: p ? '#fef08a' : '#f1f5f9',
+                                                    border: p ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
+                                                    color: p ? '#a16207' : 'var(--text-muted)',
+                                                    borderRadius: '4px',
+                                                    padding: '0',
+                                                    cursor: p ? 'pointer' : 'not-allowed',
+                                                    fontSize: '14.5px',
+                                                    fontWeight: 600,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    height: '24px',
+                                                    width: '24px',
+                                                    flexShrink: 0
+                                                  }}
+                                                >
+                                                  ✏️
+                                                </button>
+                                              );
+                                            })()}
+                                          </div>
+                                        </td>
+
+                                        {/* 4. Manufacturer (Individual per row) */}
+                                        <td style={{ padding: '4px' }}>
+                                          <input
+                                            type="text"
+                                            placeholder="제조사명"
                                             disabled={!isEditing}
-                                            placeholder="[상품코드] 상품명 또는 사양 직접 입력"
-                                            rows={2}
-                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                            value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
+                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                            value={it.supplier || ''}
                                             onChange={e => {
                                               const val = e.target.value;
                                               const nextContainers = [...basicForm.packingList.containers];
-                                              nextContainers[cIdx].items[itIdx].description = val.replace(/^P#\d+\.\s*/i, '');
+                                              nextContainers[cIdx].items[itIdx].supplier = val;
                                               setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                             }}
                                           />
-                                        </div>
-                                        <datalist id={`packing_products_datalist_${cIdx}_${itIdx}`}>
-                                          {products.map(p => {
-                                            const displayName = p.nameEn || p.nameKo || '';
-                                            return (
-                                              <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
-                                                [{p.productCode}] {displayName}
-                                              </option>
-                                            );
-                                          })}
-                                        </datalist>
-                                        {(() => {
-                                          const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
-                                          const itemCode = match ? match[1] : '-';
-                                          const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-                                          return (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                if (p) {
-                                                  setEditingProd(p);
-                                                  setIsProdModalOpen(true);
-                                                } else {
-                                                  alert('먼저 등록된 상품 ([상품코드]로 시작하는 형태)을 선택해주세요.');
-                                                }
-                                              }}
-                                              disabled={!p}
-                                              title="선택된 상품 수정 및 패킹방법 설정"
-                                              style={{
-                                                background: p ? '#fef08a' : '#f1f5f9',
-                                                border: p ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
-                                                color: p ? '#a16207' : 'var(--text-muted)',
-                                                borderRadius: '4px',
-                                                padding: '0',
-                                                cursor: p ? 'pointer' : 'not-allowed',
-                                                fontSize: '14.5px',
-                                                fontWeight: 600,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                height: '24px',
-                                                width: '24px',
-                                                flexShrink: 0
-                                              }}
-                                            >
-                                              ✏️
-                                            </button>
-                                          );
-                                        })()}
-                                      </div>
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input
-                                        type="text"
-                                        placeholder="제조사명"
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
-                                        value={it.supplier || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].supplier = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input
-                                        type="number"
-                                        placeholder="수량"
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
-                                        value={it.qty || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].qty = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
-                                    </td>
-                                    
-                                    <td style={{ padding: '4px', textAlign: 'center' }}>
-                                      {(() => {
-                                        const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
-                                        const dims = cleanDims.split('x');
-                                        const widthVal = dims[0] || '0';
-                                        const lengthVal = dims[1] || '0';
-                                        const heightVal = dims[2] || '0';
+                                        </td>
 
-                                        const handleItemDimChange = (dimKey: 'w' | 'l' | 'h', inputVal: string) => {
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          let w = widthVal;
-                                          let l = lengthVal;
-                                          let h = heightVal;
-                                          if (dimKey === 'w') w = inputVal;
-                                          if (dimKey === 'l') l = inputVal;
-                                          if (dimKey === 'h') h = inputVal;
-                                          nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
-                                          
-                                          const numW = parseFloat(w) || 0;
-                                          const numL = parseFloat(l) || 0;
-                                          const numH = parseFloat(h) || 0;
-                                          if (numW > 0 && numL > 0 && numH > 0) {
-                                            const calcCbm = ((numW * numL * numH) / 1000000000);
-                                            let count = parseInt(it.pkg, 10);
-                                            if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
-                                            nextContainers[cIdx].items[itIdx].cbm = String((calcCbm * count).toFixed(3));
-                                          }
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        };
-
-                                        return (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
-                                            <input 
-                                              type="number" 
-                                              placeholder="W" 
-                                              disabled={!isEditing} 
-                                              value={widthVal} 
-                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
-                                              onChange={e => handleItemDimChange('w', e.target.value)} 
-                                            />
-                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
-                                            <input 
-                                              type="number" 
-                                              placeholder="L" 
-                                              disabled={!isEditing} 
-                                              value={lengthVal} 
-                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
-                                              onChange={e => handleItemDimChange('l', e.target.value)} 
-                                            />
-                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
-                                            <input 
-                                              type="number" 
-                                              placeholder="H" 
-                                              disabled={!isEditing} 
-                                              value={heightVal} 
-                                              style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
-                                              onChange={e => handleItemDimChange('h', e.target.value)} 
-                                            />
-                                          </div>
-                                        );
-                                      })()}
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input
-                                        type="number"
-                                        placeholder="NET WT"
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
-                                        value={it.netWeight || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].netWeight = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input
-                                        type="number"
-                                        placeholder="GROSS WT"
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
-                                        value={it.grossWeight || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].grossWeight = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '4px' }}>
-                                      <input
-                                        type="number"
-                                        step="0.001"
-                                        placeholder="CBM"
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
-                                        value={it.cbm || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].cbm = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '4px', textAlign: 'center' }}>
-                                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
-                                        <button 
-                                          type="button"
-                                          disabled={itIdx === 0 || !isEditing}
-                                          onClick={() => moveStep2Item(cIdx, itIdx, 'up')}
-                                          title="위로 이동"
-                                          style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === 0 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                          ▲
-                                        </button>
-                                        <button 
-                                          type="button"
-                                          disabled={itIdx === (c.items || []).length - 1 || !isEditing}
-                                          onClick={() => moveStep2Item(cIdx, itIdx, 'down')}
-                                          title="아래로 이동"
-                                          style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                          ▼
-                                        </button>
-                                        {(parseInt(it.pkg, 10) > 1 || parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10) > 1) && (
-                                          <button
-                                            type="button"
+                                        {/* 5. 수량 (Individual per row) */}
+                                        <td style={{ padding: '4px' }}>
+                                          <input
+                                            type="number"
+                                            placeholder="수량"
                                             disabled={!isEditing}
-                                            onClick={() => splitStep2Item(cIdx, itIdx)}
-                                            title="이 품목을 지정 단위 또는 1장씩 분할"
-                                            style={{ width: '28px', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                          >
-                                            ✂️
-                                          </button>
+                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                            value={it.qty || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].qty = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                          />
+                                        </td>
+
+                                        {/* 6. 규격 (WxLxH) - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            {(() => {
+                                              const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
+                                              const dims = cleanDims.split('x');
+                                              const widthVal = dims[0] || '0';
+                                              const lengthVal = dims[1] || '0';
+                                              const heightVal = dims[2] || '0';
+
+                                              const handleItemDimChange = (dimKey: 'w' | 'l' | 'h', inputVal: string) => {
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                let w = widthVal;
+                                                let l = lengthVal;
+                                                let h = heightVal;
+                                                if (dimKey === 'w') w = inputVal;
+                                                if (dimKey === 'l') l = inputVal;
+                                                if (dimKey === 'h') h = inputVal;
+                                                nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
+                                                
+                                                const numW = parseFloat(w) || 0;
+                                                const numL = parseFloat(l) || 0;
+                                                const numH = parseFloat(h) || 0;
+                                                if (numW > 0 && numL > 0 && numH > 0) {
+                                                  const calcCbm = ((numW * numL * numH) / 1000000000);
+                                                  let count = parseInt(it.pkg, 10);
+                                                  if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+                                                  nextContainers[cIdx].items[itIdx].cbm = String((calcCbm * count).toFixed(3));
+                                                }
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              };
+
+                                              return (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
+                                                  <input 
+                                                    type="number" 
+                                                    placeholder="W" 
+                                                    disabled={!isEditing} 
+                                                    value={widthVal} 
+                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onChange={e => handleItemDimChange('w', e.target.value)} 
+                                                  />
+                                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
+                                                  <input 
+                                                    type="number" 
+                                                    placeholder="L" 
+                                                    disabled={!isEditing} 
+                                                    value={lengthVal} 
+                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onChange={e => handleItemDimChange('l', e.target.value)} 
+                                                  />
+                                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
+                                                  <input 
+                                                    type="number" 
+                                                    placeholder="H" 
+                                                    disabled={!isEditing} 
+                                                    value={heightVal} 
+                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onChange={e => handleItemDimChange('h', e.target.value)} 
+                                                  />
+                                                </div>
+                                              );
+                                            })()}
+                                          </td>
                                         )}
-                                        <button
-                                          type="button"
-                                          disabled={!isEditing}
-                                          onClick={() => {
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            const copiedItem = { ...nextContainers[cIdx].items[itIdx] };
-                                            nextContainers[cIdx].items.splice(itIdx + 1, 0, copiedItem);
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          title="품목 복사"
-                                          style={{ width: '28px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '14px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                          📋
-                                        </button>
-                                        <button
-                                          type="button"
-                                          disabled={!isEditing}
-                                          onClick={() => {
-                                            const nextContainers = [...basicForm.packingList.containers];
-                                            nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
-                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                          }}
-                                          title="품목 삭제"
-                                          style={{ width: '28px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        >
-                                          🗑️
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
+
+                                        {/* 7. NET WT (Kg) - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="number"
+                                              placeholder="NET WT"
+                                              disabled={!isEditing}
+                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                              value={it.netWeight || ''}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].netWeight = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* 8. GROSS WT (Kg) - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="number"
+                                              placeholder="GROSS WT"
+                                              disabled={!isEditing}
+                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                              value={it.grossWeight || ''}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* 9. CBM - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            <input
+                                              type="number"
+                                              step="0.001"
+                                              placeholder="CBM"
+                                              disabled={!isEditing}
+                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                              value={it.cbm || ''}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].cbm = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* 10. 동작 Actions (Individual per row) */}
+                                        <td style={{ padding: '4px', textAlign: 'center' }}>
+                                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                            <button 
+                                              type="button"
+                                              disabled={itIdx === 0 || !isEditing}
+                                              onClick={() => moveStep2Item(cIdx, itIdx, 'up')}
+                                              title="위로 이동"
+                                              style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === 0 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                              ▲
+                                            </button>
+                                            <button 
+                                              type="button"
+                                              disabled={itIdx === (c.items || []).length - 1 || !isEditing}
+                                              onClick={() => moveStep2Item(cIdx, itIdx, 'down')}
+                                              title="아래로 이동"
+                                              style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                              ▼
+                                            </button>
+                                            {(parseInt(it.pkg, 10) > 1 || parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10) > 1 || spanCount > 1 || isSecondary) && (
+                                              <button
+                                                type="button"
+                                                disabled={!isEditing}
+                                                onClick={() => splitStep2Item(cIdx, itIdx)}
+                                                title="이 패키지를 개별 분할"
+                                                style={{ width: '28px', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                              >
+                                                ✂️
+                                              </button>
+                                            )}
+                                            <button 
+                                              type="button"
+                                              disabled={!isEditing}
+                                              onClick={() => {
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                const cloned = { ...nextContainers[cIdx].items[itIdx] };
+                                                delete cloned._sharedGroupHead;
+                                                delete cloned._sharedWithPrev;
+                                                delete cloned._isMergedGroup;
+                                                delete cloned._isMergedMember;
+                                                nextContainers[cIdx].items.splice(itIdx + 1, 0, cloned);
+                                                recalculateContainerPkgNos(nextContainers[cIdx].items);
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                              title="이 품목 복제"
+                                              style={{ width: '28px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                              📋
+                                            </button>
+                                            <button 
+                                              type="button"
+                                              disabled={!isEditing}
+                                              onClick={() => {
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items.splice(itIdx, 1);
+                                                recalculateContainerPkgNos(nextContainers[cIdx].items);
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                              title="이 품목 삭제"
+                                              style={{ width: '28px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
 {c.items?.length === 0 ? (
                                   <tr>
                                     <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>

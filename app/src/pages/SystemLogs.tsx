@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.329',
+    version: 'v2.8.329',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 혼적/묶음 PKG 테이블 병합(rowSpan) UI 레이아웃 완성',
+    content: '• 복수 품목을 [🔗 PKG 합치기] 시, 사용자가 제공한 디자인 구조에 맞추어 체크박스/PKG NO/규격/중량(NET, GROSS)/CBM 컬럼은 1개의 통합 셀(rowSpan)로 시각적으로 결합하고, 품명/제조사/수량 및 개별 동작 버튼은 각 행별로 독립 분리 렌더링되도록 완벽 구현',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.328',
     version: 'v2.8.328',
     date: '2026-08-22',
