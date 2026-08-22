@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.331',
+    version: 'v2.8.331',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '도착보고서 혼적 테이블 병합(rowSpan) 연동 및 쉬핑마크 인쇄 라벨 중복 방지',
+    content: '• 도착보고서 작성/인쇄 시에도 패킹리스트의 혼적/묶음(rowSpan) 구조가 동일하게 반영되어 쉬핑마크/수량/중량/CBM이 통합 렌더링되도록 구현\n• 쉬핑마크 인쇄 시 동일 파렛트(예: PALLET NO. 1)에 여러 품목이 적재된 경우 중복 페이지가 인쇄되지 않고 실제 파렛트 수량만큼 1장씩 정밀 인쇄되도록 중복 제거\n• 도착보고서 헤더에 [🔄 패킹리스트 동기화] 버튼을 추가하여 패킹리스트 변경사항을 원클릭으로 즉시 반영 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.330',
     version: 'v2.8.330',
     date: '2026-08-22',

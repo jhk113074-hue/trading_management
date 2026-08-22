@@ -5133,21 +5133,39 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   </tr>
                 </thead>
                 <tbody>
-                  ${packingItemsList.map((it: any) => `
-                    <tr>
-                      <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                        ${(it.marks || '').replace(/\n/g, '<br/>')}
-                      </td>
-                      <td style="font-size: 11px; line-height: 1.5;">
-                        ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
-                      </td>
-                      <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
-                      <td class="center">${it.packageType || 'PL'}</td>
-                      <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                      <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
-                      <td class="center">${it.measurement || '-'}</td>
-                    </tr>
-                  `).join('')}
+                  ${packingItemsList.map((it: any, itemIdx: number) => {
+                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                    let spanCount = 1;
+                    if (!isSecondary) {
+                      for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
+                        const nextIt = packingItemsList[k];
+                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                          spanCount++;
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    return `
+                      <tr>
+                        ${!isSecondary ? `
+                          <td rowspan="${spanCount}" class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold; vertical-align: middle;">
+                            ${(it.marks || '').replace(/\n/g, '<br/>')}
+                          </td>
+                        ` : ''}
+                        <td style="font-size: 11px; line-height: 1.5;">
+                          ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                        </td>
+                        ${!isSecondary ? `
+                          <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
+                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
+                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
+                        ` : ''}
+                      </tr>
+                    `;
+                  }).join('')}
                   <tr class="total-row">
                     <td class="center">TOTAL</td>
                     <td></td>
@@ -5284,20 +5302,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           }
         };
 
-        const palletList: string[] = [];
+        let rawPalletList: string[] = [];
         packingItemsList.forEach((it: any, idx: number) => {
           const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
           if (pNo.includes('-')) {
             const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
             if (!isNaN(start) && !isNaN(end) && end >= start) {
-              for (let k = start; k <= end; k++) palletList.push(String(k));
+              for (let k = start; k <= end; k++) rawPalletList.push(String(k));
             } else {
-              palletList.push(pNo);
+              rawPalletList.push(pNo);
             }
           } else {
-            palletList.push(pNo);
+            rawPalletList.push(pNo);
           }
         });
+        const palletList = Array.from(new Set(rawPalletList));
         if (palletList.length === 0) palletList.push('1');
 
         let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 45%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text1 { font-size: 30pt; font-weight: 700; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; } .info-text2 { font-size: 36pt; font-weight: 900; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
@@ -9590,9 +9609,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           const pNo = it.pkgNo || String(idx + 1);
 
                           packingItemsList.push({
+                            pkgNo: pNo,
+                            pkg: it.pkg,
+                            _sharedWithPrev: it._sharedWithPrev,
+                            _sharedGroupHead: it._sharedGroupHead,
+                            _isMergedGroup: it._isMergedGroup,
+                            _isMergedMember: it._isMergedMember,
                             marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
                             descOfGoods: desc,
-                            qty: Number(it.pkg) || 0,
+                            qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
                             packageType: 'PL',
                             netWeight: Number(it.netWeight) || 0,
                             grossWeight: Number(it.grossWeight) || 0,
@@ -9895,21 +9920,39 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  ${packingItemsList.map((it: any) => `
-                                    <tr>
-                                      <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                                        ${renderShippingMarkCellHtml(it.marks)}
-                                      </td>
-                                      <td style="font-size: 11px; line-height: 1.5;">
-                                        ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
-                                      </td>
-                                      <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
-                                      <td class="center">${it.packageType || 'PL'}</td>
-                                      <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                                      <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
-                                      <td class="center">${it.measurement || '-'}</td>
-                                    </tr>
-                                  `).join('')}
+                                  ${packingItemsList.map((it: any, itemIdx: number) => {
+                                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                                    let spanCount = 1;
+                                    if (!isSecondary) {
+                                      for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
+                                        const nextIt = packingItemsList[k];
+                                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                                          spanCount++;
+                                        } else {
+                                          break;
+                                        }
+                                      }
+                                    }
+                                    return `
+                                      <tr>
+                                        ${!isSecondary ? `
+                                          <td rowspan="${spanCount}" class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold; vertical-align: middle;">
+                                            ${renderShippingMarkCellHtml(it.marks)}
+                                          </td>
+                                        ` : ''}
+                                        <td style="font-size: 11px; line-height: 1.5;">
+                                          ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                                        </td>
+                                        ${!isSecondary ? `
+                                          <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
+                                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
+                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
+                                        ` : ''}
+                                      </tr>
+                                    `;
+                                  }).join('')}
                                   <tr>
                                     <td style="border-top: none; border-bottom: none; height: 50px;"></td>
                                     <td style="border-top: none; border-bottom: none;"></td>
@@ -9976,22 +10019,23 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             }
                           };
 
-                          const palletList: string[] = [];
+                          let rawPalletList: string[] = [];
                           packingItemsList.forEach((it: any, idx: number) => {
                             const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
                             if (pNo.includes('-')) {
                               const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
                               if (!isNaN(start) && !isNaN(end) && end >= start) {
                                 for (let k = start; k <= end; k++) {
-                                  palletList.push(String(k));
+                                  rawPalletList.push(String(k));
                                 }
                               } else {
-                                palletList.push(pNo);
+                                rawPalletList.push(pNo);
                               }
                             } else {
-                              palletList.push(pNo);
+                              rawPalletList.push(pNo);
                             }
                           });
+                          const palletList = Array.from(new Set(rawPalletList));
                           if (palletList.length === 0) palletList.push('1');
 
                           let htmlContent = '<html>' +
@@ -10086,6 +10130,57 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               )}
                             </div>
                             <div style={{ display: 'flex', gap: '6px' }}>
+                              <button 
+                                onClick={() => {
+                                  let matchingItems: any[] = [];
+                                  if (basicForm.packingList?.containers) {
+                                    basicForm.packingList.containers.forEach((container: any) => {
+                                      const itemsForSupplier = (container.items || []).filter((it: any) => 
+                                        (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+                                      );
+                                      matchingItems = [...matchingItems, ...itemsForSupplier];
+                                    });
+                                  }
+                                  const refreshedList: any[] = [];
+                                  matchingItems.forEach((it: any, idx: number) => {
+                                    let desc = it.description || '';
+                                    desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+                                    if (it.qty && !desc.includes(String(it.qty))) {
+                                      desc = `${desc} ${it.qty} kg`.replace(/\s+/g, ' ');
+                                    }
+                                    const pNo = it.pkgNo || String(idx + 1);
+                                    refreshedList.push({
+                                      pkgNo: pNo,
+                                      pkg: it.pkg,
+                                      _sharedWithPrev: it._sharedWithPrev,
+                                      _sharedGroupHead: it._sharedGroupHead,
+                                      _isMergedGroup: it._isMergedGroup,
+                                      _isMergedMember: it._isMergedMember,
+                                      marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
+                                      descOfGoods: desc,
+                                      qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
+                                      packageType: 'PL',
+                                      netWeight: Number(it.netWeight) || 0,
+                                      grossWeight: Number(it.grossWeight) || 0,
+                                      measurement: it.cbm ? `${it.cbm} CBM` : ''
+                                    });
+                                  });
+
+                                  const updatedReports = {
+                                    ...(order.supplierArrivalReports || {}),
+                                    [supplierName]: {
+                                      ...repData,
+                                      packingItems: refreshedList
+                                    }
+                                  };
+                                  setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                                  alert('🔄 패킹리스트의 최신 혼적/패키지 및 쉬핑마크 데이터가 도착보고서에 동기화되었습니다.');
+                                }}
+                                style={{ padding: '5px 10px', background: '#0284c7', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                title="패킹리스트의 최신 데이터와 쉬핑마크를 도착보고서에 즉시 다시 불러옵니다"
+                              >
+                                🔄 패킹리스트 동기화
+                              </button>
                               <button 
                                 onClick={addArrivalReportItemRow}
                                 disabled={!isEditing}
@@ -10182,113 +10277,134 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 </tr>
                               </thead>
                               <tbody>
-                                {packingItemsList.map((it: any, itemIdx: number) => (
-                                  <tr key={itemIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '5px' }}>
-                                      <textarea
-                                        rows={3}
-                                        disabled={!isEditing}
-                                        value={it.marks || ''}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'marks', e.target.value)}
-                                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <textarea
-                                        rows={3}
-                                        disabled={!isEditing}
-                                        value={it.descOfGoods || ''}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'descOfGoods', e.target.value)}
-                                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px', textAlign: 'center' }}>
-                                      <input
-                                        type="number"
-                                        disabled={!isEditing}
-                                        value={it.qty || 0}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'qty', parseInt(e.target.value, 10) || 0)}
-                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px', textAlign: 'center' }}>
-                                      <input
-                                        type="text"
-                                        disabled={!isEditing}
-                                        value={it.packageType || 'PL'}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'packageType', e.target.value)}
-                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px', textAlign: 'right' }}>
-                                      <input
-                                        type="number"
-                                        disabled={!isEditing}
-                                        value={it.netWeight || 0}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'netWeight', parseFloat(e.target.value) || 0)}
-                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px', textAlign: 'right' }}>
-                                      <input
-                                        type="number"
-                                        disabled={!isEditing}
-                                        value={it.grossWeight || 0}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'grossWeight', parseFloat(e.target.value) || 0)}
-                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input
-                                        type="text"
-                                        disabled={!isEditing}
-                                        value={it.measurement || ''}
-                                        placeholder="예: =1.1*1.2*1.3"
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'measurement', e.target.value)}
-                                        onKeyDown={e => {
-                                          if (e.key === 'Enter') {
-                                            const raw = (e.target as HTMLInputElement).value;
-                                            if (raw.startsWith('=')) {
-                                              try {
-                                                const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
-                                                // eslint-disable-next-line no-new-func
-                                                const result = Function('"use strict"; return (' + expr + ')')();
-                                                if (typeof result === 'number' && isFinite(result)) {
-                                                  updateArrivalReportItem(itemIdx, 'measurement', parseFloat(result.toFixed(4)) + ' CBM');
+                                {(() => {
+                                  return packingItemsList.map((it: any, itemIdx: number) => {
+                                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                                    
+                                    let spanCount = 1;
+                                    if (!isSecondary) {
+                                      for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
+                                        const nextIt = packingItemsList[k];
+                                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                                          spanCount++;
+                                        } else {
+                                          break;
+                                        }
+                                      }
+                                    }
+
+                                    return (
+                                      <tr key={itemIdx} style={{ borderBottom: (isSecondary && itemIdx < packingItemsList.length - 1 && (packingItemsList[itemIdx + 1]._sharedWithPrev || packingItemsList[itemIdx + 1]._isMergedMember || packingItemsList[itemIdx + 1].pkgNo === it.pkgNo)) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)' }}>
+                                        {/* Marks (쉬핑마크) - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            <textarea
+                                              rows={spanCount > 1 ? spanCount * 2 + 1 : 3}
+                                              disabled={!isEditing}
+                                              value={it.marks || ''}
+                                              onChange={e => {
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  updateArrivalReportItem(itemIdx + g, 'marks', e.target.value);
                                                 }
-                                              } catch {}
-                                            }
-                                          }
-                                        }}
-                                        onBlur={e => {
-                                          const raw = e.target.value;
-                                          if (raw.startsWith('=')) {
-                                            try {
-                                              const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
-                                              // eslint-disable-next-line no-new-func
-                                              const result = Function('"use strict"; return (' + expr + ')')();
-                                              if (typeof result === 'number' && isFinite(result)) {
-                                                updateArrivalReportItem(itemIdx, 'measurement', parseFloat(result.toFixed(4)) + ' CBM');
-                                              }
-                                            } catch {}
-                                          }
-                                        }}
-                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: `1px solid ${(it.measurement||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '5px', textAlign: 'center' }}>
-                                      <button
-                                        type="button"
-                                        disabled={!isEditing || packingItemsList.length <= 1}
-                                        onClick={() => removeArrivalReportItemRow(itemIdx)}
-                                        style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '13.5px', cursor: (isEditing && packingItemsList.length > 1) ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                        title="삭제"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
+                                              }}
+                                              style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Description of Goods (품명) - Individual */}
+                                        <td style={{ padding: '5px' }}>
+                                          <textarea
+                                            rows={2}
+                                            disabled={!isEditing}
+                                            value={it.descOfGoods || ''}
+                                            onChange={e => updateArrivalReportItem(itemIdx, 'descOfGoods', e.target.value)}
+                                            style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
+                                          />
+                                        </td>
+
+                                        {/* Qty (수량) - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="number"
+                                              disabled={!isEditing}
+                                              value={it.qty || 0}
+                                              onChange={e => updateArrivalReportItem(itemIdx, 'qty', parseInt(e.target.value, 10) || 0)}
+                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Package (단위) - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="text"
+                                              disabled={!isEditing}
+                                              value={it.packageType || 'PL'}
+                                              onChange={e => updateArrivalReportItem(itemIdx, 'packageType', e.target.value)}
+                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Net Wt - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'right', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="number"
+                                              disabled={!isEditing}
+                                              value={it.netWeight || 0}
+                                              onChange={e => updateArrivalReportItem(itemIdx, 'netWeight', parseFloat(e.target.value) || 0)}
+                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Gross Wt - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'right', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            <input
+                                              type="number"
+                                              disabled={!isEditing}
+                                              value={it.grossWeight || 0}
+                                              onChange={e => updateArrivalReportItem(itemIdx, 'grossWeight', parseFloat(e.target.value) || 0)}
+                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Measurement - rowSpan */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '5px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
+                                            <input
+                                              type="text"
+                                              disabled={!isEditing}
+                                              value={it.measurement || ''}
+                                              placeholder="예: =1.1*1.2*1.3"
+                                              onChange={e => updateArrivalReportItem(itemIdx, 'measurement', e.target.value)}
+                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
+                                            />
+                                          </td>
+                                        )}
+
+                                        {/* Delete Action (Individual per row) */}
+                                        <td style={{ padding: '5px', textAlign: 'center' }}>
+                                          <button
+                                            type="button"
+                                            disabled={!isEditing || packingItemsList.length <= 1}
+                                            onClick={() => removeArrivalReportItemRow(itemIdx)}
+                                            style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '13.5px', cursor: (isEditing && packingItemsList.length > 1) ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                            title="삭제"
+                                          >
+                                            🗑️
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
                               </tbody>
                             </table>
                           </div>

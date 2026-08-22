@@ -199,6 +199,13 @@ export interface Order {
       netWeight?: number;
       grossWeight?: number;
       measurement?: string;
+      pkgNo?: string;
+      pkg?: string;
+      _sharedWithPrev?: boolean;
+      _sharedGroupHead?: boolean;
+      _isMergedGroup?: boolean;
+      _isMergedMember?: boolean;
+      [key: string]: any;
     }>;
   }>;
   supplierArrivalReportFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>;
