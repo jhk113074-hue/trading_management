@@ -5965,80 +5965,55 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             <table class="desc-table">
               <thead>
                 <tr>
-                  <th style="width: 15%;">Shipping Marks</th>
-                  <th>Description of Goods</th>
-                  <th style="width: 8%;">QTY</th>
-                  <th style="width: 8%;">PKG No.</th>
-                  <th style="width: 8%;">PKG</th>
-                  <th style="width: 12%;">Net Weight<br/>(Kg)</th>
-                  <th style="width: 12%;">Gross Weight<br/>(Kg)</th>
-                  <th style="width: 12%;">Measurement<br/>(CBM)</th>
+                  <th style="width: 18%;">Shipping Marks</th>
+                  <th style="width: 36%;">Description of Goods</th>
+                  <th style="width: 18%;">Quantity / Packages</th>
+                  <th style="width: 10%;">Net Weight</th>
+                  <th style="width: 10%;">Gross Weight</th>
+                  <th style="width: 8%;">CBM</th>
                 </tr>
               </thead>
               <tbody>
                 ${containers.map((c: any) => {
                   const itList = c.items || [];
-                  const subTotalPkg = itList.reduce((s: number, i: any) => s + (Number(i.pkg) || 0), 0);
-                  const subTotalQty = itList.reduce((s: number, i: any) => s + (Number(i.qty) || 0), 0);
-                  const subTotalNW = itList.reduce((s: number, i: any) => s + (Number(i.netWeight) || 0), 0);
-                  const subTotalGW = itList.reduce((s: number, i: any) => s + (Number(i.grossWeight) || 0), 0);
-                  const subTotalCBM = itList.reduce((s: number, i: any) => s + (Number(i.cbm) || 0), 0);
 
                   return itList.map((it: any, itIdx: number) => `
                     <tr>
                       ${itIdx === 0 ? `
-                        <td rowspan="${itList.length + 1}" style="font-size: 8.5px; font-weight: 700; vertical-align: top;">
-                          <strong>CONTAINER NO:</strong><br/>${c.containerNo}<br/>
-                          <strong>SEAL NO:</strong><br/>${c.sealNo}
+                        <td rowspan="${itList.length}" style="font-size: 8.5px; font-weight: 700; vertical-align: middle; text-align: center; padding: 10px 4px;">
                           ${(() => {
-                            const uniquePkgNos = Array.from(new Set(itList.map((x: any) => x.pkgNo || '1')));
-                            const shapeVal = (order as any).commonShippingMark?.shape || 'diamond';
-                            const compVal = (order as any).commonShippingMark?.company || 'YSACC';
-                            const portVal = (order as any).commonShippingMark?.port || order.portOfDischarge || '';
-                            const countryVal = (order as any).commonShippingMark?.country || order.destinationCountry || '';
-                            const originVal = (order as any).commonShippingMark?.origin || 'MADE IN KOREA';
+                            const shapeVal = (order as any).commonShippingMark?.shape || commonShippingMark?.shape || 'diamond';
+                            const compVal = (order as any).commonShippingMark?.company || commonShippingMark?.company || 'YSACC';
+                            const portVal = (order as any).commonShippingMark?.port || commonShippingMark?.port || order.portOfDischarge || '';
+                            const countryVal = (order as any).commonShippingMark?.country || commonShippingMark?.country || order.destinationCountry || '';
+                            const originVal = (order as any).commonShippingMark?.origin || commonShippingMark?.origin || 'MADE IN KOREA';
                             
-                            let shapeSymbol = '◯';
+                            let shapeSymbol = '◇';
                             if (shapeVal === 'circle') shapeSymbol = '◯';
                             else if (shapeVal === 'square') shapeSymbol = '▢';
                             else if (shapeVal === 'triangle') shapeSymbol = '△';
-                            else shapeSymbol = '◇';
 
-                            return uniquePkgNos.map(pNo => {
-                              const markStr = `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : ${pNo} / ${grandPkg}\n${originVal}`;
-                              return `<pre style="margin-top: 10px; border-top: 1px dashed #000; padding-top: 6px; font-family: monospace; font-size: 8px; line-height: 1.25; font-weight: bold;">${markStr}</pre>`;
-                            }).join('');
+                            const palletText = grandPkg > 1 ? `PALLET NO. : 1-${grandPkg} / ${grandPkg}` : `PALLET NO. : 1 / 1`;
+                            const markStr = `${shapeSymbol}\n${compVal}\n${portVal}${countryVal ? ', ' + countryVal : ''}\n${palletText}\n${originVal}`;
+                            return `<pre style="font-family: inherit; font-size: 9px; line-height: 1.4; font-weight: bold; text-align: center; margin: 0;">${markStr}</pre>`;
                           })()}
                         </td>
                       ` : ''}
-                      <td style="white-space: pre-wrap;">${it.description}</td>
-                      <td class="right">${it.qty ? Number(it.qty).toLocaleString() : ''}</td>
-                      <td class="center">${it.pkgNo || ''}</td>
-                      <td class="center">${it.pkg || ''}</td>
-                      <td class="right">${Number(it.netWeight || 0).toLocaleString()}</td>
-                      <td class="right">${Number(it.grossWeight || 0).toLocaleString()}</td>
-                      <td class="right">${Number(it.cbm || 0).toFixed(2)}</td>
+                      <td style="white-space: pre-wrap; font-weight: 600;">${it.description}</td>
+                      <td class="center">${Number(it.pkg) > 0 ? `${it.pkg} ${it.packageType || 'Pallet'} ` : ''}(${Number(it.qty).toLocaleString()} ${it.unit || 'EA'})</td>
+                      <td class="right">${it.netWeight ? Number(it.netWeight).toLocaleString() + ' KGS' : '-'}</td>
+                      <td class="right">${it.grossWeight ? Number(it.grossWeight).toLocaleString() + ' KGS' : '-'}</td>
+                      <td class="right">${it.cbm ? Number(it.cbm).toFixed(3) + ' CBM' : '-'}</td>
                     </tr>
-                  `).join('') + `
-                    <tr style="font-weight: 800; background: #fafafa;">
-                      <td>SUB TOTAL</td>
-                      <td class="right">${subTotalQty.toLocaleString()}</td>
-                      <td></td>
-                      <td class="center">${subTotalPkg} PKG</td>
-                      <td class="right">${subTotalNW.toLocaleString()} KGS</td>
-                      <td class="right">${subTotalGW.toLocaleString()} KGS</td>
-                      <td class="right">${subTotalCBM.toFixed(2)} CBM</td>
-                    </tr>
-                  `;
+                  `).join('');
                 }).join('')}
                 <tr style="font-weight: 800; background: #f3f4f6; font-size: 10px;">
-                  <td colspan="2">GRAND TOTAL</td>
-                  <td class="right">${grandQty.toLocaleString()}</td>
+                  <td class="center">TOTAL</td>
                   <td></td>
-                  <td class="center">${grandPkg} PKG</td>
+                  <td class="center">${grandPkg} PLT</td>
                   <td class="right">${grandNW.toLocaleString()} KGS</td>
                   <td class="right">${grandGW.toLocaleString()} KGS</td>
-                  <td class="right">${grandCBM.toFixed(2)} CBM</td>
+                  <td class="right">${grandCBM.toFixed(3)} CBM</td>
                 </tr>
               </tbody>
             </table>
@@ -13441,69 +13416,103 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         </div>
       )}
 
-      {order && (
-        <CiPlPreviewModal
-          isOpen={isCiPlPreviewOpen}
-          onClose={() => setIsCiPlPreviewOpen(false)}
-          onExportExcel={() => exportExcelRef.current?.()}
-          data={{
-            piNumber: basicForm.piNumber,
-            invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
-            customerName: basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer),
-            customerAddress: '',
-            issuingCompany: basicForm.issuingCompany,
-            lcNo: basicForm.lcNo,
-            lcDate: basicForm.lcIssuingDate,
-            lcIssuingBank: basicForm.lcIssuingBank,
-            notifyParty: basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant', 
-            remarks: basicForm.remark,
-            portOfLoading: basicForm.portOfLoading,
-            portOfDischarge: basicForm.portOfDischarge,
-            vesselName: basicForm.vesselBooking,
-            etd: basicForm.etd,
-            paymentTerms: basicForm.paymentTerms,
-            deliveryTerms: basicForm.incoterms,
-            shippingMarks: (commonShippingMark.company || 'YSACC') + '\n' + ((commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '')) + '\n' + (commonShippingMark.origin || 'MADE IN KOREA'),
-            customShipperText: basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany),
-            items: orderItems.map(it => {
-              const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
-              let itemNetWeight = matchedProd?.palletWeight || 0;
-              let itemGrossWeight = matchedProd?.palletGrossWeight || 0;
-              let itemCbm = 0.5;
-              let itemPkgCount = it.qty;
-              let itemPkgType = matchedProd?.packageType || 'Pallet';
+      {order && (() => {
+        const shapeVal = (order as any).commonShippingMark?.shape || commonShippingMark?.shape || 'diamond';
+        let shapeSymbol = '◇';
+        if (shapeVal === 'circle') shapeSymbol = '◯';
+        else if (shapeVal === 'square') shapeSymbol = '▢';
+        else if (shapeVal === 'triangle') shapeSymbol = '△';
 
-              if (basicForm.packingList?.containers) {
-                basicForm.packingList.containers.forEach((c: any) => {
-                  (c.items || []).forEach((plIt: any) => {
-                    if (plIt.description?.includes(it.name) || plIt.pkgNo?.includes(it.itemId)) {
-                      itemNetWeight = Number(plIt.netWeight) || 0;
-                      itemGrossWeight = Number(plIt.grossWeight) || 0;
-                      itemCbm = Number(plIt.cbm) || 0;
-                      itemPkgCount = Number(plIt.pkg) || 0;
-                      itemPkgType = plIt.packageType || 'Pallet';
-                    }
-                  });
+        let totalPkgCount = 0;
+        if (basicForm.packingList?.containers) {
+          basicForm.packingList.containers.forEach((c: any) => {
+            (c.items || []).forEach((it: any) => {
+              const count = parseInt(it.pkg, 10);
+              if (count > 0) totalPkgCount += count;
+            });
+          });
+        }
+        if (totalPkgCount === 0) totalPkgCount = (order.items || []).length || 1;
+
+        const palletNoText = totalPkgCount > 1 ? `PALLET NO. : 1-${totalPkgCount} / ${totalPkgCount}` : `PALLET NO. : 1 / 1`;
+        const shippingMarkText = `${shapeSymbol}\n${commonShippingMark.company || 'YSACC'}\n${commonShippingMark.port || order.portOfDischarge || ''}, ${commonShippingMark.country || order.destinationCountry || ''}\n${palletNoText}\n${commonShippingMark.origin || 'MADE IN KOREA'}`;
+
+        const previewItems = (() => {
+          if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
+            const allItems: any[] = [];
+            basicForm.packingList.containers.forEach((c: any) => {
+              (c.items || []).forEach((it: any) => {
+                const matchedPO = (orderItems || []).find((oi: any) => 
+                  (it.itemCode && oi.productCode === it.itemCode) ||
+                  (oi.name && it.description && it.description.includes(oi.name)) ||
+                  (oi.productCode && it.description && it.description.includes(oi.productCode))
+                );
+                allItems.push({
+                  name: it.description || it.itemName || matchedPO?.name || '',
+                  qty: Number(it.qty) || 0,
+                  unit: it.unit || matchedPO?.unit || 'EA',
+                  unitPrice: matchedPO?.unitPrice || 0,
+                  amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
+                  hsCode: it.hsCode || matchedPO?.hsCode || '',
+                  netWeight: Number(it.netWeight) || 0,
+                  grossWeight: Number(it.grossWeight) || 0,
+                  cbm: Number(it.cbm) || 0,
+                  packageType: it.packageType || 'Pallet',
+                  packagesCount: Number(it.pkg) || 0
                 });
-              }
+              });
+            });
+            if (allItems.length > 0) return allItems;
+          }
 
-              return {
-                name: it.name || '',
-                qty: it.qty || 0,
-                unit: it.unit || 'kg',
-                unitPrice: it.unitPrice || 0,
-                amount: it.amount || 0,
-                hsCode: it.hsCode || matchedProd?.hsCode || '',
-                netWeight: itemNetWeight,
-                grossWeight: itemGrossWeight,
-                cbm: itemCbm,
-                packageType: itemPkgType,
-                packagesCount: itemPkgCount
-              };
-            })
-          }}
-        />
-      )}
+          return orderItems.map(it => {
+            const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+            return {
+              name: it.name || '',
+              qty: it.qty || 0,
+              unit: it.unit || 'EA',
+              unitPrice: it.unitPrice || 0,
+              amount: it.amount || 0,
+              hsCode: it.hsCode || matchedProd?.hsCode || '',
+              netWeight: matchedProd?.palletWeight || 0,
+              grossWeight: matchedProd?.palletGrossWeight || 0,
+              cbm: 0.5,
+              packageType: matchedProd?.packageType || 'Pallet',
+              packagesCount: 1
+            };
+          });
+        })();
+
+        return (
+          <CiPlPreviewModal
+            isOpen={isCiPlPreviewOpen}
+            onClose={() => setIsCiPlPreviewOpen(false)}
+            onExportExcel={() => exportExcelRef.current?.()}
+            data={{
+              piNumber: basicForm.piNumber,
+              invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
+              customerName: basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer),
+              customerAddress: '',
+              issuingCompany: basicForm.issuingCompany,
+              lcNo: basicForm.lcNo,
+              lcDate: basicForm.lcIssuingDate,
+              lcIssuingBank: basicForm.lcIssuingBank,
+              notifyParty: basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant', 
+              remarks: basicForm.remark,
+              portOfLoading: basicForm.portOfLoading,
+              portOfDischarge: basicForm.portOfDischarge,
+              vesselName: basicForm.vesselBooking,
+              etd: basicForm.etd,
+              paymentTerms: basicForm.paymentTerms,
+              deliveryTerms: basicForm.incoterms,
+              shippingMarks: shippingMarkText,
+              customShipperText: basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany),
+              items: previewItems,
+              totalPackages: totalPkgCount
+            }}
+          />
+        );
+      })()}
 
       {poEmailModalData && (
         <PoEmailSendModal

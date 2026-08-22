@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.335',
+    version: 'v2.8.335',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 인쇄/미리보기 6열 표준 규격 개편, 창 크기 조절/최대화 지원, 쉬핑마크 총수량 연동',
+    content: '• 패킹리스트 출력/PDF 인쇄 및 미리보기 모달을 실제 컨테이너 패킹리스트 데이터 기반 6열 규격(Shipping Marks, Description, Quantity/Packages, Net Wt, Gross Wt, CBM)으로 일원화 개편\n• 쉬핑마크에 전체 컨테이너 패킹 총 수량(PALLET NO. : 1-N / N) 일괄 표기 지원\n• 미리보기 다이얼로그 창의 마우스 모서리 크기 조절(Resize) 및 전체화면 최대화(Maximize) 기능 추가',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.334',
     version: 'v2.8.334',
     date: '2026-08-22',
