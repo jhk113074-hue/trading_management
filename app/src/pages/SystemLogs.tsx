@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.337',
+    version: 'v2.8.337',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: '발주 품목 목록 상품명 칸 확장 및 자유로운 크기 조절(Resize Textarea) 지원',
+    content: '• 발주 품목 목록 테이블의 상품코드/품명 열 너비를 대폭 확장하고, 기존 한 줄 고정 input을 자유롭게 높낮이 조절이 가능한 Textarea로 개편하여 긴 전체 Full Name(규격, 재질, 사이즈 등)을 한눈에 확인하고 편집 가능하도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.336',
     version: 'v2.8.336',
     date: '2026-08-22',

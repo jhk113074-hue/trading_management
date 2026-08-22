@@ -6817,8 +6817,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   <thead>
                     <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '55px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No.</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'left', minWidth: '380px' }}>상품코드 / 전체 상품명</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '180px' }}>공급사</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
                       <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
@@ -6870,13 +6870,26 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         <td style={{ padding: '4px 4px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                              <input
-                                type="text"
-                                list={`detail_products_datalist_${idx}`}
+                              <textarea
+                                rows={1}
                                 value={item.name || ''}
                                 onChange={e => handleItemChange(idx, 'name', e.target.value)}
                                 placeholder="상품코드 검색/입력"
-                                style={{ width: '100%', padding: '0 40px 0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
+                                title={item.name || ''}
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 44px 6px 8px',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '4px',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  boxSizing: 'border-box',
+                                  minHeight: '34px',
+                                  resize: 'vertical',
+                                  outline: 'none',
+                                  color: '#1e293b',
+                                  lineHeight: 1.35
+                                }}
                               />
                               {item.name && (
                                 <button
@@ -6884,7 +6897,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   onClick={() => handleItemChange(idx, 'name', '')}
                                   style={{
                                     position: 'absolute',
-                                    right: '20px',
+                                    right: '22px',
+                                    top: '7px',
                                     background: 'transparent',
                                     border: 'none',
                                     color: '#64748b',
@@ -6911,6 +6925,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 style={{
                                   position: 'absolute',
                                   right: '4px',
+                                  top: '7px',
                                   background: 'transparent',
                                   border: 'none',
                                   color: '#3b82f6',
