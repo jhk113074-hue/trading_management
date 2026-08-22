@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.343',
+    version: 'v2.8.343',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '선적관리 FCL 컨테이너 상세 정보(20DG/40HC 등) CI 하단 컨테이너 규격 및 수량 자동 연동',
+    content: '• [물류/선적 - 선적관리]의 [수출량 VOLUME - FCL 컨테이너 상세 정보]에 등록된 컨테이너 규격 및 대수(예: 20DG X 2 NO, 40HC X 2 NO & 20GP X 1 NO)가 CI 하단의 [컨테이너 규격 및 수량 (CONTAINER INFO)]에 실시간 자동 집계 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.342',
     version: 'v2.8.342',
     date: '2026-08-22',

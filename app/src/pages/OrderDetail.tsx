@@ -568,6 +568,22 @@ export const OrderDetail: React.FC = () => {
     return matched.hsCode || '';
   };
 
+  const formatContainerInfoFromSpecs = (shipmentType?: string, fclSpecs?: any[]) => {
+    if (shipmentType === 'LCL') return 'LCL';
+    if (!fclSpecs || fclSpecs.length === 0) return '';
+    const countsByType: { [type: string]: number } = {};
+    fclSpecs.forEach(spec => {
+      const rawType = (spec.type || '20GP').trim();
+      const displayType = rawType === '40HQ' ? '40HC' : rawType;
+      const qty = Number(spec.qty) || 1;
+      countsByType[displayType] = (countsByType[displayType] || 0) + qty;
+    });
+    const entries = Object.entries(countsByType);
+    if (entries.length === 0) return '';
+    entries.sort((a, b) => b[0].localeCompare(a[0]));
+    return entries.map(([type, qty]) => `${type} X ${qty} NO`).join(' & ');
+  };
+
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [sourcingItems, setSourcingItems] = useState<Partial<OrderItem>[]>([]);
@@ -11061,6 +11077,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   ? customCiExtra.hsCodeSummary
                   : computedHsSummary;
 
+                // Auto-aggregate Container Info from FCL specs
+                const computedContainerInfo = formatContainerInfoFromSpecs(basicForm.shipmentType, basicForm.fclSpecs);
+                const effectiveContainerInfo = (customCiExtra.containerInfo !== undefined && customCiExtra.containerInfo !== '')
+                  ? customCiExtra.containerInfo
+                  : computedContainerInfo;
+
                 exportExcelRef.current = () => {
                   const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
                   const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
@@ -11095,7 +11117,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     totalGrossWeight: plGross,
                     totalCbm: plCbm,
                     introText: effectiveIntroText,
-                    containerInfo: customCiExtra.containerInfo,
+                    containerInfo: effectiveContainerInfo,
                     vatTrn: customCiExtra.vatTrn,
                     manufacturerName: customCiExtra.manufacturerName,
                     manufacturerAddress: customCiExtra.manufacturerAddress,
@@ -11463,15 +11485,20 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>컨테이너 규격 및 수량 (Container Info)</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>컨테이너 규격 및 수량 (Container Info)</span>
+                            {computedContainerInfo && (
+                              <span style={{ fontSize: '10.5px', color: '#0f766e', fontWeight: 600 }}>🔗 FCL 컨테이너 정보 자동 연동</span>
+                            )}
+                          </div>
                           <input
                             type="text"
-                            value={customCiExtra.containerInfo || ''}
+                            value={effectiveContainerInfo}
                             onChange={e => {
                               const val = e.target.value;
                               setCustomCiExtra(p => ({ ...p, containerInfo: val }));
                             }}
-                            placeholder="예: 40HC X 2 NO & 20GP X 1 NO"
+                            placeholder="선적관리 FCL 컨테이너 상세 정보에서 자동 연동되거나 직접 입력 가능합니다."
                             style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
                           />
                         </div>
@@ -13936,7 +13963,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               plItems: plItemsList,
               totalPackages: totalPkgCount,
               introText: (customCiExtra.introText !== undefined && customCiExtra.introText !== '') ? customCiExtra.introText : (basicForm.lcDescription || ''),
-              containerInfo: customCiExtra.containerInfo,
+              containerInfo: (customCiExtra.containerInfo !== undefined && customCiExtra.containerInfo !== '') ? customCiExtra.containerInfo : formatContainerInfoFromSpecs(basicForm.shipmentType, basicForm.fclSpecs),
               vatTrn: customCiExtra.vatTrn,
               manufacturerName: customCiExtra.manufacturerName,
               manufacturerAddress: customCiExtra.manufacturerAddress,
