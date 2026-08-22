@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.350',
+    version: 'v2.8.350',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: 'CI / PL Excel 내보내기 동적 레이아웃 개편 및 실무 상업용 완벽 규격화',
+    content: '• ExcelJS 셀 병합 충돌 버그 수정 (레터헤드 이미지 삽입 후 발생하던 빈 시트 오류 완벽 해결)\n• A4 인쇄 규격에 맞춘 7열 너비 최적화, 5x2 기본 서식 그리드, 통화 서식($), 이중 밑줄 합계선, Section A/하단 비고 동적 줄바꿈 완벽 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.349',
     version: 'v2.8.349',
     date: '2026-08-22',
