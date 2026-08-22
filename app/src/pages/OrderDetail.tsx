@@ -936,7 +936,7 @@ export const OrderDetail: React.FC = () => {
     else if (shapeVal === 'triangle') shapeSymbol = '△';
     else shapeSymbol = '◇';
 
-    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPKG NO. : ${pageNo} / ${totalCount}\n${originVal}`;
+    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : ${pageNo} / ${totalCount}\n${originVal}`;
   };
 
   // Sync common shipping mark defaults with order details once when order is first loaded
@@ -3014,21 +3014,35 @@ export const OrderDetail: React.FC = () => {
 
   const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
     const compEscaped = (comp || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const len = (comp || '').length || 1;
     let svg = '';
-    let w = 60, h = 60;
+    let w = 80, h = 60;
+
+    const calcFontSize = (baseSize: number) => {
+      if (len <= 4) return baseSize;
+      if (len <= 7) return Math.round(baseSize * 0.82);
+      if (len <= 10) return Math.round(baseSize * 0.68);
+      if (len <= 14) return Math.round(baseSize * 0.54);
+      return Math.round(baseSize * 0.44);
+    };
+
     if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      const fSize = calcFontSize(12);
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
       w = 60; h = 60;
     } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="45"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      w = 65; h = 45;
+      const fSize = calcFontSize(12);
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="45"><rect x="4" y="4" width="62" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 70; h = 45;
     } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="60"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      w = 65; h = 60;
+      const fSize = calcFontSize(11);
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="60"><polygon points="35,4 4,56 66,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 70; h = 60;
     } else {
-      // diamond
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><polygon points="30,4 56,30 30,56 4,30" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      w = 60; h = 60;
+      // diamond: wide diamond with dynamic font size
+      const fSize = calcFontSize(10.5);
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="52"><polygon points="45,3 86,26 45,49 4,26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 90; h = 52;
     }
     
     let imgData = '';
@@ -9300,11 +9314,46 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                            finalCfsAddress = 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
                         }
 
+                        const targetSup = suppliersList.find((s: any) => 
+                          (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+                          (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+                          (s.name && supplierName.includes(s.name)) ||
+                          (supplierName && s.name && (s.name.includes(supplierName)))
+                        );
+                        let shipperText = repData.shipper || '';
+                        if (!shipperText || (!shipperText.includes('TEL') && !shipperText.includes('담당자'))) {
+                          if (targetSup) {
+                            const pc = targetSup.contacts?.find((c: any) => c.isPrimary) || targetSup.contacts?.[0];
+                            const cName = pc?.name || targetSup.managerName || '';
+                            const cPos = pc?.position ? `(${pc.position})` : '';
+                            const cPhone = pc?.phone || targetSup.managerPhone || targetSup.phone || '';
+                            const cEmail = pc?.email || targetSup.purchaseEmail || '';
+                            const sLines = [targetSup.name];
+                            if (targetSup.address) sLines.push(targetSup.address);
+                            if (cName) sLines.push(`담당자: ${cName} ${cPos}`.trim());
+                            if (cPhone) sLines.push(`TEL: ${cPhone}`);
+                            if (cEmail) sLines.push(`E-mail: ${cEmail}`);
+                            shipperText = sLines.filter(Boolean).join('\n');
+                          } else {
+                            shipperText = supplierName;
+                          }
+                        }
+
+                        const entryDate = basicForm.cfsEntryDate || '';
+                        const entryTime = basicForm.cfsEntryTime || '오전 10시까지';
+                        let remarksText = repData.remarks || '';
+                        if (!remarksText || remarksText.includes('연도-월-일')) {
+                          remarksText = entryDate 
+                            ? `ORIGIN : MADE IN KOREA\n입고일: ${entryDate} ${entryTime}` 
+                            : `ORIGIN : MADE IN KOREA`;
+                        }
+
                         const rep = {
                           bookingNo: basicForm.vesselBooking || '',
-                          remarks: 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
+                          remarks: remarksText,
                           notifyParty: 'SAME AS ABOVE',
                           ...repData,
+                          shipper: shipperText,
                           portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
                           finalDestination: basicForm.portOfDischarge || repData.finalDestination || '',
                           carrier: basicForm.vesselBooking || repData.carrier || '',
@@ -9359,8 +9408,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 <tr>
                                   <td style="width: 50%;">
                                     <strong>1) Shipper</strong><br/>
-                                    ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}<br/>
-                                    ${items[0]?.supplierContact || ''}
+                                    ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}
                                   </td>
                                   <td style="width: 50%;">
                                     <strong>8) Booking No.</strong><br/>
@@ -9374,7 +9422,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   </td>
                                   <td>
                                     <strong>9) Remarks</strong><br/>
-                                    <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || `ORIGIN : MADE IN KOREA<br/><span style="color: #ef4444;">입고일: 연도-월-일 오전 10시까지</span>`).replace(/\n/g, '<br/>')}</span>
+                                    <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || 'ORIGIN : MADE IN KOREA').replace(/\n/g, '<br/>')}</span>
                                   </td>
                                 </tr>
                                 <tr>
@@ -9848,15 +9896,29 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                         const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
                           const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                          const len = (company || '').length || 1;
                           const strokeColor = '#3b82f6'; // Clean blue color
+
+                          const calcLargeFontSize = (baseSize: number) => {
+                            if (len <= 4) return baseSize;
+                            if (len <= 7) return Math.round(baseSize * 0.82);
+                            if (len <= 10) return Math.round(baseSize * 0.65);
+                            if (len <= 14) return Math.round(baseSize * 0.48);
+                            return Math.round(baseSize * 0.38);
+                          };
+
                           if (shape === 'circle') {
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="70" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            const fSize = calcLargeFontSize(70);
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                           } else if (shape === 'square') {
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="70" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            const fSize = calcLargeFontSize(70);
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                           } else if (shape === 'triangle') {
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="60" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            const fSize = calcLargeFontSize(60);
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                           } else { // diamond
-                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="280,15 545,140 280,265 15,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="80" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                            const fSize = calcLargeFontSize(68);
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                           }
                         };
 
