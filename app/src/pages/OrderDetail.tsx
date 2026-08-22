@@ -11199,21 +11199,51 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
-                            <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
+                          <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              📝 Remarks (특약사항 / 인증 문구 Certification)
+                            </span>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const poStr = basicForm.custPo ? `*PO NO.: ${basicForm.custPo}` : (basicForm.piNumber ? `*PO NO.: ${basicForm.piNumber}` : '*PO NO.: ');
+                                  const certText = `WE HEREBY CERTIFY THAT:\n(A) THIS INVOICE IS AUTHENTIC.\n(B) IT IS THE ONLY INVOICE ISSUED BY US FOR THE GOODS DESCRIBED HEREIN.\n(C) IT SHOWS THEIR EXACT VALUE WITHOUT DEDUCTION OF ANY DISCOUNT\n(D) THEIR ORIGIN IS SOUTH KOREA.\n(E) ALL ITEMS ARE ACCORDING TO SAMPLES APPROVED BY THE APPLICANT.\n${poStr}`;
+                                  setBasicForm(p => ({ ...p, remark: certText }));
+                                }}
+                                style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                              >
+                                ✨ 표준 수출 인증 문구 자동 입력
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setBasicForm(p => ({ ...p, remark: '"FREIGHT PREPAID"' }))}
+                                style={{ padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                              >
+                                PREPAID
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setBasicForm(p => ({ ...p, remark: '"FREIGHT COLLECT"' }))}
+                                style={{ padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                              >
+                                COLLECT
+                              </button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Remarks (특약사항/비고 / Certification)</span>
-                            <textarea 
-                              rows={2}
-                              placeholder='예: "FREIGHT COLLECT" 또는 WE HEREBY CERTIFY THAT... / *PO NO.: SCPO-012381-1' 
-                              value={basicForm.remark} 
-                              onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} 
-                              style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical' }} 
-                            />
-                          </div>
+                          <textarea 
+                            rows={5}
+                            placeholder="예: WE HEREBY CERTIFY THAT:\n(A) THIS INVOICE IS AUTHENTIC.\n(B) IT IS THE ONLY INVOICE ISSUED BY US FOR THE GOODS DESCRIBED HEREIN.\n*PO NO.: SCPO-012381-1" 
+                            value={basicForm.remark} 
+                            onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} 
+                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '88px', fontFamily: 'inherit', lineHeight: '1.4' }} 
+                          />
                         </div>
                       </div>
 
@@ -11529,7 +11559,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>B) VAT registration(TRN) number</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>B) TRN NUMBER (VAT REGISTRATION NO)</span>
+                            <button
+                              type="button"
+                              onClick={() => setCustomCiExtra(p => ({ ...p, vatTrn: p.vatTrn || '100605437100003' }))}
+                              style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10.5px', color: '#3b82f6', cursor: 'pointer' }}
+                            >
+                              예시 TRN 입력
+                            </button>
+                          </div>
                           <input
                             type="text"
                             value={customCiExtra.vatTrn || ''}
@@ -11537,7 +11576,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               const val = e.target.value;
                               setCustomCiExtra(p => ({ ...p, vatTrn: val }));
                             }}
-                            placeholder="예: 100605437100003"
+                            placeholder="예: 100605437100003 또는 B) TRN Number: 100605437100003"
                             style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', height: '34px', boxSizing: 'border-box' }}
                           />
                         </div>

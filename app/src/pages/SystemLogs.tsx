@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.345',
+    version: 'v2.8.345',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Remarks (수출인증문구/특약사항) 대형 편집 영역 및 Section B) TRN Number 전용 입력 영역 구축',
+    content: '• Remarks 입력칸을 전용 대형 텍스트 영역으로 독립 확장 및 [✨ 표준 수출 인증 문구 자동 입력] 원클릭 버튼 제공\n• Section B) TRN Number 입력란을 독립 및 완벽 서식 지원(B) TRN Number: ...)하도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.344',
     version: 'v2.8.344',
     date: '2026-08-22',

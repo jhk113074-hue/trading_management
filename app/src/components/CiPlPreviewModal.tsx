@@ -558,8 +558,9 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
                 {data.vatTrn && (
                   <div style={{ marginTop: '4px' }}>
-                    <span style={{ fontWeight: 800 }}>B) VAT registration(TRN) number : </span>
-                    <span style={{ fontWeight: 700 }}>{data.vatTrn}</span>
+                    <span style={{ fontWeight: 800 }}>
+                      {data.vatTrn.trim().toUpperCase().startsWith('B)') ? data.vatTrn.trim() : `B) TRN Number: ${data.vatTrn.trim()}`}
+                    </span>
                   </div>
                 )}
 

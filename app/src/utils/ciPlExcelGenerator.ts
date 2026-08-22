@@ -412,7 +412,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       if (data.vatTrn) {
         ws.getRow(itemRowIdx).height = 15;
         ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-        ws.getCell(`A${itemRowIdx}`).value = `B) VAT registration(TRN) number : ${data.vatTrn}`;
+        const bVal = data.vatTrn.trim();
+        const bText = bVal.toUpperCase().startsWith('B)') ? bVal : `B) TRN Number: ${bVal}`;
+        ws.getCell(`A${itemRowIdx}`).value = bText;
         ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
         itemRowIdx++;
       }
