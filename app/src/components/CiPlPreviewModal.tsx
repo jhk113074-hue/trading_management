@@ -535,7 +535,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               </table>
             )}
 
-            {/* Bottom Extra Sections matching CI template */}
+            {/* Bottom Extra Sections matching CI template (Only rendered if filled) */}
             {activeTab === 'CI' && (
               <div style={{ marginTop: '4px', fontSize: '9.5px', color: '#000', lineHeight: 1.4 }}>
                 <div style={{ letterSpacing: '3px', textAlign: 'center', margin: '4px 0', fontSize: '10px', fontWeight: 'bold' }}>
@@ -547,25 +547,14 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </div>
                 )}
                 
-                <div style={{ marginTop: '6px' }}>
-                  <div style={{ fontWeight: 800 }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT</div>
-                  <div style={{ paddingLeft: '12px', whiteSpace: 'pre-line' }}>
-                    {data.hsCodeSummary || (() => {
-                      const distinct: { [name: string]: string } = {};
-                      ciItems.forEach(it => {
-                        if (!it.isFreight && it.hsCode) {
-                          const base = it.name.split('(')[0].trim();
-                          if (!distinct[base]) distinct[base] = it.hsCode;
-                        }
-                      });
-                      const entries = Object.entries(distinct);
-                      if (entries.length > 0) {
-                        return entries.map(([name, code], i) => `${i + 1}) ${name.toUpperCase()}: ${code}`).join('\n');
-                      }
-                      return '1) GENERAL GOODS: 3923.29-00';
-                    })()}
+                {data.hsCodeSummary && (
+                  <div style={{ marginTop: '6px' }}>
+                    <div style={{ fontWeight: 800 }}>A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT</div>
+                    <div style={{ paddingLeft: '12px', whiteSpace: 'pre-line' }}>
+                      {data.hsCodeSummary}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {data.vatTrn && (
                   <div style={{ marginTop: '4px' }}>
@@ -574,13 +563,15 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   </div>
                 )}
 
-                <div style={{ marginTop: '4px' }}>
-                  <div style={{ fontWeight: 800 }}>C) MANUFACTURER/PRODUCER</div>
-                  <div style={{ paddingLeft: '12px' }}>
-                    <div>1. NAME : {data.manufacturerName || 'JEONGDO CO.,LTD'}</div>
-                    <div>2. ADDRESS : {data.manufacturerAddress || '67 GWINONG 1-GIL, DEOKSAN-MYEON, JINCHEON-GUN, CHUNGCHEONGBUK-DO, SOUTH KOREA'}</div>
+                {(data.manufacturerName || data.manufacturerAddress) && (
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ fontWeight: 800 }}>C) MANUFACTURER/PRODUCER</div>
+                    <div style={{ paddingLeft: '12px' }}>
+                      {data.manufacturerName && <div>1. NAME : {data.manufacturerName}</div>}
+                      {data.manufacturerAddress && <div>2. ADDRESS : {data.manufacturerAddress}</div>}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

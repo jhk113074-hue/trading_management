@@ -1718,12 +1718,12 @@ export const OrderDetail: React.FC = () => {
           setCustomCiExtra((data as any).customCiExtra);
         } else {
           setCustomCiExtra({
-            introText: `INSULATION SKIN COVER, FIBERGLASS MAT AS PER PROFORMA INVOICE NO.${data.piNumber || data.quotationId || ''} DATED ${data.poDate || ''} ${data.incoterms || 'FOB'}, ${data.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}`,
-            containerInfo: data.containerVolumeQuantities || '40HC X 2 NO & 20GP X 1 NO',
-            vatTrn: '100605437100003',
-            manufacturerName: 'JEONGDO CO.,LTD',
-            manufacturerAddress: '67 GWINONG 1-GIL, DEOKSAN-MYEON, JINCHEON-GUN, CHUNGCHEONGBUK-DO, SOUTH KOREA',
-            hsCodeSummary: '1) INSULATION SKIN: 3923.29-00\n2) FIBERGLASS MAT: 7019.15-00'
+            introText: '',
+            containerInfo: '',
+            vatTrn: '',
+            manufacturerName: '',
+            manufacturerAddress: '',
+            hsCodeSummary: ''
           });
         }
         if ((data as any).po_issued_documents) {

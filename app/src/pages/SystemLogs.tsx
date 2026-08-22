@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.340',
+    version: 'v2.8.340',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'Commercial Invoice 하단 부가 정보(Sections A, B, C) 기본값 빈칸(Empty) 처리 및 조건부 출력',
+    content: '• CI 하단 부가 정보(상단 안내문, 컨테이너 정보, A) HS CODE, B) TRN, C) 제조사 정보)의 기본값을 빈칸으로 초기화\n• 사용자가 직접 입력한 내용만 미리보기 및 정식 Excel에 깔끔하게 출력되도록 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.339',
     version: 'v2.8.339',
     date: '2026-08-22',

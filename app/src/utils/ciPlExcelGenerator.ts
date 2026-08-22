@@ -387,32 +387,23 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         itemRowIdx++;
       }
 
-      // Section A
-      ws.getRow(itemRowIdx).height = 15;
-      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
-      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
-      itemRowIdx++;
+      // Section A (Only if filled)
+      if (data.hsCodeSummary) {
+        ws.getRow(itemRowIdx).height = 15;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+        itemRowIdx++;
 
-      ws.getRow(itemRowIdx).height = 24;
-      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = data.hsCodeSummary || (() => {
-        const distinct: { [name: string]: string } = {};
-        sheetItems.forEach(it => {
-          if (!it.isFreight && it.hsCode) {
-            const base = it.name.split('(')[0].trim();
-            if (!distinct[base]) distinct[base] = it.hsCode;
-          }
-        });
-        const entries = Object.entries(distinct);
-        if (entries.length > 0) return entries.map(([n, c], i) => `${i + 1}) ${n.toUpperCase()}: ${c}`).join('\n');
-        return '1) GENERAL GOODS: 3923.29-00';
-      })();
-      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
-      itemRowIdx++;
+        ws.getRow(itemRowIdx).height = 24;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = data.hsCodeSummary;
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
+        ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
+        itemRowIdx++;
+      }
 
-      // Section B
+      // Section B (Only if filled)
       if (data.vatTrn) {
         ws.getRow(itemRowIdx).height = 15;
         ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
@@ -421,19 +412,25 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         itemRowIdx++;
       }
 
-      // Section C
-      ws.getRow(itemRowIdx).height = 15;
-      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = 'C) MANUFACTURER/PRODUCER';
-      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
-      itemRowIdx++;
+      // Section C (Only if filled)
+      if (data.manufacturerName || data.manufacturerAddress) {
+        ws.getRow(itemRowIdx).height = 15;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = 'C) MANUFACTURER/PRODUCER';
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5, bold: true };
+        itemRowIdx++;
 
-      ws.getRow(itemRowIdx).height = 24;
-      ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
-      ws.getCell(`A${itemRowIdx}`).value = `1. NAME : ${data.manufacturerName || 'JEONGDO CO.,LTD'}\n2. ADDRESS : ${data.manufacturerAddress || '67 GWINONG 1-GIL, DEOKSAN-MYEON, JINCHEON-GUN, CHUNGCHEONGBUK-DO, SOUTH KOREA'}`;
-      ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
-      ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
-      itemRowIdx++;
+        const mfgLines = [];
+        if (data.manufacturerName) mfgLines.push(`1. NAME : ${data.manufacturerName}`);
+        if (data.manufacturerAddress) mfgLines.push(`2. ADDRESS : ${data.manufacturerAddress}`);
+
+        ws.getRow(itemRowIdx).height = 24;
+        ws.mergeCells(`A${itemRowIdx}:H${itemRowIdx}`);
+        ws.getCell(`A${itemRowIdx}`).value = mfgLines.join('\n');
+        ws.getCell(`A${itemRowIdx}`).font = { name: 'Arial', size: 8.5 };
+        ws.getCell(`A${itemRowIdx}`).alignment = { wrapText: true };
+        itemRowIdx++;
+      }
     }
 
     itemRowIdx += 1;
