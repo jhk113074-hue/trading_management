@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.330',
+    version: 'v2.8.330',
+    date: '2026-08-22',
+    category: '버그수정',
+    title: '패킹리스트 [✂️ PKG 분할] 혼적 묶음 해제 및 대량 수량 분할 완벽 지원',
+    content: '• [✂️ PKG 분할] 실행 시 기존에 묶여 있던 혼적 패키지의 개별 분리 해제뿐만 아니라, 단일 품목 대량 수량(예: 2,800개 등)을 N개 분할하거나 지정 단위로 쪼갤 수 있도록 프롬프트 및 계산 로직 전면 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.329',
     version: 'v2.8.329',
     date: '2026-08-22',

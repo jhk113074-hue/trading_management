@@ -2793,7 +2793,7 @@ export const OrderDetail: React.FC = () => {
     const rawItems = containers[containerIdx].items || [];
     if (rawItems.length === 0) return;
 
-    const items = rawItems.map((it: any) => ({ ...it }));
+    let items = rawItems.map((it: any) => ({ ...it }));
 
     const selectedIndexes = specificItemIdx !== undefined 
       ? [specificItemIdx] 
@@ -2806,13 +2806,15 @@ export const OrderDetail: React.FC = () => {
         );
 
     if (selectedIndexes.length === 0) {
-      alert('분할할 항목을 체크박스로 선택하거나, 분할 가능한 항목이 없습니다.');
+      alert('분할할 항목을 체크박스로 선택해주세요.');
       return;
     }
 
-    // First, unmerge any shared group tags for selected items
+    // Check if any selected item is part of a merged group
+    let wasMergedGroup = false;
     selectedIndexes.forEach((idx: number) => {
-      if (items[idx]) {
+      if (items[idx] && (items[idx]._sharedGroupHead || items[idx]._sharedWithPrev || items[idx]._isMergedGroup || items[idx]._isMergedMember)) {
+        wasMergedGroup = true;
         delete items[idx]._sharedGroupHead;
         delete items[idx]._sharedWithPrev;
         delete items[idx]._isMergedGroup;
@@ -2821,26 +2823,48 @@ export const OrderDetail: React.FC = () => {
       }
     });
 
+    // If it was a merged group and no quantity splitting is needed, just recalculate and return
+    if (wasMergedGroup && selectedIndexes.length > 1) {
+      recalculateContainerPkgNos(items);
+
+      const nextContainers = containers.map((c: any, idx: number) => {
+        if (idx === containerIdx) {
+          return {
+            ...c,
+            items: items.map((it: any) => ({ ...it }))
+          };
+        }
+        return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+      });
+
+      setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+      setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+
+      if (order?.id) {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        setDoc(orderRef, {
+          packingList: {
+            ...basicForm.packingList,
+            containers: nextContainers
+          },
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(e => console.error('Failed to auto-save packing list:', e));
+      }
+
+      alert('✂️ 묶여 있던 패키지가 개별 고유 패키지로 분할되었습니다.');
+      return;
+    }
+
     selectedIndexes.sort((a: number, b: number) => b - a);
 
+    let splitOccurred = false;
     for (const itemIdx of selectedIndexes) {
       const target = items[itemIdx];
       if (!target) continue;
 
       let count = parseInt(target.pkg, 10);
-      if (!count || count <= 1) {
+      if (!count || count <= 0) {
         count = parseInt(calculatePkgFromPkgNo(target.pkgNo) || '1', 10);
-      }
-
-      if (count <= 1) {
-        continue;
-      }
-
-      let chunkSize = 1;
-      if (count > 2) {
-        const input = window.prompt(`[${target.description || '품목'}]\n현재 총 ${count}개의 PKG입니다.\n몇 개 단위로 분할하시겠습니까?\n(예: 1 입력시 1개씩 ${count}줄로 분할, 10 입력시 10개씩 분할)`, '1');
-        if (input === null) continue;
-        chunkSize = Math.max(1, parseInt(input || '1', 10) || 1);
       }
 
       const totalQty = parseFloat(target.qty) || 0;
@@ -2848,24 +2872,69 @@ export const OrderDetail: React.FC = () => {
       const totalGross = parseFloat(target.grossWeight) || 0;
       const totalCbm = parseFloat(target.cbm) || 0;
 
-      const splitRows: any[] = [];
-      let remainingCount = count;
+      if (count > 1) {
+        // Multi-package item (e.g. 1-38)
+        const input = window.prompt(`[${target.description || '품목'}]\n현재 총 ${count}개의 PKG입니다.\n몇 개 단위로 분할하시겠습니까?\n(예: 1 입력시 1개씩 ${count}줄로 분할, 10 입력시 10개씩 분할)`, '1');
+        if (input === null) continue;
+        const chunkSize = Math.max(1, parseInt(input || '1', 10) || 1);
 
-      while (remainingCount > 0) {
-        const curChunk = Math.min(remainingCount, chunkSize);
-        const ratio = curChunk / count;
-        splitRows.push({
-          ...target,
-          pkg: String(curChunk),
-          qty: String(Math.round(totalQty * ratio * 100) / 100),
-          netWeight: String(Math.round(totalNet * ratio)),
-          grossWeight: String(Math.round(totalGross * ratio)),
-          cbm: String((totalCbm * ratio).toFixed(3))
-        });
-        remainingCount -= curChunk;
+        const splitRows: any[] = [];
+        let remainingCount = count;
+
+        while (remainingCount > 0) {
+          const curChunk = Math.min(remainingCount, chunkSize);
+          const ratio = curChunk / count;
+          splitRows.push({
+            ...target,
+            pkg: String(curChunk),
+            qty: String(Math.round(totalQty * ratio * 100) / 100),
+            netWeight: String(Math.round(totalNet * ratio)),
+            grossWeight: String(Math.round(totalGross * ratio)),
+            cbm: String((totalCbm * ratio).toFixed(3))
+          });
+          remainingCount -= curChunk;
+        }
+
+        items.splice(itemIdx, 1, ...splitRows);
+        splitOccurred = true;
+      } else if (totalQty > 1) {
+        // Single package with multiple quantity (e.g. Qty 2800)
+        const input = window.prompt(`[${target.description || '품목'}]\n현재 수량: ${totalQty.toLocaleString()}개\n\n몇 개 행(PKG)으로 균등 분할하시겠습니까?\n(예: 2 입력시 2개로 분할, 또는 1400 입력시 1400개 단위로 분할)`, '2');
+        if (input === null) continue;
+        const parsedInput = parseFloat(input || '2') || 2;
+        
+        let numSplits = 2;
+        if (parsedInput <= 50) {
+          numSplits = Math.max(2, Math.round(parsedInput));
+        } else {
+          numSplits = Math.max(2, Math.ceil(totalQty / parsedInput));
+        }
+
+        const splitRows: any[] = [];
+        const baseQty = Math.floor(totalQty / numSplits);
+        const remainderQty = totalQty % numSplits;
+
+        for (let s = 0; s < numSplits; s++) {
+          const curQty = baseQty + (s === 0 ? remainderQty : 0);
+          const ratio = curQty / totalQty;
+          splitRows.push({
+            ...target,
+            pkg: '1',
+            qty: String(curQty),
+            netWeight: String(Math.round(totalNet * ratio)),
+            grossWeight: String(Math.round(totalGross * ratio)),
+            cbm: String((totalCbm * ratio).toFixed(3))
+          });
+        }
+
+        items.splice(itemIdx, 1, ...splitRows);
+        splitOccurred = true;
       }
+    }
 
-      items.splice(itemIdx, 1, ...splitRows);
+    if (!splitOccurred && !wasMergedGroup) {
+      alert('분할할 수 있는 수량(2개 이상)이 아닙니다.');
+      return;
     }
 
     recalculateContainerPkgNos(items);
