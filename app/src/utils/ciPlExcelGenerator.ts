@@ -74,6 +74,7 @@ export interface CiPlData {
   manufacturerAddress?: string;
   hsCodeSummary?: string;
   letterheadUrl?: string;
+  includeLetterhead?: boolean;
 }
 
 export const exportCiPlToExcel = async (data: CiPlData) => {
@@ -136,49 +137,56 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       let currRow = 1;
 
-      // Letterhead
+      // Letterhead (Optional)
+      const shouldIncludeLetterhead = data.includeLetterhead !== false;
       let imageAdded = false;
-      const logoUrl = data.letterheadUrl || (isYS ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
-      if (logoUrl) {
-        try {
-          const res = await fetch(logoUrl);
-          if (res.ok) {
-            const ab = await res.arrayBuffer();
-            const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
-            ws.addImage(imgId, 'A1:L4');
-            ws.getRow(1).height = 18;
-            ws.getRow(2).height = 18;
-            ws.getRow(3).height = 18;
-            ws.getRow(4).height = 20;
-            ws.mergeCells('A4:L4');
-            ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
-            imageAdded = true;
-            currRow = 6;
+
+      if (shouldIncludeLetterhead) {
+        const logoUrl = data.letterheadUrl || (isYS ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
+        if (logoUrl) {
+          try {
+            const res = await fetch(logoUrl);
+            if (res.ok) {
+              const ab = await res.arrayBuffer();
+              const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
+              ws.addImage(imgId, 'A1:L4');
+              ws.getRow(1).height = 18;
+              ws.getRow(2).height = 18;
+              ws.getRow(3).height = 18;
+              ws.getRow(4).height = 20;
+              ws.mergeCells('A4:L4');
+              ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              imageAdded = true;
+              currRow = 6;
+            }
+          } catch (e) {
+            console.warn('Letterhead image load fallback:', e);
           }
-        } catch (e) {
-          console.warn('Letterhead image load fallback:', e);
         }
-      }
 
-      if (!imageAdded) {
-        ws.mergeCells('A1:L1');
-        const hName = ws.getCell('A1');
-        hName.value = companyName;
-        hName.font = { name: 'Arial', size: 14, bold: true };
-        hName.alignment = { horizontal: 'left', vertical: 'middle' };
-        ws.getRow(1).height = 22;
+        if (!imageAdded) {
+          ws.mergeCells('A1:L1');
+          const hName = ws.getCell('A1');
+          hName.value = companyName;
+          hName.font = { name: 'Arial', size: 14, bold: true };
+          hName.alignment = { horizontal: 'left', vertical: 'middle' };
+          ws.getRow(1).height = 22;
 
-        ws.mergeCells('A2:L2');
-        const hAddr = ws.getCell('A2');
-        hAddr.value = headerAddress;
-        hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
-        hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-        ws.getRow(2).height = 24;
+          ws.mergeCells('A2:L2');
+          const hAddr = ws.getCell('A2');
+          hAddr.value = headerAddress;
+          hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+          hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+          ws.getRow(2).height = 24;
 
-        ws.mergeCells('A3:L3');
-        ws.getCell('A3').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
-        ws.getRow(3).height = 4;
-        currRow = 5;
+          ws.mergeCells('A3:L3');
+          ws.getCell('A3').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+          ws.getRow(3).height = 4;
+          currRow = 5;
+        }
+      } else {
+        // Without letterhead, start cleanly at row 2
+        currRow = 2;
       }
 
       // Document Title
@@ -593,49 +601,56 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       let currRow = 1;
 
-      // Letterhead
+      // Letterhead (Optional)
+      const shouldIncludeLetterhead = data.includeLetterhead !== false;
       let imageAdded = false;
-      const logoUrl = data.letterheadUrl || (isYS ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
-      if (logoUrl) {
-        try {
-          const res = await fetch(logoUrl);
-          if (res.ok) {
-            const ab = await res.arrayBuffer();
-            const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
-            ws.addImage(imgId, 'A1:L4');
-            ws.getRow(1).height = 18;
-            ws.getRow(2).height = 18;
-            ws.getRow(3).height = 18;
-            ws.getRow(4).height = 20;
-            ws.mergeCells('A4:L4');
-            ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
-            imageAdded = true;
-            currRow = 6;
+
+      if (shouldIncludeLetterhead) {
+        const logoUrl = data.letterheadUrl || (isYS ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
+        if (logoUrl) {
+          try {
+            const res = await fetch(logoUrl);
+            if (res.ok) {
+              const ab = await res.arrayBuffer();
+              const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
+              ws.addImage(imgId, 'A1:L4');
+              ws.getRow(1).height = 18;
+              ws.getRow(2).height = 18;
+              ws.getRow(3).height = 18;
+              ws.getRow(4).height = 20;
+              ws.mergeCells('A4:L4');
+              ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              imageAdded = true;
+              currRow = 6;
+            }
+          } catch (e) {
+            console.warn('Letterhead image load fallback:', e);
           }
-        } catch (e) {
-          console.warn('Letterhead image load fallback:', e);
         }
-      }
 
-      if (!imageAdded) {
-        ws.mergeCells('A1:L1');
-        const hName = ws.getCell('A1');
-        hName.value = companyName;
-        hName.font = { name: 'Arial', size: 14, bold: true };
-        hName.alignment = { horizontal: 'left', vertical: 'middle' };
-        ws.getRow(1).height = 22;
+        if (!imageAdded) {
+          ws.mergeCells('A1:L1');
+          const hName = ws.getCell('A1');
+          hName.value = companyName;
+          hName.font = { name: 'Arial', size: 14, bold: true };
+          hName.alignment = { horizontal: 'left', vertical: 'middle' };
+          ws.getRow(1).height = 22;
 
-        ws.mergeCells('A2:L2');
-        const hAddr = ws.getCell('A2');
-        hAddr.value = headerAddress;
-        hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
-        hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-        ws.getRow(2).height = 24;
+          ws.mergeCells('A2:L2');
+          const hAddr = ws.getCell('A2');
+          hAddr.value = headerAddress;
+          hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+          hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+          ws.getRow(2).height = 24;
 
-        ws.mergeCells('A3:L3');
-        ws.getCell('A3').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
-        ws.getRow(3).height = 4;
-        currRow = 5;
+          ws.mergeCells('A3:L3');
+          ws.getCell('A3').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+          ws.getRow(3).height = 4;
+          currRow = 5;
+        }
+      } else {
+        // Without letterhead, start cleanly at row 2
+        currRow = 2;
       }
 
       // Document Title

@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.364',
+    version: 'v2.8.364',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'Company Letterhead 포함/미포함 선택 옵션(체크박스) 완벽 지원',
+    content: '• 화면 상단 액션바 및 미리보기 모달 상단에 [🏢 Letterhead 포함] 체크박스 옵션 추가\\n• 레터헤드 미선택 시 상단 회사 로고 이미지를 제외하고 바로 본문 서식(Commercial Invoice / Packing List)부터 시작하는 간소화 서식으로 Excel 생성 및 인쇄 지원',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.363',
+    version: 'v2.8.363',
+    date: '2026-08-22',
+    category: 'UI/UX',
+    title: 'CI / PL 서식 작성 화면 하단 [CI 탭] 및 [PL 탭] 독립 분할 UI 적용',
+    content: '• 상단 기본 5x2 서식 그리드 하부에 [📄 Commercial Invoice (CI)] 및 [📦 Packing List (PL)] 탭 버튼 추가\\n• CI 선택 시 선적 품목/운임 및 하단 Sections A/B/C 문구 편집, PL 선택 시 컨테이너별 패키지/중량/용적 상세 편집 및 실시간 집계 요약 독립 분할 제공',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.362',
     version: 'v2.8.362',
     date: '2026-08-22',

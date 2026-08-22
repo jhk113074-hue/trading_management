@@ -41,6 +41,7 @@ export interface CiPlPreviewModalProps {
   onClose: () => void;
   data: {
     letterheadUrl?: string;
+    includeLetterhead?: boolean;
     piNumber: string;
     invoiceNo?: string;
     invoiceDate: string;
