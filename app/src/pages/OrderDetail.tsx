@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
+import { RemarkPresetModal, type RemarkPreset, DEFAULT_REMARK_PRESETS } from '../components/RemarkPresetModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
@@ -224,6 +225,20 @@ export const OrderDetail: React.FC = () => {
   }, [searchParams, order?.status]);
   const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
   const [customCiItems, setCustomCiItems] = useState<any[]>([]);
+  const [remarkPresets, setRemarkPresets] = useState<RemarkPreset[]>(DEFAULT_REMARK_PRESETS);
+  const [isRemarkPresetModalOpen, setIsRemarkPresetModalOpen] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'companies', COMPANY_ID, 'settings', 'ci_remark_presets'), docSnap => {
+      if (docSnap.exists() && docSnap.data().presets && Array.isArray(docSnap.data().presets)) {
+        setRemarkPresets(docSnap.data().presets);
+      } else {
+        setRemarkPresets(DEFAULT_REMARK_PRESETS);
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const [customCiExtra, setCustomCiExtra] = useState<{
     introText?: string;
     containerInfo?: string;
@@ -11204,45 +11219,124 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                              📝 Remarks (특약사항 / 인증 문구 Certification)
-                            </span>
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const poStr = basicForm.custPo ? `*PO NO.: ${basicForm.custPo}` : (basicForm.piNumber ? `*PO NO.: ${basicForm.piNumber}` : '*PO NO.: ');
-                                  const certText = `WE HEREBY CERTIFY THAT:\n(A) THIS INVOICE IS AUTHENTIC.\n(B) IT IS THE ONLY INVOICE ISSUED BY US FOR THE GOODS DESCRIBED HEREIN.\n(C) IT SHOWS THEIR EXACT VALUE WITHOUT DEDUCTION OF ANY DISCOUNT\n(D) THEIR ORIGIN IS SOUTH KOREA.\n(E) ALL ITEMS ARE ACCORDING TO SAMPLES APPROVED BY THE APPLICANT.\n${poStr}`;
-                                  setBasicForm(p => ({ ...p, remark: certText }));
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                📝 Remarks (특약사항 / 수출 인증 문구 Certification)
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              {/* Dropdown Selector */}
+                              <select
+                                value=""
+                                onChange={e => {
+                                  const selectedId = e.target.value;
+                                  if (!selectedId) return;
+                                  const matched = remarkPresets.find(p => p.id === selectedId);
+                                  if (matched) {
+                                    const poStr = basicForm.custPo || basicForm.piNumber || '';
+                                    let content = matched.content;
+                                    content = poStr ? content.replace(/\{PO_NO\}/g, poStr) : content.replace(/\{PO_NO\}/g, '');
+                                    setBasicForm(p => ({ ...p, remark: content }));
+                                  }
                                 }}
-                                style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                style={{
+                                  height: '30px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #cbd5e1',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  color: '#1e293b',
+                                  padding: '0 8px',
+                                  background: '#fff',
+                                  outline: 'none',
+                                  cursor: 'pointer'
+                                }}
                               >
-                                ✨ 표준 수출 인증 문구 자동 입력
-                              </button>
+                                <option value="">-- 📋 표준문구 선택 ({remarkPresets.length}개) --</option>
+                                {remarkPresets.map(p => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.title}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {/* Quick Save Current Content as Preset */}
                               <button
                                 type="button"
-                                onClick={() => setBasicForm(p => ({ ...p, remark: '"FREIGHT PREPAID"' }))}
-                                style={{ padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                                onClick={async () => {
+                                  if (!basicForm.remark?.trim()) {
+                                    alert('저장할 Remarks 내용이 없습니다. 먼저 내용을 입력해주세요.');
+                                    return;
+                                  }
+                                  const title = window.prompt('현재 Remarks 내용을 저장할 [표준문구 이름/제목]을 입력해주세요:');
+                                  if (!title || !title.trim()) return;
+
+                                  const newPreset: RemarkPreset = {
+                                    id: `preset_${Date.now()}`,
+                                    title: title.trim(),
+                                    content: basicForm.remark.trim()
+                                  };
+                                  const updated = [...remarkPresets, newPreset];
+                                  try {
+                                    await setDoc(doc(db, 'companies', COMPANY_ID, 'settings', 'ci_remark_presets'), { presets: updated });
+                                    alert(`'${title.trim()}' 표준 문구가 성공적으로 등록되었습니다!`);
+                                  } catch (err) {
+                                    console.error('Error adding preset:', err);
+                                    alert('표준문구 저장 중 오류가 발생했습니다.');
+                                  }
+                                }}
+                                style={{
+                                  height: '30px',
+                                  padding: '0 8px',
+                                  background: '#f1f5f9',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '4px',
+                                  fontSize: '11.5px',
+                                  fontWeight: 700,
+                                  color: '#0f766e',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}
+                                title="현재 입력된 내용을 새 표준문구로 추가합니다"
                               >
-                                PREPAID
+                                ➕ 현재문구 등록
                               </button>
+
+                              {/* Manage Presets Modal Button */}
                               <button
                                 type="button"
-                                onClick={() => setBasicForm(p => ({ ...p, remark: '"FREIGHT COLLECT"' }))}
-                                style={{ padding: '2px 6px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                                onClick={() => setIsRemarkPresetModalOpen(true)}
+                                style={{
+                                  height: '30px',
+                                  padding: '0 10px',
+                                  background: '#3b82f6',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
                               >
-                                COLLECT
+                                ⚙️ 표준문구 관리
                               </button>
                             </div>
                           </div>
+
                           <textarea 
                             rows={5}
                             placeholder="예: WE HEREBY CERTIFY THAT:\n(A) THIS INVOICE IS AUTHENTIC.\n(B) IT IS THE ONLY INVOICE ISSUED BY US FOR THE GOODS DESCRIBED HEREIN.\n*PO NO.: SCPO-012381-1" 
                             value={basicForm.remark} 
                             onChange={e => setBasicForm(p => ({ ...p, remark: e.target.value }))} 
-                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '88px', fontFamily: 'inherit', lineHeight: '1.4' }} 
+                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', color: '#1e293b', outline: 'none', resize: 'vertical', minHeight: '96px', fontFamily: 'inherit', lineHeight: '1.45', background: '#fff' }} 
                           />
                         </div>
                       </div>
@@ -13980,7 +14074,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             });
 
         return (
-          <CiPlPreviewModal
+          <>
+            <RemarkPresetModal
+              isOpen={isRemarkPresetModalOpen}
+              onClose={() => setIsRemarkPresetModalOpen(false)}
+              presets={remarkPresets}
+              onSelectPreset={content => setBasicForm(p => ({ ...p, remark: content }))}
+              currentPoNo={basicForm.custPo || basicForm.piNumber || ''}
+            />
+            <CiPlPreviewModal
             isOpen={isCiPlPreviewOpen}
             onClose={() => setIsCiPlPreviewOpen(false)}
             onExportExcel={() => exportExcelRef.current?.()}
@@ -14026,6 +14128,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               })()
             }}
           />
+          </>
         );
       })()}
 

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.346',
+    version: 'v2.8.346',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: 'REMARKS 표준 문구 관리 시스템 구축 (신규등록/선택/변경/수정/삭제 & Firestore 동기화)',
+    content: '• Remarks 표준 문구 선택 드롭다운 및 [➕ 현재문구 등록] 빠른 저장 기능 탑재\n• [⚙️ 표준문구 관리] 전용 관리 모달을 통해 사내 표준 인증문구/특약사항을 자유롭게 신규등록, 수정, 삭제하고 {PO_NO} 자동 치환 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.345',
     version: 'v2.8.345',
     date: '2026-08-22',
