@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.326',
+    version: 'v2.8.326',
+    date: '2026-08-22',
+    category: '기능개선',
+    title: '패킹리스트 품목/수량 개별 유지형 PKG 합치기, [↩️ PKG 원복] 버튼 추가, 포장형태 및 상단 배정버튼 정리',
+    content: '• [🔗 PKG 합치기] 실행 시 선택한 복수 품목들의 품명 및 수량을 하나로 뭉개지 않고 개별 행으로 온전히 유지하면서 동일한 PKG NO로 묶이도록 개선하고, 후속 품목들의 PKG 번호가 순차적으로 자동 업데이트되도록 고도화\n• 언제든지 모든 품목의 PKG 번호를 1, 2, 3... 개별 순차 고유 번호로 즉시 되돌릴 수 있는 [↩️ PKG 원복] 버튼 신설\n• 테이블 상단의 [⚡ 제품별 1줄 요약 배정] 및 [📋 1장씩 개별 전개 배정] 버튼 제거 및 테이블 내 [포장형태] 컬럼 정리로 화면 간결화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.325',
     version: 'v2.8.325',
     date: '2026-08-22',
