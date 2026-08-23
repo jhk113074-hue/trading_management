@@ -295,13 +295,19 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             if (res.ok) {
               const ab = await res.arrayBuffer();
               const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
-              ws.addImage(imgId, 'A1:L4');
+              ws.addImage(imgId, {
+                tl: { col: 0, row: 0 } as any,
+                br: { col: 12, row: 4 } as any,
+                editAs: 'oneCell'
+              });
               ws.getRow(1).height = 18;
               ws.getRow(2).height = 18;
               ws.getRow(3).height = 18;
               ws.getRow(4).height = 20;
               ws.mergeCells('A4:L4');
-              ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              for (let c = 1; c <= 12; c++) {
+                ws.getCell(4, c).border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              }
               imageAdded = true;
               currRow = 6;
             }
@@ -525,7 +531,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       });
 
-      // 2. Empty Padding Rows to fill A4 sheet nicely
+      // 2. Empty Padding Rows to fill A4 sheet nicely (Merged C..L without internal vertical column dividing lines)
       const minRows = 8;
       const currentTotal = regularItems.length + freightItems.length;
       const emptyRowsCount = Math.max(1, minRows - currentTotal);
@@ -533,10 +539,16 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       for (let e = 0; e < emptyRowsCount; e++) {
         const r = currRow;
         ws.getRow(r).height = 24;
-        ws.mergeCells(`C${r}:H${r}`);
+        ws.mergeCells(`C${r}:L${r}`);
         ws.getCell(`C${r}`).value = '';
         for (let c = 1; c <= 12; c++) {
-          ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+          const b: Partial<ExcelJS.Borders> = {
+            top: thinBorder,
+            bottom: thinBorder
+          };
+          if (c === 1 || c === 3) b.left = thinBorder;
+          if (c === 2 || c === 12) b.right = thinBorder;
+          ws.getCell(r, c).border = b;
         }
         currRow++;
       }
@@ -569,7 +581,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       });
 
-      // 4. Shipping Mark Box spanning all item rows
+      // 4. Shipping Mark Box spanning all item rows (Exact twoCellAnchor with integer coordinates)
       if (itemsList.length > 0 || emptyRowsCount > 0) {
         const itemEndRow = currRow - 1;
         ws.mergeCells(`A${itemStartRow}:B${itemEndRow}`);
@@ -587,8 +599,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           try {
             const smImgId = workbook.addImage({ base64: smBase64, extension: 'png' });
             ws.addImage(smImgId, {
-              tl: { col: 0.08, row: itemStartRow - 1 + 0.12 } as any,
-              ext: { width: 120, height: 135 },
+              tl: { col: 0, row: itemStartRow - 1 } as any,
+              br: { col: 2, row: itemEndRow } as any,
               editAs: 'oneCell'
             });
           } catch (err) {
@@ -754,13 +766,19 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             if (res.ok) {
               const ab = await res.arrayBuffer();
               const imgId = workbook.addImage({ buffer: ab, extension: 'png' });
-              ws.addImage(imgId, 'A1:L4');
+              ws.addImage(imgId, {
+                tl: { col: 0, row: 0 } as any,
+                br: { col: 12, row: 4 } as any,
+                editAs: 'oneCell'
+              });
               ws.getRow(1).height = 18;
               ws.getRow(2).height = 18;
               ws.getRow(3).height = 18;
               ws.getRow(4).height = 20;
               ws.mergeCells('A4:L4');
-              ws.getCell('A4').border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              for (let c = 1; c <= 12; c++) {
+                ws.getCell(4, c).border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+              }
               imageAdded = true;
               currRow = 6;
             }
@@ -1073,8 +1091,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             try {
               const plSmImgId = workbook.addImage({ base64: plSmBase64, extension: 'png' });
               ws.addImage(plSmImgId, {
-                tl: { col: 0.35, row: cStartRow - 1 + 0.12 } as any,
-                ext: { width: 120, height: 135 },
+                tl: { col: 0, row: cStartRow - 1 } as any,
+                br: { col: 3, row: cEndRow } as any,
                 editAs: 'oneCell'
               });
             } catch (err) {

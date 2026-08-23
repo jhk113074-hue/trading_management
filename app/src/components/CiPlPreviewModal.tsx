@@ -667,7 +667,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         </tr>
                       ))}
 
-                      {/* 2. Empty padding rows to fill A4 sheet */}
+                      {/* 2. Empty padding rows to fill A4 sheet (Merged with no internal vertical dividing lines) */}
                       {Array.from({ length: emptyCount }).map((_, eIdx) => (
                         <tr key={`empty-${eIdx}`} style={{ height: '26px' }}>
                           {!data.introText && regularItems.length === 0 && eIdx === 0 && (
@@ -675,11 +675,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                               {renderGraphicShippingMark()}
                             </td>
                           )}
-                          <td style={tdItemStyle}></td>
-                          <td style={tdItemStyle}></td>
-                          <td style={tdItemStyle}></td>
-                          <td style={tdItemStyle}></td>
-                          <td style={tdItemStyle}></td>
+                          <td colSpan={5} style={{ ...tdItemStyle, borderLeft: 'none', borderRight: '1px solid #000' }}></td>
                         </tr>
                       ))}
 

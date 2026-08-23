@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.384',
+    version: 'v2.8.384',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '표 빈 줄(Empty Rows) 내부 세로 칸구획 완벽 제거 및 엑셀 그리기(drawings) XML 스키마 검증 오류 근본 해결',
+    content: '• CI 품목 표 빈 줄(Empty Rows)에 표시되던 품명/수량/단가 등의 세로 격자선(칸구획)을 모두 제거하여 완전한 빈 칸 영역으로 깔끔하게 통합\\n• 엑셀 열기 시 발생하던 drawings(도형/이미지) 및 styles.xml 검증 오류의 원인이었던 이미지 앵커 부동소수점 좌표를 엄격한 OpenXML 정수 앵커 규격으로 정정하여 경고 없이 100% 정상 실행되도록 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.383',
     version: 'v2.8.383',
     date: '2026-08-23',
