@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.381',
+    version: 'v2.8.381',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: 'CI / PL 서식(Excel 및 PDF/미리보기) 각 항목 블록의 제목과 내용 합산 바깥쪽 테두리(Outer Border)만 적용',
+    content: '• 상단 헤더의 각 블록(Shipper, Applicant, Notify, Remarks, Invoice No, LC No, 포트, 출항정보 등) 내부의 제목-내용 사이 가로 분할선을 제거하고, 블록 전체 바깥쪽 테두리만 깔끔하게 표시되도록 통일 적용 (Excel 및 화면 미리보기 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.380',
     version: 'v2.8.380',
     date: '2026-08-23',

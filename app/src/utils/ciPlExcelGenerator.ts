@@ -158,61 +158,71 @@ export interface CiPlData {
   includeLetterhead?: boolean;
 }
 
-const setBox = (
+const applyOuterBorder = (
   ws: ExcelJS.Worksheet,
-  range: string,
-  value: string,
-  options: {
-    bold?: boolean;
-    size?: number;
-    align?: 'left' | 'center' | 'right';
-    vertical?: 'top' | 'middle' | 'bottom';
-    wrapText?: boolean;
-    fill?: string;
-  } = {}
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number,
+  borderStyle: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: 'FF000000' } }
 ) => {
-  ws.mergeCells(range);
-  const cell = ws.getCell(range.split(':')[0]);
-  cell.value = value;
-  cell.font = {
-    name: 'Arial',
-    size: options.size || 8.5,
-    bold: !!options.bold,
-    color: { argb: 'FF000000' }
-  };
-  cell.alignment = {
-    horizontal: options.align || 'left',
-    vertical: options.vertical || 'middle',
-    wrapText: options.wrapText !== undefined ? options.wrapText : true
-  };
-  if (options.fill) {
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: options.fill }
-    };
-  }
-  const [start, end] = range.split(':');
-  const startCol = start.replace(/[0-9]/g, '');
-  const startRow = parseInt(start.replace(/[A-Z]/g, ''), 10);
-  const endCol = (end || start).replace(/[0-9]/g, '');
-  const endRow = parseInt((end || start).replace(/[A-Z]/g, ''), 10);
-
-  const colToNum = (c: string) => c.charCodeAt(0) - 64;
-  const c1 = colToNum(startCol);
-  const c2 = colToNum(endCol);
-
-  const thinBorder: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: 'FF000000' } };
   for (let r = startRow; r <= endRow; r++) {
-    for (let c = c1; c <= c2; c++) {
-      ws.getCell(r, c).border = {
-        top: thinBorder,
-        bottom: thinBorder,
-        left: thinBorder,
-        right: thinBorder
+    for (let c = startCol; c <= endCol; c++) {
+      const cell = ws.getCell(r, c);
+      const existing = cell.border || {};
+      cell.border = {
+        ...existing,
+        top: r === startRow ? borderStyle : existing.top,
+        bottom: r === endRow ? borderStyle : existing.bottom,
+        left: c === startCol ? borderStyle : existing.left,
+        right: c === endCol ? borderStyle : existing.right,
       };
     }
   }
+};
+
+const setFieldBlock = (
+  ws: ExcelJS.Worksheet,
+  colRange: string,
+  labelRow: number,
+  valueStartRow: number,
+  valueEndRow: number,
+  labelText: string,
+  valueText: string,
+  options: {
+    labelBold?: boolean;
+    labelSize?: number;
+    valueSize?: number;
+    valueAlign?: 'left' | 'center' | 'right';
+    valueVertical?: 'top' | 'middle' | 'bottom';
+    wrapText?: boolean;
+  } = {}
+) => {
+  const [startColStr, endColStr] = colRange.split(':');
+  const colToNum = (c: string) => c.charCodeAt(0) - 64;
+  const c1 = colToNum(startColStr);
+  const c2 = colToNum(endColStr);
+
+  // Label cell (1 line)
+  ws.mergeCells(labelRow, c1, labelRow, c2);
+  const labelCell = ws.getCell(labelRow, c1);
+  labelCell.value = labelText;
+  labelCell.font = { name: 'Arial', size: options.labelSize || 9, bold: options.labelBold !== false, color: { argb: 'FF000000' } };
+  labelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+  // Value cell
+  ws.mergeCells(valueStartRow, c1, valueEndRow, c2);
+  const valCell = ws.getCell(valueStartRow, c1);
+  valCell.value = valueText;
+  valCell.font = { name: 'Arial', size: options.valueSize || 8.5, bold: false, color: { argb: 'FF000000' } };
+  valCell.alignment = {
+    horizontal: options.valueAlign || 'left',
+    vertical: options.valueVertical || 'middle',
+    wrapText: options.wrapText !== false
+  };
+
+  // Outer border only around the whole combined block (no internal dividing line)
+  applyOuterBorder(ws, labelRow, valueEndRow, c1, c2);
 };
 
 export const exportCiPlToExcel = async (data: CiPlData) => {
@@ -336,90 +346,78 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 26;
       currRow += 2;
 
-      // Header Grid (Separate single-line label cells and dedicated value cells)
+      // Header Grid (Separate single-line label cells and dedicated value cells with OUTER BORDER ONLY)
       // Section 1: Shipper vs (Invoice No & LC No)
       const r1 = currRow; // Label row
       ws.getRow(r1).height = 18;
-      setBox(ws, `A${r1}:F${r1}`, 'Shipper / Beneficiary:', { bold: true, size: 9 });
-      setBox(ws, `G${r1}:L${r1}`, 'Invoice No. & Date:', { bold: true, size: 9 });
-
-      const r2 = r1 + 1; // Invoice value row
+      const r2 = r1 + 1;  // Invoice value row
       ws.getRow(r2).height = 20;
-      setBox(ws, `G${r2}:L${r2}`, `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`, { size: 8.5 });
-
-      const r3 = r2 + 1; // LC label row
+      const r3 = r2 + 1;  // LC label row
       ws.getRow(r3).height = 18;
-      setBox(ws, `G${r3}:L${r3}`, 'L/C No. & Date:', { bold: true, size: 9 });
-
-      const r4 = r3 + 1; // LC value row
+      const r4 = r3 + 1;  // LC value row
       ws.getRow(r4).height = 20;
-      setBox(ws, `G${r4}:L${r4}`, `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`, { size: 8.5 });
 
-      // Shipper Value (merged A(r2):F(r4))
+      // Shipper Block (A:F across rows r1..r4)
       const shipperVal = data.customShipperText || `${companyName}\n${headerAddress}`;
-      setBox(ws, `A${r2}:F${r4}`, shipperVal, { size: 8.5, vertical: 'top', wrapText: true });
+      setFieldBlock(ws, 'A:F', r1, r2, r4, 'Shipper / Beneficiary:', shipperVal, { valueVertical: 'top' });
+
+      // Invoice No Block (G:L across rows r1..r2)
+      setFieldBlock(ws, 'G:L', r1, r2, r2, 'Invoice No. & Date:', `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`);
+
+      // L/C No Block (G:L across rows r3..r4)
+      setFieldBlock(ws, 'G:L', r3, r4, r4, 'L/C No. & Date:', `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`);
 
       currRow = r4 + 1;
 
       // Section 2: Applicant vs L/C Issuing Bank
       const r5 = currRow; // Label row
       ws.getRow(r5).height = 18;
-      setBox(ws, `A${r5}:F${r5}`, 'Applicant:', { bold: true, size: 9 });
-      setBox(ws, `G${r5}:L${r5}`, 'L/C Issuing Bank:', { bold: true, size: 9 });
-
-      const r6 = r5 + 1; // Value row
+      const r6 = r5 + 1;  // Value row
       const applicantVal = (data.customerName || '-') + (data.customerAddress ? '\n' + data.customerAddress : '');
       const applicantLines = applicantVal.split('\n').length;
       ws.getRow(r6).height = Math.max(38, applicantLines * 14 + 6);
-      setBox(ws, `A${r6}:F${r6}`, applicantVal, { size: 8.5, vertical: 'top', wrapText: true });
-      setBox(ws, `G${r6}:L${r6}`, data.lcIssuingBank || 'N/A', { size: 8.5, vertical: 'top', wrapText: true });
+
+      setFieldBlock(ws, 'A:F', r5, r6, r6, 'Applicant:', applicantVal, { valueVertical: 'top' });
+      setFieldBlock(ws, 'G:L', r5, r6, r6, 'L/C Issuing Bank:', data.lcIssuingBank || 'N/A', { valueVertical: 'top' });
 
       currRow = r6 + 1;
 
       // Section 3: Notify Party vs Remarks
       const r7 = currRow; // Label row
       ws.getRow(r7).height = 18;
-      setBox(ws, `A${r7}:F${r7}`, 'Notify Party:', { bold: true, size: 9 });
-      setBox(ws, `G${r7}:L${r7}`, 'Remarks:', { bold: true, size: 9 });
-
-      const r8 = r7 + 1; // Value row
+      const r8 = r7 + 1;  // Value row
       const notifyVal = data.notifyParty || data.customerName || 'Same as Applicant';
       const remarksVal = data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"';
       const remarkLines = remarksVal.split('\n').length;
       ws.getRow(r8).height = Math.max(38, remarkLines * 14 + 6);
-      setBox(ws, `A${r8}:F${r8}`, notifyVal, { size: 8.5, vertical: 'top', wrapText: true });
-      setBox(ws, `G${r8}:L${r8}`, remarksVal, { size: 8.5, vertical: 'top', wrapText: true });
+
+      setFieldBlock(ws, 'A:F', r7, r8, r8, 'Notify Party:', notifyVal, { valueVertical: 'top' });
+      setFieldBlock(ws, 'G:L', r7, r8, r8, 'Remarks:', remarksVal, { valueVertical: 'top' });
 
       currRow = r8 + 1;
 
       // Section 4: Port of Loading, Port of Discharge, Payment Terms
       const r9 = currRow; // Label row
       ws.getRow(r9).height = 18;
-      setBox(ws, `A${r9}:D${r9}`, 'Port of Loading:', { bold: true, size: 8.5 });
-      setBox(ws, `E${r9}:H${r9}`, 'Port of Discharge:', { bold: true, size: 8.5 });
-      setBox(ws, `I${r9}:L${r9}`, 'Payment Terms:', { bold: true, size: 8.5 });
-
       const r10 = r9 + 1; // Value row
       const payLines = (data.paymentTerms || '-').split('\n').length;
       ws.getRow(r10).height = Math.max(24, payLines * 14 + 4);
-      setBox(ws, `A${r10}:D${r10}`, data.portOfLoading || '-', { size: 8.5 });
-      setBox(ws, `E${r10}:H${r10}`, data.portOfDischarge || '-', { size: 8.5 });
-      setBox(ws, `I${r10}:L${r10}`, data.paymentTerms || '-', { size: 8.5, wrapText: true });
+
+      setFieldBlock(ws, 'A:D', r9, r10, r10, 'Port of Loading:', data.portOfLoading || '-');
+      setFieldBlock(ws, 'E:H', r9, r10, r10, 'Port of Discharge:', data.portOfDischarge || '-');
+      setFieldBlock(ws, 'I:L', r9, r10, r10, 'Payment Terms:', data.paymentTerms || '-');
 
       currRow = r10 + 1;
 
       // Section 5: Vessel / Flight, ETD, Delivery Terms
       const r11 = currRow; // Label row
       ws.getRow(r11).height = 18;
-      setBox(ws, `A${r11}:D${r11}`, 'Vessel / Flight:', { bold: true, size: 8.5 });
-      setBox(ws, `E${r11}:H${r11}`, 'ETD:', { bold: true, size: 8.5 });
-      setBox(ws, `I${r11}:L${r11}`, 'Delivery Terms:', { bold: true, size: 8.5 });
-
       const r12 = r11 + 1; // Value row
       ws.getRow(r12).height = 22;
-      setBox(ws, `A${r12}:D${r12}`, data.vesselName || '-', { size: 8.5 });
-      setBox(ws, `E${r12}:H${r12}`, data.etd || '-', { size: 8.5 });
-      setBox(ws, `I${r12}:L${r12}`, data.deliveryTerms || '-', { size: 8.5 });
+
+      setFieldBlock(ws, 'A:D', r11, r12, r12, 'Vessel / Flight:', data.vesselName || '-');
+      setFieldBlock(ws, 'E:H', r11, r12, r12, 'ETD:', data.etd || '-');
+      setFieldBlock(ws, 'I:L', r11, r12, r12, 'Delivery Terms:', data.deliveryTerms || '-');
 
       currRow = r12 + 1;
 
@@ -765,90 +763,78 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getRow(currRow).height = 26;
       currRow += 2;
 
-      // Header Grid for PL (Separate single-line label cells and dedicated value cells)
+      // Header Grid for PL (Separate single-line label cells and dedicated value cells with OUTER BORDER ONLY)
       // Section 1: Shipper vs (PL No & LC No)
       const r1 = currRow; // Label row
       ws.getRow(r1).height = 18;
-      setBox(ws, `A${r1}:F${r1}`, 'Shipper/Exporter:', { bold: true, size: 9 });
-      setBox(ws, `G${r1}:L${r1}`, 'Packing List No. & Date:', { bold: true, size: 9 });
-
-      const r2 = r1 + 1; // PL value row
+      const r2 = r1 + 1;  // PL value row
       ws.getRow(r2).height = 20;
-      setBox(ws, `G${r2}:L${r2}`, `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`, { size: 8.5 });
-
-      const r3 = r2 + 1; // LC label row
+      const r3 = r2 + 1;  // LC label row
       ws.getRow(r3).height = 18;
-      setBox(ws, `G${r3}:L${r3}`, 'L/C No. & Date:', { bold: true, size: 9 });
-
-      const r4 = r3 + 1; // LC value row
+      const r4 = r3 + 1;  // LC value row
       ws.getRow(r4).height = 20;
-      setBox(ws, `G${r4}:L${r4}`, `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`, { size: 8.5 });
 
-      // Shipper Value (merged A(r2):F(r4))
+      // Shipper Block (A:F across rows r1..r4)
       const shipperVal = data.customShipperText || `${companyName}\n${headerAddress}`;
-      setBox(ws, `A${r2}:F${r4}`, shipperVal, { size: 8.5, vertical: 'top', wrapText: true });
+      setFieldBlock(ws, 'A:F', r1, r2, r4, 'Shipper/Exporter:', shipperVal, { valueVertical: 'top' });
+
+      // Packing List No Block (G:L across rows r1..r2)
+      setFieldBlock(ws, 'G:L', r1, r2, r2, 'Packing List No. & Date:', `${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`);
+
+      // L/C No Block (G:L across rows r3..r4)
+      setFieldBlock(ws, 'G:L', r3, r4, r4, 'L/C No. & Date:', `${data.lcNo || 'N/A'}${data.lcDate ? `   &   ${data.lcDate}` : ''}`);
 
       currRow = r4 + 1;
 
       // Section 2: Applicant vs L/C Issuing Bank
       const r5 = currRow; // Label row
       ws.getRow(r5).height = 18;
-      setBox(ws, `A${r5}:F${r5}`, 'Applicant/Consignee:', { bold: true, size: 9 });
-      setBox(ws, `G${r5}:L${r5}`, 'L/C Issuing Bank:', { bold: true, size: 9 });
-
-      const r6 = r5 + 1; // Value row
+      const r6 = r5 + 1;  // Value row
       const applicantVal = (data.customerName || '-') + (data.customerAddress ? '\n' + data.customerAddress : '');
       const applicantLines = applicantVal.split('\n').length;
       ws.getRow(r6).height = Math.max(38, applicantLines * 14 + 6);
-      setBox(ws, `A${r6}:F${r6}`, applicantVal, { size: 8.5, vertical: 'top', wrapText: true });
-      setBox(ws, `G${r6}:L${r6}`, data.lcIssuingBank || 'N/A', { size: 8.5, vertical: 'top', wrapText: true });
+
+      setFieldBlock(ws, 'A:F', r5, r6, r6, 'Applicant/Consignee:', applicantVal, { valueVertical: 'top' });
+      setFieldBlock(ws, 'G:L', r5, r6, r6, 'L/C Issuing Bank:', data.lcIssuingBank || 'N/A', { valueVertical: 'top' });
 
       currRow = r6 + 1;
 
       // Section 3: Notify Party vs Remarks
       const r7 = currRow; // Label row
       ws.getRow(r7).height = 18;
-      setBox(ws, `A${r7}:F${r7}`, 'Notify Party:', { bold: true, size: 9 });
-      setBox(ws, `G${r7}:L${r7}`, 'Remarks:', { bold: true, size: 9 });
-
-      const r8 = r7 + 1; // Value row
+      const r8 = r7 + 1;  // Value row
       const notifyVal = data.notifyParty || data.customerName || 'Same as Applicant';
       const remarksVal = data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"';
       const remarkLines = remarksVal.split('\n').length;
       ws.getRow(r8).height = Math.max(38, remarkLines * 14 + 6);
-      setBox(ws, `A${r8}:F${r8}`, notifyVal, { size: 8.5, vertical: 'top', wrapText: true });
-      setBox(ws, `G${r8}:L${r8}`, remarksVal, { size: 8.5, vertical: 'top', wrapText: true });
+
+      setFieldBlock(ws, 'A:F', r7, r8, r8, 'Notify Party:', notifyVal, { valueVertical: 'top' });
+      setFieldBlock(ws, 'G:L', r7, r8, r8, 'Remarks:', remarksVal, { valueVertical: 'top' });
 
       currRow = r8 + 1;
 
       // Section 4: Port of Loading, Port of Discharge, Payment Terms
       const r9 = currRow; // Label row
       ws.getRow(r9).height = 18;
-      setBox(ws, `A${r9}:D${r9}`, 'Port of Loading:', { bold: true, size: 8.5 });
-      setBox(ws, `E${r9}:H${r9}`, 'Port of Discharge:', { bold: true, size: 8.5 });
-      setBox(ws, `I${r9}:L${r9}`, 'Payment Terms:', { bold: true, size: 8.5 });
-
       const r10 = r9 + 1; // Value row
       const payLines = (data.paymentTerms || '-').split('\n').length;
       ws.getRow(r10).height = Math.max(24, payLines * 14 + 4);
-      setBox(ws, `A${r10}:D${r10}`, data.portOfLoading || '-', { size: 8.5 });
-      setBox(ws, `E${r10}:H${r10}`, data.portOfDischarge || '-', { size: 8.5 });
-      setBox(ws, `I${r10}:L${r10}`, data.paymentTerms || '-', { size: 8.5, wrapText: true });
+
+      setFieldBlock(ws, 'A:D', r9, r10, r10, 'Port of Loading:', data.portOfLoading || '-');
+      setFieldBlock(ws, 'E:H', r9, r10, r10, 'Port of Discharge:', data.portOfDischarge || '-');
+      setFieldBlock(ws, 'I:L', r9, r10, r10, 'Payment Terms:', data.paymentTerms || '-');
 
       currRow = r10 + 1;
 
       // Section 5: Vessel Name & Voyage No., Sailing on or about, Delivery Terms
       const r11 = currRow; // Label row
       ws.getRow(r11).height = 18;
-      setBox(ws, `A${r11}:D${r11}`, 'Vessel Name & Voyage No.:', { bold: true, size: 8.5 });
-      setBox(ws, `E${r11}:H${r11}`, 'Sailing on or about:', { bold: true, size: 8.5 });
-      setBox(ws, `I${r11}:L${r11}`, 'Delivery Terms:', { bold: true, size: 8.5 });
-
       const r12 = r11 + 1; // Value row
       ws.getRow(r12).height = 22;
-      setBox(ws, `A${r12}:D${r12}`, data.vesselName || '-', { size: 8.5 });
-      setBox(ws, `E${r12}:H${r12}`, data.etd || '-', { size: 8.5 });
-      setBox(ws, `I${r12}:L${r12}`, data.deliveryTerms || '-', { size: 8.5 });
+
+      setFieldBlock(ws, 'A:D', r11, r12, r12, 'Vessel Name & Voyage No.:', data.vesselName || '-');
+      setFieldBlock(ws, 'E:H', r11, r12, r12, 'Sailing on or about:', data.etd || '-');
+      setFieldBlock(ws, 'I:L', r11, r12, r12, 'Delivery Terms:', data.deliveryTerms || '-');
 
       currRow = r12 + 1;
 

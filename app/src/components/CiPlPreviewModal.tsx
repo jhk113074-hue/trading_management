@@ -253,23 +253,10 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     fontSize: '10.5px'
   };
 
-  const tdLabelStyle: React.CSSProperties = {
+  const tdBlockStyle: React.CSSProperties = {
     border: '1px solid #000',
-    padding: '3px 6px',
-    fontSize: '9px',
-    fontWeight: 800,
-    textTransform: 'uppercase',
-    color: '#000',
-    background: '#f8fafc'
-  };
-
-  const tdValueStyle: React.CSSProperties = {
-    border: '1px solid #000',
-    padding: '4px 6px',
-    fontSize: '9.5px',
-    fontWeight: 400,
-    color: '#000',
-    whiteSpace: 'pre-line',
+    padding: '5px 8px',
+    verticalAlign: 'top',
     background: '#ffffff'
   };
 
@@ -488,118 +475,132 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               {activeTab === 'CI' ? 'Commercial Invoice' : 'Packing List'}
             </div>
 
-            {/* Header Info Grid with Separated Subtitle Cells and Data Cells */}
+            {/* Header Info Grid with Combined Title & Content in Outer-Bordered Boxes */}
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }}>
               <tbody>
                 {/* Section 1: Shipper vs (Invoice No & LC No) */}
                 <tr>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    {activeTab === 'CI' ? 'Shipper / Beneficiary:' : 'Shipper/Exporter:'}
+                  <td colSpan={3} rowSpan={2} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '4px' }}>
+                      {activeTab === 'CI' ? 'Shipper / Beneficiary:' : 'Shipper/Exporter:'}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {data.customShipperText || `${companyName}\n${headerAddress}`}
+                    </div>
                   </td>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    {activeTab === 'CI' ? 'Invoice No. & Date:' : 'Packing List No. & Date:'}
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={3} rowSpan={3} style={{ ...tdValueStyle, width: '50%', verticalAlign: 'top' }}>
-                    {data.customShipperText || `${companyName}\n${headerAddress}`}
-                  </td>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%' }}>
-                    {`${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`}
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    L/C No. & Date:
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      {activeTab === 'CI' ? 'Invoice No. & Date:' : 'Packing List No. & Date:'}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {`${data.invoiceNo || data.piNumber || '-'}   /   ${data.invoiceDate}`}
+                    </div>
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%' }}>
-                    {data.lcNo || 'N/A'} {data.lcDate ? `& ${data.lcDate}` : ''}
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      L/C No. & Date:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.lcNo || 'N/A'} {data.lcDate ? `& ${data.lcDate}` : ''}
+                    </div>
                   </td>
                 </tr>
 
                 {/* Section 2: Applicant vs LC Issuing Bank */}
                 <tr>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    {activeTab === 'CI' ? 'Applicant:' : 'Applicant/Consignee:'}
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '4px' }}>
+                      {activeTab === 'CI' ? 'Applicant:' : 'Applicant/Consignee:'}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {(data.customerName || '-') + (data.customerAddress ? '\n' + data.customerAddress : '')}
+                    </div>
                   </td>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    L/C Issuing Bank:
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%', verticalAlign: 'top' }}>
-                    {(data.customerName || '-') + (data.customerAddress ? '\n' + data.customerAddress : '')}
-                  </td>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%', verticalAlign: 'top' }}>
-                    {data.lcIssuingBank || 'N/A'}
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '4px' }}>
+                      L/C Issuing Bank:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {data.lcIssuingBank || 'N/A'}
+                    </div>
                   </td>
                 </tr>
 
                 {/* Section 3: Notify Party vs Remarks */}
                 <tr>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    Notify Party:
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '4px' }}>
+                      Notify Party:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {data.notifyParty || data.customerName || 'Same as Applicant'}
+                    </div>
                   </td>
-                  <td colSpan={3} style={{ ...tdLabelStyle, width: '50%' }}>
-                    Remarks:
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%', verticalAlign: 'top' }}>
-                    {data.notifyParty || data.customerName || 'Same as Applicant'}
-                  </td>
-                  <td colSpan={3} style={{ ...tdValueStyle, width: '50%', verticalAlign: 'top' }}>
-                    {data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}
+                  <td colSpan={3} style={{ ...tdBlockStyle, width: '50%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9.5px', textTransform: 'uppercase', color: '#000', marginBottom: '4px' }}>
+                      Remarks:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {data.remarks ? `"${data.remarks}"` : '"FREIGHT PREPAID"'}
+                    </div>
                   </td>
                 </tr>
 
                 {/* Section 4: Port Loading, Port Discharge, Payment Terms */}
                 <tr>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.33%' }}>
-                    Port of Loading:
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      Port of Loading:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.portOfLoading || '-'}
+                    </div>
                   </td>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.33%' }}>
-                    Port of Discharge:
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      Port of Discharge:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.portOfDischarge || '-'}
+                    </div>
                   </td>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.34%' }}>
-                    Payment Terms:
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.33%' }}>
-                    {data.portOfLoading || '-'}
-                  </td>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.33%' }}>
-                    {data.portOfDischarge || '-'}
-                  </td>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.34%' }}>
-                    {data.paymentTerms || '-'}
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.34%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      Payment Terms:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000', whiteSpace: 'pre-line' }}>
+                      {data.paymentTerms || '-'}
+                    </div>
                   </td>
                 </tr>
 
                 {/* Section 5: Vessel, ETD, Delivery Terms */}
                 <tr>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.33%' }}>
-                    {activeTab === 'CI' ? 'Vessel / Flight:' : 'Vessel Name & Voyage No.:'}
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      {activeTab === 'CI' ? 'Vessel / Flight:' : 'Vessel Name & Voyage No.:'}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.vesselName || '-'}
+                    </div>
                   </td>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.33%' }}>
-                    {activeTab === 'CI' ? 'ETD:' : 'Sailing on or about:'}
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.33%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      {activeTab === 'CI' ? 'ETD:' : 'Sailing on or about:'}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.etd || '-'}
+                    </div>
                   </td>
-                  <td colSpan={2} style={{ ...tdLabelStyle, width: '33.34%' }}>
-                    Delivery Terms:
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.33%' }}>
-                    {data.vesselName || '-'}
-                  </td>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.33%' }}>
-                    {data.etd || '-'}
-                  </td>
-                  <td colSpan={2} style={{ ...tdValueStyle, width: '33.34%' }}>
-                    {data.deliveryTerms || '-'}
+                  <td colSpan={2} style={{ ...tdBlockStyle, width: '33.34%' }}>
+                    <div style={{ fontWeight: 800, fontSize: '9px', textTransform: 'uppercase', color: '#000', marginBottom: '3px' }}>
+                      Delivery Terms:
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: '9.5px', color: '#000' }}>
+                      {data.deliveryTerms || '-'}
+                    </div>
                   </td>
                 </tr>
               </tbody>
