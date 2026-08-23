@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.385',
+    version: 'v2.8.385',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '표 빈 영역 완전 여백 처리(가로/세로 모든 내부선 제거) 및 styles.xml 숫자서식(numFmt) 표준화로 복구 팝업 최종 완벽 해결',
+    content: '• CI 품목 표 빈 줄 영역의 모든 가로/세로 내부 분할선을 제거하여 완전한 빈 여백 블록으로 매끄럽게 정리\\n• Excel styles.xml 오류 원인이었던 비표준 통화 서식 문자열(US$#,##0.00 등)을 엑셀 표준 서식($#,##0.00 및 텍스트 조합)으로 전면 교체하여 엑셀 실행 시 스타일 복구 경고창 완벽 제거',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.384',
     version: 'v2.8.384',
     date: '2026-08-23',

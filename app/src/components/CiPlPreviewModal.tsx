@@ -667,17 +667,17 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         </tr>
                       ))}
 
-                      {/* 2. Empty padding rows to fill A4 sheet (Merged with no internal vertical dividing lines) */}
-                      {Array.from({ length: emptyCount }).map((_, eIdx) => (
-                        <tr key={`empty-${eIdx}`} style={{ height: '26px' }}>
-                          {!data.introText && regularItems.length === 0 && eIdx === 0 && (
+                      {/* 2. Empty padding block to fill A4 sheet (Completely seamless with ZERO internal lines) */}
+                      {emptyCount > 0 && (
+                        <tr style={{ height: `${emptyCount * 26}px` }}>
+                          {!data.introText && regularItems.length === 0 && (
                             <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
                               {renderGraphicShippingMark()}
                             </td>
                           )}
-                          <td colSpan={5} style={{ ...tdItemStyle, borderLeft: 'none', borderRight: '1px solid #000' }}></td>
+                          <td colSpan={5} style={{ borderLeft: 'none', borderRight: '1px solid #000', borderTop: 'none', borderBottom: 'none', background: '#fff' }}></td>
                         </tr>
-                      ))}
+                      )}
 
                       {/* 3. Freight items at the bottom */}
                       {freightItems.map((item, fIdx) => (

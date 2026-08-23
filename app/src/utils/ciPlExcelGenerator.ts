@@ -518,12 +518,12 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`K${r}`).value = uPrice;
         ws.getCell(`K${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`K${r}`).numFmt = 'US$#,##0.00';
+        ws.getCell(`K${r}`).numFmt = '$#,##0.00';
 
         ws.getCell(`L${r}`).value = amt;
         ws.getCell(`L${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`L${r}`).numFmt = 'US$#,##0.00';
+        ws.getCell(`L${r}`).numFmt = '$#,##0.00';
 
         for (let c = 1; c <= 12; c++) {
           ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
@@ -531,26 +531,30 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       });
 
-      // 2. Empty Padding Rows to fill A4 sheet nicely (Merged C..L without internal vertical column dividing lines)
+      // 2. Empty Padding Block to fill A4 sheet nicely (Seamless block with ZERO internal lines)
       const minRows = 8;
       const currentTotal = regularItems.length + freightItems.length;
       const emptyRowsCount = Math.max(1, minRows - currentTotal);
 
-      for (let e = 0; e < emptyRowsCount; e++) {
-        const r = currRow;
-        ws.getRow(r).height = 24;
-        ws.mergeCells(`C${r}:L${r}`);
-        ws.getCell(`C${r}`).value = '';
-        for (let c = 1; c <= 12; c++) {
-          const b: Partial<ExcelJS.Borders> = {
-            top: thinBorder,
-            bottom: thinBorder
-          };
-          if (c === 1 || c === 3) b.left = thinBorder;
-          if (c === 2 || c === 12) b.right = thinBorder;
-          ws.getCell(r, c).border = b;
+      if (emptyRowsCount > 0) {
+        const emptyStartRow = currRow;
+        const emptyEndRow = emptyStartRow + emptyRowsCount - 1;
+
+        for (let r = emptyStartRow; r <= emptyEndRow; r++) {
+          ws.getRow(r).height = 24;
         }
-        currRow++;
+        ws.mergeCells(`C${emptyStartRow}:L${emptyEndRow}`);
+        ws.getCell(`C${emptyStartRow}`).value = '';
+
+        for (let r = emptyStartRow; r <= emptyEndRow; r++) {
+          for (let c = 1; c <= 12; c++) {
+            const b: Partial<ExcelJS.Borders> = {};
+            if (c === 1 || c === 3) b.left = thinBorder;
+            if (c === 2 || c === 12) b.right = thinBorder;
+            ws.getCell(r, c).border = b;
+          }
+        }
+        currRow = emptyEndRow + 1;
       }
 
       // 3. Freight Charges (placed at the bottom of the table)
@@ -573,7 +577,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`L${r}`).value = amt;
         ws.getCell(`L${r}`).font = { name: 'Tahoma', size: 9.5, bold: true };
         ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`L${r}`).numFmt = 'US$#,##0.00';
+        ws.getCell(`L${r}`).numFmt = '$#,##0.00';
 
         for (let c = 1; c <= 12; c++) {
           ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
@@ -638,7 +642,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`L${totalRow}`).value = totalAmt;
       ws.getCell(`L${totalRow}`).font = { name: 'Tahoma', size: 10.5, bold: true };
       ws.getCell(`L${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`L${totalRow}`).numFmt = 'US$#,##0.00';
+      ws.getCell(`L${totalRow}`).numFmt = '$#,##0.00';
 
       for (let c = 1; c <= 12; c++) {
         ws.getCell(totalRow, c).border = { top: thinBorder, bottom: doubleBorder, left: thinBorder, right: thinBorder };
@@ -1116,21 +1120,18 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`D${totalRow}`).font = { name: 'Tahoma', size: 9, bold: true };
       ws.getCell(`D${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-      ws.getCell(`I${totalRow}`).value = totalNetW;
+      ws.getCell(`I${totalRow}`).value = `${totalNetW.toLocaleString()} KGS`;
       ws.getCell(`I${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`I${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`I${totalRow}`).numFmt = '#,##0 "KGS"';
 
-      ws.getCell(`J${totalRow}`).value = totalGrossW;
+      ws.getCell(`J${totalRow}`).value = `${totalGrossW.toLocaleString()} KGS`;
       ws.getCell(`J${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`J${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`J${totalRow}`).numFmt = '#,##0 "KGS"';
 
       ws.mergeCells(`K${totalRow}:L${totalRow}`);
-      ws.getCell(`K${totalRow}`).value = totalCbmV;
+      ws.getCell(`K${totalRow}`).value = `${totalCbmV.toFixed(2)} CBM`;
       ws.getCell(`K${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`K${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-      ws.getCell(`K${totalRow}`).numFmt = '#,##0.00 "CBM"';
 
       for (let c = 1; c <= 12; c++) {
         ws.getCell(totalRow, c).border = { top: thinBorder, bottom: doubleBorder, left: thinBorder, right: thinBorder };
