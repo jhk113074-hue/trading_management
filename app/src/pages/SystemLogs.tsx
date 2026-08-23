@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.380',
+    version: 'v2.8.380',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: 'CI / PL 서식(Excel 및 PDF/미리보기) 각 부제목(Label)과 내용(Value) 셀 독립 구획 및 Invoice/LC 번호 분리',
+    content: '• 상단 5x2 헤더 영역의 모든 부제목을 1행 독립 칸(Bold)으로 분리하고, 실제 내용 데이터는 바로 아래 별도 내용칸(Regular)으로 구획화\\n• Invoice No. & Date와 L/C No. & Date를 각각 독립된 박스로 분리하여 개별 테두리 및 칸 구획 완성 (Excel 및 화면 미리보기 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.379',
     version: 'v2.8.379',
     date: '2026-08-22',
