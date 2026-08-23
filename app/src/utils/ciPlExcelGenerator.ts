@@ -48,8 +48,8 @@ export const generateShippingMarkPngBase64 = (opts: {
   if (typeof document === 'undefined') return null;
   try {
     const canvas = document.createElement('canvas');
-    canvas.width = 240;
-    canvas.height = 250;
+    canvas.width = 320;
+    canvas.height = 340;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
@@ -57,7 +57,7 @@ export const generateShippingMarkPngBase64 = (opts: {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 4.5;
 
     const shape = opts.shape || 'diamond';
     const comp = opts.company || 'YSACC';
@@ -65,20 +65,20 @@ export const generateShippingMarkPngBase64 = (opts: {
     // Draw shape
     ctx.beginPath();
     if (shape === 'circle') {
-      ctx.arc(120, 65, 48, 0, Math.PI * 2);
+      ctx.arc(160, 80, 60, 0, Math.PI * 2);
     } else if (shape === 'square') {
-      ctx.rect(60, 20, 120, 90);
+      ctx.rect(80, 25, 160, 115);
     } else if (shape === 'triangle') {
-      ctx.moveTo(120, 15);
-      ctx.lineTo(185, 115);
-      ctx.lineTo(55, 115);
+      ctx.moveTo(160, 20);
+      ctx.lineTo(250, 145);
+      ctx.lineTo(70, 145);
       ctx.closePath();
     } else {
       // Diamond
-      ctx.moveTo(120, 15);
-      ctx.lineTo(195, 65);
-      ctx.lineTo(120, 115);
-      ctx.lineTo(45, 65);
+      ctx.moveTo(160, 18);
+      ctx.lineTo(260, 85);
+      ctx.lineTo(160, 152);
+      ctx.lineTo(60, 85);
       ctx.closePath();
     }
     ctx.stroke();
@@ -87,20 +87,20 @@ export const generateShippingMarkPngBase64 = (opts: {
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = comp.length > 12 ? 'bold 13px Arial' : (comp.length > 8 ? 'bold 15px Arial' : 'bold 17px Arial');
-    const shapeCenterY = shape === 'triangle' ? 82 : 65;
-    ctx.fillText(comp, 120, shapeCenterY);
+    ctx.font = comp.length > 12 ? 'bold 16px Tahoma' : (comp.length > 8 ? 'bold 19px Tahoma' : 'bold 22px Tahoma');
+    const shapeCenterY = shape === 'triangle' ? 105 : 85;
+    ctx.fillText(comp, 160, shapeCenterY);
 
     // Text below shape
-    ctx.font = 'bold 12.5px Arial';
+    ctx.font = 'bold 15px Tahoma';
     ctx.fillStyle = '#000000';
     const portCountry = [opts.port, opts.country].filter(Boolean).join(', ').toUpperCase() || 'BUSAN, KOREA';
     const pltNo = opts.palletNoText || 'PALLET NO. : 1 / 1';
     const origin = opts.origin || 'MADE IN KOREA';
 
-    ctx.fillText(portCountry, 120, 155);
-    ctx.fillText(pltNo, 120, 185);
-    ctx.fillText(origin, 120, 215);
+    ctx.fillText(portCountry, 160, 195);
+    ctx.fillText(pltNo, 160, 235);
+    ctx.fillText(origin, 160, 275);
 
     const dataUrl = canvas.toDataURL('image/png');
     return dataUrl.split(',')[1];
@@ -207,14 +207,14 @@ const setFieldBlock = (
   ws.mergeCells(labelRow, c1, labelRow, c2);
   const labelCell = ws.getCell(labelRow, c1);
   labelCell.value = labelText;
-  labelCell.font = { name: 'Arial', size: options.labelSize || 9, bold: options.labelBold !== false, color: { argb: 'FF000000' } };
+  labelCell.font = { name: 'Tahoma', size: options.labelSize || 9, bold: options.labelBold !== false, color: { argb: 'FF000000' } };
   labelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
   // Value cell
   ws.mergeCells(valueStartRow, c1, valueEndRow, c2);
   const valCell = ws.getCell(valueStartRow, c1);
   valCell.value = valueText;
-  valCell.font = { name: 'Arial', size: options.valueSize || 8.5, bold: false, color: { argb: 'FF000000' } };
+  valCell.font = { name: 'Tahoma', size: options.valueSize || 8.5, bold: false, color: { argb: 'FF000000' } };
   valCell.alignment = {
     horizontal: options.valueAlign || 'left',
     vertical: options.valueVertical || 'middle',
@@ -271,16 +271,16 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.columns = [
         { width: 8.0 },  // A (Shipping Mark 1/2) -> A+B = 16.0
         { width: 8.0 },  // B (Shipping Mark 2/2) -> A..D = 36.0 (Box 1)
-        { width: 10.0 }, // C (Desc 1/4)
-        { width: 10.0 }, // D (Desc 2/4)
-        { width: 9.0 },  // E (Desc 3/4)          -> E+F = 18.0, C..F = 38.0
-        { width: 9.0 },  // F (Desc 4/4)          -> A..F = 54.0 (Left 50%)
-        { width: 9.0 },  // G (HS Code 1/2)       -> G+H = 18.0
-        { width: 9.0 },  // H (HS Code 2/2)       -> E..H = 36.0 (Box 2)
-        { width: 9.5 },  // I (Quantity)
-        { width: 5.5 },  // J (Unit)
-        { width: 10.5 }, // K (Unit Price)
-        { width: 10.5 }, // L (Amount)            -> I..L = 36.0 (Box 3), G..L = 54.0 (Right 50%)
+        { width: 10.0 }, // C
+        { width: 9.0 },  // D
+        { width: 9.0 },  // E
+        { width: 9.0 },  // F
+        { width: 9.0 },  // G
+        { width: 10.0 }, // H -> C..H = 56.0 (Description of Goods)
+        { width: 11.0 }, // I (Quantity)
+        { width: 7.0 },  // J (Unit)
+        { width: 13.0 }, // K (Unit Price)
+        { width: 13.0 }, // L (Amount)
       ];
 
       let currRow = 1;
@@ -316,14 +316,14 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.mergeCells('A1:L1');
           const hName = ws.getCell('A1');
           hName.value = companyName;
-          hName.font = { name: 'Arial', size: 14, bold: true };
+          hName.font = { name: 'Tahoma', size: 14, bold: true };
           hName.alignment = { horizontal: 'left', vertical: 'middle' };
           ws.getRow(1).height = 22;
 
           ws.mergeCells('A2:L2');
           const hAddr = ws.getCell('A2');
           hAddr.value = headerAddress;
-          hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+          hAddr.font = { name: 'Tahoma', size: 8, color: { argb: 'FF334155' } };
           hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
           ws.getRow(2).height = 24;
 
@@ -341,9 +341,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.mergeCells(`A${currRow}:L${currRow}`);
       const titleCell = ws.getCell(`A${currRow}`);
       titleCell.value = 'Commercial Invoice';
-      titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FF000000' } };
+      titleCell.font = { name: 'Tahoma', size: 18, bold: true, color: { argb: 'FF000000' } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 26;
+      ws.getRow(currRow).height = 28;
       currRow += 2;
 
       // Header Grid (Separate single-line label cells and dedicated value cells with OUTER BORDER ONLY)
@@ -423,35 +423,34 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       currRow++;
 
-      // Table Headers
+      // Table Headers (HS Code column removed from table; Description expanded to C..H)
       const thRow = currRow;
-      ws.getRow(thRow).height = 24;
+      ws.getRow(thRow).height = 28;
 
       const setTh = (range: string, val: string) => {
         ws.mergeCells(range);
         const cell = ws.getCell(range.split(':')[0]);
         cell.value = val;
-        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+        cell.font = { name: 'Tahoma', size: 10, bold: true, color: { argb: 'FF0F172A' } };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       };
 
       setTh(`A${thRow}:B${thRow}`, 'Shipping Mark');
-      setTh(`C${thRow}:F${thRow}`, 'Description of Goods');
-      setTh(`G${thRow}:H${thRow}`, 'HS Code');
+      setTh(`C${thRow}:H${thRow}`, 'Description of Goods');
       ws.getCell(`I${thRow}`).value = 'Quantity';
-      ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+      ws.getCell(`I${thRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.getCell(`J${thRow}`).value = 'Unit';
-      ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+      ws.getCell(`J${thRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.getCell(`K${thRow}`).value = 'Unit Price ($)';
-      ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+      ws.getCell(`K${thRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.getCell(`L${thRow}`).value = 'Amount ($)';
-      ws.getCell(`L${thRow}`).font = { name: 'Arial', size: 9, bold: true };
+      ws.getCell(`L${thRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`L${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       for (let c = 1; c <= 12; c++) {
@@ -468,10 +467,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.mergeCells(`C${introR}:L${introR}`);
         const introCell = ws.getCell(`C${introR}`);
         introCell.value = data.introText.trim();
-        introCell.font = { name: 'Arial', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+        introCell.font = { name: 'Tahoma', size: 9.5, bold: true, color: { argb: 'FF1E293B' } };
         introCell.alignment = { vertical: 'middle', wrapText: true };
         const linesCount = data.introText.trim().split('\n').length;
-        ws.getRow(introR).height = Math.max(22, linesCount * 14 + 6);
+        ws.getRow(introR).height = Math.max(24, linesCount * 15 + 8);
         for (let c = 1; c <= 12; c++) {
           ws.getCell(introR, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
         }
@@ -479,48 +478,46 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       }
 
       const itemsList = data.ciItems && data.ciItems.length > 0 ? data.ciItems : data.items;
+      const regularItems = itemsList.filter(it => !it.isFreight);
+      const freightItems = itemsList.filter(it => it.isFreight);
       let totalQty = 0;
       let totalAmt = 0;
 
-      itemsList.forEach(it => {
+      // 1. Regular Product Items
+      regularItems.forEach(it => {
         const r = currRow;
         const cleanName = cleanCiName(it.name || '');
         const descLines = cleanName.split('\n').length;
-        ws.getRow(r).height = Math.max(22, descLines * 14 + 4);
+        ws.getRow(r).height = Math.max(24, descLines * 15 + 6);
 
         const qty = Number(it.qty) || 0;
         const uPrice = Number(it.unitPrice) || 0;
-        const amt = it.isFreight ? (Number(it.amount) || 0) : (Number(it.amount) || qty * uPrice);
+        const amt = Number(it.amount) || (qty * uPrice);
 
-        totalQty += it.isFreight ? 0 : qty;
+        totalQty += qty;
         totalAmt += amt;
 
-        ws.mergeCells(`C${r}:F${r}`);
+        ws.mergeCells(`C${r}:H${r}`);
         ws.getCell(`C${r}`).value = cleanName;
-        ws.getCell(`C${r}`).font = { name: 'Arial', size: 9 };
+        ws.getCell(`C${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`C${r}`).alignment = { vertical: 'middle', wrapText: true };
 
-        ws.mergeCells(`G${r}:H${r}`);
-        ws.getCell(`G${r}`).value = it.isFreight ? '' : (it.hsCode || '');
-        ws.getCell(`G${r}`).font = { name: 'Arial', size: 9 };
-        ws.getCell(`G${r}`).alignment = { horizontal: 'center', vertical: 'middle' };
-
-        ws.getCell(`I${r}`).value = it.isFreight ? '' : qty;
-        ws.getCell(`I${r}`).font = { name: 'Arial', size: 9 };
+        ws.getCell(`I${r}`).value = qty;
+        ws.getCell(`I${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`I${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        if (!it.isFreight) ws.getCell(`I${r}`).numFmt = '#,##0';
+        ws.getCell(`I${r}`).numFmt = '#,##0';
 
-        ws.getCell(`J${r}`).value = it.isFreight ? '' : (it.unit || 'PCS');
-        ws.getCell(`J${r}`).font = { name: 'Arial', size: 9 };
+        ws.getCell(`J${r}`).value = it.unit || 'PCS';
+        ws.getCell(`J${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`J${r}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        ws.getCell(`K${r}`).value = it.isFreight ? '' : uPrice;
-        ws.getCell(`K${r}`).font = { name: 'Arial', size: 9 };
+        ws.getCell(`K${r}`).value = uPrice;
+        ws.getCell(`K${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        if (!it.isFreight) ws.getCell(`K${r}`).numFmt = 'US$#,##0.00';
+        ws.getCell(`K${r}`).numFmt = 'US$#,##0.00';
 
         ws.getCell(`L${r}`).value = amt;
-        ws.getCell(`L${r}`).font = { name: 'Arial', size: 9 };
+        ws.getCell(`L${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`L${r}`).numFmt = 'US$#,##0.00';
 
@@ -530,7 +527,52 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       });
 
-      if (itemsList.length > 0) {
+      // 2. Empty Padding Rows to fill A4 sheet nicely
+      const minRows = 8;
+      const currentTotal = regularItems.length + freightItems.length;
+      const emptyRowsCount = Math.max(1, minRows - currentTotal);
+
+      for (let e = 0; e < emptyRowsCount; e++) {
+        const r = currRow;
+        ws.getRow(r).height = 24;
+        ws.mergeCells(`C${r}:H${r}`);
+        ws.getCell(`C${r}`).value = '';
+        for (let c = 1; c <= 12; c++) {
+          ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+        }
+        currRow++;
+      }
+
+      // 3. Freight Charges (placed at the bottom of the table)
+      freightItems.forEach(it => {
+        const r = currRow;
+        const cleanName = cleanCiName(it.name || '');
+        const amt = Number(it.amount) || 0;
+        totalAmt += amt;
+
+        ws.getRow(r).height = 24;
+        ws.mergeCells(`C${r}:H${r}`);
+        ws.getCell(`C${r}`).value = cleanName;
+        ws.getCell(`C${r}`).font = { name: 'Tahoma', size: 9.5, bold: true };
+        ws.getCell(`C${r}`).alignment = { vertical: 'middle', wrapText: true };
+
+        ws.getCell(`I${r}`).value = '';
+        ws.getCell(`J${r}`).value = '';
+        ws.getCell(`K${r}`).value = '';
+
+        ws.getCell(`L${r}`).value = amt;
+        ws.getCell(`L${r}`).font = { name: 'Tahoma', size: 9.5, bold: true };
+        ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
+        ws.getCell(`L${r}`).numFmt = 'US$#,##0.00';
+
+        for (let c = 1; c <= 12; c++) {
+          ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+        }
+        currRow++;
+      });
+
+      // 4. Shipping Mark Box spanning all item rows
+      if (itemsList.length > 0 || emptyRowsCount > 0) {
         const itemEndRow = currRow - 1;
         ws.mergeCells(`A${itemStartRow}:B${itemEndRow}`);
         
@@ -555,28 +597,28 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             console.warn('Failed to embed shipping mark image in CI sheet:', err);
             const markCell = ws.getCell(`A${itemStartRow}`);
             markCell.value = data.shippingMarks || 'N/M';
-            markCell.font = { name: 'Arial', size: 8.5, bold: true };
+            markCell.font = { name: 'Tahoma', size: 9.5, bold: true };
             markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
           }
         } else {
           const markCell = ws.getCell(`A${itemStartRow}`);
           markCell.value = data.shippingMarks || 'N/M';
-          markCell.font = { name: 'Arial', size: 8.5, bold: true };
+          markCell.font = { name: 'Tahoma', size: 9.5, bold: true };
           markCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         }
       }
 
       // Total Amount
       const totalRow = currRow;
-      ws.getRow(totalRow).height = 24;
+      ws.getRow(totalRow).height = 26;
       ws.mergeCells(`A${totalRow}:H${totalRow}`);
       const totTitleCell = ws.getCell(`A${totalRow}`);
       totTitleCell.value = 'TOTAL AMOUNT';
-      totTitleCell.font = { name: 'Arial', size: 9, color: { argb: 'FF000000' } };
+      totTitleCell.font = { name: 'Tahoma', size: 10, bold: true, color: { argb: 'FF000000' } };
       totTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.getCell(`I${totalRow}`).value = totalQty;
-      ws.getCell(`I${totalRow}`).font = { name: 'Arial', size: 9 };
+      ws.getCell(`I${totalRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`I${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`I${totalRow}`).numFmt = '#,##0';
 
@@ -584,7 +626,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`K${totalRow}`).value = '';
 
       ws.getCell(`L${totalRow}`).value = totalAmt;
-      ws.getCell(`L${totalRow}`).font = { name: 'Arial', size: 9 };
+      ws.getCell(`L${totalRow}`).font = { name: 'Tahoma', size: 10.5, bold: true };
       ws.getCell(`L${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`L${totalRow}`).numFmt = 'US$#,##0.00';
 
@@ -596,7 +638,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       // Separator Line
       ws.mergeCells(`A${currRow}:L${currRow}`);
       ws.getCell(`A${currRow}`).value = '--------------------------------------------------------------------------------------------------------------------------------';
-      ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8, color: { argb: 'FF94A3B8' } };
+      ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8, color: { argb: 'FF94A3B8' } };
       ws.getCell(`A${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       ws.getRow(currRow).height = 14;
       currRow++;
@@ -608,7 +650,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.mergeCells(`A${currRow}:L${currRow}`);
         ws.getCell(`A${currRow}`).value = cInfoFormatted;
         ws.getCell(`A${currRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 9, bold: true };
         ws.getRow(currRow).height = 18;
         currRow++;
       }
@@ -616,14 +658,14 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       if (data.hsCodeSummary && data.hsCodeSummary.trim()) {
         ws.mergeCells(`A${currRow}:L${currRow}`);
         ws.getCell(`A${currRow}`).value = 'A) RELEVANT HARMONIZED SYSTEM COMMODITY CODE NUMBER(S) APPLICABLE TO EACH ITEM SHIPPED UNDER THIS CREDIT';
-        ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: true };
+        ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8.5, bold: true };
         ws.getRow(currRow).height = 18;
         currRow++;
 
         const hsLines = data.hsCodeSummary.trim().split('\n').length;
         ws.mergeCells(`A${currRow}:L${currRow}`);
         ws.getCell(`A${currRow}`).value = data.hsCodeSummary.trim();
-        ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5 };
+        ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8.5 };
         ws.getCell(`A${currRow}`).alignment = { wrapText: true, vertical: 'top' };
         ws.getRow(currRow).height = Math.max(22, hsLines * 14 + 6);
         currRow++;
@@ -641,7 +683,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           const isHeader = /^[B-Z]\)/i.test(trimmed);
           ws.mergeCells(`A${currRow}:L${currRow}`);
           ws.getCell(`A${currRow}`).value = line;
-          ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: isHeader };
+          ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8.5, bold: isHeader };
           ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
           ws.getRow(currRow).height = isHeader ? 18 : 15;
           currRow++;
@@ -651,17 +693,17 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       currRow += 2;
       ws.mergeCells(`I${currRow}:L${currRow}`);
       ws.getCell(`I${currRow}`).value = 'Signed by';
-      ws.getCell(`I${currRow}`).font = { name: 'Arial', size: 8.5, italic: true };
+      ws.getCell(`I${currRow}`).font = { name: 'Tahoma', size: 10, italic: true };
       ws.getCell(`I${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 16;
-      currRow += 3;
+      ws.getRow(currRow).height = 18;
+      currRow += 4; // Ample space for signature
 
       ws.mergeCells(`I${currRow}:L${currRow}`);
       ws.getCell(`I${currRow}`).value = companyName;
-      ws.getCell(`I${currRow}`).font = { name: 'Arial', size: 10, bold: true };
+      ws.getCell(`I${currRow}`).font = { name: 'Tahoma', size: 11, bold: true };
       ws.getCell(`I${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       ws.getCell(`I${currRow}`).border = { top: darkBorder };
-      ws.getRow(currRow).height = 22;
+      ws.getRow(currRow).height = 26;
     };
 
     // ==========================================
@@ -733,14 +775,14 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           ws.mergeCells('A1:L1');
           const hName = ws.getCell('A1');
           hName.value = companyName;
-          hName.font = { name: 'Arial', size: 14, bold: true };
+          hName.font = { name: 'Tahoma', size: 14, bold: true };
           hName.alignment = { horizontal: 'left', vertical: 'middle' };
           ws.getRow(1).height = 22;
 
           ws.mergeCells('A2:L2');
           const hAddr = ws.getCell('A2');
           hAddr.value = headerAddress;
-          hAddr.font = { name: 'Arial', size: 8, color: { argb: 'FF334155' } };
+          hAddr.font = { name: 'Tahoma', size: 8, color: { argb: 'FF334155' } };
           hAddr.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
           ws.getRow(2).height = 24;
 
@@ -758,9 +800,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.mergeCells(`A${currRow}:L${currRow}`);
       const titleCell = ws.getCell(`A${currRow}`);
       titleCell.value = 'Packing List';
-      titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF000000' } };
+      titleCell.font = { name: 'Tahoma', size: 18, bold: true, color: { argb: 'FF000000' } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 26;
+      ws.getRow(currRow).height = 28;
       currRow += 2;
 
       // Header Grid for PL (Separate single-line label cells and dedicated value cells with OUTER BORDER ONLY)
@@ -846,25 +888,25 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       ws.mergeCells(`A${thRow}:C${thRow}`);
       ws.getCell(`A${thRow}`).value = 'Shipping Marks';
-      ws.getCell(`A${thRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+      ws.getCell(`A${thRow}`).font = { name: 'Tahoma', size: 9, bold: true, color: { argb: 'FF0F172A' } };
       ws.getCell(`A${thRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.mergeCells(`D${thRow}:H${thRow}`);
       ws.getCell(`D${thRow}`).value = 'Description of Goods\nQuantity / Number of Packages';
-      ws.getCell(`D${thRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+      ws.getCell(`D${thRow}`).font = { name: 'Tahoma', size: 9, bold: true, color: { argb: 'FF0F172A' } };
       ws.getCell(`D${thRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
       ws.getCell(`I${thRow}`).value = 'Net Weight\n(KGS)';
-      ws.getCell(`I${thRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+      ws.getCell(`I${thRow}`).font = { name: 'Tahoma', size: 9, bold: true, color: { argb: 'FF0F172A' } };
       ws.getCell(`I${thRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
       ws.getCell(`J${thRow}`).value = 'Gross Weight\n(KGS)';
-      ws.getCell(`J${thRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+      ws.getCell(`J${thRow}`).font = { name: 'Tahoma', size: 9, bold: true, color: { argb: 'FF0F172A' } };
       ws.getCell(`J${thRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
       ws.mergeCells(`K${thRow}:L${thRow}`);
       ws.getCell(`K${thRow}`).value = 'Measurement\n(CBM)';
-      ws.getCell(`K${thRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F172A' } };
+      ws.getCell(`K${thRow}`).font = { name: 'Tahoma', size: 9, bold: true, color: { argb: 'FF0F172A' } };
       ws.getCell(`K${thRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
       for (let c = 1; c <= 12; c++) {
@@ -881,7 +923,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.mergeCells(`D${introR}:L${introR}`);
         const introCell = ws.getCell(`D${introR}`);
         introCell.value = data.introText.trim();
-        introCell.font = { name: 'Arial', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+        introCell.font = { name: 'Tahoma', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
         introCell.alignment = { vertical: 'middle', wrapText: true };
         const linesCount = data.introText.trim().split('\n').length;
         ws.getRow(introR).height = Math.max(26, linesCount * 14 + 8);
@@ -978,22 +1020,22 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
           ws.mergeCells(`D${r}:H${r}`);
           ws.getCell(`D${r}`).value = descText;
-          ws.getCell(`D${r}`).font = { name: 'Arial', size: 8.5 };
+          ws.getCell(`D${r}`).font = { name: 'Tahoma', size: 8.5 };
           ws.getCell(`D${r}`).alignment = { vertical: 'middle', wrapText: true };
 
           ws.getCell(`I${r}`).value = netW;
-          ws.getCell(`I${r}`).font = { name: 'Arial', size: 8.5 };
+          ws.getCell(`I${r}`).font = { name: 'Tahoma', size: 8.5 };
           ws.getCell(`I${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
           ws.getCell(`I${r}`).numFmt = '#,##0';
 
           ws.getCell(`J${r}`).value = grossW;
-          ws.getCell(`J${r}`).font = { name: 'Arial', size: 8.5 };
+          ws.getCell(`J${r}`).font = { name: 'Tahoma', size: 8.5 };
           ws.getCell(`J${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
           ws.getCell(`J${r}`).numFmt = '#,##0';
 
           ws.mergeCells(`K${r}:L${r}`);
           ws.getCell(`K${r}`).value = cbm;
-          ws.getCell(`K${r}`).font = { name: 'Arial', size: 8.5 };
+          ws.getCell(`K${r}`).font = { name: 'Tahoma', size: 8.5 };
           ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
           ws.getCell(`K${r}`).numFmt = '#,##0.00';
 
@@ -1017,7 +1059,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         }
 
         cLeftCell.value = leftText.trim();
-        cLeftCell.font = { name: 'Arial', size: 8.5, bold: true };
+        cLeftCell.font = { name: 'Tahoma', size: 8.5, bold: true };
         cLeftCell.alignment = { horizontal: 'center', vertical: 'bottom', wrapText: true };
 
         if (cIdx === 0) {
@@ -1050,27 +1092,27 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       ws.mergeCells(`A${totalRow}:C${totalRow}`);
       ws.getCell(`A${totalRow}`).value = 'TOTAL';
-      ws.getCell(`A${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+      ws.getCell(`A${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`A${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.mergeCells(`D${totalRow}:H${totalRow}`);
       ws.getCell(`D${totalRow}`).value = `${totalPkgCount || data.totalPackages || 1} GT`;
-      ws.getCell(`D${totalRow}`).font = { name: 'Arial', size: 9, bold: true };
+      ws.getCell(`D${totalRow}`).font = { name: 'Tahoma', size: 9, bold: true };
       ws.getCell(`D${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.getCell(`I${totalRow}`).value = totalNetW;
-      ws.getCell(`I${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+      ws.getCell(`I${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`I${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`I${totalRow}`).numFmt = '#,##0 "KGS"';
 
       ws.getCell(`J${totalRow}`).value = totalGrossW;
-      ws.getCell(`J${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+      ws.getCell(`J${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`J${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`J${totalRow}`).numFmt = '#,##0 "KGS"';
 
       ws.mergeCells(`K${totalRow}:L${totalRow}`);
       ws.getCell(`K${totalRow}`).value = totalCbmV;
-      ws.getCell(`K${totalRow}`).font = { name: 'Arial', size: 9.5, bold: true };
+      ws.getCell(`K${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`K${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`K${totalRow}`).numFmt = '#,##0.00 "CBM"';
 
@@ -1082,7 +1124,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       // Dotted Line
       ws.mergeCells(`A${currRow}:L${currRow}`);
       ws.getCell(`A${currRow}`).value = '////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
-      ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8, color: { argb: 'FF94A3B8' } };
+      ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8, color: { argb: 'FF94A3B8' } };
       ws.getCell(`A${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       ws.getRow(currRow).height = 14;
       currRow++;
@@ -1094,7 +1136,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.mergeCells(`A${currRow}:L${currRow}`);
         ws.getCell(`A${currRow}`).value = cInfoFormatted;
         ws.getCell(`A${currRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-        ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 9, bold: true };
+        ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 9, bold: true };
         ws.getRow(currRow).height = 18;
         currRow++;
       }
@@ -1111,7 +1153,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           const isHeader = /^(REMARK|REMARKS|NOTE|NOTES|[A-Z]\))/i.test(trimmed);
           ws.mergeCells(`A${currRow}:L${currRow}`);
           ws.getCell(`A${currRow}`).value = line;
-          ws.getCell(`A${currRow}`).font = { name: 'Arial', size: 8.5, bold: isHeader };
+          ws.getCell(`A${currRow}`).font = { name: 'Tahoma', size: 8.5, bold: isHeader };
           ws.getCell(`A${currRow}`).alignment = { vertical: 'middle', wrapText: true };
           ws.getRow(currRow).height = isHeader ? 18 : 15;
           currRow++;
@@ -1121,17 +1163,17 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       currRow += 2;
       ws.mergeCells(`I${currRow}:L${currRow}`);
       ws.getCell(`I${currRow}`).value = 'Signed by';
-      ws.getCell(`I${currRow}`).font = { name: 'Arial', size: 8.5, italic: true };
+      ws.getCell(`I${currRow}`).font = { name: 'Tahoma', size: 10, italic: true };
       ws.getCell(`I${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(currRow).height = 16;
-      currRow += 3;
+      ws.getRow(currRow).height = 18;
+      currRow += 4; // Ample space for signature
 
       ws.mergeCells(`I${currRow}:L${currRow}`);
       ws.getCell(`I${currRow}`).value = companyName;
-      ws.getCell(`I${currRow}`).font = { name: 'Arial', size: 10, bold: true };
+      ws.getCell(`I${currRow}`).font = { name: 'Tahoma', size: 11, bold: true };
       ws.getCell(`I${currRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       ws.getCell(`I${currRow}`).border = { top: darkBorder };
-      ws.getRow(currRow).height = 22;
+      ws.getRow(currRow).height = 26;
     };
 
     await buildCiSheet();

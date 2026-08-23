@@ -130,39 +130,39 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     let shapeSvg = null;
     if (shape === 'circle') {
       shapeSvg = (
-        <svg width="68" height="68" style={{ display: 'block', margin: '0 auto' }}>
-          <circle cx="34" cy="34" r="30" stroke="black" strokeWidth="2.2" fill="none" />
-          <text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        <svg width="76" height="76" style={{ display: 'block', margin: '0 auto' }}>
+          <circle cx="38" cy="38" r="34" stroke="black" strokeWidth="2.8" fill="none" />
+          <text x="50%" y="54%" fontSize="13" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'square') {
       shapeSvg = (
-        <svg width="68" height="50" style={{ display: 'block', margin: '0 auto' }}>
-          <rect x="4" y="4" width="60" height="42" stroke="black" strokeWidth="2.2" fill="none" />
-          <text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        <svg width="84" height="64" style={{ display: 'block', margin: '0 auto' }}>
+          <rect x="4" y="4" width="76" height="56" stroke="black" strokeWidth="2.8" fill="none" />
+          <text x="50%" y="54%" fontSize="13" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'triangle') {
       shapeSvg = (
-        <svg width="68" height="56" style={{ display: 'block', margin: '0 auto' }}>
-          <polygon points="34,4 4,52 64,52" stroke="black" strokeWidth="2.2" fill="none" />
-          <text x="50%" y="68%" fontSize="10.5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        <svg width="84" height="70" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="42,4 4,66 80,66" stroke="black" strokeWidth="2.8" fill="none" />
+          <text x="50%" y="68%" fontSize="12" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else {
       // Diamond
       shapeSvg = (
-        <svg width="74" height="52" style={{ display: 'block', margin: '0 auto' }}>
-          <polygon points="37,4 70,26 37,48 4,26" stroke="black" strokeWidth="2.2" fill="none" />
-          <text x="50%" y="54%" fontSize={comp.length > 11 ? '8.5' : (comp.length > 8 ? '9.5' : '11')} fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+        <svg width="92" height="64" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="46,4 88,32 46,60 4,32" stroke="black" strokeWidth="2.8" fill="none" />
+          <text x="50%" y="54%" fontSize={comp.length > 11 ? '10.5' : (comp.length > 8 ? '12' : '13.5')} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', lineHeight: 1.25, padding: '6px 2px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', lineHeight: 1.3, padding: '8px 2px' }}>
         {shapeSvg}
-        <div style={{ fontSize: '9px', fontWeight: 800, textAlign: 'center', textTransform: 'uppercase', color: '#000', marginTop: '2px' }}>
+        <div style={{ fontSize: '10.5px', fontWeight: 800, textAlign: 'center', textTransform: 'uppercase', color: '#000', marginTop: '4px', letterSpacing: '0.2px' }}>
           <div>{portCountry}</div>
           <div style={{ margin: '2px 0' }}>{pltNo}</div>
           <div>{origin}</div>
@@ -430,7 +430,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
             background: '#fff',
             padding: '36px 36px',
             boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-            fontFamily: "'Arial', 'Noto Sans KR', sans-serif",
+            fontFamily: "'Tahoma', 'Noto Sans KR', sans-serif",
             color: '#000',
             boxSizing: 'border-box'
           }}>
@@ -471,7 +471,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
             )}
 
             {/* Document Title */}
-            <div style={{ textAlign: 'center', fontSize: '20px', fontWeight: 900, textTransform: 'capitalize', margin: '14px 0 16px 0', textDecoration: 'none', letterSpacing: '0.5px' }}>
+            <div style={{ textAlign: 'center', fontSize: '23px', fontWeight: 900, textTransform: 'capitalize', margin: '16px 0 18px 0', letterSpacing: '0.8px' }}>
               {activeTab === 'CI' ? 'Commercial Invoice' : 'Packing List'}
             </div>
 
@@ -608,68 +608,108 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
             {/* Items Grid */}
             {activeTab === 'CI' ? (
-              // COMMERCIAL INVOICE ITEMS TABLE (7 Columns Perfectly Synchronized with Excel)
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={{ ...thStyle, width: '15%' }}>Shipping Mark</th>
-                    <th style={{ ...thStyle, width: '35%' }}>Description of Goods</th>
-                    <th style={{ ...thStyle, width: '14%' }}>HS Code</th>
-                    <th style={{ ...thStyle, width: '9%' }}>Quantity</th>
-                    <th style={{ ...thStyle, width: '7%' }}>Unit</th>
-                    <th style={{ ...thStyle, width: '10%' }}>Unit Price ($)</th>
-                    <th style={{ ...thStyle, width: '10%' }}>Amount ($)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Top Intro Text if provided */}
-                  {data.introText && (
-                    <tr>
-                      <td rowSpan={ciItems.length + 1} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '8px 4px' }}>
-                        {renderGraphicShippingMark()}
-                      </td>
-                      <td colSpan={6} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa' }}>
-                        {data.introText}
-                      </td>
-                    </tr>
-                  )}
-                  {ciItems.map((item, idx) => (
-                    <tr key={idx}>
-                      {!data.introText && idx === 0 && (
-                        <td rowSpan={ciItems.length} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '8px 4px' }}>
-                          {renderGraphicShippingMark()}
-                        </td>
+              // COMMERCIAL INVOICE ITEMS TABLE (6 Columns; HS Code removed from table; Empty padding rows added)
+              (() => {
+                const regularItems = ciItems.filter(it => !it.isFreight);
+                const freightItems = ciItems.filter(it => it.isFreight);
+                const minRows = 8;
+                const emptyCount = Math.max(1, minRows - (regularItems.length + freightItems.length));
+                const totalItemRows = regularItems.length + emptyCount + freightItems.length + (data.introText ? 1 : 0);
+
+                return (
+                  <table style={tableStyle}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...thStyle, width: '16%' }}>Shipping Mark</th>
+                        <th style={{ ...thStyle, width: '48%' }}>Description of Goods</th>
+                        <th style={{ ...thStyle, width: '10%' }}>Quantity</th>
+                        <th style={{ ...thStyle, width: '6%' }}>Unit</th>
+                        <th style={{ ...thStyle, width: '10%' }}>Unit Price ($)</th>
+                        <th style={{ ...thStyle, width: '10%' }}>Amount ($)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Top Intro Text if provided */}
+                      {data.introText && (
+                        <tr>
+                          <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                            {renderGraphicShippingMark()}
+                          </td>
+                          <td colSpan={5} style={{ ...tdItemStyle, fontSize: '10px', fontWeight: 700, padding: '6px 8px', background: '#fafafa' }}>
+                            {data.introText}
+                          </td>
+                        </tr>
                       )}
-                      <td style={tdItemStyle}>
-                        <div style={{ fontWeight: 400 }}>{item.name}</div>
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'center', fontSize: '9.5px', color: '#334155' }}>
-                        {item.isFreight ? '' : (item.hsCode || '-')}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
-                        {item.isFreight ? '' : Number(item.qty).toLocaleString()}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'center' }}>
-                        {item.isFreight ? '' : (item.unit || 'PCS')}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right' }}>
-                        {item.isFreight ? '' : `US$${Number(item.unitPrice).toFixed(2)}`}
-                      </td>
-                      <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 400 }}>
-                        US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))}
-                  {/* CI Total row */}
-                  <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
-                    <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }} colSpan={3}>TOTAL AMOUNT</td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalQtyCI.toLocaleString()}</td>
-                    <td style={tdItemStyle}></td>
-                    <td style={tdItemStyle}></td>
-                    <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '11px', fontWeight: 900 }}>US${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                </tbody>
-              </table>
+
+                      {/* 1. Regular items */}
+                      {regularItems.map((item, idx) => (
+                        <tr key={`reg-${idx}`}>
+                          {!data.introText && idx === 0 && (
+                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                              {renderGraphicShippingMark()}
+                            </td>
+                          )}
+                          <td style={{ ...tdItemStyle, padding: '6px 8px' }}>
+                            <div style={{ fontWeight: 400, fontSize: '10px' }}>{item.name}</div>
+                          </td>
+                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px' }}>
+                            {Number(item.qty).toLocaleString()}
+                          </td>
+                          <td style={{ ...tdItemStyle, textAlign: 'center', fontSize: '10px' }}>
+                            {item.unit || 'PCS'}
+                          </td>
+                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px' }}>
+                            US${Number(item.unitPrice).toFixed(2)}
+                          </td>
+                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px', fontWeight: 400 }}>
+                            US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* 2. Empty padding rows to fill A4 sheet */}
+                      {Array.from({ length: emptyCount }).map((_, eIdx) => (
+                        <tr key={`empty-${eIdx}`} style={{ height: '26px' }}>
+                          {!data.introText && regularItems.length === 0 && eIdx === 0 && (
+                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                              {renderGraphicShippingMark()}
+                            </td>
+                          )}
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                        </tr>
+                      ))}
+
+                      {/* 3. Freight items at the bottom */}
+                      {freightItems.map((item, fIdx) => (
+                        <tr key={`freight-${fIdx}`}>
+                          <td style={{ ...tdItemStyle, padding: '6px 8px', fontWeight: 700, fontSize: '10px' }}>
+                            {item.name}
+                          </td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px', fontWeight: 700 }}>
+                            US${Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* CI Total row */}
+                      <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
+                        <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }} colSpan={2}>TOTAL AMOUNT</td>
+                        <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalQtyCI.toLocaleString()}</td>
+                        <td style={tdItemStyle}></td>
+                        <td style={tdItemStyle}></td>
+                        <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '11px', fontWeight: 900 }}>US${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()
             ) : (
               // AUTHENTIC PACKING LIST ITEMS TABLE
               <table style={tableStyle}>
@@ -886,12 +926,12 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               </div>
             )}
 
-            {/* Footer Signature */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingRight: '20px' }}>
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '35px' }}>Signed by</div>
-                <div style={{ borderBottom: '1px solid #000', width: '100%', margin: '0 auto 4px' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{companyName}</div>
+            {/* Footer Signature with Ample Space */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '36px', paddingRight: '20px', paddingBottom: '20px' }}>
+              <div style={{ textAlign: 'center', width: '250px' }}>
+                <div style={{ fontSize: '11px', fontStyle: 'italic', fontWeight: 600, marginBottom: '60px' }}>Signed by</div>
+                <div style={{ borderBottom: '1.5px solid #000', width: '100%', margin: '0 auto 6px' }}></div>
+                <div style={{ fontWeight: 800, fontSize: '12px', letterSpacing: '0.5px' }}>{companyName}</div>
               </div>
             </div>
           </div>

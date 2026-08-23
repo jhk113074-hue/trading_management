@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.382',
+    version: 'v2.8.382',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: 'CI/PL 서식 전면 개선: Tahoma 폰트 적용, 제목 및 전체 글씨 확대, 고해상도 쉬핑마크, 표 HS CODE 제거 및 빈줄/운송비/Total 배치 최적화, 서명란 확장',
+    content: '• 문서 제목(Commercial Invoice / Packing List)을 18pt(2pt 확대)로 키우고 전체 기본 폰트를 Tahoma로 일괄 전환 및 글씨 크기 상향\\n• 쉬핑마크(Shipping Mark) 그래픽 해상도 및 선 두께, 회사명/텍스트 크기를 대폭 키워 시인성 강화\\n• CI 품목 표에서 불필요한 HS CODE 열을 제거하여 품명(Description) 열을 넓히고, HS CODE는 하단 요약란에만 표시\\n• 표 중간에 자동 빈 줄(Empty Rows)을 배치하여 운송비(Freight)와 TOTAL AMOUNT가 표 최하단에 위치하고 A4 용지가 꽉 차도록 레이아웃 최적화\\n• Signed by (서명 및 직인) 영역의 높이 및 공간을 대폭 확장하여 서명/날인 여유 공간 확보 (Excel 및 화면 미리보기 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.381',
     version: 'v2.8.381',
     date: '2026-08-23',
