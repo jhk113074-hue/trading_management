@@ -5603,7 +5603,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const palletList = Array.from(new Set(rawPalletList));
         if (palletList.length === 0) palletList.push('1');
 
-        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 44%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text { font-size: 38pt; font-weight: 900; margin: 6px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
+        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 40%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 56%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text { font-size: 52pt; font-weight: 900; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 1px; line-height: 1.35; }</style></head><body>';
 
         for (const pNum of palletList) {
           const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
@@ -10029,14 +10029,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 44%;' +
+                                    'height: 40%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 50%;' +
+                                    'height: 56%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10044,12 +10044,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'text-align: center;' +
                                   '}' +
                                   '.info-text {' +
-                                    'font-size: clamp(18pt, 4.4vh, 32pt);' +
+                                    'font-size: clamp(24pt, 5.8vh, 44pt);' +
                                     'font-weight: 900;' +
-                                    'margin: 0.6vh 0;' +
+                                    'margin: 0.7vh 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
-                                    'letter-spacing: 0.5px;' +
+                                    'letter-spacing: 0.8px;' +
+                                    'line-height: 1.35;' +
                                   '}' +
                                 '}' +
                                 '@media print {' +
@@ -10070,14 +10071,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 44%;' +
+                                    'height: 40%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 50%;' +
+                                    'height: 56%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10085,12 +10086,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'text-align: center;' +
                                   '}' +
                                   '.info-text {' +
-                                    'font-size: 38pt;' +
+                                    'font-size: 52pt;' +
                                     'font-weight: 900;' +
-                                    'margin: 6px 0;' +
+                                    'margin: 8px 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
-                                    'letter-spacing: 0.5px;' +
+                                    'letter-spacing: 1px;' +
+                                    'line-height: 1.35;' +
                                   '}' +
                                 '}' +
                               '</style>' +

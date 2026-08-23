@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.394',
+    version: 'v2.8.394',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 하단 3개 텍스트 크기를 초대형(52pt/44pt)으로 대폭 확대',
+    content: '• 쉬핑마크 하단 3개 행(도착항/국가, PALLET NO, 원산지)의 글씨 크기를 A4 가로 폭의 약 70~80%에 달하는 초대형 폰트(인쇄 시 52pt / 화면 44pt Extra Bold)로 대폭 확대하여 멀리서도 확연히 보이도록 가독성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.393',
     version: 'v2.8.393',
     date: '2026-08-23',

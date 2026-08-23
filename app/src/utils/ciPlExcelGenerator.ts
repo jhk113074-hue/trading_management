@@ -108,21 +108,21 @@ export const generateShippingMarkPngBase64 = (opts: {
     const pltNo = opts.palletNoText || 'PALLET NO. : 1 / 1';
     const origin = opts.origin || 'MADE IN KOREA';
 
-    // Uniform max font size for all 3 lines that fits width 225px
-    let fSize = 18;
+    // Uniform max font size for all 3 lines that fits width 232px
+    let fSize = 21;
     ctx.font = `bold ${fSize}px Tahoma`;
-    while (fSize > 11 && (
-      ctx.measureText(portCountry).width > 225 ||
-      ctx.measureText(pltNo).width > 225 ||
-      ctx.measureText(origin).width > 225
+    while (fSize > 12 && (
+      ctx.measureText(portCountry).width > 232 ||
+      ctx.measureText(pltNo).width > 232 ||
+      ctx.measureText(origin).width > 232
     )) {
       fSize -= 1;
       ctx.font = `bold ${fSize}px Tahoma`;
     }
 
-    ctx.fillText(portCountry, 120, 140);
+    ctx.fillText(portCountry, 120, 138);
     ctx.fillText(pltNo, 120, 172);
-    ctx.fillText(origin, 120, 204);
+    ctx.fillText(origin, 120, 206);
 
     const dataUrl = canvas.toDataURL('image/png');
     return dataUrl.split(',')[1];
