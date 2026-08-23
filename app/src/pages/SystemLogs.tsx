@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.388',
+    version: 'v2.8.388',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 원본 비율 유지 고정(종횡비 왜곡 및 과도한 상하 늘어남 방지)',
+    content: '• CI 및 PL 쉬핑마크 이미지를 병합 셀 높이에 맞춰 왜곡하여 늘리지 않고, 본래 고유 비율(정비율) 그대로 상단에 선명하게 고정 렌더링되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.387',
     version: 'v2.8.387',
     date: '2026-08-23',

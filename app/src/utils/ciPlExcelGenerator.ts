@@ -609,7 +609,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             const smImgId = workbook.addImage({ base64: smBase64, extension: 'png' });
             ws.addImage(smImgId, {
               tl: { col: 0, row: itemStartRow - 1 } as any,
-              br: { col: 2, row: itemEndRow } as any,
+              ext: { width: 115, height: 140 },
               editAs: 'oneCell'
             });
           } catch (err) {
@@ -1101,7 +1101,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
               const plSmImgId = workbook.addImage({ base64: plSmBase64, extension: 'png' });
               ws.addImage(plSmImgId, {
                 tl: { col: 0, row: cStartRow - 1 } as any,
-                br: { col: 3, row: cEndRow } as any,
+                ext: { width: 125, height: 150 },
                 editAs: 'oneCell'
               });
             } catch (err) {
