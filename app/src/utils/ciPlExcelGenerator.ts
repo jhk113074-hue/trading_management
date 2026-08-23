@@ -534,30 +534,29 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         currRow++;
       });
 
-      // 2. Empty Padding Block to fill A4 sheet nicely (Seamless block with ZERO internal lines)
+      // 2. Empty Padding Rows to fill A4 sheet nicely (Individual rows with separate column slots, no internal borders)
       const minRows = 8;
       const currentTotal = regularItems.length + freightItems.length;
       const emptyRowsCount = Math.max(1, minRows - currentTotal);
 
-      if (emptyRowsCount > 0) {
-        const emptyStartRow = currRow;
-        const emptyEndRow = emptyStartRow + emptyRowsCount - 1;
+      for (let e = 0; e < emptyRowsCount; e++) {
+        const r = currRow;
+        ws.getRow(r).height = 24;
+        ws.mergeCells(`C${r}:H${r}`);
+        ws.getCell(`C${r}`).value = '';
 
-        for (let r = emptyStartRow; r <= emptyEndRow; r++) {
-          ws.getRow(r).height = 24;
-        }
-        ws.mergeCells(`C${emptyStartRow}:L${emptyEndRow}`);
-        ws.getCell(`C${emptyStartRow}`).value = '';
+        ws.getCell(`I${r}`).value = '';
+        ws.getCell(`J${r}`).value = '';
+        ws.getCell(`K${r}`).value = '';
+        ws.getCell(`L${r}`).value = '';
 
-        for (let r = emptyStartRow; r <= emptyEndRow; r++) {
-          for (let c = 1; c <= 12; c++) {
-            const b: Partial<ExcelJS.Borders> = {};
-            if (c === 1 || c === 3) b.left = thinBorder;
-            if (c === 2 || c === 12) b.right = thinBorder;
-            ws.getCell(r, c).border = b;
-          }
+        for (let c = 1; c <= 12; c++) {
+          const b: Partial<ExcelJS.Borders> = {};
+          if (c === 1 || c === 3) b.left = thinBorder;
+          if (c === 2 || c === 12) b.right = thinBorder;
+          ws.getCell(r, c).border = b;
         }
-        currRow = emptyEndRow + 1;
+        currRow++;
       }
 
       // 3. Freight Charges (placed at the bottom of the table)

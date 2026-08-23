@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.387',
+    version: 'v2.8.387',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '표 빈 행(Empty Rows)을 단일 병합 블록이 아닌 각 행별 개별 행/열 구조로 복원',
+    content: '• 빈 품목 영역을 통으로 합치지 않고, 각 행마다 품명(C~H) 및 수량/단위/단가/금액(I, J, K, L)의 개별 행/열 구조를 유지하면서 내부 테두리선만 제거하여 자연스러운 엑셀 셀 그리드 유지 (Excel 및 미리보기 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.386',
     version: 'v2.8.386',
     date: '2026-08-23',

@@ -667,17 +667,21 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         </tr>
                       ))}
 
-                      {/* 2. Empty padding block to fill A4 sheet (Completely seamless with ZERO internal lines) */}
-                      {emptyCount > 0 && (
-                        <tr style={{ height: `${emptyCount * 26}px` }}>
-                          {!data.introText && regularItems.length === 0 && (
+                      {/* 2. Empty padding rows to fill A4 sheet (Individual rows with separate column slots) */}
+                      {Array.from({ length: emptyCount }).map((_, eIdx) => (
+                        <tr key={`empty-${eIdx}`} style={{ height: '24px' }}>
+                          {!data.introText && regularItems.length === 0 && eIdx === 0 && (
                             <td rowSpan={totalItemRows} style={{ ...tdItemStyle, borderLeft: '1px solid #000', borderRight: '1px solid #000', textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
                               {renderGraphicShippingMark()}
                             </td>
                           )}
-                          <td colSpan={5} style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: 'none', borderBottom: 'none', background: '#fff' }}></td>
+                          <td style={{ ...tdItemStyle, borderLeft: '1px solid #000', padding: '6px 8px' }}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={tdItemStyle}></td>
+                          <td style={{ ...tdItemStyle, borderRight: '1px solid #000' }}></td>
                         </tr>
-                      )}
+                      ))}
 
                       {/* 3. Freight items at the bottom */}
                       {freightItems.map((item, fIdx) => (
