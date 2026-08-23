@@ -5603,7 +5603,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const palletList = Array.from(new Set(rawPalletList));
         if (palletList.length === 0) palletList.push('1');
 
-        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 45%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text1 { font-size: 30pt; font-weight: 700; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; } .info-text2 { font-size: 36pt; font-weight: 900; margin: 10px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
+        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 45%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text1 { font-size: 34pt; font-weight: 800; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; } .info-text2 { font-size: 42pt; font-weight: 900; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
 
         for (const pNum of palletList) {
           const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
@@ -10007,51 +10007,107 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               '<style>' +
                                 '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
                                 '@page { size: A4 landscape; margin: 0; }' +
-                                'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
-                                '.no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }' +
-                                '@media print { .no-print { display: none !important; } }' +
-                                '.page {' +
-                                  'width: 297mm;' +
-                                  'height: 210mm;' +
-                                  'box-sizing: border-box;' +
-                                  'padding: 12mm;' +
-                                  'display: flex;' +
-                                  'flex-direction: column;' +
-                                  'align-items: center;' +
-                                  'justify-content: space-around;' +
-                                  'page-break-after: always;' +
+                                'html, body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #f8fafc; }' +
+                                '.no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 9px 18px; background: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }' +
+                                '.no-print:hover { background: #0369a1; }' +
+                                '@media screen {' +
+                                  'body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; box-sizing: border-box; padding: 10px 0; }' +
+                                  '.page {' +
+                                    'width: min(94vw, calc((96vh - 20px) * 1.414));' +
+                                    'height: min(94vh, calc(94vw * 0.707));' +
+                                    'margin: 0 auto 20px auto;' +
+                                    'background: #fff;' +
+                                    'box-shadow: 0 10px 25px rgba(0,0,0,0.1);' +
+                                    'border: 1px solid #cbd5e1;' +
+                                    'border-radius: 4px;' +
+                                    'box-sizing: border-box;' +
+                                    'padding: 2.5vh 3vw;' +
+                                    'display: flex;' +
+                                    'flex-direction: column;' +
+                                    'align-items: center;' +
+                                    'justify-content: space-evenly;' +
+                                  '}' +
+                                  '.shape-container {' +
+                                    'width: 100%;' +
+                                    'height: 48%;' +
+                                    'display: flex;' +
+                                    'align-items: center;' +
+                                    'justify-content: center;' +
+                                  '}' +
+                                  '.info-container {' +
+                                    'width: 100%;' +
+                                    'height: 46%;' +
+                                    'display: flex;' +
+                                    'flex-direction: column;' +
+                                    'align-items: center;' +
+                                    'justify-content: center;' +
+                                    'text-align: center;' +
+                                  '}' +
+                                  '.info-text1 {' +
+                                    'font-size: clamp(14pt, 3.2vh, 26pt);' +
+                                    'font-weight: 800;' +
+                                    'margin: 0.5vh 0;' +
+                                    'text-transform: uppercase;' +
+                                    'color: #000;' +
+                                    'letter-spacing: 0.5px;' +
+                                  '}' +
+                                  '.info-text2 {' +
+                                    'font-size: clamp(18pt, 4.4vh, 34pt);' +
+                                    'font-weight: 900;' +
+                                    'margin: 0.8vh 0;' +
+                                    'text-transform: uppercase;' +
+                                    'color: #000;' +
+                                    'letter-spacing: 0.5px;' +
+                                  '}' +
                                 '}' +
-                                '.shape-container {' +
-                                  'width: 100%;' +
-                                  'height: 45%;' +
-                                  'display: flex;' +
-                                  'align-items: center;' +
-                                  'justify-content: center;' +
-                                '}' +
-                                '.info-container {' +
-                                  'width: 100%;' +
-                                  'height: 48%;' +
-                                  'display: flex;' +
-                                  'flex-direction: column;' +
-                                  'align-items: center;' +
-                                  'justify-content: center;' +
-                                  'text-align: center;' +
-                                '}' +
-                                '.info-text1 {' +
-                                  'font-size: 30pt;' +
-                                  'font-weight: 700;' +
-                                  'margin: 10px 0;' +
-                                  'text-transform: uppercase;' +
-                                  'color: #000;' +
-                                  'letter-spacing: 0.5px;' +
-                                '}' +
-                                '.info-text2 {' +
-                                  'font-size: 36pt;' +
-                                  'font-weight: 900;' +
-                                  'margin: 10px 0;' +
-                                  'text-transform: uppercase;' +
-                                  'color: #000;' +
-                                  'letter-spacing: 0.5px;' +
+                                '@media print {' +
+                                  '.no-print { display: none !important; }' +
+                                  'html, body { background: #fff !important; padding: 0 !important; }' +
+                                  '.page {' +
+                                    'width: 297mm;' +
+                                    'height: 210mm;' +
+                                    'border: none !important;' +
+                                    'box-shadow: none !important;' +
+                                    'box-sizing: border-box;' +
+                                    'padding: 12mm;' +
+                                    'display: flex;' +
+                                    'flex-direction: column;' +
+                                    'align-items: center;' +
+                                    'justify-content: space-around;' +
+                                    'page-break-after: always;' +
+                                  '}' +
+                                  '.shape-container {' +
+                                    'width: 100%;' +
+                                    'height: 45%;' +
+                                    'display: flex;' +
+                                    'align-items: center;' +
+                                    'justify-content: center;' +
+                                  '}' +
+                                  '.info-container {' +
+                                    'width: 100%;' +
+                                    'height: 48%;' +
+                                    'display: flex;' +
+                                    'flex-direction: column;' +
+                                    'align-items: center;' +
+                                    'justify-content: center;' +
+                                    'text-align: center;' +
+                                  '}' +
+                                  '.info-text1 {' +
+                                    'font-size: 32pt;' +
+                                    'font-weight: 800;' +
+                                    'margin: 8px 0;' +
+                                    'text-transform: uppercase;' +
+                                    'color: #000;' +
+                                    'letter-spacing: 0.5px;' +
+                                  '}' +
+                                  '.info-text2 {' +
+                                    'font-size: 40pt;' +
+                                    'font-weight: 900;' +
+                                    'margin: 8px 0;' +
+                                    'text-transform: uppercase;' +
+                                    'color: #000;' +
+                                    'letter-spacing: 0.5px;' +
+                                  '}' +
                                 '}' +
                               '</style>' +
                             '</head>' +
@@ -10072,7 +10128,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                           htmlContent += '</body></html>';
 
-                          const printWin = window.open('', '_blank', 'width=1000,height=800,resizable=yes,scrollbars=yes');
+                          const printWin = window.open('', '_blank', 'width=1100,height=750,resizable=yes,scrollbars=yes');
                           if (printWin) {
                             printWin.document.open();
                             printWin.document.write(htmlContent);

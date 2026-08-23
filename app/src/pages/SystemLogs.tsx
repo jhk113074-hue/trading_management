@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.392',
+    version: 'v2.8.392',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 인쇄 팝업 창 스크롤바 제거 및 반응형 뷰포트 맞춤 렌더링',
+    content: '• 쉬핑마크 인쇄/출력 팝업 창에서 화면 높이 초과로 인해 발생하던 스크롤바를 완전히 제거하고, 화면 뷰포트 크기에 딱 맞춰 한눈에 시원하게 보이도록 반응형 스타일링 개선',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.391',
+    version: 'v2.8.391',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 하단 텍스트(도착항/국가, PALLET NO, 원산지) 글씨 크기 확대',
+    content: '• 쉬핑마크 도형 하단에 표기되는 도착항/국가, PALLET NO.(강조), MADE IN KOREA 텍스트 폰트 크기를 비율에 맞춰 시원하고 큼직하게 확대 개선 (Excel 생성, 미리보기 화면, 대형 라벨 인쇄 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.390',
     version: 'v2.8.390',
     date: '2026-08-23',

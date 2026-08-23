@@ -101,16 +101,39 @@ export const generateShippingMarkPngBase64 = (opts: {
     const shapeCenterY = shape === 'triangle' ? 76 : 60;
     ctx.fillText(comp, 120, shapeCenterY);
 
-    // Text below shape
-    ctx.font = 'bold 12px Tahoma';
+    // Text below shape - dynamically maximize font sizes in proportion
     ctx.fillStyle = '#000000';
+
     const portCountry = [opts.port, opts.country].filter(Boolean).join(', ').toUpperCase() || 'BUSAN, KOREA';
     const pltNo = opts.palletNoText || 'PALLET NO. : 1 / 1';
     const origin = opts.origin || 'MADE IN KOREA';
 
-    ctx.fillText(portCountry, 120, 142);
+    // Port & Country
+    let fSize1 = 16;
+    ctx.font = `bold ${fSize1}px Tahoma`;
+    while (fSize1 > 10 && ctx.measureText(portCountry).width > 225) {
+      fSize1 -= 1;
+      ctx.font = `bold ${fSize1}px Tahoma`;
+    }
+    ctx.fillText(portCountry, 120, 138);
+
+    // Pallet No (Emphasized primary text)
+    let fSize2 = 19;
+    ctx.font = `bold ${fSize2}px Tahoma`;
+    while (fSize2 > 11 && ctx.measureText(pltNo).width > 225) {
+      fSize2 -= 1;
+      ctx.font = `bold ${fSize2}px Tahoma`;
+    }
     ctx.fillText(pltNo, 120, 172);
-    ctx.fillText(origin, 120, 202);
+
+    // Origin
+    let fSize3 = 16;
+    ctx.font = `bold ${fSize3}px Tahoma`;
+    while (fSize3 > 10 && ctx.measureText(origin).width > 225) {
+      fSize3 -= 1;
+      ctx.font = `bold ${fSize3}px Tahoma`;
+    }
+    ctx.fillText(origin, 120, 206);
 
     const dataUrl = canvas.toDataURL('image/png');
     return dataUrl.split(',')[1];
