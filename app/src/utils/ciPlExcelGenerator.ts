@@ -526,7 +526,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`L${r}`).numFmt = '$#,##0.00';
 
         for (let c = 1; c <= 12; c++) {
-          ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+          const b: Partial<ExcelJS.Borders> = {};
+          if (c === 1 || c === 3) b.left = thinBorder;
+          if (c === 2 || c === 12) b.right = thinBorder;
+          ws.getCell(r, c).border = b;
         }
         currRow++;
       });
@@ -580,7 +583,10 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`L${r}`).numFmt = '$#,##0.00';
 
         for (let c = 1; c <= 12; c++) {
-          ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+          const b: Partial<ExcelJS.Borders> = {};
+          if (c === 1 || c === 3) b.left = thinBorder;
+          if (c === 2 || c === 12) b.right = thinBorder;
+          ws.getCell(r, c).border = b;
         }
         currRow++;
       });

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.386',
+    version: 'v2.8.386',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: 'CI 품목 표 데이터 영역 내부의 모든 테두리(가로/세로선) 완전 제거',
+    content: '• Commercial Invoice 품목 표 본문(일반 품목, 빈 여백, 운송비 행 전체) 내부의 모든 가로 격자선 및 세로 칸구획선을 제거하여, 테이블 외곽선 및 쉬핑마크 구분선만 남기고 깔끔한 무역 표준 서식으로 개선 (Excel 및 미리보기 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.385',
     version: 'v2.8.385',
     date: '2026-08-23',

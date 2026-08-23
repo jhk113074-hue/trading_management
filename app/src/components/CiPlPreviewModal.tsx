@@ -247,7 +247,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
   };
 
   const tdItemStyle: React.CSSProperties = {
-    border: '1px solid #000',
+    border: 'none',
     padding: '5px 6px',
     color: '#000',
     fontSize: '10.5px'
@@ -645,11 +645,11 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       {regularItems.map((item, idx) => (
                         <tr key={`reg-${idx}`}>
                           {!data.introText && idx === 0 && (
-                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, borderLeft: '1px solid #000', borderRight: '1px solid #000', textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
                               {renderGraphicShippingMark()}
                             </td>
                           )}
-                          <td style={{ ...tdItemStyle, padding: '6px 8px' }}>
+                          <td style={{ ...tdItemStyle, borderLeft: '1px solid #000', padding: '6px 8px' }}>
                             <div style={{ fontWeight: 400, fontSize: '10px' }}>{item.name}</div>
                           </td>
                           <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px' }}>
@@ -661,7 +661,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                           <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px' }}>
                             US${Number(item.unitPrice).toFixed(2)}
                           </td>
-                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px', fontWeight: 400 }}>
+                          <td style={{ ...tdItemStyle, borderRight: '1px solid #000', textAlign: 'right', fontSize: '10px', fontWeight: 400 }}>
                             US${Number(item.amount || ((item.qty || 0) * (item.unitPrice || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                         </tr>
@@ -671,24 +671,24 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                       {emptyCount > 0 && (
                         <tr style={{ height: `${emptyCount * 26}px` }}>
                           {!data.introText && regularItems.length === 0 && (
-                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
+                            <td rowSpan={totalItemRows} style={{ ...tdItemStyle, borderLeft: '1px solid #000', borderRight: '1px solid #000', textAlign: 'center', verticalAlign: 'middle', padding: '10px 4px', background: '#fff' }}>
                               {renderGraphicShippingMark()}
                             </td>
                           )}
-                          <td colSpan={5} style={{ borderLeft: 'none', borderRight: '1px solid #000', borderTop: 'none', borderBottom: 'none', background: '#fff' }}></td>
+                          <td colSpan={5} style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: 'none', borderBottom: 'none', background: '#fff' }}></td>
                         </tr>
                       )}
 
                       {/* 3. Freight items at the bottom */}
                       {freightItems.map((item, fIdx) => (
                         <tr key={`freight-${fIdx}`}>
-                          <td style={{ ...tdItemStyle, padding: '6px 8px', fontWeight: 700, fontSize: '10px' }}>
+                          <td style={{ ...tdItemStyle, borderLeft: '1px solid #000', padding: '6px 8px', fontWeight: 700, fontSize: '10px' }}>
                             {item.name}
                           </td>
                           <td style={tdItemStyle}></td>
                           <td style={tdItemStyle}></td>
                           <td style={tdItemStyle}></td>
-                          <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '10px', fontWeight: 700 }}>
+                          <td style={{ ...tdItemStyle, borderRight: '1px solid #000', textAlign: 'right', fontSize: '10px', fontWeight: 700 }}>
                             US${Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                         </tr>
@@ -696,11 +696,11 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
                       {/* CI Total row */}
                       <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
-                        <td style={{ ...tdItemStyle, textAlign: 'center', fontWeight: 900 }} colSpan={2}>TOTAL AMOUNT</td>
-                        <td style={{ ...tdItemStyle, textAlign: 'right', fontWeight: 900 }}>{totalQtyCI.toLocaleString()}</td>
-                        <td style={tdItemStyle}></td>
-                        <td style={tdItemStyle}></td>
-                        <td style={{ ...tdItemStyle, textAlign: 'right', fontSize: '11px', fontWeight: 900 }}>US${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ ...tdItemStyle, border: '1px solid #000', borderBottom: '3px double #000', textAlign: 'center', fontWeight: 900 }} colSpan={2}>TOTAL AMOUNT</td>
+                        <td style={{ ...tdItemStyle, borderTop: '1px solid #000', borderBottom: '3px double #000', textAlign: 'right', fontWeight: 900 }}>{totalQtyCI.toLocaleString()}</td>
+                        <td style={{ ...tdItemStyle, borderTop: '1px solid #000', borderBottom: '3px double #000' }}></td>
+                        <td style={{ ...tdItemStyle, borderTop: '1px solid #000', borderBottom: '3px double #000' }}></td>
+                        <td style={{ ...tdItemStyle, border: '1px solid #000', borderBottom: '3px double #000', textAlign: 'right', fontSize: '11px', fontWeight: 900 }}>US${totalAmountCI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       </tr>
                     </tbody>
                   </table>
