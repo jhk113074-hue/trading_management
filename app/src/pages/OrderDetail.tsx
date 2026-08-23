@@ -5603,11 +5603,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const palletList = Array.from(new Set(rawPalletList));
         if (palletList.length === 0) palletList.push('1');
 
-        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 45%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text1 { font-size: 34pt; font-weight: 800; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; } .info-text2 { font-size: 42pt; font-weight: 900; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
+        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 44%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text { font-size: 38pt; font-weight: 900; margin: 6px 0; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }</style></head><body>';
 
         for (const pNum of palletList) {
           const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
-          htmlContent += '<div class="page"><div class="shape-container">' + shapeHtml + '</div><div class="info-container"><div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div><div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div><div class="info-text1">' + originVal + '</div></div></div>';
+          htmlContent += '<div class="page"><div class="shape-container">' + shapeHtml + '</div><div class="info-container"><div class="info-text">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div><div class="info-text">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div><div class="info-text">' + originVal + '</div></div></div>';
         }
         htmlContent += '</body></html>';
 
@@ -10029,32 +10029,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 48%;' +
+                                    'height: 44%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 46%;' +
+                                    'height: 50%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                     'text-align: center;' +
                                   '}' +
-                                  '.info-text1 {' +
-                                    'font-size: clamp(14pt, 3.2vh, 26pt);' +
-                                    'font-weight: 800;' +
-                                    'margin: 0.5vh 0;' +
-                                    'text-transform: uppercase;' +
-                                    'color: #000;' +
-                                    'letter-spacing: 0.5px;' +
-                                  '}' +
-                                  '.info-text2 {' +
-                                    'font-size: clamp(18pt, 4.4vh, 34pt);' +
+                                  '.info-text {' +
+                                    'font-size: clamp(18pt, 4.4vh, 32pt);' +
                                     'font-weight: 900;' +
-                                    'margin: 0.8vh 0;' +
+                                    'margin: 0.6vh 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
                                     'letter-spacing: 0.5px;' +
@@ -10078,32 +10070,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 45%;' +
+                                    'height: 44%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 48%;' +
+                                    'height: 50%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                     'text-align: center;' +
                                   '}' +
-                                  '.info-text1 {' +
-                                    'font-size: 32pt;' +
-                                    'font-weight: 800;' +
-                                    'margin: 8px 0;' +
-                                    'text-transform: uppercase;' +
-                                    'color: #000;' +
-                                    'letter-spacing: 0.5px;' +
-                                  '}' +
-                                  '.info-text2 {' +
-                                    'font-size: 40pt;' +
+                                  '.info-text {' +
+                                    'font-size: 38pt;' +
                                     'font-weight: 900;' +
-                                    'margin: 8px 0;' +
+                                    'margin: 6px 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
                                     'letter-spacing: 0.5px;' +
@@ -10119,9 +10103,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             htmlContent += '<div class="page">' +
                               '<div class="shape-container">' + shapeHtml + '</div>' +
                               '<div class="info-container">' +
-                                '<div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
-                                '<div class="info-text2">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div>' +
-                                '<div class="info-text1">' + originVal + '</div>' +
+                                '<div class="info-text">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
+                                '<div class="info-text">PALLET NO. : ' + pNum + ' / ' + grandTotalPlt + '</div>' +
+                                '<div class="info-text">' + originVal + '</div>' +
                               '</div>' +
                             '</div>';
                           }

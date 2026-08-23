@@ -166,10 +166,10 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5px', lineHeight: 1.3, padding: '8px 2px' }}>
         {shapeSvg}
-        <div style={{ textAlign: 'center', textTransform: 'uppercase', color: '#000', marginTop: '6px', lineHeight: 1.35, letterSpacing: '0.2px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 800 }}>{portCountry}</div>
+        <div style={{ textAlign: 'center', textTransform: 'uppercase', color: '#000', marginTop: '6px', lineHeight: 1.38, letterSpacing: '0.2px' }}>
+          <div style={{ fontSize: '13.5px', fontWeight: 900 }}>{portCountry}</div>
           <div style={{ fontSize: '13.5px', fontWeight: 900, margin: '2px 0' }}>{pltNo}</div>
-          <div style={{ fontSize: '12px', fontWeight: 800 }}>{origin}</div>
+          <div style={{ fontSize: '13.5px', fontWeight: 900 }}>{origin}</div>
         </div>
       </div>
     );

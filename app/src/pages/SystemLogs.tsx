@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.393',
+    version: 'v2.8.393',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 하단 텍스트(3개 행)를 모두 동일한 최대 크기 및 굵기로 일원화',
+    content: '• 쉬핑마크 하단의 3개 정보(도착항/국가, PALLET NO, 원산지) 글씨 크기를 모두 동일한 초대형 굵은 폰트(Extra Bold)로 일원화하여 시인성과 가독성을 극대화 (Excel 생성, 미리보기 화면, 대형 라벨 인쇄 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.392',
     version: 'v2.8.392',
     date: '2026-08-23',
