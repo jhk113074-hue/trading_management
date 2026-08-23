@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.383',
+    version: 'v2.8.383',
+    date: '2026-08-23',
+    category: '버그수정',
+    title: 'Excel styles.xml 복구 오류 해결 및 쉬핑마크 왜곡/비율 완벽 수정',
+    content: '• Excel 열기 시 styles.xml 서식 복구 오류 원인이었던 border 객체 미정의 속성 직렬화 버그 완벽 제거\\n• 쉬핑마크(Shipping Mark)가 병합 셀 높이에 따라 상하로 길게 늘어지거나 왜곡되던 현상을 ext(고정 픽셀 규격 1:1.1 비율) 렌더링으로 변경하여 왜곡 없는 선명한 다이아몬드/텍스트 그래픽으로 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.382',
     version: 'v2.8.382',
     date: '2026-08-23',

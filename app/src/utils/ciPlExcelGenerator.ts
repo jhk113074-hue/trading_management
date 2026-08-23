@@ -48,8 +48,8 @@ export const generateShippingMarkPngBase64 = (opts: {
   if (typeof document === 'undefined') return null;
   try {
     const canvas = document.createElement('canvas');
-    canvas.width = 320;
-    canvas.height = 340;
+    canvas.width = 240;
+    canvas.height = 260;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
@@ -57,7 +57,7 @@ export const generateShippingMarkPngBase64 = (opts: {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 4.5;
+    ctx.lineWidth = 3.5;
 
     const shape = opts.shape || 'diamond';
     const comp = opts.company || 'YSACC';
@@ -65,20 +65,20 @@ export const generateShippingMarkPngBase64 = (opts: {
     // Draw shape
     ctx.beginPath();
     if (shape === 'circle') {
-      ctx.arc(160, 80, 60, 0, Math.PI * 2);
+      ctx.arc(120, 60, 46, 0, Math.PI * 2);
     } else if (shape === 'square') {
-      ctx.rect(80, 25, 160, 115);
+      ctx.rect(60, 18, 120, 84);
     } else if (shape === 'triangle') {
-      ctx.moveTo(160, 20);
-      ctx.lineTo(250, 145);
-      ctx.lineTo(70, 145);
+      ctx.moveTo(120, 14);
+      ctx.lineTo(190, 104);
+      ctx.lineTo(50, 104);
       ctx.closePath();
     } else {
       // Diamond
-      ctx.moveTo(160, 18);
-      ctx.lineTo(260, 85);
-      ctx.lineTo(160, 152);
-      ctx.lineTo(60, 85);
+      ctx.moveTo(120, 12);
+      ctx.lineTo(195, 60);
+      ctx.lineTo(120, 108);
+      ctx.lineTo(45, 60);
       ctx.closePath();
     }
     ctx.stroke();
@@ -87,20 +87,20 @@ export const generateShippingMarkPngBase64 = (opts: {
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = comp.length > 12 ? 'bold 16px Tahoma' : (comp.length > 8 ? 'bold 19px Tahoma' : 'bold 22px Tahoma');
-    const shapeCenterY = shape === 'triangle' ? 105 : 85;
-    ctx.fillText(comp, 160, shapeCenterY);
+    ctx.font = comp.length > 12 ? 'bold 12px Tahoma' : (comp.length > 8 ? 'bold 14px Tahoma' : 'bold 16px Tahoma');
+    const shapeCenterY = shape === 'triangle' ? 76 : 60;
+    ctx.fillText(comp, 120, shapeCenterY);
 
     // Text below shape
-    ctx.font = 'bold 15px Tahoma';
+    ctx.font = 'bold 12px Tahoma';
     ctx.fillStyle = '#000000';
     const portCountry = [opts.port, opts.country].filter(Boolean).join(', ').toUpperCase() || 'BUSAN, KOREA';
     const pltNo = opts.palletNoText || 'PALLET NO. : 1 / 1';
     const origin = opts.origin || 'MADE IN KOREA';
 
-    ctx.fillText(portCountry, 160, 195);
-    ctx.fillText(pltNo, 160, 235);
-    ctx.fillText(origin, 160, 275);
+    ctx.fillText(portCountry, 120, 142);
+    ctx.fillText(pltNo, 120, 172);
+    ctx.fillText(origin, 120, 202);
 
     const dataUrl = canvas.toDataURL('image/png');
     return dataUrl.split(',')[1];
@@ -163,20 +163,18 @@ const applyOuterBorder = (
   startRow: number,
   endRow: number,
   startCol: number,
-  endCol: number,
-  borderStyle: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: 'FF000000' } }
+  endCol: number
 ) => {
+  const thin: ExcelJS.Border = { style: 'thin', color: { argb: 'FF000000' } };
   for (let r = startRow; r <= endRow; r++) {
     for (let c = startCol; c <= endCol; c++) {
       const cell = ws.getCell(r, c);
-      const existing = cell.border || {};
-      cell.border = {
-        ...existing,
-        top: r === startRow ? borderStyle : existing.top,
-        bottom: r === endRow ? borderStyle : existing.bottom,
-        left: c === startCol ? borderStyle : existing.left,
-        right: c === endCol ? borderStyle : existing.right,
-      };
+      const b: Partial<ExcelJS.Borders> = {};
+      if (r === startRow) b.top = thin;
+      if (r === endRow) b.bottom = thin;
+      if (c === startCol) b.left = thin;
+      if (c === endCol) b.right = thin;
+      cell.border = b;
     }
   }
 };
@@ -589,8 +587,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           try {
             const smImgId = workbook.addImage({ base64: smBase64, extension: 'png' });
             ws.addImage(smImgId, {
-              tl: { col: 0.1, row: itemStartRow - 1 + 0.1 } as any,
-              br: { col: 1.9, row: itemEndRow - 0.1 } as any,
+              tl: { col: 0.08, row: itemStartRow - 1 + 0.12 } as any,
+              ext: { width: 120, height: 135 },
               editAs: 'oneCell'
             });
           } catch (err) {
@@ -1075,8 +1073,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
             try {
               const plSmImgId = workbook.addImage({ base64: plSmBase64, extension: 'png' });
               ws.addImage(plSmImgId, {
-                tl: { col: 0.1, row: cStartRow - 1 + 0.1 } as any,
-                br: { col: 2.9, row: cStartRow - 1 + Math.min(3.8, cEndRow - cStartRow + 0.8) } as any,
+                tl: { col: 0.35, row: cStartRow - 1 + 0.12 } as any,
+                ext: { width: 120, height: 135 },
                 editAs: 'oneCell'
               });
             } catch (err) {
