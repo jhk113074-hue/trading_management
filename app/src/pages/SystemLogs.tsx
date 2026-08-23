@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.395',
+    version: 'v2.8.395',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 도형(다이아몬드 외) 크기 및 내부 텍스트 최대화',
+    content: '• 쉬핑마크 상단 도형(다이아몬드, 사각형, 원형, 삼각형)의 가로/세로 크기를 용지 및 캔버스 폭을 가득 채우도록 최대화하고, 내부 회사명 폰트와 선 굵기도 균형 있게 확대 (라벨 인쇄, 미리보기, Excel 동시 적용)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.394',
     version: 'v2.8.394',
     date: '2026-08-23',

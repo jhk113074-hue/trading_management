@@ -62,23 +62,23 @@ export const generateShippingMarkPngBase64 = (opts: {
     const shape = opts.shape || 'diamond';
     const comp = opts.company || 'YSACC';
 
-    // Draw shape
+    // Draw shape (Maximized geometry)
     ctx.beginPath();
     if (shape === 'circle') {
-      ctx.arc(120, 60, 46, 0, Math.PI * 2);
+      ctx.arc(120, 58, 52, 0, Math.PI * 2);
     } else if (shape === 'square') {
-      ctx.rect(60, 18, 120, 84);
+      ctx.rect(20, 10, 200, 96);
     } else if (shape === 'triangle') {
-      ctx.moveTo(120, 14);
-      ctx.lineTo(190, 104);
-      ctx.lineTo(50, 104);
+      ctx.moveTo(120, 8);
+      ctx.lineTo(228, 108);
+      ctx.lineTo(12, 108);
       ctx.closePath();
     } else {
       // Diamond
-      ctx.moveTo(120, 12);
-      ctx.lineTo(195, 60);
-      ctx.lineTo(120, 108);
-      ctx.lineTo(45, 60);
+      ctx.moveTo(120, 6);
+      ctx.lineTo(228, 58);
+      ctx.lineTo(120, 110);
+      ctx.lineTo(12, 58);
       ctx.closePath();
     }
     ctx.stroke();
@@ -88,17 +88,17 @@ export const generateShippingMarkPngBase64 = (opts: {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const maxTextWidth = shape === 'diamond' ? 108 : (shape === 'triangle' ? 84 : 110);
-    const maxTextHeight = shape === 'diamond' ? 42 : (shape === 'triangle' ? 36 : 46);
+    const maxTextWidth = shape === 'diamond' ? 145 : (shape === 'triangle' ? 110 : 160);
+    const maxTextHeight = shape === 'diamond' ? 52 : (shape === 'triangle' ? 44 : 56);
 
-    let fontSize = 28;
+    let fontSize = 34;
     ctx.font = `bold ${fontSize}px Tahoma`;
-    while (fontSize > 10 && (ctx.measureText(comp).width > maxTextWidth || fontSize > maxTextHeight)) {
+    while (fontSize > 11 && (ctx.measureText(comp).width > maxTextWidth || fontSize > maxTextHeight)) {
       fontSize -= 1;
       ctx.font = `bold ${fontSize}px Tahoma`;
     }
 
-    const shapeCenterY = shape === 'triangle' ? 76 : 60;
+    const shapeCenterY = shape === 'triangle' ? 76 : 58;
     ctx.fillText(comp, 120, shapeCenterY);
 
     // Text below shape - uniformly maximize font size across all 3 lines

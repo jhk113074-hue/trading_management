@@ -129,35 +129,35 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
     let shapeSvg = null;
     if (shape === 'circle') {
-      const fSize = comp.length > 10 ? '13' : (comp.length > 7 ? '15.5' : (comp.length > 5 ? '17.5' : '20'));
+      const fSize = comp.length > 10 ? '14' : (comp.length > 7 ? '17' : (comp.length > 5 ? '19.5' : '22'));
       shapeSvg = (
-        <svg width="76" height="76" style={{ display: 'block', margin: '0 auto' }}>
-          <circle cx="38" cy="38" r="34" stroke="black" strokeWidth="2.8" fill="none" />
+        <svg width="88" height="88" style={{ display: 'block', margin: '0 auto' }}>
+          <circle cx="44" cy="44" r="40" stroke="black" strokeWidth="3" fill="none" />
           <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'square') {
-      const fSize = comp.length > 10 ? '13' : (comp.length > 7 ? '15.5' : (comp.length > 5 ? '18' : '21'));
+      const fSize = comp.length > 10 ? '14' : (comp.length > 7 ? '17' : (comp.length > 5 ? '20' : '23'));
       shapeSvg = (
-        <svg width="84" height="64" style={{ display: 'block', margin: '0 auto' }}>
-          <rect x="4" y="4" width="76" height="56" stroke="black" strokeWidth="2.8" fill="none" />
+        <svg width="102" height="74" style={{ display: 'block', margin: '0 auto' }}>
+          <rect x="4" y="4" width="94" height="66" stroke="black" strokeWidth="3" fill="none" />
           <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'triangle') {
-      const fSize = comp.length > 10 ? '12' : (comp.length > 7 ? '14' : (comp.length > 5 ? '16' : '18.5'));
+      const fSize = comp.length > 10 ? '13' : (comp.length > 7 ? '15.5' : (comp.length > 5 ? '18' : '21'));
       shapeSvg = (
-        <svg width="84" height="70" style={{ display: 'block', margin: '0 auto' }}>
-          <polygon points="42,4 4,66 80,66" stroke="black" strokeWidth="2.8" fill="none" />
+        <svg width="102" height="80" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="51,4 4,76 98,76" stroke="black" strokeWidth="3" fill="none" />
           <text x="50%" y="68%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else {
       // Diamond
-      const fSize = comp.length > 11 ? '12' : (comp.length > 8 ? '14.5' : (comp.length > 5 ? '17' : '20.5'));
+      const fSize = comp.length > 11 ? '13.5' : (comp.length > 8 ? '16' : (comp.length > 5 ? '19' : '23'));
       shapeSvg = (
-        <svg width="92" height="64" style={{ display: 'block', margin: '0 auto' }}>
-          <polygon points="46,4 88,32 46,60 4,32" stroke="black" strokeWidth="2.8" fill="none" />
+        <svg width="112" height="74" style={{ display: 'block', margin: '0 auto' }}>
+          <polygon points="56,4 108,37 56,70 4,37" stroke="black" strokeWidth="3" fill="none" />
           <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );

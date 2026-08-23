@@ -5572,17 +5572,17 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           };
 
           if (shape === 'circle') {
-            const fSize = calcLargeFontSize(95);
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+            const fSize = calcLargeFontSize(120);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" style="height: 100%; width: 100%; max-height: 100%;"><circle cx="250" cy="175" r="160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else if (shape === 'square') {
-            const fSize = calcLargeFontSize(95);
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+            const fSize = calcLargeFontSize(125);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 300" style="height: 100%; width: 100%; max-height: 100%;"><rect x="15" y="15" width="720" height="270" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else if (shape === 'triangle') {
-            const fSize = calcLargeFontSize(80);
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+            const fSize = calcLargeFontSize(95);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 340" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="375,15 15,325 735,325" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else {
-            const fSize = calcLargeFontSize(98);
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+            const fSize = calcLargeFontSize(135);
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 320" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="475,8 940,160 475,312 10,160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           }
         };
 
@@ -5603,7 +5603,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const palletList = Array.from(new Set(rawPalletList));
         if (palletList.length === 0) palletList.push('1');
 
-        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 12mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 40%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 56%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text { font-size: 52pt; font-weight: 900; margin: 8px 0; text-transform: uppercase; color: #000; letter-spacing: 1px; line-height: 1.35; }</style></head><body>';
+        let htmlContent = '<html><head><title>PLT Shipping Marks - ' + supplierName + '</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");@page { size: A4 landscape; margin: 0; } body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; } .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 10mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; } .shape-container { width: 100%; height: 46%; display: flex; align-items: center; justify-content: center; } .info-container { width: 100%; height: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; } .info-text { font-size: 50pt; font-weight: 900; margin: 6px 0; text-transform: uppercase; color: #000; letter-spacing: 1px; line-height: 1.3; }</style></head><body>';
 
         for (const pNum of palletList) {
           const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
@@ -9968,17 +9968,17 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             };
 
                             if (shape === 'circle') {
-                              const fSize = calcLargeFontSize(95);
-                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                              const fSize = calcLargeFontSize(120);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" style="height: 100%; width: 100%; max-height: 100%;"><circle cx="250" cy="175" r="160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else if (shape === 'square') {
-                              const fSize = calcLargeFontSize(95);
-                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                              const fSize = calcLargeFontSize(125);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 300" style="height: 100%; width: 100%; max-height: 100%;"><rect x="15" y="15" width="720" height="270" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else if (shape === 'triangle') {
-                              const fSize = calcLargeFontSize(80);
-                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                              const fSize = calcLargeFontSize(95);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 340" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="375,15 15,325 735,325" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else {
-                              const fSize = calcLargeFontSize(98);
-                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                              const fSize = calcLargeFontSize(135);
+                              return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 320" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="475,8 940,160 475,312 10,160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             }
                           };
 
@@ -10021,7 +10021,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'border: 1px solid #cbd5e1;' +
                                     'border-radius: 4px;' +
                                     'box-sizing: border-box;' +
-                                    'padding: 2.5vh 3vw;' +
+                                    'padding: 2vh 2.5vw;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10029,14 +10029,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 40%;' +
+                                    'height: 46%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 56%;' +
+                                    'height: 50%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10044,13 +10044,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'text-align: center;' +
                                   '}' +
                                   '.info-text {' +
-                                    'font-size: clamp(24pt, 5.8vh, 44pt);' +
+                                    'font-size: clamp(22pt, 5.2vh, 40pt);' +
                                     'font-weight: 900;' +
-                                    'margin: 0.7vh 0;' +
+                                    'margin: 0.6vh 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
                                     'letter-spacing: 0.8px;' +
-                                    'line-height: 1.35;' +
+                                    'line-height: 1.3;' +
                                   '}' +
                                 '}' +
                                 '@media print {' +
@@ -10062,7 +10062,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'border: none !important;' +
                                     'box-shadow: none !important;' +
                                     'box-sizing: border-box;' +
-                                    'padding: 12mm;' +
+                                    'padding: 10mm;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10071,14 +10071,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   '}' +
                                   '.shape-container {' +
                                     'width: 100%;' +
-                                    'height: 40%;' +
+                                    'height: 46%;' +
                                     'display: flex;' +
                                     'align-items: center;' +
                                     'justify-content: center;' +
                                   '}' +
                                   '.info-container {' +
                                     'width: 100%;' +
-                                    'height: 56%;' +
+                                    'height: 50%;' +
                                     'display: flex;' +
                                     'flex-direction: column;' +
                                     'align-items: center;' +
@@ -10086,13 +10086,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     'text-align: center;' +
                                   '}' +
                                   '.info-text {' +
-                                    'font-size: 52pt;' +
+                                    'font-size: 50pt;' +
                                     'font-weight: 900;' +
-                                    'margin: 8px 0;' +
+                                    'margin: 6px 0;' +
                                     'text-transform: uppercase;' +
                                     'color: #000;' +
                                     'letter-spacing: 1px;' +
-                                    'line-height: 1.35;' +
+                                    'line-height: 1.3;' +
                                   '}' +
                                 '}' +
                               '</style>' +
