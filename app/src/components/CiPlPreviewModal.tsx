@@ -129,32 +129,36 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
 
     let shapeSvg = null;
     if (shape === 'circle') {
+      const fSize = comp.length > 10 ? '13' : (comp.length > 7 ? '15.5' : (comp.length > 5 ? '17.5' : '20'));
       shapeSvg = (
         <svg width="76" height="76" style={{ display: 'block', margin: '0 auto' }}>
           <circle cx="38" cy="38" r="34" stroke="black" strokeWidth="2.8" fill="none" />
-          <text x="50%" y="54%" fontSize="13" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+          <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'square') {
+      const fSize = comp.length > 10 ? '13' : (comp.length > 7 ? '15.5' : (comp.length > 5 ? '18' : '21'));
       shapeSvg = (
         <svg width="84" height="64" style={{ display: 'block', margin: '0 auto' }}>
           <rect x="4" y="4" width="76" height="56" stroke="black" strokeWidth="2.8" fill="none" />
-          <text x="50%" y="54%" fontSize="13" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+          <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else if (shape === 'triangle') {
+      const fSize = comp.length > 10 ? '12' : (comp.length > 7 ? '14' : (comp.length > 5 ? '16' : '18.5'));
       shapeSvg = (
         <svg width="84" height="70" style={{ display: 'block', margin: '0 auto' }}>
           <polygon points="42,4 4,66 80,66" stroke="black" strokeWidth="2.8" fill="none" />
-          <text x="50%" y="68%" fontSize="12" fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+          <text x="50%" y="68%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     } else {
       // Diamond
+      const fSize = comp.length > 11 ? '12' : (comp.length > 8 ? '14.5' : (comp.length > 5 ? '17' : '20.5'));
       shapeSvg = (
         <svg width="92" height="64" style={{ display: 'block', margin: '0 auto' }}>
           <polygon points="46,4 88,32 46,60 4,32" stroke="black" strokeWidth="2.8" fill="none" />
-          <text x="50%" y="54%" fontSize={comp.length > 11 ? '10.5' : (comp.length > 8 ? '12' : '13.5')} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
+          <text x="50%" y="54%" fontSize={fSize} fontWeight="bold" fontFamily="Tahoma, sans-serif" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text>
         </svg>
       );
     }

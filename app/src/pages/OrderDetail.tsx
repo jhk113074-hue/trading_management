@@ -5564,23 +5564,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           const strokeColor = '#000000';
           const calcLargeFontSize = (baseSize: number) => {
             if (len <= 4) return baseSize;
-            if (len <= 7) return Math.round(baseSize * 0.82);
-            if (len <= 10) return Math.round(baseSize * 0.65);
-            if (len <= 14) return Math.round(baseSize * 0.48);
-            return Math.round(baseSize * 0.38);
+            if (len <= 6) return Math.round(baseSize * 0.96);
+            if (len <= 8) return Math.round(baseSize * 0.86);
+            if (len <= 11) return Math.round(baseSize * 0.74);
+            if (len <= 14) return Math.round(baseSize * 0.60);
+            return Math.round(baseSize * 0.48);
           };
 
           if (shape === 'circle') {
-            const fSize = calcLargeFontSize(70);
+            const fSize = calcLargeFontSize(95);
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else if (shape === 'square') {
-            const fSize = calcLargeFontSize(70);
+            const fSize = calcLargeFontSize(95);
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else if (shape === 'triangle') {
-            const fSize = calcLargeFontSize(60);
+            const fSize = calcLargeFontSize(80);
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           } else {
-            const fSize = calcLargeFontSize(68);
+            const fSize = calcLargeFontSize(98);
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
           }
         };
@@ -9959,23 +9960,24 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
 
                             const calcLargeFontSize = (baseSize: number) => {
                               if (len <= 4) return baseSize;
-                              if (len <= 7) return Math.round(baseSize * 0.82);
-                              if (len <= 10) return Math.round(baseSize * 0.65);
-                              if (len <= 14) return Math.round(baseSize * 0.48);
-                              return Math.round(baseSize * 0.38);
+                              if (len <= 6) return Math.round(baseSize * 0.96);
+                              if (len <= 8) return Math.round(baseSize * 0.86);
+                              if (len <= 11) return Math.round(baseSize * 0.74);
+                              if (len <= 14) return Math.round(baseSize * 0.60);
+                              return Math.round(baseSize * 0.48);
                             };
 
                             if (shape === 'circle') {
-                              const fSize = calcLargeFontSize(70);
+                              const fSize = calcLargeFontSize(95);
                               return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else if (shape === 'square') {
-                              const fSize = calcLargeFontSize(70);
+                              const fSize = calcLargeFontSize(95);
                               return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; width: auto; max-width: 100%;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else if (shape === 'triangle') {
-                              const fSize = calcLargeFontSize(60);
+                              const fSize = calcLargeFontSize(80);
                               return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; width: auto; max-width: 100%;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             } else {
-                              const fSize = calcLargeFontSize(68);
+                              const fSize = calcLargeFontSize(98);
                               return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" style="height: 100%; width: auto; max-width: 100%;"><polygon points="350,15 680,140 350,265 20,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
                             }
                           };

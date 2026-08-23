@@ -83,11 +83,21 @@ export const generateShippingMarkPngBase64 = (opts: {
     }
     ctx.stroke();
 
-    // Company name inside shape
+    // Company name inside shape - dynamically maximize font size to fill shape without overflowing
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = comp.length > 12 ? 'bold 12px Tahoma' : (comp.length > 8 ? 'bold 14px Tahoma' : 'bold 16px Tahoma');
+
+    const maxTextWidth = shape === 'diamond' ? 108 : (shape === 'triangle' ? 84 : 110);
+    const maxTextHeight = shape === 'diamond' ? 42 : (shape === 'triangle' ? 36 : 46);
+
+    let fontSize = 28;
+    ctx.font = `bold ${fontSize}px Tahoma`;
+    while (fontSize > 10 && (ctx.measureText(comp).width > maxTextWidth || fontSize > maxTextHeight)) {
+      fontSize -= 1;
+      ctx.font = `bold ${fontSize}px Tahoma`;
+    }
+
     const shapeCenterY = shape === 'triangle' ? 76 : 60;
     ctx.fillText(comp, 120, shapeCenterY);
 
