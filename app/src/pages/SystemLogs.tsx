@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.389',
+    version: 'v2.8.389',
+    date: '2026-08-23',
+    category: 'UI/UX',
+    title: '쉬핑마크 도형 테두리 선 색상을 검은색(#000000)으로 일원화',
+    content: '• 대형 쉬핑마크 출력/라벨 인쇄 시 다이아몬드/원형/사각형 등의 테두리선이 파란색으로 표시되던 부분을 선명한 검은색(#000000)으로 변경',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.388',
     version: 'v2.8.388',
     date: '2026-08-23',

@@ -5561,7 +5561,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
           const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const len = (company || '').length || 1;
-          const strokeColor = '#3b82f6';
+          const strokeColor = '#000000';
           const calcLargeFontSize = (baseSize: number) => {
             if (len <= 4) return baseSize;
             if (len <= 7) return Math.round(baseSize * 0.82);
@@ -9955,7 +9955,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
                             const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                             const len = (company || '').length || 1;
-                            const strokeColor = '#3b82f6';
+                            const strokeColor = '#000000';
 
                             const calcLargeFontSize = (baseSize: number) => {
                               if (len <= 4) return baseSize;
