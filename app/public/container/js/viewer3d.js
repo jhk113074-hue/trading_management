@@ -16,6 +16,16 @@ class Viewer3D {
         this.dimensions = null; // {l, w, h}
         this.hasInitializedCamera = false;
         this.lastContainerType = null;
+
+        // 3D Drag and Drop Properties
+        this.dragPlane = new THREE.Plane();
+        this.planeIntersectPoint = new THREE.Vector3();
+        this.dragOffset = new THREE.Vector3();
+        this.draggedPallet = null;
+        this.isDraggingPallet3D = false;
+        this.dragStartMousePos = { x: 0, y: 0 };
+        this.dragItemStartCoords = { x: 0, y: 0, z: 0 };
+        this.hasMovedIn3D = false;
         
         // Expose to window for app.js
         window.Viewer3D = this;
@@ -71,39 +81,202 @@ class Viewer3D {
         // Resize Listener
         window.addEventListener('resize', this.resize.bind(this));
 
-        // Click on 3D Box Selection Listener
-        let isDragging = false;
-        let downPos = { x: 0, y: 0 };
-        
-        this.renderer.domElement.addEventListener('mousedown', (e) => {
-            isDragging = false;
-            downPos = { x: e.clientX, y: e.clientY };
-        });
-        
-        this.renderer.domElement.addEventListener('mousemove', (e) => {
-            if (Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 5) {
-                isDragging = true;
-            }
-        });
-
-        this.renderer.domElement.addEventListener('mouseup', (e) => {
-            if (isDragging) return; // Ignore camera orbit drag
-            
+        // --- 3D Interactive Mouse Drag & Drop & Selection ---
+        const getMouseNDC = (e) => {
             const rect = this.renderer.domElement.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
+            return {
+                x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+            };
+        };
+
+        this.renderer.domElement.addEventListener('mousedown', (e) => {
+            const ndc = getMouseNDC(e);
+            this.mouse.x = ndc.x;
+            this.mouse.y = ndc.y;
             this.raycaster.setFromCamera(this.mouse, this.camera);
+
             const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
             const intersects = this.raycaster.intersectObjects(clickableMeshes);
-            
+
             if (intersects.length > 0) {
                 const hitMesh = intersects[0].object;
                 const pm = this.palletMeshes.find(p => p.mesh === hitMesh);
                 if (pm && pm.item) {
+                    this.draggedPallet = pm;
+                    this.isDraggingPallet3D = false;
+                    this.hasMovedIn3D = false;
+                    this.dragStartMousePos = { x: e.clientX, y: e.clientY };
+                    this.dragItemStartCoords = { x: pm.item.x, y: pm.item.y, z: pm.item.z };
+
+                    // Disable OrbitControls while dragging a pallet
+                    this.controls.enabled = false;
+                    this.renderer.domElement.style.cursor = 'grabbing';
+
+                    // Set horizontal dragging plane at pallet's current Y height
+                    this.dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), pm.mesh.position);
+                    this.raycaster.ray.intersectPlane(this.dragPlane, this.planeIntersectPoint);
+                    this.dragOffset.copy(this.planeIntersectPoint).sub(pm.mesh.position);
+
                     this.selectPallet(pm.item.globalIndex);
                     if (typeof window.onPalletSelected === 'function') {
                         window.onPalletSelected(pm.item);
+                    }
+                }
+            }
+        });
+
+        this.renderer.domElement.addEventListener('mousemove', (e) => {
+            const ndc = getMouseNDC(e);
+            this.mouse.x = ndc.x;
+            this.mouse.y = ndc.y;
+
+            if (this.draggedPallet) {
+                const distMoved = Math.hypot(e.clientX - this.dragStartMousePos.x, e.clientY - this.dragStartMousePos.y);
+                if (!this.hasMovedIn3D && distMoved < 6) return;
+                
+                this.isDraggingPallet3D = true;
+                this.hasMovedIn3D = true;
+
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                if (this.raycaster.ray.intersectPlane(this.dragPlane, this.planeIntersectPoint)) {
+                    const targetWorldPos = this.planeIntersectPoint.clone().sub(this.dragOffset);
+                    const item = this.draggedPallet.item;
+                    if (!this.dimensions) return;
+                    const { l, w, h } = this.dimensions;
+                    const offsetX = -l / 2;
+                    const offsetZ = -w / 2;
+
+                    let targetX = targetWorldPos.x - offsetX - (item.packedL / 2);
+                    let targetY = targetWorldPos.z - offsetZ - (item.packedW / 2);
+
+                    // Magnetic snapping (100mm tolerance)
+                    const snapDist = 100;
+                    let snappedX = false;
+                    let snappedY = false;
+
+                    if (Math.abs(targetX) < snapDist) { targetX = 0; snappedX = true; }
+                    else if (Math.abs(targetX + item.packedL - l) < snapDist) { targetX = l - item.packedL; snappedX = true; }
+
+                    if (Math.abs(targetY) < snapDist) { targetY = 0; snappedY = true; }
+                    else if (Math.abs(targetY + item.packedW - w) < snapDist) { targetY = w - item.packedW; snappedY = true; }
+                    else if (Math.abs(targetY - (w - item.packedW) / 2) < snapDist) { targetY = Math.round((w - item.packedW) / 2); snappedY = true; }
+
+                    // Snap to other pallets
+                    if (window.currentResults && window.currentResultIndex !== undefined) {
+                        const currentRes = window.currentResults[window.currentResultIndex];
+                        if (currentRes && currentRes.loaded) {
+                            currentRes.loaded.forEach(other => {
+                                if (other.globalIndex === item.globalIndex) return;
+                                if (!snappedX) {
+                                    if (Math.abs(targetX - (other.x + other.packedL)) < snapDist) { targetX = other.x + other.packedL; snappedX = true; }
+                                    else if (Math.abs(targetX + item.packedL - other.x) < snapDist) { targetX = other.x - item.packedL; snappedX = true; }
+                                    else if (Math.abs(targetX - other.x) < snapDist) { targetX = other.x; snappedX = true; }
+                                }
+                                if (!snappedY) {
+                                    if (Math.abs(targetY - (other.y + other.packedW)) < snapDist) { targetY = other.y + other.packedW; snappedY = true; }
+                                    else if (Math.abs(targetY + item.packedW - other.y) < snapDist) { targetY = other.y - item.packedW; snappedY = true; }
+                                    else if (Math.abs(targetY - other.y) < snapDist) { targetY = other.y; snappedY = true; }
+                                }
+                            });
+                        }
+                    }
+
+                    if (!snappedX) targetX = Math.round(targetX / 50) * 50;
+                    if (!snappedY) targetY = Math.round(targetY / 50) * 50;
+
+                    const finalX = Math.max(0, Math.min(l - item.packedL, Math.round(targetX)));
+                    const finalY = Math.max(0, Math.min(w - item.packedW, Math.round(targetY)));
+                    const shiftX = finalX - item.x;
+                    const shiftY = finalY - item.y;
+
+                    // If moving 1단 pallet, also shift stacked 2단 pallet sitting on top
+                    if (item.z === 0 && window.currentResults && window.currentResultIndex !== undefined) {
+                        const currentRes = window.currentResults[window.currentResultIndex];
+                        if (currentRes && currentRes.loaded) {
+                            currentRes.loaded.forEach(other => {
+                                if (other.globalIndex !== item.globalIndex && other.z > 0) {
+                                    if (Math.abs(other.x - item.x) < 300 && Math.abs(other.y - item.y) < 300) {
+                                        other.x = Math.max(0, Math.min(l - other.packedL, other.x + shiftX));
+                                        other.y = Math.max(0, Math.min(w - other.packedW, other.y + shiftY));
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    item.x = finalX;
+                    item.y = finalY;
+
+                    // Live sync 3D mesh position & highlight box
+                    const newWorldX = offsetX + item.x + (item.packedL / 2);
+                    const newWorldZ = offsetZ + item.y + (item.packedW / 2);
+                    this.draggedPallet.mesh.position.x = newWorldX;
+                    this.draggedPallet.mesh.position.z = newWorldZ;
+                    if (this.highlightBox) {
+                        this.highlightBox.position.x = newWorldX;
+                        this.highlightBox.position.z = newWorldZ;
+                    }
+
+                    // Live sync with bottom panel & 2D canvas
+                    if (typeof window.syncPalletPositionFrom3D === 'function') {
+                        window.syncPalletPositionFrom3D(item);
+                    }
+                }
+            } else {
+                // Hover detection
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
+                const intersects = this.raycaster.intersectObjects(clickableMeshes);
+                this.renderer.domElement.style.cursor = intersects.length > 0 ? 'grab' : 'default';
+            }
+        });
+
+        const handle3DDragEnd = () => {
+            if (this.draggedPallet) {
+                if (this.isDraggingPallet3D && this.hasMovedIn3D) {
+                    if (typeof window.applyPalletPositionChange === 'function') {
+                        window.applyPalletPositionChange(this.draggedPallet.item);
+                    }
+                }
+                this.draggedPallet = null;
+                this.isDraggingPallet3D = false;
+                this.hasMovedIn3D = false;
+                this.controls.enabled = true;
+                this.renderer.domElement.style.cursor = 'default';
+            }
+        };
+
+        this.renderer.domElement.addEventListener('mouseup', handle3DDragEnd);
+        this.renderer.domElement.addEventListener('mouseleave', handle3DDragEnd);
+
+        // Double Click to Rotate in 3D
+        this.renderer.domElement.addEventListener('dblclick', (e) => {
+            const ndc = getMouseNDC(e);
+            this.mouse.x = ndc.x;
+            this.mouse.y = ndc.y;
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+
+            const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
+            const intersects = this.raycaster.intersectObjects(clickableMeshes);
+
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const pm = this.palletMeshes.find(p => p.mesh === hitMesh);
+                if (pm && pm.item) {
+                    const item = pm.item;
+                    const temp = item.packedL;
+                    item.packedL = item.packedW;
+                    item.packedW = temp;
+                    item.rotated = !item.rotated;
+
+                    if (this.dimensions) {
+                        if (item.x + item.packedL > this.dimensions.l) item.x = Math.max(0, this.dimensions.l - item.packedL);
+                        if (item.y + item.packedW > this.dimensions.w) item.y = Math.max(0, this.dimensions.w - item.packedW);
+                    }
+
+                    if (typeof window.applyPalletPositionChange === 'function') {
+                        window.applyPalletPositionChange(item);
                     }
                 }
             }

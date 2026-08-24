@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.417',
+    version: 'v2.8.417',
+    date: '2026-08-24',
+    category: '신규기능',
+    title: '3D 뷰어 화면 내 마우스 직접 드래그앤드롭 위치 이동 및 실시간 연동 기능 추가',
+    content: '• 3D 화면에서도 화물을 마우스로 직접 클릭하고 드래그하여 컨테이너 바닥/벽면 및 인접 화물에 자석 스냅으로 위치를 직관적으로 이동 가능\\n• 3D 드래그 중 하단 수치 패널, 2D 도면, 패킹 리스트 실시간 동기화 및 더블클릭 90° 회전 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.416',
     version: 'v2.8.416',
     date: '2026-08-24',

@@ -1616,6 +1616,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 시뮬레이션 계산 수행
             currentResults = Packer.pack(containers, currentItems);
+            window.currentResults = currentResults;
+            window.currentResultIndex = currentResultIndex;
+            window.itemColors = itemColors;
             initialResults = JSON.parse(JSON.stringify(currentResults));
             currentResultIndex = 0;
 
@@ -3400,6 +3403,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Highlight table row (without jumping window scroll)
         renderPackingList(currentResult.loaded);
+    };
+
+    // Expose globals for 3D Viewer Drag Sync
+    window.currentResults = currentResults;
+    window.currentResultIndex = currentResultIndex;
+    window.itemColors = itemColors;
+    window.applyPalletPositionChange = (item) => applyPalletPositionChange(item);
+
+    window.syncPalletPositionFrom3D = (item) => {
+        if (inputPosX) inputPosX.value = item.x;
+        if (inputPosY) inputPosY.value = item.y;
+        if (inputPosZ) inputPosZ.value = item.z;
+        if (dispPosX) dispPosX.textContent = `X: ${item.x} mm`;
+        if (dispPosY) dispPosY.textContent = `Y: ${item.y} mm`;
+        if (dispPosZ) dispPosZ.textContent = `Z: ${item.z} mm`;
+        drawVisualization();
     };
 
     const applyPalletPositionChange = (item) => {
