@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.416',
+    version: 'v2.8.416',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '화물 클릭/선택 시 화면 전체가 아래로 튕기듯 스크롤되는 현상 제거',
+    content: '• 2D 도면에서 화물 선택 시 하단 패킹 리스트로의 자동 스크롤(scrollIntoView)을 제거하여 화면 위치가 흔들림 없이 고정되도록 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.415',
     version: 'v2.8.415',
     date: '2026-08-24',

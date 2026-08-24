@@ -3398,12 +3398,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Highlight table row
+        // Highlight table row (without jumping window scroll)
         renderPackingList(currentResult.loaded);
-        const targetRow = document.getElementById(`packing-row-${globalIndex}`);
-        if (targetRow) {
-            targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
     };
 
     const applyPalletPositionChange = (item) => {
