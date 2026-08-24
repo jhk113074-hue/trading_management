@@ -5385,12 +5385,22 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
 
     let currentIssuedDocs = [...((order as any)?.po_issued_documents || issuedDocs || [])];
-    
-    let arrivalDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active');
-    let shippingDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active');
 
-    let arrivalPdfUrl = arrivalDoc?.fileUrl || '';
-    let shippingPdfUrl = shippingDoc?.fileUrl || '';
+    // Check if active docs were already generated recently (within 10 minutes from previous action like KakaoTalk send)
+    const existingArrivalDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서') && d.status === 'active');
+    const existingShippingDoc = currentIssuedDocs.find((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨') && d.status === 'active');
+
+    const now = Date.now();
+    const isRecentArrival = existingArrivalDoc && (now - new Date(existingArrivalDoc.issuedAt).getTime() < 10 * 60 * 1000);
+    const isRecentShipping = existingShippingDoc && (now - new Date(existingShippingDoc.issuedAt).getTime() < 10 * 60 * 1000);
+
+    let arrivalPdfUrl = (isRecentArrival ? existingArrivalDoc?.fileUrl : '') || '';
+    let shippingPdfUrl = (isRecentShipping ? existingShippingDoc?.fileUrl : '') || '';
+
+    // If both documents are already recently generated, reuse them without redundant regeneration
+    if (arrivalPdfUrl && shippingPdfUrl) {
+      return { arrivalPdfUrl, shippingPdfUrl, poNum };
+    }
 
     try {
       await handleSaveBasic(false);
@@ -5398,7 +5408,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       console.warn("Auto save before doc ensure:", e);
     }
 
-    const repData = (order.supplierArrivalReports || {})[supplierName] || {};
+    const repData = (order.supplierArrivalReports || (basicForm as any)?.supplierArrivalReports || {})[supplierName] || {};
+    
+    // Calculate grandTotalPlt
     let grandTotalPlt = 0;
     if (basicForm.packingList?.containers) {
       basicForm.packingList.containers.forEach((c: any) => {
@@ -5441,6 +5453,65 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       });
     }
 
+    // Company, Shipper, Consignee, CFS Info
+    const isYS = (order.issuingCompany || basicForm.issuingCompany) === 'YS';
+    const myManagerName = userProfile?.name || auth.currentUser?.displayName || (auth.currentUser?.email ? auth.currentUser.email.split('@')[0] : '담당자');
+    const myManagerPhone = userProfile?.mobile || userProfile?.phone || '';
+    const myManagerEmail = userProfile?.email || auth.currentUser?.email || '';
+
+    let compName = isYS ? '영성ACC' : '(주)와이에스에이씨씨(YSACC CO., LTD.)';
+    let address = isYS ? '청주시 흥덕구 월명로 76, 111-201' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
+    let phone = myManagerPhone || (isYS ? '01073611130' : '010-4494-1028');
+
+    let defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${myManagerName}${myManagerEmail ? `\nE-mail: ${myManagerEmail}` : ''}`;
+    let finalConsignee = repData.consignee || defaultConsignee;
+    if (myManagerName && myManagerName !== '담당자') {
+      if (finalConsignee.includes('담당자:')) {
+        finalConsignee = finalConsignee.replace(/담당자:\s*[^\n\r()]+/g, `담당자: ${myManagerName}`);
+      } else {
+        finalConsignee += `\n담당자: ${myManagerName}`;
+      }
+    }
+    if (myManagerEmail) {
+      if (finalConsignee.includes('E-mail:')) {
+        finalConsignee = finalConsignee.replace(/E-mail:\s*[^\n\r()]+/g, `E-mail: ${myManagerEmail}`);
+      } else {
+        finalConsignee = finalConsignee.replace(/\s*\([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\)/g, '');
+        finalConsignee += `\nE-mail: ${myManagerEmail}`;
+      }
+    }
+
+    let finalCfsAddress = basicForm.cfsContactInfo || basicForm.cfsAddress || repData.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
+
+    const targetSup = suppliersList.find((s: any) => 
+      (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.name && supplierName.includes(s.name)) ||
+      (supplierName && s.name && (s.name.includes(supplierName)))
+    );
+    let shipperText = repData.shipper || '';
+    if (!shipperText || (!shipperText.includes('TEL') && !shipperText.includes('담당자'))) {
+      if (targetSup) {
+        const pc = targetSup.contacts?.find((c: any) => c.isPrimary) || targetSup.contacts?.[0];
+        const cName = pc?.name || targetSup.managerName || '';
+        const cPos = pc?.position ? `(${pc.position})` : '';
+        const cPhone = pc?.phone || targetSup.managerPhone || targetSup.phone || '';
+        const cEmail = pc?.email || targetSup.purchaseEmail || '';
+        const sLines = [targetSup.name];
+        if (targetSup.address) sLines.push(targetSup.address);
+        if (cName) sLines.push(`담당자: ${cName} ${cPos}`.trim());
+        if (cPhone) sLines.push(`TEL: ${cPhone}`);
+        if (cEmail) sLines.push(`E-mail: ${cEmail}`);
+        shipperText = sLines.filter(Boolean).join('\n');
+      } else {
+        shipperText = supplierName;
+      }
+    }
+
+    const entryDate = basicForm.cfsEntryDate || '';
+    const entryTime = (basicForm as any).cfsEntryTime || '오전 10시까지';
+    let remarksText = repData.remarks || `ORIGIN : MADE IN KOREA${entryDate ? `\n* CFS 입고일시: ${entryDate} ${entryTime}` : ''}`;
+
     // 1. Generate & upload Arrival Report PDF if needed
     if (!arrivalPdfUrl) {
       try {
@@ -5479,7 +5550,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 <tr>
                   <td style="width: 50%;">
                     <strong>1) Shipper</strong><br/>
-                    ${(repData.shipper || supplierName).replace(/\n/g, '<br/>')}
+                    ${shipperText.replace(/\n/g, '<br/>')}
                   </td>
                   <td style="width: 50%;">
                     <strong>8) Booking No.</strong><br/>
@@ -5489,11 +5560,11 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 <tr>
                   <td>
                     <strong>2) Consignee</strong><br/>
-                    ${(repData.consignee || '').replace(/\n/g, '<br/>')}
+                    ${finalConsignee.replace(/\n/g, '<br/>')}
                   </td>
                   <td>
                     <strong>9) Remarks</strong><br/>
-                    <span style="color: #4b5563; font-weight: 600;">${(repData.remarks || `ORIGIN : MADE IN KOREA`).replace(/\n/g, '<br/>')}</span>
+                    <span style="color: #4b5563; font-weight: 600;">${remarksText.replace(/\n/g, '<br/>')}</span>
                   </td>
                 </tr>
                 <tr>
@@ -5503,7 +5574,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   </td>
                   <td style="text-align: center; vertical-align: middle;">
                     <strong>입고지</strong><br/>
-                    <strong>${(repData.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
+                    <strong>${finalCfsAddress.replace(/\n/g, '<br/>')}</strong>
                   </td>
                 </tr>
                 <tr>
@@ -10551,6 +10622,110 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       );
                     })
                   )}
+
+                  {/* 3) 도착보고서 및 쉬핑마크 라벨 발행 문서함 */}
+                  <div style={{ marginTop: '14px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        📁 발행된 도착보고서 및 쉬핑마크 라벨 문서함
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                          {issuedDocs.filter((d: any) => d.fileName.startsWith('도착보고서') || d.fileName.startsWith('쉬핑마크라벨')).length}건
+                        </span>
+                      </h3>
+                    </div>
+                    <div style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '12px' }}>
+                      해당 오더에 대해 시스템을 통해 생성/발행된 모든 도착보고서 및 쉬핑마크 라벨 PDF 원본을 통합 관리 및 다운로드할 수 있습니다.
+                    </div>
+
+                    {issuedDocs.filter((d: any) => d.fileName.startsWith('도착보고서') || d.fileName.startsWith('쉬핑마크라벨')).length > 0 ? (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', backgroundColor: '#fff', border: '1px solid #cbd5e1' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#475569' }}>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '45px', fontWeight: 750 }}>No</th>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '100px', fontWeight: 750 }}>구분</th>
+                              <th style={{ padding: '8px', textAlign: 'left', width: '140px', fontWeight: 750 }}>공급사/제조사</th>
+                              <th style={{ padding: '8px', textAlign: 'left', fontWeight: 750 }}>문서명 (파일명)</th>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '140px', fontWeight: 750 }}>발행일시</th>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '60px', fontWeight: 750 }}>버전</th>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '80px', fontWeight: 750 }}>발행자</th>
+                              <th style={{ padding: '8px', textAlign: 'center', width: '130px', fontWeight: 750 }}>관리 / 다운로드</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {issuedDocs
+                              .filter((d: any) => d.fileName.startsWith('도착보고서') || d.fileName.startsWith('쉬핑마크라벨'))
+                              .map((doc: any, idx: number) => {
+                                const isArrival = doc.fileName.startsWith('도착보고서');
+                                return (
+                                  <tr key={doc.id || idx} style={{ borderBottom: '1px solid #e2e8f0', color: doc.status === 'superseded' ? '#94a3b8' : '#1e293b', background: doc.status === 'active' ? '#ffffff' : '#f8fafc' }}>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                      <span style={{ 
+                                        padding: '2px 8px', 
+                                        borderRadius: '4px', 
+                                        fontSize: '11.5px', 
+                                        fontWeight: 700,
+                                        background: isArrival ? '#ede9fe' : '#e0f2fe',
+                                        color: isArrival ? '#6d28d9' : '#0369a1',
+                                        border: isArrival ? '1px solid #ddd6fe' : '1px solid #bae6fd'
+                                      }}>
+                                        {isArrival ? '📄 도착보고서' : '🏷️ 쉬핑마크'}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'left', fontWeight: 700 }}>{doc.supplier_name || '-'}</td>
+                                    <td style={{ padding: '8px', textAlign: 'left' }}>
+                                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>
+                                        {doc.fileName}
+                                      </a>
+                                      {doc.status === 'active' && (
+                                        <span style={{ marginLeft: '6px', padding: '1px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '11px', fontWeight: 800, border: '1px solid #86efac' }}>
+                                          최신
+                                        </span>
+                                      )}
+                                      {doc.status === 'superseded' && (
+                                        <span style={{ marginLeft: '6px', padding: '1px 6px', backgroundColor: '#f1f5f9', color: '#64748b', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+                                          이전버전
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px' }}>{new Date(doc.issuedAt).toLocaleString('ko-KR')}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700 }}>v{doc.version}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px' }}>{doc.issuedBy || 'System'}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => previewFile(doc.fileUrl, doc.fileName)}
+                                          style={{ padding: '4px 8px', backgroundColor: '#3b82f6', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                                          title="미리보기"
+                                        >
+                                          🔍 보기
+                                        </button>
+                                        {isAdmin && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)}
+                                            style={{ padding: '4px 6px', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', color: '#dc2626', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                                            title="문서 삭제"
+                                          >
+                                            🗑️
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '24px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#64748b', fontSize: '13px', border: '1px dashed #cbd5e1' }}>
+                        아직 발행된 도착보고서 및 쉬핑마크 라벨이 없습니다. 상단 [메일 발송] 또는 [카톡 발송] 시 자동으로 최신 문서가 발행되어 보관됩니다.
+                      </div>
+                    )}
+                  </div>
                 </div>
               
               )}

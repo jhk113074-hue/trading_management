@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.407',
+    version: 'v2.8.407',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '메일 및 카톡 발송 시 최신 데이터 기반 도착보고서 & 쉬핑마크 자동 재생성 및 신규 버전 첨부',
+    content: '• 도착보고/쉬핑마크 메일 발송 및 카톡 공유 버튼 클릭 시, 이전 버전 캐시나 구버전 파일에 의존하지 않고 현재 화면의 최신 패킹 데이터, CFS 입고지, 쉬핑마크 설정으로 PDF 문서를 즉시 최신 버전(v2, v3...)으로 재발행하여 유첨 발송하도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.406',
     version: 'v2.8.406',
     date: '2026-08-24',
