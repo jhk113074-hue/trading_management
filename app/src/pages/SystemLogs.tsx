@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.440',
+    version: 'v2.8.440',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '3D [처음부터 시작 모드] 핸들러 및 setMode 메소드 연결 완료',
+    content: '• Viewer3D 클래스에 누락되었던 setMode 및 updateModeUI 메소드를 완벽히 추가하여 [처음부터 시작 모드] 클릭 시 전체 화물이 대기 장소로 즉시 이동되도록 정상 조치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.439',
     version: 'v2.8.439',
     date: '2026-08-24',

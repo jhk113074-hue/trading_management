@@ -671,6 +671,121 @@ class Viewer3D {
         }
     }
 
+    setMode(mode) {
+        this.mode = mode; // 'view' | 'edit' | 'fresh'
+        this.updateModeUI();
+    }
+
+    updateModeUI() {
+        const btnView = document.getElementById('btn-mode-3d-view');
+        const btnEdit = document.getElementById('btn-mode-3d-edit');
+        const btnFresh = document.getElementById('btn-mode-3d-fresh');
+        const banner = document.getElementById('mode-3d-banner');
+        
+        const resetBtnStyles = (btn) => {
+            if (!btn) return;
+            btn.classList.remove('active');
+            btn.style.background = '#f1f5f9';
+            btn.style.color = '#475569';
+            btn.style.border = '1px solid #cbd5e1';
+            btn.style.boxShadow = 'none';
+        };
+
+        const setActiveBtn = (btn, bg, border, shadow) => {
+            if (!btn) return;
+            btn.classList.add('active');
+            btn.style.background = bg;
+            btn.style.color = '#ffffff';
+            btn.style.border = border;
+            btn.style.boxShadow = shadow;
+        };
+
+        resetBtnStyles(btnView);
+        resetBtnStyles(btnEdit);
+        resetBtnStyles(btnFresh);
+
+        if (this.mode === 'fresh') {
+            setActiveBtn(btnFresh, '#4f46e5', '1px solid #4338ca', '0 2px 6px rgba(79,70,229,0.35)');
+        } else if (this.mode === 'edit') {
+            setActiveBtn(btnEdit, '#3b82f6', '1px solid #2563eb', '0 2px 6px rgba(37,99,235,0.35)');
+        } else {
+            setActiveBtn(btnView, '#0284c7', '1px solid #0284c7', '0 2px 6px rgba(2,132,199,0.35)');
+        }
+
+        if (banner) {
+            if (this.mode === 'fresh') {
+                banner.style.background = '#eef2ff';
+                banner.style.border = '1.5px solid #a5b4fc';
+                banner.style.color = '#3730a3';
+                banner.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="background: #4f46e5; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11.5px;">📦 처음부터 시작 모드</span>
+                        <span>화물이 컨테이너 밖 대기장소에 있습니다. <b>화물을 클릭하거나 [1개씩 적재]</b> 버튼을 눌러 배치하세요.</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" id="btn-banner-load-next" style="background: #4f46e5; color: #ffffff; border: 1px solid #4338ca; font-weight: 750; font-size: 12px; padding: 4px 12px; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 5px rgba(79,70,229,0.3);">
+                            📥 다음 화물 1개 적재
+                        </button>
+                        <button type="button" id="btn-banner-move-all-out" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 750; font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                            📤 전체 밖으로 꺼내기
+                        </button>
+                        <button type="button" id="btn-banner-reset-auto" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 750; font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                            ↩️ 자동적재 원상복귀
+                        </button>
+                    </div>
+                `;
+                const btnLoadNext = document.getElementById('btn-banner-load-next');
+                const btnMoveAllOut = document.getElementById('btn-banner-move-all-out');
+                const btnResetAuto = document.getElementById('btn-banner-reset-auto');
+                if (btnLoadNext && window.loadNextPalletIntoContainer) btnLoadNext.onclick = window.loadNextPalletIntoContainer;
+                if (btnMoveAllOut && window.moveAllPalletsOutside) btnMoveAllOut.onclick = window.moveAllPalletsOutside;
+                if (btnResetAuto && window.resetToAutoPacking) btnResetAuto.onclick = window.resetToAutoPacking;
+            } else if (this.mode === 'edit') {
+                banner.style.background = '#fef2f2';
+                banner.style.border = '1.5px solid #f87171';
+                banner.style.color = '#991b1b';
+                banner.innerHTML = `
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span style="background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11.5px;">✏️ 수정/이동 모드</span>
+                        <span>화물을 <b>클릭하여 선택 후 키보드 방향키 또는 화면 버튼</b>으로 이동하세요. (ESC: 선택해제)</span>
+                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <button type="button" id="btn-banner-switch-fresh" style="background: #4f46e5; color: #ffffff; border: 1px solid #4338ca; font-weight: 750; font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                            📦 처음부터 수동 배치
+                        </button>
+                        <button type="button" id="btn-banner-switch-view" style="background: #ffffff; color: #0284c7; border: 1px solid #bae6fd; font-weight: 750; font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                            👁️ 보기 모드로 전환
+                        </button>
+                    </div>
+                `;
+                const btnSwitchFresh = document.getElementById('btn-banner-switch-fresh');
+                const btnSwitchView = document.getElementById('btn-banner-switch-view');
+                if (btnSwitchFresh) btnSwitchFresh.onclick = () => {
+                    this.setMode('fresh');
+                    if (window.moveAllPalletsOutside) window.moveAllPalletsOutside();
+                };
+                if (btnSwitchView) btnSwitchView.onclick = () => this.setMode('view');
+            } else {
+                banner.style.background = '#f0f9ff';
+                banner.style.border = '1.5px solid #7dd3fc';
+                banner.style.color = '#0369a1';
+                banner.innerHTML = `
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span style="background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11.5px;">👁️ 3D 보기 모드</span>
+                        <span>화면 어디서나 <b>마우스 드래그로 자유롭게 360° 회전 및 휠 줌</b>하여 화물 적재 상태를 확인하세요.</span>
+                    </span>
+                    <button type="button" id="btn-banner-switch-edit" style="background: #3b82f6; color: #ffffff; border: 1px solid #2563eb; font-weight: 750; font-size: 12px; padding: 4px 12px; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 5px rgba(37,99,235,0.3);">
+                        ✏️ 화물 이동/수정하기
+                    </button>
+                `;
+                const btnSwitch = document.getElementById('btn-banner-switch-edit');
+                if (btnSwitch) {
+                    btnSwitch.onclick = () => this.setMode('edit');
+                }
+            }
+        }
+    }
+
     setCamera(preset) {
         if (!this.dimensions || !this.camera || !this.controls) return;
         const { l, w, h } = this.dimensions;
@@ -684,6 +799,9 @@ class Viewer3D {
             case 'iso':
             case 'reset':
                 this.camera.position.set(dist * 0.85, dist * 0.65, dist * 0.85);
+                break;
+            case 'iso_wide':
+                this.camera.position.set(dist * 1.3, dist * 0.9, dist * 1.3);
                 break;
             case 'top':
                 this.camera.position.set(0, dist * 1.35, 0);
