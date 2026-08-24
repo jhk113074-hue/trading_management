@@ -11651,7 +11651,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               }));
                             }}
                             rows={4} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '86px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'inherit', resize: 'vertical', minHeight: '86px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
 
@@ -11700,7 +11700,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               }));
                             }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'inherit', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
 
@@ -11714,7 +11714,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             placeholder="L/C 개설은행 정보 (예: EMIRATES NBD BANK PJSC, DUBAI, U.A.E.)" 
                             value={basicForm.lcIssuingBank || ''} 
                             onChange={e => setBasicForm(p => ({ ...p, lcIssuingBank: e.target.value }))} 
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'inherit', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
                       </div>
@@ -11741,7 +11741,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 }
                               }));
                             }}
-                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'inherit', resize: 'vertical', minHeight: '74px', outline: 'none', width: '100%', boxSizing: 'border-box' }} 
                           />
                         </div>
 

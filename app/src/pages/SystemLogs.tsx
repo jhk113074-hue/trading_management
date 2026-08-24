@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.434',
+    version: 'v2.8.434',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '전체 사이트 및 입력란/테이블 폰트 가독성 대폭 개선 (Pretendard & Noto Sans KR 고선명 폰트 스택 적용)',
+    content: '• index.html에 최신 Pretendard 및 Noto Sans KR / Inter 고선명 웹폰트 CDN을 정식 탑재\\n• input, textarea, select, button 등 브라우저 기본 굴림/고정폭 폰트로 깨지던 요소를 최신 고가독성 서체로 전면 통일 및 안티앨리어싱 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.433',
     version: 'v2.8.433',
     date: '2026-08-24',
