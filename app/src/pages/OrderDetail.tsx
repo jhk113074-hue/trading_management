@@ -5198,357 +5198,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     }
   };
 
-  const handlePrintSupplierArrivalReport = async (supplierName: string) => {
-    if (!order) return;
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
-    const repData = (order as any)?.supplierArrivalReports?.[supplierName] || (order as any)?.supplierArrivalReports?.[poNum] || {};
-    const packingItemsList = ((order as any)?.packingPlItems || []).filter((it: any) => {
-      const matchName = it.supplierName || it.supplier || '';
-      return matchName.trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-             (it.name && it.name.includes(supplierName)) ||
-             (it.desc && it.desc.includes(supplierName));
-    });
-
-    const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
-    if (win) {
-      win.document.write("<html><body><div style='text-align:center; padding: 50px; font-family: sans-serif;'>데이터를 불러오는 중입니다...</div></body></html>");
-    }
-
-    const isYS = order.issuingCompany === 'YS';
-    const myManagerName = userProfile?.name || auth.currentUser?.displayName || (auth.currentUser?.email ? auth.currentUser.email.split('@')[0] : '담당자');
-    const myManagerPhone = userProfile?.mobile || userProfile?.phone || '';
-    const myManagerEmail = userProfile?.email || auth.currentUser?.email || '';
-
-    let compName = isYS ? '영성ACC' : '(주)와이에스에이씨씨(YSACC CO., LTD.)';
-    let address = isYS ? '청주시 흥덕구 월명로 76, 111-201' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
-    let phone = myManagerPhone || (isYS ? '01073611130' : '010-4494-1028');
-
-    try {
-      const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
-      if (compDoc.exists()) {
-        const data = compDoc.data();
-        compName = data.nameKo || data.name || compName;
-        address = data.addressKo || address;
-        phone = myManagerPhone || data.phone || phone;
-      }
-    } catch (e) {
-      console.error("Failed to load company info", e);
-    }
-
-    let defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${myManagerName}${myManagerEmail ? `\nE-mail: ${myManagerEmail}` : ''}`;
-    let finalConsignee = repData.consignee || defaultConsignee;
-    let finalCfsAddress = basicForm.cfsContactInfo || basicForm.cfsAddress || repData.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
-
-    const targetSup = suppliersList.find((s: any) => 
-      (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-      (s.name && supplierName.includes(s.name)) ||
-      (supplierName && s.name && (s.name.includes(supplierName)))
-    );
-    let shipperText = repData.shipper || '';
-    if (!shipperText || (!shipperText.includes('TEL') && !shipperText.includes('담당자'))) {
-      if (targetSup) {
-        const pc = targetSup.contacts?.find((c: any) => c.isPrimary) || targetSup.contacts?.[0];
-        const cName = pc?.name || targetSup.managerName || '';
-        const cPos = pc?.position ? `(${pc.position})` : '';
-        const cPhone = pc?.phone || targetSup.managerPhone || targetSup.phone || '';
-        const cEmail = pc?.email || targetSup.purchaseEmail || '';
-        const sLines = [targetSup.name];
-        if (targetSup.address) sLines.push(targetSup.address);
-        if (cName) sLines.push(`담당자: ${cName} ${cPos}`.trim());
-        if (cPhone) sLines.push(`TEL: ${cPhone}`);
-        if (cEmail) sLines.push(`E-mail: ${cEmail}`);
-        shipperText = sLines.filter(Boolean).join('\n');
-      } else {
-        shipperText = supplierName;
-      }
-    }
-
-    const entryDate = basicForm.cfsEntryDate || order?.cfsEntryDate || '';
-    const entryTime = (basicForm as any).cfsEntryTime || order?.cfsEntryTime || '오전 10시까지';
-    let remarksText = repData.remarks || 'ORIGIN : MADE IN KOREA';
-    if (entryDate) {
-      remarksText = `${remarksText}\n* CFS 입고일시: ${entryDate} ${entryTime}`;
-    }
-
-    const rep = {
-      bookingNo: basicForm.vesselBooking || '',
-      remarks: remarksText,
-      notifyParty: 'SAME AS ABOVE',
-      ...repData,
-      shipper: shipperText,
-      portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
-      finalDestination: basicForm.portOfDischarge || repData.finalDestination || '',
-      carrier: basicForm.vesselBooking || repData.carrier || '',
-      sailingOnOrAbout: basicForm.etd || repData.sailingOnOrAbout || '',
-      cfsEta: basicForm.cfsEntryDate || repData.cfsEta || '',
-      consignee: finalConsignee,
-      cfsAddress: finalCfsAddress,
-      packingItems: packingItemsList.length > 0 ? packingItemsList : (groupedSupplierItems[supplierName] || [])
-    };
-
-    const displayItems = packingItemsList.length > 0 ? packingItemsList : (groupedSupplierItems[supplierName] || []);
-    const totalQty = displayItems.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
-    const totalNetWeight = displayItems.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
-    const totalGrossWeight = displayItems.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
-
-    const printHtml = `
-      <html>
-        <head>
-          <title>도착보고 - ${poNum}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
-            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
-            @media print {
-              .no-print { display: none !important; }
-              body { padding: 0; }
-            }
-            .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
-            .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
-            .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-            .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
-            .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
-            .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
-            .desc-table td.right { text-align: right; }
-            .desc-table td.center { text-align: center; }
-            .total-row td { background: #f1f5f9; font-weight: bold; border-top: 2px double #000; }
-          </style>
-        </head>
-        <body>
-          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
-          <div class="header-container">
-            <div class="title-korean">도착 보고서 (Arrival Report)</div>
-            <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
-              <strong>Doc No:</strong> ${poNum}<br/>
-              <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
-            </div>
-          </div>
-
-          <table class="info-table">
-            <tr>
-              <td style="width: 50%;">
-                <strong>1) Shipper</strong><br/>
-                ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}
-              </td>
-              <td style="width: 50%;">
-                <strong>8) Booking No.</strong><br/>
-                <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>2) Consignee</strong><br/>
-                ${(rep.consignee || defaultConsignee).replace(/\n/g, '<br/>')}
-              </td>
-              <td>
-                <strong>9) Remarks</strong><br/>
-                <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || 'ORIGIN : MADE IN KOREA').replace(/\n/g, '<br/>')}</span>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>3) Notify Party</strong><br/>
-                ${rep.notifyParty || 'SAME AS ABOVE'}
-              </td>
-              <td style="text-align: center; vertical-align: middle;">
-                <strong>입고지</strong><br/>
-                <strong>${(rep.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                  <div>
-                    <strong>4) Port of Loading</strong><br/>
-                    ${rep.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
-                  </div>
-                  <div>
-                    <strong>5) Final Destination</strong><br/>
-                    ${rep.finalDestination || '-'}
-                  </div>
-                </div>
-              </td>
-              <td>
-                <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                  <div>
-                    <strong>10) Carrier</strong><br/>
-                    ${rep.carrier || '-'}
-                  </div>
-                  <div>
-                    <strong>11) Sailing On Or About</strong><br/>
-                    ${rep.sailingOnOrAbout || '-'}
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <strong>6) CFS 입고일시</strong><br/>
-                <span style="color: #b91c1c; font-weight: bold; font-size: 12px;">${entryDate ? `${entryDate} ${entryTime}` : (rep.cfsEta || '-')}</span>
-              </td>
-              <td>
-                <strong>12) Package Spec</strong><br/>
-                ${rep.packagingSpec || (basicForm as any)?.packagingSpec || 'STANDARD EXPORT PACKING'}
-              </td>
-            </tr>
-          </table>
-
-          <div style="font-weight: bold; font-size: 13px; margin: 15px 0 5px 0; color: #1e293b;">7) 화물 및 포장 내역 (Cargo & Packing Details)</div>
-          <table class="desc-table">
-            <thead>
-              <tr>
-                <th style="width: 45px;">No.</th>
-                <th>품명 및 규격 (Description of Goods)</th>
-                <th style="width: 70px;">수량</th>
-                <th style="width: 55px;">단위</th>
-                <th style="width: 80px;">N/W (kg)</th>
-                <th style="width: 80px;">G/W (kg)</th>
-                <th style="width: 90px;">포장형태</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${displayItems.map((it: any, idx: number) => `
-                <tr>
-                  <td class="center">${idx + 1}</td>
-                  <td><strong>${it.name || it.desc || it.description || '-'}</strong>${it.grade || it.spec ? `<br/><span style="color: #64748b; font-size: 10.5px;">${it.grade || it.spec}</span>` : ''}</td>
-                  <td class="right">${(it.qty || 0).toLocaleString()}</td>
-                  <td class="center">${it.unit || 'EA'}</td>
-                  <td class="right">${(it.netWeight || 0).toLocaleString()}</td>
-                  <td class="right">${(it.grossWeight || 0).toLocaleString()}</td>
-                  <td class="center">${it.packageType || '단품/팔레트'}</td>
-                </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td colspan="2" class="center">TOTAL / 합계</td>
-                <td class="right">${totalQty.toLocaleString()}</td>
-                <td class="center">TOTAL</td>
-                <td class="right">${totalNetWeight.toLocaleString()}</td>
-                <td class="right">${totalGrossWeight.toLocaleString()}</td>
-                <td class="center">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    if (win) {
-      win.document.open();
-      win.document.write(printHtml);
-      win.document.close();
-    }
-  };
-
-  const handlePrintSupplierShippingMarks = (supplierName: string) => {
-    const shapeVal = commonShippingMark.shape;
-    const compVal = commonShippingMark.company;
-    const portVal = commonShippingMark.port;
-    const countryVal = commonShippingMark.country;
-    const originVal = commonShippingMark.origin;
-
-    const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
-      const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const len = (company || '').length || 1;
-      const strokeColor = '#000000';
-
-      const calcLargeFontSize = (baseSize: number) => {
-        if (len <= 4) return baseSize;
-        if (len <= 6) return Math.round(baseSize * 0.96);
-        if (len <= 8) return Math.round(baseSize * 0.86);
-        if (len <= 11) return Math.round(baseSize * 0.74);
-        if (len <= 14) return Math.round(baseSize * 0.60);
-        return Math.round(baseSize * 0.48);
-      };
-
-      if (shape === 'circle') {
-        const fSize = calcLargeFontSize(120);
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" style="height: 100%; width: 100%; max-height: 100%;"><circle cx="250" cy="175" r="160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      } else if (shape === 'square') {
-        const fSize = calcLargeFontSize(125);
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 300" style="height: 100%; width: 100%; max-height: 100%;"><rect x="15" y="15" width="720" height="270" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      } else if (shape === 'triangle') {
-        const fSize = calcLargeFontSize(95);
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 340" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="375,15 15,325 735,325" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="68%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      } else {
-        const fSize = calcLargeFontSize(135);
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 320" style="height: 100%; width: 100%; max-height: 100%;"><polygon points="475,8 940,160 475,312 10,160" stroke="${strokeColor}" stroke-width="18" fill="none" /><text x="50%" y="54%" font-size="${fSize}" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-      }
-    };
-
-    const packingItemsList = ((order as any)?.packingPlItems || []).filter((it: any) => {
-      const matchName = it.supplierName || it.supplier || '';
-      return matchName.trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-             (it.name && it.name.includes(supplierName)) ||
-             (it.desc && it.desc.includes(supplierName));
-    });
-
-    let rawPalletList: string[] = [];
-    packingItemsList.forEach((it: any, idx: number) => {
-      const pNo = it.pkgNo || (it.marks?.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
-      if (pNo.includes('-')) {
-        const [start, end] = pNo.split('-').map((n: string) => parseInt(n.trim(), 10));
-        if (!isNaN(start) && !isNaN(end) && end >= start) {
-          for (let k = start; k <= end; k++) {
-            rawPalletList.push(String(k));
-          }
-        } else {
-          rawPalletList.push(pNo);
-        }
-      } else {
-        rawPalletList.push(pNo);
-      }
-    });
-    const palletList = Array.from(new Set(rawPalletList));
-    if (palletList.length === 0) palletList.push('1');
-
-    const totalPallets = palletList.length;
-    const pagesHtml = palletList.map((pltNum) => `
-      <div class="page">
-        <div class="shape-container">
-          ${getLargeShippingMarkShapeSvg(shapeVal, compVal)}
-        </div>
-        <div class="info-container">
-          <div class="info-text">${portVal || order?.portOfDischarge || 'BUSAN'}</div>
-          <div class="info-text">${countryVal || order?.destinationCountry || 'KOREA'}</div>
-          <div class="info-text">C/NO : ${pltNum} OF ${totalPallets}</div>
-          <div class="info-text">${originVal || 'MADE IN KOREA'}</div>
-        </div>
-      </div>
-    `).join('');
-
-    const win = window.open('', '_blank', 'width=900,height=800');
-    if (win) {
-      win.document.open();
-      win.document.write(`
-        <html>
-          <head>
-            <title>PLT Shipping Marks - ${supplierName}</title>
-            <style>
-              @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");
-              @page { size: A4 landscape; margin: 0; }
-              body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }
-              .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
-              @media print { .no-print { display: none !important; } }
-              .page { width: 297mm; height: 210mm; box-sizing: border-box; padding: 10mm; display: flex; flex-direction: column; align-items: center; justify-content: space-around; page-break-after: always; }
-              .shape-container { width: 100%; height: 46%; display: flex; align-items: center; justify-content: center; }
-              .info-container { width: 100%; height: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-              .info-text { font-size: 42pt; font-weight: 900; margin: 4px 0; text-transform: uppercase; color: #000; letter-spacing: 1px; line-height: 1.2; }
-            </style>
-          </head>
-          <body>
-            <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
-            ${pagesHtml}
-          </body>
-        </html>
-      `);
-      win.document.close();
-    }
-  };
-
   const handleSendPoEmail = async (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
 
@@ -11438,394 +11087,110 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     </div>
                   </div>
 
-                  {/* ── [기존 화면 밑] 각 공급업체별 발주서, 도착보고서, 쉬핑마크 통합 서류함 ── */}
-                  <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px' }}>
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
-                          📦 각 업체별 발주서(PO) 및 도착보고서 통합 서류함 (총 {allOrderSuppliers.length}개사)
-                        </h4>
-                        <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
-                          본 수주건에 등록된 모든 매입/공급업체의 발주서, 도착보고서, 쉬핑마크 및 기발행 PDF 문서를 한곳에서 확인하고 즉시 열람/인쇄/전송할 수 있습니다.
-                        </p>
+                  {/* ── [기존 화면 밑] 실제 발행된 서류만 깔끔한 단일 테이블로 표시 ── */}
+                  <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e293b' }}>
+                          📁 발행된 서류 보관함 ({issuedDocs.filter(d => d.status === 'active').length}건)
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          본 주문에서 공급업체별로 발행 및 저장된 발주서(PO), 도착보고서, 쉬핑마크 라벨 원본 문서 목록입니다.
+                        </span>
                       </div>
                     </div>
 
-                    {allOrderSuppliers.length === 0 ? (
-                      <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '4px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13.5px' }}>
-                        현재 등록된 매입/공급업체 품목이 없습니다. 1단계 [수주정보] 또는 2단계 [소싱/발주]에서 공급처를 지정해 주세요.
-                      </div>
-                    ) : (
-                      allOrderSuppliers.map((supplierName, sIdx) => {
-                        const items = groupedSupplierItems[supplierName] || [];
-                        const cleanSupplierName = supplierName.replace(/\s+/g, '');
-                        const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                        const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
-                        const isPoSent = !!basicForm.supplierPoSent?.[supplierName];
-                        const matchedSupplierObj = suppliersList.find((s: any) => 
-                          (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-                          (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-                          (s.name && supplierName.includes(s.name)) ||
-                          (supplierName && s.name && (s.name.includes(supplierName)))
-                        );
-                        const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
-                        const supEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
-                        const supPhone = primaryContact?.phone || matchedSupplierObj?.managerPhone || matchedSupplierObj?.phone || '';
+                    {issuedDocs.filter(d => d.status === 'active').length > 0 ? (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontSize: '12px', fontWeight: 750 }}>
+                            <th style={{ padding: '8px 10px', textAlign: 'center', width: '50px' }}>No</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'center', width: '120px' }}>서류 구분</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left', width: '200px' }}>공급업체</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'left' }}>파일명 / 문서번호</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'center', width: '160px' }}>발행일시</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'center', width: '90px' }}>발행자</th>
+                            <th style={{ padding: '8px 10px', textAlign: 'center', width: '140px' }}>열람 및 관리</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {issuedDocs.filter(d => d.status === 'active').map((docItem, idx) => {
+                            const isArrival = docItem.fileName.startsWith('도착보고서');
+                            const isMarks = docItem.fileName.startsWith('쉬핑마크라벨');
+                            const badgeColor = isArrival ? '#0d9488' : isMarks ? '#854d0e' : '#2563eb';
+                            const badgeBg = isArrival ? '#f0fdfa' : isMarks ? '#fefce8' : '#eff6ff';
+                            const docType = isArrival ? '🚚 도착보고서' : isMarks ? '🏷️ 쉬핑마크' : '📄 발주서 (PO)';
 
-                        // Purchase total calculation
-                        const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                        const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                        const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
-                        const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                        const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                        const totalFormatted = [
-                          usdTotal > 0 ? `$${(usdTotal + usdVat).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD` : null,
-                          krwTotal > 0 ? `₩${(krwTotal + krwVat).toLocaleString()} KRW` : null
-                        ].filter(Boolean).join(' / ') || '0';
-
-                        // Issued docs for this supplier
-                        const relatedDocs = (issuedDocs || []).filter(d => 
-                          d.status === 'active' && (
-                            d.supplier_name === supplierName ||
-                            d.po_number === poNum ||
-                            d.po_number.includes(supplierCode) ||
-                            d.fileName.includes(supplierName) ||
-                            d.fileName.includes(cleanSupplierName)
-                          )
-                        );
-
-                        return (
-                          <div
-                            key={supplierName}
-                            style={{
-                              background: '#fff',
-                              border: '1px solid #cbd5e1',
-                              borderRadius: '4px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                              overflow: 'hidden'
-                            }}
-                          >
-                            {/* Card Header */}
-                            <div
-                              style={{
-                                background: '#f8fafc',
-                                borderBottom: '1px solid #cbd5e1',
-                                padding: '10px 16px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                gap: '10px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
-                                  🏢 #{sIdx + 1} {supplierName}
-                                </span>
-                                <span style={{ fontSize: '12px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                  발주품목: {items.length}건
-                                </span>
-                                <span style={{ fontSize: '12px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                  발주총액: {totalFormatted}
-                                </span>
-                                {supEmail && (
-                                  <span style={{ fontSize: '11.5px', color: '#64748b' }}>
-                                    ✉️ {supEmail} {supPhone ? `| 📞 ${supPhone}` : ''}
+                            return (
+                              <tr key={docItem.id || idx} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background 0.15s' }}>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 750, color: badgeColor, background: badgeBg, padding: '2px 8px', borderRadius: '4px', border: `1px solid ${badgeColor}30` }}>
+                                    {docType}
                                   </span>
-                                )}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierPo(supplierName, items)}
-                                  style={{
-                                    height: '32px',
-                                    padding: '0 12px',
-                                    fontSize: '12px',
-                                    fontWeight: 750,
-                                    color: '#fff',
-                                    background: '#2563eb',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  🖨️ 발주서 인쇄
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierArrivalReport(supplierName)}
-                                  style={{
-                                    height: '32px',
-                                    padding: '0 12px',
-                                    fontSize: '12px',
-                                    fontWeight: 750,
-                                    color: '#fff',
-                                    background: '#0d9488',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  🚚 도착보고서 인쇄
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierShippingMarks(supplierName)}
-                                  style={{
-                                    height: '32px',
-                                    padding: '0 12px',
-                                    fontSize: '12px',
-                                    fontWeight: 750,
-                                    color: '#475569',
-                                    background: '#f1f5f9',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  🏷️ 쉬핑마크
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Card Body - 3 Columns */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', padding: '16px' }}>
-                              {/* 1. 발주서(PO) 정보 섹션 */}
-                              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 1) 공급업체 발주서 (PO)</span>
-                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: isPoSent ? '#dcfce7' : '#fee2e2', color: isPoSent ? '#166534' : '#991b1b' }}>
-                                  {isPoSent ? '✅ 발송완료' : '⏳ 미발송'}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
-                                <div><strong>발주번호:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e293b' }}>{poNum}</span></div>
-                                <div><strong>과세구분:</strong> {taxType} ({basicForm.supplierHidePrices?.[supplierName] ? '단가 비노출' : '단가 노출'})</div>
-                                <div><strong>납품기한:</strong> {basicForm.requestedDelivery || basicForm.supplierPoDetails?.[supplierName]?.requestDate || '추후 통보'}</div>
-                              </div>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierPo(supplierName, items)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#2563eb',
-                                    background: '#eff6ff',
-                                    border: '1px solid #bfdbfe',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  🖨️ 발주서 열람/인쇄
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSendPoEmail(supplierName, items)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#059669',
-                                    background: '#ecfdf5',
-                                    border: '1px solid #a7f3d0',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  ✉️ 메일 발송
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#854d0e',
-                                    background: '#fefce8',
-                                    border: '1px solid #fef08a',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  💬 카톡 공유
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* 2. 도착보고서 & 쉬핑마크 섹션 */}
-                            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e' }}>🚚 2) 도착보고서 & 쉬핑마크</span>
-                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#e0f2fe', color: '#0369a1' }}>
-                                  패킹연동 완료
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
-                                <div><strong>CFS 입고일시:</strong> <span style={{ fontWeight: 700, color: '#b91c1c' }}>{basicForm.cfsEntryDate ? `${basicForm.cfsEntryDate} ${(basicForm as any).cfsEntryTime || '오전 10시까지'}` : '미지정'}</span></div>
-                                <div><strong>입고지/CFS:</strong> {basicForm.cfsContactInfo ? basicForm.cfsContactInfo.split('\n')[0] : 'CMK LOGISTICS (부산신항)'}</div>
-                                <div><strong>모선/부킹:</strong> {basicForm.vesselBooking || '-'} / {basicForm.etd || '-'}</div>
-                              </div>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierArrivalReport(supplierName)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#0d9488',
-                                    background: '#f0fdfa',
-                                    border: '1px solid #99f6e4',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  🚚 도착보고 인쇄
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintSupplierShippingMarks(supplierName)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#475569',
-                                    background: '#f1f5f9',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  🏷️ 쉬핑마크
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSendArrivalShippingEmail(supplierName)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#059669',
-                                    background: '#ecfdf5',
-                                    border: '1px solid #a7f3d0',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  ✉️ 메일 발송
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyArrivalShippingKatalkMessage(supplierName)}
-                                  style={{
-                                    height: '30px',
-                                    padding: '0 10px',
-                                    fontSize: '11.5px',
-                                    fontWeight: 700,
-                                    color: '#854d0e',
-                                    background: '#fefce8',
-                                    border: '1px solid #fef08a',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  💬 카톡 공유
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* 3. 발행 문서 보관함 */}
-                            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>📁 3) 발행된 PDF 문서함</span>
-                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
-                                  {relatedDocs.length}개 파일
-                                </span>
-                              </div>
-                              {relatedDocs.length === 0 ? (
-                                <div style={{ fontSize: '11.5px', color: '#94a3b8', fontStyle: 'italic', padding: '10px 0' }}>
-                                  아직 발행 및 저장된 PDF 문서가 없습니다. 상단 인쇄 버튼을 누르면 자동 보관됩니다.
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
-                                  {relatedDocs.map((docItem: any, dIdx: number) => {
-                                    const isArrival = docItem.fileName.startsWith('도착보고서');
-                                    const isMarks = docItem.fileName.startsWith('쉬핑마크라벨');
-                                    const badgeColor = isArrival ? '#0d9488' : isMarks ? '#854d0e' : '#2563eb';
-                                    const badgeBg = isArrival ? '#f0fdfa' : isMarks ? '#fefce8' : '#eff6ff';
-                                    const docType = isArrival ? '🚚 도착보고서' : isMarks ? '🏷️ 쉬핑마크' : '📄 발주서';
-
-                                    return (
-                                      <div
-                                        key={docItem.id || dIdx}
+                                </td>
+                                <td style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 750, color: '#1e293b' }}>
+                                  🏢 {docItem.supplier_name || '공통'}
+                                </td>
+                                <td style={{ padding: '8px 10px', textAlign: 'left' }}>
+                                  <div style={{ fontWeight: 600, color: '#1e293b' }}>{docItem.fileName}</div>
+                                  {docItem.po_number && <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>문서번호: {docItem.po_number}</div>}
+                                </td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+                                  {docItem.issuedAt ? new Date(docItem.issuedAt).toLocaleString('ko-KR') : '-'}
+                                </td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center', fontSize: '12px', color: '#475569' }}>
+                                  {docItem.issuedBy || '관리자'}
+                                </td>
+                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(docItem.fileUrl, '_blank')}
+                                      style={{
+                                        padding: '4px 10px',
+                                        background: '#2563eb',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      👁️ 열기
+                                    </button>
+                                    {isAdmin && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePoIssuedDoc(docItem.id, docItem.fileName)}
                                         style={{
-                                          display: 'flex',
-                                          justifyContent: 'space-between',
-                                          alignItems: 'center',
-                                          background: '#fff',
                                           padding: '4px 8px',
-                                          borderRadius: '3px',
-                                          border: '1px solid #e2e8f0',
-                                          fontSize: '11px'
+                                          background: '#fee2e2',
+                                          color: '#dc2626',
+                                          border: '1px solid #fecaca',
+                                          borderRadius: '4px',
+                                          fontSize: '11.5px',
+                                          fontWeight: 700,
+                                          cursor: 'pointer'
                                         }}
                                       >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                                          <span style={{ fontSize: '10px', fontWeight: 750, color: badgeColor, background: badgeBg, padding: '1px 4px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
-                                            {docType}
-                                          </span>
-                                          <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {docItem.fileName}
-                                          </span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                          <button
-                                            type="button"
-                                            onClick={() => window.open(docItem.fileUrl, '_blank')}
-                                            style={{
-                                              background: '#3b82f6',
-                                              color: '#fff',
-                                              border: 'none',
-                                              borderRadius: '3px',
-                                              padding: '2px 6px',
-                                              fontSize: '10px',
-                                              fontWeight: 700,
-                                              cursor: 'pointer'
-                                            }}
-                                          >
-                                            열기
-                                          </button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                                        🗑️ 삭제
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div style={{ padding: '30px', textAlign: 'center', background: '#f8fafc', borderRadius: '4px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13px' }}>
+                        아직 발행된 발주서나 도착보고서가 없습니다. 2단계 [소싱/발주] 또는 [물류/선적] 탭에서 발주서 및 도착보고서를 인쇄/저장하시면 이곳에 자동으로 보관됩니다.
+                      </div>
+                    )}
+                  </div>
               </div>
             )}
 

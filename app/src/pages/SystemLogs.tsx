@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.426',
+    version: 'v2.8.426',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '서류 업로드 화면 하단에 실제 발행된 발주서/도착보고서 서류 목록만 깔끔하게 단일 테이블로 간소화',
+    content: '• 복잡한 공급업체별 중복 카드 및 폼을 제거하고, 본 주문에서 실제로 발행된 PDF 서류(발주서, 도착보고서, 쉬핑마크)만 심플한 목록 테이블로 표시하도록 UI 대폭 간소화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.425',
     version: 'v2.8.425',
     date: '2026-08-24',
