@@ -27,6 +27,57 @@ export const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [orderStatsBySupplier, setOrderStatsBySupplier] = useState<Record<string, { count: number; totalKrw: number; totalUsd: number }>>({});
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'companies', COMPANY_ID, 'orders'), (snap) => {
+      const stats: Record<string, { count: number; totalKrw: number; totalUsd: number }> = {};
+      
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const items = data.items || [];
+        const basicForm = data.basicForm || {};
+        const grouped: Record<string, any[]> = {};
+        items.forEach((it: any) => {
+          const sup = (it.supplier || it.supplierName || '').trim();
+          if (sup) {
+            if (!grouped[sup]) grouped[sup] = [];
+            grouped[sup].push(it);
+          }
+        });
+        
+        Object.entries(grouped).forEach(([supName, supItems]) => {
+          const cleanName = supName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+          if (!stats[cleanName]) {
+            stats[cleanName] = { count: 0, totalKrw: 0, totalUsd: 0 };
+          }
+          stats[cleanName].count += 1;
+          
+          let sumKrw = 0;
+          let sumUsd = 0;
+          supItems.forEach(it => {
+            const qty = Number(it.qty || 1);
+            const price = Number(it.purchasePrice || it.purchaseUnitPrice || it.unitPrice || 0);
+            const curr = (it.purchaseUnitCurrency || it.currency || 'KRW').toUpperCase();
+            if (curr === 'USD') {
+              sumUsd += qty * price;
+            } else {
+              sumKrw += qty * price;
+            }
+          });
+          const taxType = (data.supplierTaxTypes || basicForm.supplierTaxTypes || {})[supName] || '과세';
+          if (taxType !== '영세') {
+            sumKrw = Math.round(sumKrw * 1.1);
+            sumUsd = parseFloat((sumUsd * 1.1).toFixed(2));
+          }
+          stats[cleanName].totalKrw += sumKrw;
+          stats[cleanName].totalUsd += sumUsd;
+        });
+      });
+      setOrderStatsBySupplier(stats);
+    });
+    return () => unsub();
+  }, []);
 
   // Column resize: [코드, 공급업체명, 사업자등록, 대표전화, 담당자, 주소, 작업]
   const { thStyle, resizerProps } = useColumnResize([110, 200, 140, 120, 160, 220, 90]);
@@ -323,8 +374,33 @@ export const Suppliers: React.FC = () => {
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{s.name || '-'}</div>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>대표: {s.representative || '-'}</div>
+                    <div style={{ fontWeight: 600, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span>{s.name || '-'}</span>
+                      {s.shortCode && (
+                        <span style={{ fontSize: '10.5px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 5px', borderRadius: '3px', fontWeight: 800 }}>
+                          PO: {s.shortCode}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span>대표: {s.representative || '-'}</span>
+                      {(() => {
+                        const cleanName = (s.name || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+                        const stat = orderStatsBySupplier[cleanName];
+                        if (stat && stat.count > 0) {
+                          const amtStr = [
+                            stat.totalKrw > 0 ? `₩${Math.round(stat.totalKrw).toLocaleString()}` : null,
+                            stat.totalUsd > 0 ? `${stat.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : null
+                          ].filter(Boolean).join(' / ');
+                          return (
+                            <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, fontSize: '10.5px' }}>
+                              📦 발주 {stat.count}건 ({amtStr})
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </td>
                   <td style={{ padding: '10px 12px', color: '#475569' }}>{s.bizNumber || '-'}</td>
                   <td style={{ padding: '10px 12px', color: '#475569' }}>{s.phone || '-'}</td>

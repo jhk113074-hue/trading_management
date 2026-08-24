@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.427',
+    version: 'v2.8.427',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '공급업체별 고유 발주번호 연번 자동 채번(YSACC/YS-26-약자-01) 및 공급업체 관리 발주/금액/합계 연동',
+    content: '• 업체별 고유 발주번호 체계 구축 (YSACC/YS-년도2자리-업체약자-연번(01, 02..))\\n• 공급업체 마스터에서 발주서용 고유 약자(Short Code) 설정 및 누적 발주/금액 실시간 요약 연동\\n• 공급업체 상세 모달에서 해당 업체의 전체 발주서(PO) 목록, 오더번호, 발주금액, 합계 및 발주서 열람 서브창 연동\\n• 서류관리 발행 서류함에서 [열기] 클릭 시 브라우저 서브창(미리보기 모달)으로 즉시 열람되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.426',
     version: 'v2.8.426',
     date: '2026-08-24',

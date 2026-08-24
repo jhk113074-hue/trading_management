@@ -11,6 +11,7 @@ import { ProductSearchModal } from '../components/ProductSearchModal';
 import { ArrivalReportModal } from '../components/ArrivalReportModal';
 import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
 import { previewFile } from '../components/FilePreviewModal';
+import { generateSupplierPoNumber } from '../utils/poNumberUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
@@ -614,6 +615,37 @@ export const OrderDetail: React.FC = () => {
   const [sourcingItems, setSourcingItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
   const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
+  const [allExistingPoNumbers, setAllExistingPoNumbers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchAllPos = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'orders'));
+        const poList: string[] = [];
+        snap.docs.forEach(d => {
+          const oData = d.data();
+          if (oData.supplierPoDetails) {
+            Object.values(oData.supplierPoDetails).forEach((det: any) => {
+              if (det?.poNumber && typeof det.poNumber === 'string') {
+                poList.push(det.poNumber.trim());
+              }
+            });
+          }
+          if (Array.isArray(oData.po_issued_documents)) {
+            oData.po_issued_documents.forEach((doc: any) => {
+              if (doc.po_number && typeof doc.po_number === 'string') {
+                poList.push(doc.po_number.trim());
+              }
+            });
+          }
+        });
+        setAllExistingPoNumbers(Array.from(new Set(poList)));
+      } catch (e) {
+        console.error('Failed to load existing PO numbers', e);
+      }
+    };
+    fetchAllPos();
+  }, []);
   console.log("[DEBUG] Rendering OrderDetail page. forwardersList:", forwardersList);
   const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
 
@@ -4244,9 +4276,15 @@ export const OrderDetail: React.FC = () => {
     if (!order) return;
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const hidePrices = !!basicForm.supplierHidePrices?.[supplierName];
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+    // // supplierCode commented
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
@@ -4667,9 +4705,14 @@ export const OrderDetail: React.FC = () => {
     }
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const hidePrices = !!basicForm.supplierHidePrices?.[supplierName];
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
@@ -5139,14 +5182,19 @@ export const OrderDetail: React.FC = () => {
     if (!order) return;
 
     try {
-      const cleanSupplierName = supplierName.replace(/\s+/g, '');
-      const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
       const targetSupplier = suppliersList.find(s => s.name === supplierName);
       const supplierEmail = targetSupplier?.purchaseEmail || '미지정';
 
-      const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
+      const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
       const pdfUrl = latestDoc?.fileUrl || '';
 
       const itemsText = items.map(it => {
@@ -5207,11 +5255,16 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const targetSupplier = suppliersList.find(s => s.name === supplierName);
     const supplierEmail = targetSupplier?.purchaseEmail || '';
 
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
-    const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
+    const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
     const pdfUrl = latestDoc?.fileUrl || '';
 
     const itemsText = items.map(it => {
@@ -5260,7 +5313,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     try {
       const ccList = emailData.cc.split(',').map(e => e.trim()).filter(Boolean).map(e => ({ email: e }));
       const isArrival = poEmailModalData.supplierName.endsWith('_arrival') || !!poEmailModalData.pdfAttachments;
-      const cleanSupplierName = poEmailModalData.supplierName.replace(/_arrival$/, '');
       const senderEmail = userProfile?.email || 'jhkim1130@ysacc.co.kr';
 
       let attachments: { title: string; url: string }[] = [];
@@ -5366,7 +5418,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           setOrder(prev => prev ? ({ ...prev, po_dispatch_status: updatedDispatchStatus }) : prev);
         }
 
-        alert(`✅ [${cleanSupplierName}] ${isArrival ? '도착보고서 및 쉬핑마크 라벨' : '발주서'} 이메일 발송 완료!\n\n발신자: ${senderEmail}\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
+        alert(`✅ [${poEmailModalData.supplierName}] ${isArrival ? '도착보고서 및 쉬핑마크 라벨' : '발주서'} 이메일 발송 완료!\n\n발신자: ${senderEmail}\n수신자: ${emailData.to}\n참조자: ${emailData.cc || '없음'}`);
         setSentEmailSuppliers(prev => ({ ...prev, [poEmailModalData.supplierName]: true }));
         setPoEmailModalData(null);
       } else {
@@ -5382,9 +5434,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
   const autoEnsureArrivalAndShippingDocs = async (supplierName: string): Promise<{ arrivalPdfUrl: string; shippingPdfUrl: string; poNum: string }> => {
     if (!order) return { arrivalPdfUrl: '', shippingPdfUrl: '', poNum: '' };
 
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+    const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
     let currentIssuedDocs = [...((order as any)?.po_issued_documents || issuedDocs || [])];
 
@@ -7420,9 +7477,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     ) : (
                       allOrderSuppliers.map(supplierName => {
                         const items = groupedSupplierItems[supplierName] || [];
-                        const cleanSupplierName = supplierName.replace(/\s+/g, '');
-                        const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                        const defaultPoNum = `${order.ciNumber || order.id}-${supplierCode}`;
+                        const defaultPoNum = generateSupplierPoNumber(
+                          basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                          basicForm.poDate || (order as any)?.poDate || '',
+                          supplierName,
+                          suppliersList,
+                          allExistingPoNumbers,
+                          basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                        );
                         const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || defaultPoNum;
 
                         return (
@@ -7463,7 +7525,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   />
                                 </div>
                                 {(() => {
-                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number === poNum || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
+                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
                                   if (activeDoc) {
                                     return (
                                       <span style={{ padding: '2px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #86efac' }}>
@@ -7556,7 +7618,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   미리보기 / 인쇄
                                 </button>
                                 {(() => {
-                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(cleanSupplierName.substring(0,3).toUpperCase())));
+                                  const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName));
                                   const isIssued = !!activeDoc;
                                   const nextVersion = isIssued ? (activeDoc.version || 1) + 1 : 1;
 
@@ -9703,9 +9765,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                   ) : (
                     allOrderSuppliers.map(supplierName => {
                       const items = groupedSupplierItems[supplierName] || [];
-                      const cleanSupplierName = supplierName.replace(/\s+/g, '');
-                      const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+                      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    supplierName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
+                  );
 
                       // Fetch/Initialize arrival report state for this supplier in the order doc
                       const repData = (order.supplierArrivalReports || {})[supplierName] || {};
@@ -11146,7 +11213,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                     <button
                                       type="button"
-                                      onClick={() => window.open(docItem.fileUrl, '_blank')}
+                                      onClick={() => previewFile(docItem.fileUrl, docItem.fileName)}
                                       style={{
                                         padding: '4px 10px',
                                         background: '#2563eb',
@@ -14405,10 +14472,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               setActiveArrivalReport(null);
               // Print immediately using the saved updated reports in local memory or data
               const rep = reportData;
-              const cleanSupplierName = activeArrivalReport.supplierName.replace(/\s+/g, '');
-              const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
               const sName = activeArrivalReport.supplierName;
-              const poNum = basicForm.supplierPoDetails?.[sName]?.poNumber || order.supplierPoDetails?.[sName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+              const poNum = basicForm.supplierPoDetails?.[sName]?.poNumber || order.supplierPoDetails?.[sName]?.poNumber || generateSupplierPoNumber(
+                    basicForm.issuingCompany || order.issuingCompany || 'YSACC',
+                    basicForm.poDate || (order as any)?.poDate || '',
+                    sName,
+                    suppliersList,
+                    allExistingPoNumbers,
+                    basicForm.supplierPoDetails?.[sName]?.poNumber || order.supplierPoDetails?.[sName]?.poNumber
+                  );
 
               const packingItemsList = rep.packingItems || [];
               const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);

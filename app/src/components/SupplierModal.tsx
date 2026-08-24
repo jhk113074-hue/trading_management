@@ -4,6 +4,8 @@ import { db, COMPANY_ID } from '../firebase';
 import type { Supplier, SupplierContact } from '../types/supplier';
 import type { Customer } from '../types/customer';
 import { CustomerSearchModal } from './CustomerSearchModal';
+import { previewFile } from './FilePreviewModal';
+import { getSupplierShortCode } from '../utils/poNumberUtils';
 
 interface Props {
   initialSupplier?: Supplier;
@@ -54,7 +56,8 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
     supplierCode: '', name: '', bizNumber: '', representative: '',
     phone: '', purchaseEmail: '', defaultCcEmails: '', address: '', managerName: '', managerPhone: '',
     category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: [],
-    countryType: '국내'
+    countryType: '국내',
+    shortCode: initialSupplier?.shortCode || getSupplierShortCode(initialSupplier?.name || '')
   });
 
   const supplierId = initialSupplier?.id || '';
@@ -683,7 +686,13 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                   <Input label="공급업체코드 (필수) ★" value={formData.supplierCode} onChange={(v: any) => handleChange('supplierCode', v)} disabled={true} placeholder="자동 발번 중..." labelColor="#0891b2" />
-                  <Input label="공급업체명 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: 국도화학 주식회사" labelColor="#0891b2" />
+                  <Input label="공급업체명 (필수) ★" value={formData.name} onChange={(v: any) => {
+                    handleChange('name', v);
+                    if (!formData.shortCode) {
+                      handleChange('shortCode', getSupplierShortCode(v));
+                    }
+                  }} placeholder="예: 국도화학 주식회사" labelColor="#0891b2" />
+                  <Input label="발주서용 업체약자 (PO Short Code)" value={formData.shortCode || ''} onChange={(v: any) => handleChange('shortCode', v.toUpperCase())} placeholder="예: JS, 2H, LAM, IO (미입력시 자동추천)" labelColor="#0891b2" />
                   <Select label="국내/해외 구분" value={formData.countryType || '국내'} onChange={(v: any) => handleChange('countryType', v)} options={['국내', '해외']} />
                   <Input label={formData.countryType === '해외' ? '사업자등록번호' : '사업자등록번호 (국내)'} value={formData.bizNumber} onChange={(v: any) => handleChange('bizNumber', v)} placeholder="000-00-00000" />
                   <Input label="대표자명" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="대표이사 성명" />
@@ -1010,13 +1019,15 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                           <thead style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                             <tr>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>년월일 (Date)</th>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>구분</th>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>CI / 문서 번호</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', width: '95px' }}>발주일자</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', width: '80px' }}>구분</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', width: '150px' }}>발주번호 (PO NO)</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', width: '140px' }}>수주 / CI 번호</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>공급가액 / 부가세</th>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>최종 매입/계약 (합계)</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>발주합계 금액</th>
                               <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'right' }}>지급/결제 금액</th>
-                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center' }}>지급 상태</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center', width: '90px' }}>지급 상태</th>
+                              <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569', textAlign: 'center', width: '90px' }}>발주서 열람</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1041,25 +1052,33 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                               const isPartial = s.paidAmount > 0 && !isPaidFull;
 
                               return (
-                                <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '40px' }}>
-                                  <td style={{ padding: '8px 10px', color: '#334155', fontWeight: 600 }}>{s.date}</td>
+                                <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', height: '44px' }}>
+                                  <td style={{ padding: '8px 10px', color: '#334155', fontWeight: 600, fontSize: '12px' }}>{s.date}</td>
                                   <td style={{ padding: '8px 10px' }}>
                                     <span style={{
-                                      padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700,
+                                      padding: '2px 6px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700,
                                       background: s.type === '수입' ? '#eff6ff' : s.type === '수출소싱' ? '#f0fdf4' : '#fefce8',
                                       color: s.type === '수입' ? '#1d4ed8' : s.type === '수출소싱' ? '#15803d' : '#a16207',
                                       border: `1px solid ${s.type === '수입' ? '#bfdbfe' : s.type === '수출소싱' ? '#bbf7d0' : '#fef08a'}`
                                     }}>
-                                      {s.type === '수입' ? '🚢 수입' : s.type === '수출소싱' ? '🛫 소싱' : '🏬 국내'}
+                                      {s.type === '수입' ? '🚢 수입' : s.type === '수출소싱' ? '🛫 발주' : '🏬 국내'}
                                     </span>
                                   </td>
-                                  <td style={{ padding: '8px 10px', fontWeight: 700, color: '#1e293b' }}>{s.ciNumber}</td>
+                                  <td style={{ padding: '8px 10px' }}>
+                                    <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#1e3a8a', fontSize: '12.5px' }}>
+                                      {s.poNumber || '-'}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1e293b', fontSize: '12px' }}>
+                                    <div>{s.ciNumber}</div>
+                                    {s.itemsCount > 0 && <div style={{ fontSize: '11px', color: '#64748b' }}>({s.itemsCount}개 품목)</div>}
+                                  </td>
                                   <td style={{ padding: '8px 10px', textAlign: 'right', fontSize: '11.5px', color: '#475569' }}>
                                     <div>공급가: {supplyFormatted}</div>
                                     {s.vatAmount > 0 && <div style={{ fontSize: '11px', color: '#64748b' }}>VAT: {vatFormatted}</div>}
                                   </td>
-                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{totalFormatted}</td>
-                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#2563eb' }}>{paidFormatted}</td>
+                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0f172a', fontSize: '13px' }}>{totalFormatted}</td>
+                                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: isPaidFull ? '#16a34a' : '#2563eb', fontSize: '12.5px' }}>{paidFormatted}</td>
                                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                     <span style={{
                                       padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700,
@@ -1069,13 +1088,35 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
                                       {isPaidFull ? '● 지급완료' : isPartial ? '◐ 부분지급' : '● 미지급'}
                                     </span>
                                   </td>
+                                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                    {s.fileUrl ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => previewFile(s.fileUrl, s.fileName || `발주서_${s.poNumber}.pdf`)}
+                                        style={{
+                                          padding: '3px 8px',
+                                          background: '#2563eb',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: 700,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        👁️ 열기
+                                      </button>
+                                    ) : (
+                                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>미발행</span>
+                                    )}
+                                  </td>
                                 </tr>
                               );
                             })}
                           </tbody>
                           <tfoot style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
                             <tr>
-                              <td colSpan={4} style={{ padding: '10px', color: '#1e293b' }}>
+                              <td colSpan={5} style={{ padding: '10px', color: '#1e293b' }}>
                                 📊 합계 (TOTAL - 전체 총 {filteredList.length}건)
                               </td>
                               <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>

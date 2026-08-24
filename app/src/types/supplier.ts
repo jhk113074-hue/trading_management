@@ -26,6 +26,10 @@ export interface Supplier {
   // ── 겸업(공급사이면서 고객사이기도 한 업체) 연결 ──
   linkedCustomerId?: string; // 동일 업체의 고객사 레코드 ID
   linkedCustomerName?: string; // 표시용 (조회 편의)
+
+  // ── 발주번호 고유 약자 및 연번 관리 ──
+  shortCode?: string; // 발주번호용 영문 약자 (예: JS, 2H, LAM, IO, KM 등)
+  poSequence?: number; // 현재까지 발행된 마지막 발주 연번
 }
 
 export interface SupplierContact {
