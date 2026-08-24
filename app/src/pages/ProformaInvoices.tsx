@@ -181,7 +181,6 @@ export const ProformaInvoices: React.FC = () => {
   const allPis = useMemo(() => {
     const list = [...pis];
     const existingPiNumbers = new Set(list.map(p => (p.piNumber || '').trim().toLowerCase()));
-    const existingPiIds = new Set(list.map(p => p.id));
 
     orders.forEach((ord: any) => {
       const ordPiNum = (
@@ -193,10 +192,10 @@ export const ProformaInvoices: React.FC = () => {
         ''
       ).trim();
 
-      const isLinkedToExisting = ord.quotationId && existingPiIds.has(ord.quotationId);
       const hasMatchingNumber = ordPiNum && existingPiNumbers.has(ordPiNum.toLowerCase());
 
-      if (!isLinkedToExisting && !hasMatchingNumber && ordPiNum) {
+      if (!hasMatchingNumber && ordPiNum) {
+        existingPiNumbers.add(ordPiNum.toLowerCase());
         const items = ord.items || [];
         const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
         const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
@@ -212,7 +211,7 @@ export const ProformaInvoices: React.FC = () => {
         if (!dateStr) dateStr = '2026-08-10';
 
         const virtualPi: ProformaInvoice = {
-          id: ord.quotationId || `ORDER_PI_${ord.id}`,
+          id: `ORDER_PI_${ord.id}`,
           piNumber: ordPiNum,
           piDate: dateStr,
           customerId: ord.customerId || matchingCust?.id || '',

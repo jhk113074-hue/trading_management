@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.420',
+    version: 'v2.8.420',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '수주 고유 PI 번호(PI-YSACC-2026-CIE-16 등) 견적서 목록 완전 포함 및 즉시 표시',
+    content: '• 수주에 연결된 quotationId가 이전 견적서를 가리키고 있더라도, 고유 PI 번호(PI-YSACC-2026-CIE-16)를 가진 모든 수주건이 견적서 목록에 독립적으로 100% 빠짐없이 표시되도록 필터링 로직 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.419',
     version: 'v2.8.419',
     date: '2026-08-24',
