@@ -1900,6 +1900,10 @@ export const OrderDetail: React.FC = () => {
   const latestPackingDataRef = useRef({ basicForm, orderItems, products, order });
   latestPackingDataRef.current = { basicForm, orderItems, products, order };
 
+  const isInitialOrderLoadRef = useRef(false);
+  const latestOrderStateRef = useRef({ basicForm, orderItems, sourcingItems, forwardersList, order });
+  latestOrderStateRef.current = { basicForm, orderItems, sourcingItems, forwardersList, order };
+
   // Listen for Container Packer EXPORT_PACKING_LIST & IFRAME_READY messages
   useEffect(() => {
     const handlePackerMessage = (event: MessageEvent) => {
@@ -1976,9 +1980,13 @@ export const OrderDetail: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     const docRef = doc(db, 'companies', COMPANY_ID, 'orders', id);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    const unsubscribe = onSnapshot(docRef, { includeMetadataChanges: true }, (docSnap) => {
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() } as Order;
+        if (docSnap.metadata.hasPendingWrites && isInitialOrderLoadRef.current) {
+          // Skip overwriting active local edits on pending local writes
+          return;
+        }
         if (data.transportationFiles && data.transportationFiles.length > 0) {
           const merged = [...(data.containerWorkFiles || []), ...data.transportationFiles];
           const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', data.id);
@@ -2198,8 +2206,37 @@ export const OrderDetail: React.FC = () => {
           };
         });
 
-        setOrderItems(restoredOrderItems);
-        setSourcingItems(alignedSourcing);
+        // On initial load or remote external update, set order items
+        if (!isInitialOrderLoadRef.current) {
+          setOrderItems(restoredOrderItems);
+          setSourcingItems(alignedSourcing);
+          isInitialOrderLoadRef.current = true;
+        } else {
+          // If remote update has items, preserve local supplier inputs that are currently being edited
+          setOrderItems(prev => {
+            const currentLocal = latestOrderStateRef.current.orderItems || prev;
+            return restoredOrderItems.map((rIt, idx) => {
+              const localIt = (rIt.itemId && currentLocal.find((c: any) => c.itemId && c.itemId === rIt.itemId)) || currentLocal[idx];
+              return {
+                ...rIt,
+                supplier: localIt?.supplier != null && localIt.supplier.trim() !== '' ? localIt.supplier : rIt.supplier,
+                grade: localIt?.grade != null && localIt.grade.trim() !== '' ? localIt.grade : rIt.grade
+              };
+            });
+          });
+
+          setSourcingItems(prev => {
+            const currentLocal = latestOrderStateRef.current.sourcingItems || prev;
+            return alignedSourcing.map((aIt, idx) => {
+              const localIt = (aIt.itemId && currentLocal.find((c: any) => c.itemId && c.itemId === aIt.itemId)) || currentLocal[idx];
+              return {
+                ...aIt,
+                supplier: localIt?.supplier != null && localIt.supplier.trim() !== '' ? localIt.supplier : aIt.supplier,
+                grade: localIt?.grade != null && localIt.grade.trim() !== '' ? localIt.grade : aIt.grade
+              };
+            });
+          });
+        }
         setForwardersList(data.forwarders || []);
 
         // stageCompletion 로드 — 없으면 기본값 유지
@@ -2231,9 +2268,55 @@ export const OrderDetail: React.FC = () => {
       return;
     }
     const piRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', order.quotationId);
-    const unsubscribe = onSnapshot(piRef, (docSnap) => {
+    const unsubscribe = onSnapshot(piRef, async (docSnap) => {
       if (docSnap.exists()) {
-        setPiData(docSnap.data());
+        const pData = docSnap.data();
+        setPiData(pData);
+
+        // Auto sync specs from connected PI line items if order item grades are empty
+        try {
+          const revSnap = await getDocs(collection(piRef, 'revisions'));
+          const latestRevDoc = revSnap.docs.sort((a, b) => (b.data().version || 0) - (a.data().version || 0))[0];
+          if (latestRevDoc) {
+            const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
+            const quoteItems = liSnap.docs.map(d => d.data() as any).sort((a, b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
+            if (quoteItems.length > 0) {
+              setOrderItems(prev => {
+                let hasChanges = false;
+                const updated = prev.map((oi, idx) => {
+                  if (!oi.grade || oi.grade.trim() === '') {
+                    const qi = quoteItems[idx];
+                    const specVal = qi?.spec || qi?.grade || '';
+                    if (specVal) {
+                      hasChanges = true;
+                      return { ...oi, grade: specVal };
+                    }
+                  }
+                  return oi;
+                });
+                return hasChanges ? updated : prev;
+              });
+
+              setSourcingItems(prev => {
+                let hasChanges = false;
+                const updated = prev.map((si, idx) => {
+                  if (!si.grade || si.grade.trim() === '') {
+                    const qi = quoteItems[idx];
+                    const specVal = qi?.spec || qi?.grade || '';
+                    if (specVal) {
+                      hasChanges = true;
+                      return { ...si, grade: specVal };
+                    }
+                  }
+                  return si;
+                });
+                return hasChanges ? updated : prev;
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to load PI line items specs:", e);
+        }
       } else {
         setPiData(null);
       }
@@ -2409,24 +2492,31 @@ export const OrderDetail: React.FC = () => {
 
   // Save details changes
   const handleSaveBasic = async (showMsg: boolean = true, tabIdOverride?: string, stepNameOverride?: string) => {
-    if (!order) return;
+    const curState = latestOrderStateRef.current;
+    const curOrder = curState.order || order;
+    const curBasicForm = curState.basicForm;
+    const curOrderItems = curState.orderItems;
+    const curSourcingItems = curState.sourcingItems;
+    const curForwardersList = curState.forwardersList;
+
+    if (!curOrder) return;
     try {
-      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      const links = basicForm.externalLinksStr
+      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', curOrder.id);
+      const links = (curBasicForm.externalLinksStr || '')
         .split('\n')
         .map(l => l.trim())
         .filter(l => l.length > 0);
 
       // Validate items names
-      if (orderItems.some(it => !it.name?.trim())) {
+      if (curOrderItems.some(it => !it.name?.trim())) {
         alert('모든 품목의 품명을 입력해야 합니다.');
         return;
       }
 
-      const totalAmount = orderItems.reduce((sum, item) => sum + (item.amount || 0), 0)
-        + forwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
-      const hasUsd = orderItems.some(it => it.currency === 'USD');
-      const hasKrw = orderItems.some(it => it.currency === 'KRW');
+      const totalAmount = curOrderItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+        + curForwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
+      const hasUsd = curOrderItems.some(it => it.currency === 'USD');
+      const hasKrw = curOrderItems.some(it => it.currency === 'KRW');
       let orderCurrency: 'USD' | 'KRW' | 'mixed' = 'USD';
       if (hasUsd && hasKrw) {
         orderCurrency = 'mixed';
@@ -2436,17 +2526,17 @@ export const OrderDetail: React.FC = () => {
 
       // Detect changes and generate log description
       const changes: string[] = [];
-      if (order.piNumber !== basicForm.piNumber) changes.push(`PI 번호 변경: "${order.piNumber || ''}" → "${basicForm.piNumber}"`);
-      if (order.customer !== basicForm.customer) changes.push(`고객사 변경: "${order.customer || ''}" → "${basicForm.customer}"`);
-      if (order.custPo !== basicForm.custPo) changes.push(`고객사 PO 변경: "${order.custPo || ''}" → "${basicForm.custPo}"`);
-      if (order.incoterms !== basicForm.incoterms) changes.push(`인코텀즈 변경: "${order.incoterms || ''}" → "${basicForm.incoterms}"`);
-      if (order.paymentTerms !== basicForm.paymentTerms) changes.push(`결제조건 변경: "${order.paymentTerms || ''}" → "${basicForm.paymentTerms}"`);
-      if (order.poDate !== basicForm.poDate) changes.push(`PO접수일 변경: "${order.poDate || ''}" → "${basicForm.poDate}"`);
-      if (order.requestedDelivery !== basicForm.requestedDelivery) changes.push(`요청납기 변경: "${order.requestedDelivery || ''}" → "${basicForm.requestedDelivery}"`);
-      if (order.deliveryPlace !== basicForm.deliveryPlace) changes.push(`납품처 변경: "${order.deliveryPlace || ''}" → "${basicForm.deliveryPlace}"`);
-      if (order.remark !== basicForm.remark) changes.push(`비고(Remarks) 변경: "${order.remark || ''}" → "${basicForm.remark}"`);
-      if (order.ciNumber !== basicForm.ciNumber) changes.push(`CI 번호 변경: "${order.ciNumber || ''}" → "${basicForm.ciNumber}"`);
-      if (order.isLc !== basicForm.isLc) changes.push(`L/C거래여부 변경: "${order.isLc || ''}" → "${basicForm.isLc}"`);
+      if (curOrder.piNumber !== curBasicForm.piNumber) changes.push(`PI 번호 변경: "${curOrder.piNumber || ''}" → "${curBasicForm.piNumber}"`);
+      if (curOrder.customer !== curBasicForm.customer) changes.push(`고객사 변경: "${curOrder.customer || ''}" → "${curBasicForm.customer}"`);
+      if (curOrder.custPo !== curBasicForm.custPo) changes.push(`고객사 PO 변경: "${curOrder.custPo || ''}" → "${curBasicForm.custPo}"`);
+      if (curOrder.incoterms !== curBasicForm.incoterms) changes.push(`인코텀즈 변경: "${curOrder.incoterms || ''}" → "${curBasicForm.incoterms}"`);
+      if (curOrder.paymentTerms !== curBasicForm.paymentTerms) changes.push(`결제조건 변경: "${curOrder.paymentTerms || ''}" → "${curBasicForm.paymentTerms}"`);
+      if (curOrder.poDate !== curBasicForm.poDate) changes.push(`PO접수일 변경: "${curOrder.poDate || ''}" → "${curBasicForm.poDate}"`);
+      if (curOrder.requestedDelivery !== curBasicForm.requestedDelivery) changes.push(`요청납기 변경: "${curOrder.requestedDelivery || ''}" → "${curBasicForm.requestedDelivery}"`);
+      if (curOrder.deliveryPlace !== curBasicForm.deliveryPlace) changes.push(`납품처 변경: "${curOrder.deliveryPlace || ''}" → "${curBasicForm.deliveryPlace}"`);
+      if (curOrder.remark !== curBasicForm.remark) changes.push(`비고(Remarks) 변경: "${curOrder.remark || ''}" → "${curBasicForm.remark}"`);
+      if (curOrder.ciNumber !== curBasicForm.ciNumber) changes.push(`CI 번호 변경: "${curOrder.ciNumber || ''}" → "${curBasicForm.ciNumber}"`);
+      if (curOrder.isLc !== curBasicForm.isLc) changes.push(`L/C거래여부 변경: "${curOrder.isLc || ''}" → "${curBasicForm.isLc}"`);
       
       const sourcingTabToSave = tabIdOverride || activeSourcingTab;
       const stepToSave = stepNameOverride || activeStep;
@@ -2456,19 +2546,19 @@ export const OrderDetail: React.FC = () => {
                            stepToSave === '서류관리' ? '선적관리' :
                            stepToSave === '정산/결제' ? '이익관리' : null;
 
-      if (mappedStatus && order.status !== mappedStatus) {
-        changes.push(`진행단계 변경: "${order.status || ''}" → "${mappedStatus}"`);
+      if (mappedStatus && curOrder.status !== mappedStatus) {
+        changes.push(`진행단계 변경: "${curOrder.status || ''}" → "${mappedStatus}"`);
       }
 
       // Compare items length or amounts
-      if (JSON.stringify(order.items || []) !== JSON.stringify(orderItems)) {
-        changes.push(`품목 리스트 변경 (총 ${orderItems.length}개 품목)`);
+      if (JSON.stringify(curOrder.items || []) !== JSON.stringify(curOrderItems)) {
+        changes.push(`품목 리스트 변경 (총 ${curOrderItems.length}개 품목)`);
       }
-      if (JSON.stringify(order.forwarders || []) !== JSON.stringify(forwardersList)) {
+      if (JSON.stringify(curOrder.forwarders || []) !== JSON.stringify(curForwardersList)) {
         changes.push('운송사(포워더) 지정 및 운임 예산 변경');
       }
 
-      let nextHistoryLogs = (order as any).history_logs || [];
+      let nextHistoryLogs = (curOrder as any).history_logs || [];
       const isMonitoring = isMonitoringUser({ email: auth.currentUser?.email || '', name: auth.currentUser?.displayName || '' });
       if (changes.length > 0 && !isMonitoring) {
         const logEntry = {
@@ -2482,7 +2572,7 @@ export const OrderDetail: React.FC = () => {
 
       await setDoc(docRef, {
         history_logs: nextHistoryLogs,
-        status: stepToSave === '변경이력(Log)' ? (order.status || '주문') : (mappedStatus || '주문'),
+        status: stepToSave === '변경이력(Log)' ? (curOrder.status || '주문') : (mappedStatus || '주문'),
         piNumber: basicForm.piNumber,
         customer: basicForm.customer,
         custPo: basicForm.custPo,
@@ -2503,7 +2593,7 @@ export const OrderDetail: React.FC = () => {
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate || '',
         cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
-        supplierArrivalReports: order?.supplierArrivalReports || (basicForm as any).supplierArrivalReports || {},
+        supplierArrivalReports: curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {},
         cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
@@ -2552,7 +2642,7 @@ export const OrderDetail: React.FC = () => {
         paymentCollectedInstallments: basicForm.paymentCollectedInstallments || [],
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
         bankCharges: basicForm.bankCharges || [],
-        transactionFiles: order.transactionFiles || [],
+        transactionFiles: curOrder.transactionFiles || [],
 
         // 주문 기본정보 및 L/C 거래 상세 저장
         customerAddress: basicForm.customerAddress,
@@ -2577,8 +2667,8 @@ export const OrderDetail: React.FC = () => {
         blNumbers: basicForm.blNumbers || [],
         blNumber: basicForm.blNumber || '',
         
-        items: orderItems.map((it, idx) => {
-          const matchingSourcing = (it.itemId && sourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || sourcingItems[idx];
+        items: curOrderItems.map((it, idx) => {
+          const matchingSourcing = (it.itemId && curSourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || curSourcingItems[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingSourcing?.supplier?.trim() || '');
           return {
             itemId: it.itemId || (idx + 1).toString(),
@@ -2598,11 +2688,11 @@ export const OrderDetail: React.FC = () => {
             hsCode: (it as any).hsCode || ''
           };
         }),
-        sourcingItems: sourcingItems.map((it, idx) => {
-          const matchingOrderItem = (it.itemId && orderItems.find(r => r.itemId && r.itemId === it.itemId)) || orderItems[idx];
+        sourcingItems: curSourcingItems.map((it, idx) => {
+          const matchingOrderItem = (it.itemId && curOrderItems.find(r => r.itemId && r.itemId === it.itemId)) || curOrderItems[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingOrderItem?.supplier?.trim() || '');
           return {
-            itemId: it.itemId || '',
+            itemId: it.itemId || (idx + 1).toString(),
             name: it.name || '',
             supplier: activeSupplier,
             supplierContact: it.supplierContact || matchingOrderItem?.supplierContact || '',
@@ -2620,7 +2710,7 @@ export const OrderDetail: React.FC = () => {
         }),
         totalAmount,
         currency: orderCurrency,
-        forwarders: forwardersList.map(fw => {
+        forwarders: curForwardersList.map(fw => {
           const budget = !fw.budgetAmountUsd ? 0 : Number(fw.budgetAmountUsd);
           const freight = !fw.freightAmount ? 0 : Number(fw.freightAmount);
           const domestic = !fw.amountKrw ? 0 : Number(fw.amountKrw);
@@ -2634,13 +2724,13 @@ export const OrderDetail: React.FC = () => {
             finalAmountKrw: domestic + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? freight : 0),
           };
         }),
-        forwarderFreightAmount: forwardersList[0] ? (
-          (forwardersList[0].freightCurrency === 'USD' ? Number(forwardersList[0].freightAmount) : 0) || 
-          Number(forwardersList[0].amountUsd) || 
-          Number(forwardersList[0].amountKrw) || 
+        forwarderFreightAmount: curForwardersList[0] ? (
+          (curForwardersList[0].freightCurrency === 'USD' ? Number(curForwardersList[0].freightAmount) : 0) || 
+          Number(curForwardersList[0].amountUsd) || 
+          Number(curForwardersList[0].amountKrw) || 
           0
         ) : 0,
-        forwarderFreightCurrency: (forwardersList[0] ? (forwardersList[0].freightCurrency || (forwardersList[0].amountUsd ? 'USD' : 'KRW')) : 'KRW') as any,
+        forwarderFreightCurrency: (curForwardersList[0] ? (curForwardersList[0].freightCurrency || (curForwardersList[0].amountUsd ? 'USD' : 'KRW')) : 'KRW') as any,
         
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -2671,8 +2761,8 @@ export const OrderDetail: React.FC = () => {
       }
 
       isDirtyRef.current = false;
-      const piNum = basicForm.piNumber || order.piNumber || '알수없음';
-      const customer = basicForm.customer || order.customer || '알수없음';
+      const piNum = curBasicForm.piNumber || curOrder.piNumber || '알수없음';
+      const customer = curBasicForm.customer || curOrder.customer || '알수없음';
 
       if (changes.length > 0) {
         const logDescription = changes.join(', ');
@@ -2785,6 +2875,7 @@ export const OrderDetail: React.FC = () => {
       
       updated[index] = it;
       finalUpdatedItem = it;
+      latestOrderStateRef.current.orderItems = updated;
       return updated;
     });
 
@@ -2812,6 +2903,7 @@ export const OrderDetail: React.FC = () => {
           };
         }
       }
+      latestOrderStateRef.current.sourcingItems = sourcingUpdated;
       return sourcingUpdated;
     });
   };
@@ -6987,130 +7079,158 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             </div>
                           </td>
                         
-                        {/* 상품코드 */}
+                        {/* 상품코드 및 규격/스펙 */}
                         <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                              <textarea
-                                rows={1}
-                                value={item.name || ''}
-                                onChange={e => handleItemChange(idx, 'name', e.target.value)}
-                                placeholder="상품코드 검색/입력"
-                                title={item.name || ''}
-                                style={{
-                                  width: '100%',
-                                  padding: '6px 44px 6px 8px',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '4px',
-                                  fontSize: '13px',
-                                  fontWeight: 400,
-                                  letterSpacing: 'normal',
-                                  boxSizing: 'border-box',
-                                  minHeight: '34px',
-                                  resize: 'vertical',
-                                  outline: 'none',
-                                  color: '#1e293b',
-                                  lineHeight: 1.4
-                                }}
-                              />
-                              {item.name && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <textarea
+                                  rows={1}
+                                  value={item.name || ''}
+                                  onChange={e => handleItemChange(idx, 'name', e.target.value)}
+                                  placeholder="상품코드 검색/입력"
+                                  title={item.name || ''}
+                                  style={{
+                                    width: '100%',
+                                    padding: '6px 44px 6px 8px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    fontSize: '13px',
+                                    fontWeight: 400,
+                                    letterSpacing: 'normal',
+                                    boxSizing: 'border-box',
+                                    minHeight: '34px',
+                                    resize: 'vertical',
+                                    outline: 'none',
+                                    color: '#1e293b',
+                                    lineHeight: 1.4
+                                  }}
+                                />
+                                {item.name && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleItemChange(idx, 'name', '')}
+                                    style={{
+                                      position: 'absolute',
+                                      right: '22px',
+                                      top: '7px',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: '#64748b',
+                                      cursor: 'pointer',
+                                      fontSize: '13px',
+                                      padding: '2px',
+                                      zIndex: 5,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title="비우기"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
                                 <button
                                   type="button"
-                                  onClick={() => handleItemChange(idx, 'name', '')}
+                                  onClick={() => {
+                                    setSearchItemIndex(idx);
+                                    setIsSourcingSearch(false);
+                                    setIsProductSearchOpen(true);
+                                  }}
                                   style={{
                                     position: 'absolute',
-                                    right: '22px',
+                                    right: '4px',
                                     top: '7px',
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#64748b',
+                                    color: '#3b82f6',
                                     cursor: 'pointer',
-                                    fontSize: '13px',
+                                    fontSize: '13.5px',
                                     padding: '2px',
                                     zIndex: 5,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                   }}
-                                  title="비우기"
+                                  title="상품 검색 (Subwindow)"
                                 >
-                                  ✕
+                                  🔍
                                 </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSearchItemIndex(idx);
-                                  setIsSourcingSearch(false);
-                                  setIsProductSearchOpen(true);
-                                }}
-                                style={{
-                                  position: 'absolute',
-                                  right: '4px',
-                                  top: '7px',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: '#3b82f6',
-                                  cursor: 'pointer',
-                                  fontSize: '13.5px',
-                                  padding: '2px',
-                                  zIndex: 5,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                                title="상품 검색 (Subwindow)"
-                              >
-                                🔍
-                              </button>
-                              <datalist id={`detail_products_datalist_${idx}`}>
-                                {products.map(p => {
-                                  const displayName = p.nameEn || p.nameKo || '';
-                                  return (
-                                    <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
-                                      [{p.productCode}] {displayName}
-                                    </option>
-                                  );
-                                })}
-                              </datalist>
+                                <datalist id={`detail_products_datalist_${idx}`}>
+                                  {products.map(p => {
+                                    const displayName = p.nameEn || p.nameKo || '';
+                                    return (
+                                      <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
+                                        [{p.productCode}] {displayName}
+                                      </option>
+                                    );
+                                  })}
+                                </datalist>
+                              </div>
+                              {(() => {
+                                const rawCode = getRawProductCode(item.name);
+                                const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (p) {
+                                        setEditingProd(p);
+                                        setIsProdModalOpen(true);
+                                      } else {
+                                        alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                      }
+                                    }}
+                                    disabled={!p}
+                                    title="선택된 상품 수정"
+                                    style={{
+                                      background: p ? '#fef08a' : '#f1f5f9',
+                                      border: p ? '1px solid #eab308' : '1px solid #cbd5e1',
+                                      color: p ? '#a16207' : '#94a3b8',
+                                      borderRadius: '4px',
+                                      padding: '2px 4px',
+                                      cursor: p ? 'pointer' : 'not-allowed',
+                                      fontSize: '13.5px',
+                                      fontWeight: 400,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '32px',
+                                      width: '26px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                );
+                              })()}
                             </div>
-                            {(() => {
-                              const rawCode = getRawProductCode(item.name);
-                              const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (p) {
-                                      setEditingProd(p);
-                                      setIsProdModalOpen(true);
-                                    } else {
-                                      alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                    }
-                                  }}
-                                  disabled={!p}
-                                  title="선택된 상품 수정"
-                                  style={{
-                                    background: p ? '#fef08a' : '#f1f5f9',
-                                    border: p ? '1px solid #eab308' : '1px solid #cbd5e1',
-                                    color: p ? '#a16207' : '#94a3b8',
-                                    borderRadius: '4px',
-                                    padding: '2px 4px',
-                                    cursor: p ? 'pointer' : 'not-allowed',
-                                    fontSize: '13.5px',
-                                    fontWeight: 400,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    height: '32px',
-                                    width: '26px',
-                                    boxSizing: 'border-box'
-                                  }}
-                                >
-                                  ✏️
-                                </button>
-                              );
-                            })()}
+                            {/* 규격 / 스펙(Spec) 필드 */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
+                                스펙(Spec)
+                              </span>
+                              <input
+                                type="text"
+                                value={item.grade || ''}
+                                onChange={e => handleItemChange(idx, 'grade', e.target.value)}
+                                placeholder="규격 / 스펙(Spec) 입력 (예: WBR-7575Z, 50*70*3T)"
+                                title={`규격/스펙: ${item.grade || ''}`}
+                                style={{
+                                  flex: 1,
+                                  height: '24px',
+                                  padding: '0 8px',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  border: item.grade ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                                  background: item.grade ? '#f8fafc' : '#fff',
+                                  color: item.grade ? '#1e40af' : '#64748b',
+                                  borderRadius: '3px',
+                                  outline: 'none',
+                                  boxSizing: 'border-box'
+                                }}
+                              />
+                            </div>
                           </div>
                         </td>
 

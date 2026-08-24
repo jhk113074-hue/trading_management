@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.432',
+    version: 'v2.8.432',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '공급사 및 품목 정보 입력 시 Firestore 스냅샷 되돌림 현상 및 비동기 상태 레이스 컨디션 해결',
+    content: '• 포커스 이동 및 백그라운드 자동 저장 시 Firestore 로컬 쓰기 스냅샷(hasPendingWrites)에 의한 입력값 덮어쓰기 방지 가드 적용\\n• handleItemChange 변경 시 Ref 동기화를 적용하여 입력 즉시 최신 상태가 온전히 Firestore로 저장되도록 안정화',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.431',
+    version: 'v2.8.431',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '발주 품목 목록 상품명 하단 규격/스펙(Spec) 상시 표시 및 입력/수정 지원, 견적 연동 스펙 자동 반영',
+    content: '• 수주 상세(OrderDetail) 발주 품목 목록 테이블의 각 품목명 하단에 규격/스펙(Spec) 전용 입력란을 배치하여 어떤 제품인지 즉시 확인 및 수정 가능하도록 개선\\n• 연결된 견적서(PI)의 품목 스펙 정보가 자동으로 동기화되어 표시되도록 처리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.430',
     version: 'v2.8.430',
     date: '2026-08-24',
