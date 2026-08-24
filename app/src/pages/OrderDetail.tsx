@@ -11172,7 +11172,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
                   { id: 'CI_PL작성', label: 'CI/PL 작성' },
-                  { id: '업체별발행서류', label: '📦 업체별 발주서 / 도착보고서' },
                   { id: '서류업로드', label: '서류 업로드 및 수출신고' }
                 ].map(tab => {
                   const isActive = activeDocumentTab === tab.id;
@@ -11200,173 +11199,410 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 })}
               </div>
 
-              {/* ── 업체별 발주서 및 도착보고서 전용 서류 탭 ── */}
-              {activeDocumentTab === '업체별발행서류' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* 상단 안내 바 */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
-                        📦 각 업체별 발주서(PO) 및 도착보고서 통합 서류함 (총 {allOrderSuppliers.length}개사)
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
-                        본 수주건에 등록된 모든 매입/공급업체의 발주서, 도착보고서, 쉬핑마크 및 기발행 PDF 문서를 한곳에서 확인하고 즉시 열람/인쇄/전송할 수 있습니다.
-                      </p>
+              {activeDocumentTab === '서류업로드' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* 상단 기본 정보 및 서류 업로드 그리드 */}
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* 수출신고번호, 수출면장 기준환율 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                      <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                      <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1478.44" />
+                    </div>
+
+                    {/* B/L 번호 목록 다중 입력 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {(basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])).some(bl => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                        {isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                              setBasicForm(p => ({
+                                ...p,
+                                blNumbers: [...currentBls, '']
+                              }));
+                            }}
+                            style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            + 추가
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                        {(() => {
+                          const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                          if (currentBls.length === 0) {
+                            return (
+                              <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>등록된 B/L 번호가 없습니다. (수정 모드에서 추가 가능)</div>
+                            );
+                          }
+                          return currentBls.map((bl: string, idx: number) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <input
+                                type="text"
+                                value={bl}
+                                disabled={!isEditing}
+                                onChange={(e) => {
+                                  const nextBls = [...currentBls];
+                                  nextBls[idx] = e.target.value;
+                                  setBasicForm(p => ({
+                                    ...p,
+                                    blNumbers: nextBls,
+                                    blNumber: nextBls.filter(Boolean).join(', ')
+                                  }));
+                                }}
+                                placeholder={`B/L 번호 #${idx + 1}`}
+                                style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
+                              />
+                              {isEditing && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
+                                    setBasicForm(p => ({
+                                      ...p,
+                                      blNumbers: nextBls,
+                                      blNumber: nextBls.filter(Boolean).join(', ')
+                                    }));
+                                  }}
+                                  style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
+                    <div style={{ width: '100%', borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                        {renderFileField('CI / PL 유첨 (수동)', 'ciFiles', 'ci-file-input')}
+                        {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
+                        {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+                        {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                        {/* COA 및 시험성적서 (매입처별 개별/멀티 유첨 구조) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: 'span 1' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                              COA 및 시험성적서 {(order.coaFilesBySupplier && Object.values(order.coaFilesBySupplier).some((files: any) => files && files.length > 0)) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                            {(() => {
+                              const suppliers = Array.from(new Set(orderItems.map(it => it.supplier?.trim()).filter(Boolean))) as string[];
+                              if (suppliers.length === 0) {
+                                suppliers.push('일반 매입처');
+                              }
+                              return suppliers.map((sup) => {
+                                const files = (order.coaFilesBySupplier || {})[sup] || [];
+                                const inputId = `coa-file-input-${sup.replace(/\s+/g, '-')}`;
+                                return (
+                                  <div
+                                    key={sup}
+                                    tabIndex={isEditing ? 0 : undefined}
+                                    onDragOver={e => {
+                                      if (!isEditing) return;
+                                      e.preventDefault();
+                                      e.currentTarget.style.borderColor = '#3b82f6';
+                                      e.currentTarget.style.background = '#f0f9ff';
+                                    }}
+                                    onDragLeave={e => {
+                                      if (!isEditing) return;
+                                      e.preventDefault();
+                                      e.currentTarget.style.borderColor = '#e2e8f0';
+                                      e.currentTarget.style.background = '#fff';
+                                    }}
+                                    onDrop={e => {
+                                      if (!isEditing) return;
+                                      e.preventDefault();
+                                      e.currentTarget.style.borderColor = '#e2e8f0';
+                                      e.currentTarget.style.background = '#fff';
+                                      if (uploadingCoaSupplier !== null) return;
+                                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                        const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
+                                        handleSupplierCoaUpload(fakeEvent, sup);
+                                      }
+                                    }}
+                                    onPaste={async e => {
+                                      if (!isEditing) return;
+                                      const clipboardItems = e.clipboardData.items;
+                                      const filesToUpload: File[] = [];
+                                      for (let i = 0; i < clipboardItems.length; i++) {
+                                        if (clipboardItems[i].type.indexOf('image') !== -1) {
+                                          const file = clipboardItems[i].getAsFile();
+                                          if (file) {
+                                            e.preventDefault();
+                                            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                                            const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
+                                            const renamedFile = new File(
+                                              [file],
+                                              `screenshot_${dateStr}_${timeStr}.png`,
+                                              { type: file.type }
+                                            );
+                                            filesToUpload.push(renamedFile);
+                                          }
+                                        }
+                                      }
+                                      if (filesToUpload.length > 0) {
+                                        const fakeEvent = { target: { files: filesToUpload } } as any;
+                                        handleSupplierCoaUpload(fakeEvent, sup);
+                                      }
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '4px',
+                                      padding: '6px',
+                                      border: '1px solid #e2e8f0',
+                                      borderRadius: '4px',
+                                      background: '#fff',
+                                      outline: 'none',
+                                      transition: 'all 0.2s'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup} {files.length > 0 && <span style={{ color: '#10b981', marginLeft: '2px' }}>✅</span>}</span>
+                                      {isEditing && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            disabled={uploadingCoaSupplier !== null}
+                                            onClick={() => document.getElementById(inputId)?.click()}
+                                            style={{
+                                              background: '#3b82f6',
+                                              color: '#fff',
+                                              border: 'none',
+                                              borderRadius: '3px',
+                                              padding: '2px 6px',
+                                              fontSize: '10px',
+                                              fontWeight: 700,
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            {uploadingCoaSupplier === sup ? '...' : '추가'}
+                                          </button>
+                                          <input
+                                            type="file"
+                                            id={inputId}
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => handleSupplierCoaUpload(e, sup)}
+                                            disabled={uploadingCoaSupplier !== null}
+                                            multiple
+                                          />
+                                        </>
+                                      )}
+                                    </div>
+                                    {files.length > 0 ? (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px' }}>
+                                        {files.map((file: any, fIdx: number) => (
+                                          <div key={fIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #f1f5f9' }}>
+                                            <span
+                                              onClick={() => previewFile(file.url, file.name)}
+                                              style={{ fontSize: '10.5px', color: '#1e293b', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}
+                                            >
+                                              📎 {file.name}
+                                            </span>
+                                            {isEditing && (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSupplierCoaDelete(sup, fIdx, file.name)}
+                                                style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '9px', fontWeight: 700, cursor: 'pointer', padding: '0 2px' }}
+                                              >
+                                                ✕
+                                              </button>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음 (드래그 가능)</span>
+                                    )}
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </div>
+                        {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                        {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
+                      </div>
                     </div>
                   </div>
 
-                  {allOrderSuppliers.length === 0 ? (
-                    <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '4px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13.5px' }}>
-                      현재 등록된 매입/공급업체 품목이 없습니다. 1단계 [수주정보] 또는 2단계 [소싱/발주]에서 공급처를 지정해 주세요.
+                  {/* ── [기존 화면 밑] 각 공급업체별 발주서, 도착보고서, 쉬핑마크 통합 서류함 ── */}
+                  <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px 16px' }}>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
+                          📦 각 업체별 발주서(PO) 및 도착보고서 통합 서류함 (총 {allOrderSuppliers.length}개사)
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
+                          본 수주건에 등록된 모든 매입/공급업체의 발주서, 도착보고서, 쉬핑마크 및 기발행 PDF 문서를 한곳에서 확인하고 즉시 열람/인쇄/전송할 수 있습니다.
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    allOrderSuppliers.map((supplierName, sIdx) => {
-                      const items = groupedSupplierItems[supplierName] || [];
-                      const cleanSupplierName = supplierName.replace(/\s+/g, '');
-                      const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                      const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
-                      const isPoSent = !!basicForm.supplierPoSent?.[supplierName];
-                      const matchedSupplierObj = suppliersList.find((s: any) => 
-                        (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-                        (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-                        (s.name && supplierName.includes(s.name)) ||
-                        (supplierName && s.name && (s.name.includes(supplierName)))
-                      );
-                      const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
-                      const supEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
-                      const supPhone = primaryContact?.phone || matchedSupplierObj?.managerPhone || matchedSupplierObj?.phone || '';
 
-                      // Purchase total calculation
-                      const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                      const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                      const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
-                      const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                      const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                      const totalFormatted = [
-                        usdTotal > 0 ? `$${(usdTotal + usdVat).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD` : null,
-                        krwTotal > 0 ? `₩${(krwTotal + krwVat).toLocaleString()} KRW` : null
-                      ].filter(Boolean).join(' / ') || '0';
+                    {allOrderSuppliers.length === 0 ? (
+                      <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '4px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13.5px' }}>
+                        현재 등록된 매입/공급업체 품목이 없습니다. 1단계 [수주정보] 또는 2단계 [소싱/발주]에서 공급처를 지정해 주세요.
+                      </div>
+                    ) : (
+                      allOrderSuppliers.map((supplierName, sIdx) => {
+                        const items = groupedSupplierItems[supplierName] || [];
+                        const cleanSupplierName = supplierName.replace(/\s+/g, '');
+                        const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+                        const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || `${order.ciNumber || order.id}-${supplierCode}`;
+                        const isPoSent = !!basicForm.supplierPoSent?.[supplierName];
+                        const matchedSupplierObj = suppliersList.find((s: any) => 
+                          (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+                          (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+                          (s.name && supplierName.includes(s.name)) ||
+                          (supplierName && s.name && (s.name.includes(supplierName)))
+                        );
+                        const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+                        const supEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
+                        const supPhone = primaryContact?.phone || matchedSupplierObj?.managerPhone || matchedSupplierObj?.phone || '';
 
-                      // Issued docs for this supplier
-                      const relatedDocs = (issuedDocs || []).filter(d => 
-                        d.status === 'active' && (
-                          d.supplier_name === supplierName ||
-                          d.po_number === poNum ||
-                          d.po_number.includes(supplierCode) ||
-                          d.fileName.includes(supplierName) ||
-                          d.fileName.includes(cleanSupplierName)
-                        )
-                      );
+                        // Purchase total calculation
+                        const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                        const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                        const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                        const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                        const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                        const totalFormatted = [
+                          usdTotal > 0 ? `$${(usdTotal + usdVat).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD` : null,
+                          krwTotal > 0 ? `₩${(krwTotal + krwVat).toLocaleString()} KRW` : null
+                        ].filter(Boolean).join(' / ') || '0';
 
-                      return (
-                        <div
-                          key={supplierName}
-                          style={{
-                            background: '#fff',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          {/* Card Header */}
+                        // Issued docs for this supplier
+                        const relatedDocs = (issuedDocs || []).filter(d => 
+                          d.status === 'active' && (
+                            d.supplier_name === supplierName ||
+                            d.po_number === poNum ||
+                            d.po_number.includes(supplierCode) ||
+                            d.fileName.includes(supplierName) ||
+                            d.fileName.includes(cleanSupplierName)
+                          )
+                        );
+
+                        return (
                           <div
+                            key={supplierName}
                             style={{
-                              background: '#f8fafc',
-                              borderBottom: '1px solid #cbd5e1',
-                              padding: '10px 16px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              flexWrap: 'wrap',
-                              gap: '10px'
+                              background: '#fff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                              overflow: 'hidden'
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
-                                🏢 #{sIdx + 1} {supplierName}
-                              </span>
-                              <span style={{ fontSize: '12px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                발주품목: {items.length}건
-                              </span>
-                              <span style={{ fontSize: '12px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                                발주총액: {totalFormatted}
-                              </span>
-                              {supEmail && (
-                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>
-                                  ✉️ {supEmail} {supPhone ? `| 📞 ${supPhone}` : ''}
+                            {/* Card Header */}
+                            <div
+                              style={{
+                                background: '#f8fafc',
+                                borderBottom: '1px solid #cbd5e1',
+                                padding: '10px 16px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                gap: '10px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
+                                  🏢 #{sIdx + 1} {supplierName}
                                 </span>
-                              )}
+                                <span style={{ fontSize: '12px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  발주품목: {items.length}건
+                                </span>
+                                <span style={{ fontSize: '12px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  발주총액: {totalFormatted}
+                                </span>
+                                {supEmail && (
+                                  <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                                    ✉️ {supEmail} {supPhone ? `| 📞 ${supPhone}` : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintSupplierPo(supplierName, items)}
+                                  style={{
+                                    height: '32px',
+                                    padding: '0 12px',
+                                    fontSize: '12px',
+                                    fontWeight: 750,
+                                    color: '#fff',
+                                    background: '#2563eb',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  🖨️ 발주서 인쇄
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintSupplierArrivalReport(supplierName)}
+                                  style={{
+                                    height: '32px',
+                                    padding: '0 12px',
+                                    fontSize: '12px',
+                                    fontWeight: 750,
+                                    color: '#fff',
+                                    background: '#0d9488',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  🚚 도착보고서 인쇄
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintSupplierShippingMarks(supplierName)}
+                                  style={{
+                                    height: '32px',
+                                    padding: '0 12px',
+                                    fontSize: '12px',
+                                    fontWeight: 750,
+                                    color: '#475569',
+                                    background: '#f1f5f9',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  🏷️ 쉬핑마크
+                                </button>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <button
-                                type="button"
-                                onClick={() => handlePrintSupplierPo(supplierName, items)}
-                                style={{
-                                  height: '32px',
-                                  padding: '0 12px',
-                                  fontSize: '12px',
-                                  fontWeight: 750,
-                                  color: '#fff',
-                                  background: '#2563eb',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                              >
-                                🖨️ 발주서 인쇄
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handlePrintSupplierArrivalReport(supplierName)}
-                                style={{
-                                  height: '32px',
-                                  padding: '0 12px',
-                                  fontSize: '12px',
-                                  fontWeight: 750,
-                                  color: '#fff',
-                                  background: '#0d9488',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                              >
-                                🚚 도착보고서 인쇄
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handlePrintSupplierShippingMarks(supplierName)}
-                                style={{
-                                  height: '32px',
-                                  padding: '0 12px',
-                                  fontSize: '12px',
-                                  fontWeight: 750,
-                                  color: '#475569',
-                                  background: '#f1f5f9',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
-                              >
-                                🏷️ 쉬핑마크
-                              </button>
-                            </div>
-                          </div>
 
-                          {/* Card Body - 3 Columns */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', padding: '16px' }}>
-                            {/* 1. 발주서(PO) 정보 섹션 */}
-                            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                            {/* Card Body - 3 Columns */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', padding: '16px' }}>
+                              {/* 1. 발주서(PO) 정보 섹션 */}
+                              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 1) 공급업체 발주서 (PO)</span>
                                 <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: isPoSent ? '#dcfce7' : '#fee2e2', color: isPoSent ? '#166534' : '#991b1b' }}>
                                   {isPoSent ? '✅ 발송완료' : '⏳ 미발송'}
@@ -11590,277 +11826,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     })
                   )}
                 </div>
-              )}
-
-              {activeDocumentTab === '서류업로드' && (
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* 업체별 서류 빠른 열람 요약 배너 */}
-                  <div style={{ width: '100%', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e40af' }}>
-                        📦 각 공급업체별 발주서 및 도착보고서 발행 현황 ({allOrderSuppliers.length}개사):
-                      </span>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {allOrderSuppliers.map(sup => (
-                          <span key={sup} style={{ fontSize: '11px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontWeight: 700, color: '#334155' }}>
-                            {sup}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => updateQuery({ documentTab: '업체별발행서류' })}
-                      style={{
-                        background: '#2563eb',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px 12px',
-                        fontSize: '12px',
-                        fontWeight: 750,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      전체 발주서 / 도착보고서 보기 ➔
-                    </button>
-                  </div>
-                  {/* 수출신고번호, 수출면장 기준환율 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1478.44" />
-                  </div>
-
-                  {/* B/L 번호 목록 다중 입력 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {(basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])).some(bl => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                      {isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
-                            setBasicForm(p => ({
-                              ...p,
-                              blNumbers: [...currentBls, '']
-                            }));
-                          }}
-                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          + 추가
-                        </button>
-                      )}
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
-                      {(() => {
-                        const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
-                        if (currentBls.length === 0) {
-                          return (
-                            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>등록된 B/L 번호가 없습니다. (수정 모드에서 추가 가능)</div>
-                          );
-                        }
-                        return currentBls.map((bl: string, idx: number) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <input
-                              type="text"
-                              value={bl}
-                              disabled={!isEditing}
-                              onChange={(e) => {
-                                const nextBls = [...currentBls];
-                                nextBls[idx] = e.target.value;
-                                setBasicForm(p => ({
-                                  ...p,
-                                  blNumbers: nextBls,
-                                  blNumber: nextBls.filter(Boolean).join(', ')
-                                }));
-                              }}
-                              placeholder={`B/L 번호 #${idx + 1}`}
-                              style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
-                            />
-                            {isEditing && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
-                                  setBasicForm(p => ({
-                                    ...p,
-                                    blNumbers: nextBls,
-                                    blNumber: nextBls.filter(Boolean).join(', ')
-                                  }));
-                                }}
-                                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
-                              >
-                                삭제
-                              </button>
-                            )}
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
-                  {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
-                  <div style={{ gridColumn: 'span 3', borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                      {renderFileField('CI / PL 유첨 (수동)', 'ciFiles', 'ci-file-input')}
-                      {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
-                      {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
-                      {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                      {/* COA 및 시험성적서 (매입처별 개별/멀티 유첨 구조) */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: 'span 1' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
-                            COA 및 시험성적서 {(order.coaFilesBySupplier && Object.values(order.coaFilesBySupplier).some((files: any) => files && files.length > 0)) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
-                          {(() => {
-                            const suppliers = Array.from(new Set(orderItems.map(it => it.supplier?.trim()).filter(Boolean))) as string[];
-                            if (suppliers.length === 0) {
-                              suppliers.push('일반 매입처');
-                            }
-                            return suppliers.map((sup) => {
-                              const files = (order.coaFilesBySupplier || {})[sup] || [];
-                              const inputId = `coa-file-input-${sup.replace(/\s+/g, '-')}`;
-                              return (
-                                <div
-                                  key={sup}
-                                  tabIndex={isEditing ? 0 : undefined}
-                                  onDragOver={e => {
-                                    if (!isEditing) return;
-                                    e.preventDefault();
-                                    e.currentTarget.style.borderColor = '#3b82f6';
-                                    e.currentTarget.style.background = '#f0f9ff';
-                                  }}
-                                  onDragLeave={e => {
-                                    if (!isEditing) return;
-                                    e.preventDefault();
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.background = '#fff';
-                                  }}
-                                  onDrop={e => {
-                                    if (!isEditing) return;
-                                    e.preventDefault();
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.background = '#fff';
-                                    if (uploadingCoaSupplier !== null) return;
-                                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                      const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
-                                      handleSupplierCoaUpload(fakeEvent, sup);
-                                    }
-                                  }}
-                                  onPaste={async e => {
-                                    if (!isEditing) return;
-                                    const clipboardItems = e.clipboardData.items;
-                                    const filesToUpload: File[] = [];
-                                    for (let i = 0; i < clipboardItems.length; i++) {
-                                      if (clipboardItems[i].type.indexOf('image') !== -1) {
-                                        const file = clipboardItems[i].getAsFile();
-                                        if (file) {
-                                          e.preventDefault();
-                                          const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-                                          const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
-                                          const renamedFile = new File(
-                                            [file],
-                                            `screenshot_${dateStr}_${timeStr}.png`,
-                                            { type: file.type }
-                                          );
-                                          filesToUpload.push(renamedFile);
-                                        }
-                                      }
-                                    }
-                                    if (filesToUpload.length > 0) {
-                                      const fakeEvent = { target: { files: filesToUpload } } as any;
-                                      handleSupplierCoaUpload(fakeEvent, sup);
-                                    }
-                                  }}
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '4px',
-                                    padding: '6px',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '4px',
-                                    background: '#fff',
-                                    outline: 'none',
-                                    transition: 'all 0.2s'
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup} {files.length > 0 && <span style={{ color: '#10b981', marginLeft: '2px' }}>✅</span>}</span>
-                                    {isEditing && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          disabled={uploadingCoaSupplier !== null}
-                                          onClick={() => document.getElementById(inputId)?.click()}
-                                          style={{
-                                            background: '#3b82f6',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: '3px',
-                                            padding: '2px 6px',
-                                            fontSize: '10px',
-                                            fontWeight: 700,
-                                            cursor: 'pointer'
-                                          }}
-                                        >
-                                          {uploadingCoaSupplier === sup ? '...' : '추가'}
-                                        </button>
-                                        <input
-                                          type="file"
-                                          id={inputId}
-                                          style={{ display: 'none' }}
-                                          onChange={(e) => handleSupplierCoaUpload(e, sup)}
-                                          disabled={uploadingCoaSupplier !== null}
-                                          multiple
-                                        />
-                                      </>
-                                    )}
-                                  </div>
-                                  {files.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px' }}>
-                                      {files.map((file: any, fIdx: number) => (
-                                        <div key={fIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #f1f5f9' }}>
-                                          <span
-                                            onClick={() => previewFile(file.url, file.name)}
-                                            style={{ fontSize: '10.5px', color: '#1e293b', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}
-                                          >
-                                            📎 {file.name}
-                                          </span>
-                                          {isEditing && (
-                                            <button
-                                              type="button"
-                                              onClick={() => handleSupplierCoaDelete(sup, fIdx, file.name)}
-                                              style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '9px', fontWeight: 700, cursor: 'pointer', padding: '0 2px' }}
-                                            >
-                                              ✕
-                                            </button>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음 (드래그 가능)</span>
-                                  )}
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </div>
-                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
-                      {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
+            )}
 
               {activeDocumentTab === 'CI_PL작성' && (() => {
                 // Compute totals

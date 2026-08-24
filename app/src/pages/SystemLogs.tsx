@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.425',
+    version: 'v2.8.425',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '서류 업로드 및 수출신고 탭 내에 각 공급업체별 발주서/도착보고서/쉬핑마크 통합 서류함 일원화',
+    content: '• 서류관리의 하위 탭 구조를 [CI/PL 작성]과 [서류 업로드 및 수출신고] 2개로 유지\\n• [서류 업로드 및 수출신고] 화면 하단에 모든 공급업체의 발주서, 도착보고서, 쉬핑마크 및 PDF 이력 관리 서류함을 통합 배치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.424',
     version: 'v2.8.424',
     date: '2026-08-24',
