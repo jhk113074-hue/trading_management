@@ -2390,15 +2390,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dateInput && data.date) dateInput.value = data.date;
             
             // Populate containers safely
-            if (data.containers) {
-                if (document.getElementById('qty-LCL')) document.getElementById('qty-LCL').value = data.containers['LCL'] || 0;
-                if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
-                if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
-                if (document.getElementById('qty-20DG')) document.getElementById('qty-20DG').value = data.containers['20DG'] || 0;
-                if (document.getElementById('qty-40GP')) document.getElementById('qty-40GP').value = data.containers['40GP'] || 0;
-                if (document.getElementById('qty-40HC')) document.getElementById('qty-40HC').value = (data.containers['40HC'] || data.containers['40HQ']) || 0;
-                if (document.getElementById('qty-40HQ')) document.getElementById('qty-40HQ').value = (data.containers['40HQ'] || data.containers['40HC']) || 0;
-                if (document.getElementById('qty-40DG')) document.getElementById('qty-40DG').value = data.containers['40DG'] || 0;
+            if (data.containers && typeof data.containers === 'object') {
+                const availableTypes = ['20DG', '20GP', '40HQ', '40HC', '40GP', '20RF', '40DG', 'LCL'];
+                const primaryType = availableTypes.find(t => (data.containers[t] || 0) > 0) || Object.keys(data.containers)[0] || '20GP';
+                if (typeof setSelectedContainer === 'function') {
+                    setSelectedContainer(primaryType, data.containers);
+                }
             }
             
             // Populate items

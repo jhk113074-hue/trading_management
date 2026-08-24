@@ -1713,12 +1713,32 @@ export const OrderDetail: React.FC = () => {
     }
 
     const containersPayload: Record<string, number> = {};
-    if (targetBasicForm.packingList?.containers) {
+    
+    // 1. Prioritize FCL Specs from Forwarder/Shipping setup (e.g. 20DG 2대)
+    const fclSpecsList = targetBasicForm.fclSpecs || targetOrder?.fclSpecs;
+    if (targetBasicForm.shipmentType === 'LCL' || targetOrder?.shipmentType === 'LCL') {
+      containersPayload['LCL'] = 1;
+    } else if (Array.isArray(fclSpecsList) && fclSpecsList.length > 0) {
+      fclSpecsList.forEach((c: any) => {
+        const type = c.type || c.containerType || '20GP';
+        const qty = parseInt(c.qty, 10) || 1;
+        containersPayload[type] = (containersPayload[type] || 0) + qty;
+      });
+    } else if (Array.isArray(targetBasicForm.selectedContainers) && targetBasicForm.selectedContainers.length > 0) {
+      targetBasicForm.selectedContainers.forEach((c: any) => {
+        const type = c.type || c.containerType || '20GP';
+        const qty = parseInt(c.qty || c.count, 10) || 1;
+        containersPayload[type] = (containersPayload[type] || 0) + qty;
+      });
+    } else if (targetBasicForm.packingList?.containers && targetBasicForm.packingList.containers.length > 0) {
       targetBasicForm.packingList.containers.forEach((c: any) => {
         const type = c.containerType || '20GP';
         containersPayload[type] = (containersPayload[type] || 0) + 1;
       });
+    } else if (targetBasicForm.containerType) {
+      containersPayload[targetBasicForm.containerType] = 1;
     }
+
     if (Object.keys(containersPayload).length === 0) {
       containersPayload['20GP'] = 1;
     }

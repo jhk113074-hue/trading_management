@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.406',
+    version: 'v2.8.406',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '3D 시뮬레이션 FCL 컨테이너 타입 및 대수(수량) 완벽 연동',
+    content: '• 포워딩/운송사 선정 탭의 FCL 상세 정보(예: 20DG 2대 등)를 3D 적재 시뮬레이터로 전달 시 컨테이너 종류와 대수를 최우선으로 정확하게 연동하도록 수정\\n• 3D 시뮬레이터 로딩 시 전달받은 컨테이너 수량(setSelectedContainer)을 즉시 활성화하여 복수 컨테이너 적재 시뮬레이션이 자동으로 정상 실행되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.405',
     version: 'v2.8.405',
     date: '2026-08-24',
