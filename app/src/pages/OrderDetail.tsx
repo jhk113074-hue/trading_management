@@ -5370,8 +5370,14 @@ export const OrderDetail: React.FC = () => {
       const pdfUrl = latestDoc?.fileUrl || '';
 
       const itemsText = items.map(it => {
-        const spec = (it as any).grade ? ` ${(it as any).grade}` : '';
-        return `• [${it.name}${spec}] ${it.name || ''} (${(it.qty || 0).toLocaleString()}${it.unit || 'EA'})`;
+        const name = (it.name || '').trim();
+        const spec = ((it as any).grade || '').trim();
+        const qtyFormatted = (it.qty || 0).toLocaleString();
+        const unit = it.unit || 'EA';
+        if (spec) {
+          return `• ${name} [${spec}] (${qtyFormatted}${unit})`;
+        }
+        return `• ${name} (${qtyFormatted}${unit})`;
       }).join('\n');
 
       const totalAmt = items.reduce((sum, it) => {
@@ -5440,8 +5446,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const pdfUrl = latestDoc?.fileUrl || '';
 
     const itemsText = items.map(it => {
-      const spec = (it as any).grade ? ` ${(it as any).grade}` : '';
-      return `• [${it.name}${spec}] (${(it.qty || 0).toLocaleString()}${it.unit || 'EA'})`;
+      const name = (it.name || '').trim();
+      const spec = ((it as any).grade || '').trim();
+      const qtyFormatted = (it.qty || 0).toLocaleString();
+      const unit = it.unit || 'EA';
+      if (spec) {
+        return `• ${name} [${spec}] (${qtyFormatted}${unit})`;
+      }
+      return `• ${name} (${qtyFormatted}${unit})`;
     }).join('\n');
 
     const totalAmt = items.reduce((sum, it) => {

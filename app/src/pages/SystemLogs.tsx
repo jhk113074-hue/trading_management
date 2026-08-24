@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.447',
+    version: 'v2.8.447',
+    date: '2026-08-25',
+    category: '버그수정',
+    title: '발주서 이메일 및 카카오톡 전송 본문 품목명 중복 및 대괄호 꼬임 현상 정상화',
+    content: '• 발주서 이메일 및 카카오톡 공유 메시지 생성 시 품목명과 규격이 중복 표기되고 이중 대괄호([[...]])로 묶이던 현상 수정\\n• [품목명] [스펙] (수량+단위) 형식으로 깔끔하고 가독성 높게 본문 서식 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.446',
     version: 'v2.8.446',
     date: '2026-08-25',
