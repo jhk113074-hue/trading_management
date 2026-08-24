@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { SupplierContact } from '../types/supplier';
 
 interface PoEmailSendModalProps {
   supplierName: string;
@@ -8,6 +9,7 @@ interface PoEmailSendModalProps {
   defaultContent: string;
   pdfUrl?: string;
   pdfAttachments?: { title: string; url: string }[];
+  supplierContacts?: SupplierContact[];
   onSend: (data: { to: string; cc: string; subject: string; content: string }) => Promise<void> | void;
   onClose: () => void;
 }
@@ -20,6 +22,7 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
   defaultContent,
   pdfUrl,
   pdfAttachments,
+  supplierContacts,
   onSend,
   onClose
 }) => {
@@ -28,6 +31,58 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
   const [subject, setSubject] = useState(defaultSubject);
   const [content, setContent] = useState(defaultContent);
   const [isSending, setIsSending] = useState(false);
+
+  // Internal YSACC default team members
+  const internalMembers = [
+    { name: 'Alex Park', email: 'alexpark@ysacc.co.kr' },
+    { name: '김주한 대표', email: 'jhkim1130@ysacc.co.kr' },
+    { name: '김주한 부장', email: 'jhk010624@ysacc.co.kr' }
+  ];
+
+  // Supplier specific contact persons
+  const contactMembers = (supplierContacts || [])
+    .filter(c => c.email && c.email.trim())
+    .map(c => ({
+      name: `${c.name || '담당자'}${c.position ? `(${c.position})` : ''}`,
+      email: c.email!.trim()
+    }));
+
+  const allCandidateMembers = [
+    ...internalMembers,
+    ...contactMembers.filter(cm => !internalMembers.some(im => im.email.toLowerCase() === cm.email.toLowerCase()))
+  ];
+
+  const isEmailInCc = (email: string) => {
+    const list = ccEmails.split(',').map(x => x.trim().toLowerCase());
+    return list.includes(email.toLowerCase());
+  };
+
+  const toggleCcEmail = (email: string) => {
+    const list = ccEmails.split(',').map(x => x.trim()).filter(Boolean);
+    const existingIdx = list.findIndex(x => x.toLowerCase() === email.toLowerCase());
+    let nextList: string[];
+    if (existingIdx >= 0) {
+      nextList = list.filter((_, idx) => idx !== existingIdx);
+    } else {
+      nextList = [...list, email];
+    }
+    const newCcStr = nextList.join(', ');
+    setCcEmails(newCcStr);
+
+    setContent(prev => {
+      if (prev.includes('▪ 참조(CC):')) {
+        const lines = prev.split('\n');
+        const updated = lines.map(line => {
+          if (line.startsWith('▪ 참조(CC):')) {
+            return `▪ 참조(CC): ${newCcStr || '없음'}`;
+          }
+          return line;
+        });
+        return updated.join('\n');
+      }
+      return prev;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +128,7 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
           borderRadius: '6px',
           border: '1px solid #cbd5e1',
           boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
-          width: '600px',
+          width: '620px',
           maxWidth: '92vw',
           overflow: 'hidden',
           display: 'flex',
@@ -89,7 +144,7 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
         </div>
 
         {/* 폼 */}
-        <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '82vh', overflowY: 'auto' }}>
           {/* 수신자 (TO) */}
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -116,15 +171,33 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
             />
           </div>
 
-          {/* 참조 (CC) */}
+          {/* 참조 (CC) 및 빠른 멤버 선택 */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>
-              참조 (CC) 이메일 (쉼표 구분)
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                참조 (CC) 이메일 (쉼표 구분)
+              </label>
+            </div>
             <input
               type="text"
               value={ccEmails}
-              onChange={e => setCcEmails(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                setCcEmails(val);
+                setContent(prev => {
+                  if (prev.includes('▪ 참조(CC):')) {
+                    const lines = prev.split('\n');
+                    const updated = lines.map(line => {
+                      if (line.startsWith('▪ 참조(CC):')) {
+                        return `▪ 참조(CC): ${val || '없음'}`;
+                      }
+                      return line;
+                    });
+                    return updated.join('\n');
+                  }
+                  return prev;
+                });
+              }}
               placeholder="alexpark@ysacc.co.kr, jhkim1130@ysacc.co.kr"
               style={{
                 width: '100%',
@@ -139,6 +212,39 @@ export const PoEmailSendModal: React.FC<PoEmailSendModalProps> = ({
                 outline: 'none'
               }}
             />
+
+            {/* CC 빠른 멤버 토글 뱃지 */}
+            <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 750 }}>👥 CC 빠른 선택:</span>
+              {allCandidateMembers.map(member => {
+                const isSelected = isEmailInCc(member.email);
+                return (
+                  <button
+                    key={member.email}
+                    type="button"
+                    onClick={() => toggleCcEmail(member.email)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      border: isSelected ? '1px solid #3b82f6' : '1px solid #cbd5e1',
+                      background: isSelected ? '#eff6ff' : '#f8fafc',
+                      color: isSelected ? '#1d4ed8' : '#64748b',
+                      fontSize: '11px',
+                      fontWeight: isSelected ? 750 : 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={`${member.name} (${member.email}) ${isSelected ? '참조 해제' : '참조 추가'}`}
+                  >
+                    <span>{isSelected ? '✓' : '+'}</span>
+                    <span>{member.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 메일 제목 */}

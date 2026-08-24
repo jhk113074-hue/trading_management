@@ -351,6 +351,7 @@ export const OrderDetail: React.FC = () => {
     defaultContent: string;
     pdfUrl: string;
     pdfAttachments?: { title: string; url: string }[];
+    supplierContacts?: any[];
   } | null>(null);
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
@@ -5430,8 +5431,25 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
     const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
 
-    const targetSupplier = suppliersList.find(s => s.name === supplierName);
-    const supplierEmail = targetSupplier?.purchaseEmail || '';
+    const matchedSupplierObj = suppliersList.find((s: any) => 
+      (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.name && supplierName.includes(s.name)) ||
+      (supplierName && s.name && (s.name.includes(supplierName)))
+    );
+    const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+    const supplierEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
+
+    const ccFromContacts = (matchedSupplierObj?.contacts || [])
+      .filter((c: any) => c.isCc && c.email)
+      .map((c: any) => c.email!.trim());
+    const explicitCcList = (matchedSupplierObj?.defaultCcEmails || '')
+      .split(',')
+      .map((x: string) => x.trim())
+      .filter(Boolean);
+    const combinedSupplierCc = Array.from(new Set([...ccFromContacts, ...explicitCcList]));
+    const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+    const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
 
     const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
                     basicForm.issuingCompany || order.issuingCompany || 'YSACC',
@@ -5471,7 +5489,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const dateFormatted = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
       + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
 
-    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
     const subject = `[${companyTitleName} 발주서 발행 알림] ${poNum} - ${supplierName}`;
     const textContent = `[${companyTitleName} 발주서 발행 및 메일전송 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발주품목:\n${itemsText}\n▪ 발주금액: ${formattedAmt}\n------------------------------------\n▪ 발신담당: ${senderInfo}\n▪ 수신(TO): ${supplierEmail || '미지정'}\n▪ 참조(CC): ${defaultCc}\n▪ 발행일시: ${dateFormatted}`;
 
@@ -5482,7 +5499,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
       defaultCcEmails: defaultCc,
       defaultSubject: subject,
       defaultContent: textContent,
-      pdfUrl: pdfUrl
+      pdfUrl: pdfUrl,
+      supplierContacts: matchedSupplierObj?.contacts || []
     });
   };
 
@@ -15248,6 +15266,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           defaultContent={poEmailModalData.defaultContent}
           pdfUrl={poEmailModalData.pdfUrl}
           pdfAttachments={poEmailModalData.pdfAttachments}
+          supplierContacts={poEmailModalData.supplierContacts}
           onSend={handleExecuteSendPoEmail}
           onClose={() => setPoEmailModalData(null)}
         />

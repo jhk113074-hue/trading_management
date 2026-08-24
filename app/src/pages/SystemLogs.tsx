@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.448',
+    version: 'v2.8.448',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '발주서 이메일 발송 모달 내 CC 참조 멤버 자동 연동 및 원클릭 토글 뱃지 복원/강화',
+    content: '• 공급업체 기본 참조 이메일(defaultCcEmails) 및 등록된 공급사 담당자 CC 목록 자동 연동\\n• 이메일 발송 팝업 내 [👥 CC 빠른 선택] 토글 뱃지 탑재 (사내 멤버 및 공급사 담당자 1클릭 추가/제거)\\n• 참조 멤버 변경 시 본문 내 "▪ 참조(CC):" 내용 실시간 자동 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.447',
     version: 'v2.8.447',
     date: '2026-08-25',
