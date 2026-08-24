@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.437',
+    version: 'v2.8.437',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '3D 컨테이너 화물 선택/해제/이동 편의성 대폭 개선 (화면 HUD 플로팅 컨트롤러 및 원클릭 해제/키보드 단축키 지원)',
+    content: '• 3D 화면에서 화물 클릭 시 즉시 선택, 빈 공간 클릭 시 즉시 선택 해제되는 자연스러운 인터랙션 구현\\n• 화물 선택 시 3D 화면 하단에 플로팅 조작창(HUD)이 나타나 앞/뒤/좌/우 이동, 90° 회전, 1단↔2단 변경, 선택 해제를 화면에서 즉시 조작\\n• 키보드 방향키(↑↓←→ / WASD), R(회전), T/Space(단수 변경), ESC(선택 해제), Tab(다음 화물) 단축키 전면 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.436',
     version: 'v2.8.436',
     date: '2026-08-24',

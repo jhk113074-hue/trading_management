@@ -82,7 +82,9 @@ class Viewer3D {
         // Resize Listener
         window.addEventListener('resize', this.resize.bind(this));
 
-        // --- 3D Interactive Mouse Drag & Drop & Selection ---
+        // --- 3D Interactive Mouse Drag & Drop & Selection (Click anywhere to select or deselect) ---
+        let mouseDownPos = { x: 0, y: 0 };
+
         const getMouseNDC = (e) => {
             const rect = this.renderer.domElement.getBoundingClientRect();
             return {
@@ -92,6 +94,9 @@ class Viewer3D {
         };
 
         this.renderer.domElement.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Primary mouse button only
+
+            mouseDownPos = { x: e.clientX, y: e.clientY };
             const ndc = getMouseNDC(e);
             this.mouse.x = ndc.x;
             this.mouse.y = ndc.y;
@@ -110,19 +115,10 @@ class Viewer3D {
                     this.dragStartMousePos = { x: e.clientX, y: e.clientY };
                     this.dragItemStartCoords = { x: pm.item.x, y: pm.item.y, z: pm.item.z };
 
-                    // Disable OrbitControls while dragging a pallet
-                    this.controls.enabled = false;
-                    this.renderer.domElement.style.cursor = 'grabbing';
-
                     // Set horizontal dragging plane at pallet's current Y height
                     this.dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), pm.mesh.position);
                     this.raycaster.ray.intersectPlane(this.dragPlane, this.planeIntersectPoint);
                     this.dragOffset.copy(this.planeIntersectPoint).sub(pm.mesh.position);
-
-                    this.selectPallet(pm.item.globalIndex);
-                    if (typeof window.onPalletSelected === 'function') {
-                        window.onPalletSelected(pm.item);
-                    }
                 }
             }
         });
@@ -138,6 +134,10 @@ class Viewer3D {
                 
                 this.isDraggingPallet3D = true;
                 this.hasMovedIn3D = true;
+
+                // Disable OrbitControls while dragging a pallet
+                this.controls.enabled = false;
+                this.renderer.domElement.style.cursor = 'grabbing';
 
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 if (this.raycaster.ray.intersectPlane(this.dragPlane, this.planeIntersectPoint)) {
@@ -177,7 +177,7 @@ class Viewer3D {
                                 if (!snappedY) {
                                     if (Math.abs(targetY - (other.y + other.packedW)) < snapDist) { targetY = other.y + other.packedW; snappedY = true; }
                                     else if (Math.abs(targetY + item.packedW - other.y) < snapDist) { targetY = other.y - item.packedW; snappedY = true; }
-                                    else if (Math.abs(targetY - other.y) < snapDist) { targetY = other.y; snappedY = true; }
+                                    else if (Math.abs(targetY - other.y) < snapDist) { targetY = other.y - item.packedW; snappedY = true; }
                                 }
                             });
                         }
@@ -219,9 +219,14 @@ class Viewer3D {
                         this.highlightBox.position.z = newWorldZ;
                     }
 
-                    // Live sync with bottom panel & 2D canvas
+                    // Live sync with bottom panel & 2D canvas & HUD
                     if (typeof window.syncPalletPositionFrom3D === 'function') {
                         window.syncPalletPositionFrom3D(item);
+                    }
+                    const hudCoords = document.getElementById('hud-coords');
+                    if (hudCoords) {
+                        const tierText = item.z > 0 ? '2단 적재 (상단)' : '1단 적재 (바닥)';
+                        hudCoords.textContent = `위치: X=${item.x}mm, Y=${item.y}mm, Z=${item.z}mm | ${tierText}`;
                     }
                 }
             } else {
@@ -229,11 +234,17 @@ class Viewer3D {
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
                 const intersects = this.raycaster.intersectObjects(clickableMeshes);
-                this.renderer.domElement.style.cursor = intersects.length > 0 ? 'grab' : 'default';
+                if (intersects.length > 0) {
+                    this.renderer.domElement.style.cursor = 'pointer';
+                } else {
+                    this.renderer.domElement.style.cursor = 'default';
+                }
             }
         });
 
-        const handle3DDragEnd = () => {
+        const handle3DDragEnd = (e) => {
+            const distMoved = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
+
             if (this.draggedPallet) {
                 if (this.isDraggingPallet3D && this.hasMovedIn3D) {
                     if (typeof window.applyPalletPositionChange === 'function') {
@@ -246,10 +257,46 @@ class Viewer3D {
                 this.controls.enabled = true;
                 this.renderer.domElement.style.cursor = 'default';
             }
+
+            // Click handling (if mouse was clicked, not dragged)
+            if (distMoved < 6) {
+                const ndc = getMouseNDC(e);
+                this.mouse.x = ndc.x;
+                this.mouse.y = ndc.y;
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+
+                const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
+                const intersects = this.raycaster.intersectObjects(clickableMeshes);
+
+                if (intersects.length > 0) {
+                    const hitMesh = intersects[0].object;
+                    const pm = this.palletMeshes.find(p => p.mesh === hitMesh);
+                    if (pm && pm.item) {
+                        // Clicked on a pallet: Select it immediately!
+                        this.selectPallet(pm.item.globalIndex);
+                        if (typeof window.onPalletSelected === 'function') {
+                            window.onPalletSelected(pm.item);
+                        }
+                    }
+                } else {
+                    // Clicked on empty space/background: Deselect!
+                    this.selectPallet(null);
+                    if (typeof window.onPalletDeselected === 'function') {
+                        window.onPalletDeselected();
+                    }
+                }
+            }
         };
 
         this.renderer.domElement.addEventListener('mouseup', handle3DDragEnd);
-        this.renderer.domElement.addEventListener('mouseleave', handle3DDragEnd);
+        this.renderer.domElement.addEventListener('mouseleave', () => {
+            if (this.draggedPallet) {
+                this.draggedPallet = null;
+                this.isDraggingPallet3D = false;
+                this.hasMovedIn3D = false;
+                this.controls.enabled = true;
+            }
+        });
 
         // Double Click to Rotate in 3D
         this.renderer.domElement.addEventListener('dblclick', (e) => {
@@ -279,11 +326,10 @@ class Viewer3D {
                     if (typeof window.applyPalletPositionChange === 'function') {
                         window.applyPalletPositionChange(item);
                     }
+                    this.selectPallet(item.globalIndex);
                 }
             }
         });
-    }
-
     resize() {
         if (!this.container || !this.renderer || !this.camera) return;
         const width = this.container.clientWidth || (this.container.parentElement ? this.container.parentElement.clientWidth : 800);
@@ -381,7 +427,15 @@ class Viewer3D {
             this.highlightBox = null;
         }
         
-        if (globalIndex === null || globalIndex === undefined) return;
+        const hud = document.getElementById('hud-3d-pallet-ctrl');
+        const hudTitle = document.getElementById('hud-title');
+        const hudCoords = document.getElementById('hud-coords');
+        const hudTierBtn = document.getElementById('hud-btn-tier');
+
+        if (globalIndex === null || globalIndex === undefined) {
+            if (hud) hud.style.display = 'none';
+            return;
+        }
         
         const pm = this.palletMeshes.find(p => p.item && p.item.globalIndex === globalIndex);
         if (pm && pm.mesh) {
@@ -392,6 +446,17 @@ class Viewer3D {
             this.highlightBox = new THREE.LineSegments(hlEdges, hlMat);
             this.highlightBox.position.copy(pm.mesh.position);
             this.scene.add(this.highlightBox);
+
+            // Update HUD overlay
+            if (hud) {
+                hud.style.display = 'block';
+                if (hudTitle) hudTitle.innerHTML = `[#${item.globalIndex}] ${item.name} <small style="color:#94a3b8; font-weight:normal;">(${item.packedL}×${item.packedW}×${item.packedH}mm)</small>`;
+                const tierText = item.z > 0 ? '2단 적재 (상단)' : '1단 적재 (바닥)';
+                if (hudCoords) hudCoords.textContent = `위치: X=${item.x}mm, Y=${item.y}mm, Z=${item.z}mm | ${tierText}`;
+                if (hudTierBtn) hudTierBtn.innerHTML = item.z > 0 ? '🔽 1단(바닥) 내리기' : '🔼 2단(상단) 올리기';
+            }
+        } else {
+            if (hud) hud.style.display = 'none';
         }
     }
 

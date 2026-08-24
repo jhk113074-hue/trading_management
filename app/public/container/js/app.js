@@ -3671,3 +3671,146 @@ document.addEventListener('DOMContentLoaded', () => {
         window.parent.postMessage({ type: 'IFRAME_READY' }, '*');
     }
 });
+
+    // --- 3D Floating HUD Controller & Keyboard Shortcuts ---
+    window.onPalletDeselected = () => {
+        selectedPalletGlobalIndex = null;
+        if (palletAdjustPanel) palletAdjustPanel.classList.add('hidden');
+        const hud = document.getElementById('hud-3d-pallet-ctrl');
+        if (hud) hud.style.display = 'none';
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (currentResult) renderPackingList(currentResult.loaded);
+    };
+
+    const moveSelectedPalletBy = (dx, dy) => {
+        if (selectedPalletGlobalIndex === null) return;
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (!item) return;
+
+        const { l, w } = currentResult.dimensions;
+        item.x = Math.max(0, Math.min(l - item.packedL, item.x + dx));
+        item.y = Math.max(0, Math.min(w - item.packedW, item.y + dy));
+
+        applyPalletPositionChange(item);
+        if (window.Viewer3D) window.Viewer3D.selectPallet(item.globalIndex);
+    };
+
+    const toggleSelectedPalletTier = () => {
+        if (selectedPalletGlobalIndex === null) return;
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (!item) return;
+
+        if (item.z > 0) {
+            item.z = 0; // Drop to 1단 floor
+        } else {
+            // Raise to 2단 (use first item height or 1200)
+            const firstItemH = currentResult.loaded[0]?.packedH || 1200;
+            item.z = firstItemH;
+        }
+
+        applyPalletPositionChange(item);
+        if (window.Viewer3D) window.Viewer3D.selectPallet(item.globalIndex);
+    };
+
+    const rotateSelectedPallet90 = () => {
+        if (selectedPalletGlobalIndex === null) return;
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (!item) return;
+
+        const temp = item.packedL;
+        item.packedL = item.packedW;
+        item.packedW = temp;
+        item.rotated = !item.rotated;
+
+        const { l, w } = currentResult.dimensions;
+        if (item.x + item.packedL > l) item.x = Math.max(0, l - item.packedL);
+        if (item.y + item.packedW > w) item.y = Math.max(0, w - item.packedW);
+
+        applyPalletPositionChange(item);
+        if (window.Viewer3D) window.Viewer3D.selectPallet(item.globalIndex);
+    };
+
+    // HUD Button Click Listeners
+    const hudBtnFwd = document.getElementById('hud-btn-fwd');
+    const hudBtnBack = document.getElementById('hud-btn-back');
+    const hudBtnLeft = document.getElementById('hud-btn-left');
+    const hudBtnRight = document.getElementById('hud-btn-right');
+    const hudBtnRotate = document.getElementById('hud-btn-rotate');
+    const hudBtnTier = document.getElementById('hud-btn-tier');
+    const hudBtnDeselect = document.getElementById('hud-btn-deselect');
+
+    if (hudBtnFwd) hudBtnFwd.onclick = (e) => { e.stopPropagation(); moveSelectedPalletBy(-100, 0); };
+    if (hudBtnBack) hudBtnBack.onclick = (e) => { e.stopPropagation(); moveSelectedPalletBy(100, 0); };
+    if (hudBtnLeft) hudBtnLeft.onclick = (e) => { e.stopPropagation(); moveSelectedPalletBy(0, -100); };
+    if (hudBtnRight) hudBtnRight.onclick = (e) => { e.stopPropagation(); moveSelectedPalletBy(0, 100); };
+    if (hudBtnRotate) hudBtnRotate.onclick = (e) => { e.stopPropagation(); rotateSelectedPallet90(); };
+    if (hudBtnTier) hudBtnTier.onclick = (e) => { e.stopPropagation(); toggleSelectedPalletTier(); };
+    if (hudBtnDeselect) hudBtnDeselect.onclick = (e) => { e.stopPropagation(); window.onPalletDeselected(); };
+
+    // Global Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+        // Do not intercept if typing in an input/textarea
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+        if (selectedPalletGlobalIndex !== null) {
+            const step = e.shiftKey ? 300 : 100;
+            switch(e.key) {
+                case 'Escape':
+                    e.preventDefault();
+                    window.onPalletDeselected();
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    moveSelectedPalletBy(-step, 0); // Toward front
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    moveSelectedPalletBy(step, 0); // Toward door
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    moveSelectedPalletBy(0, -step); // Toward left
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    moveSelectedPalletBy(0, step); // Toward right
+                    break;
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    rotateSelectedPallet90();
+                    break;
+                case 't':
+                case 'T':
+                case ' ':
+                    e.preventDefault();
+                    toggleSelectedPalletTier();
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+                    if (currentResult && currentResult.loaded) {
+                        const curIdx = currentResult.loaded.findIndex(i => i.globalIndex === selectedPalletGlobalIndex);
+                        const nextIdx = e.shiftKey 
+                            ? (curIdx - 1 + currentResult.loaded.length) % currentResult.loaded.length 
+                            : (curIdx + 1) % currentResult.loaded.length;
+                        selectPalletForAdjustment(currentResult.loaded[nextIdx].globalIndex);
+                    }
+                    break;
+            }
+        }
+    });
