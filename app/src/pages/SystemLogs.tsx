@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.403',
+    version: 'v2.8.403',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 혼적(Mixed Cargo) 패키지 통합 연동 지원',
+    content: '• 패킹리스트에서 여러 품목을 1개의 팔레트/패키지로 합친 혼적([혼적 N건]) 항목을 3D 컨테이너 적재 시뮬레이션 실행 시 개별 품목이 아닌 1개의 통합 팔레트 화물로 규격(WxDxH) 및 중량을 완벽 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.402',
     version: 'v2.8.402',
     date: '2026-08-24',

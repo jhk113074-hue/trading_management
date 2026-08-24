@@ -1611,6 +1611,114 @@ export const OrderDetail: React.FC = () => {
     return () => document.removeEventListener('click', handleGlobalClick, true);
   }); // run on every render to capture the latest handleSaveBasic closure
 
+  // Helper to build 3D container loading simulation payload taking mixed cargo (혼적) into account
+  const buildPackerSimulationPayload = () => {
+    const itemsPayload: any[] = [];
+    if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
+      basicForm.packingList.containers.forEach((c: any) => {
+        const itemsList = c.items || [];
+        for (let itIdx = 0; itIdx < itemsList.length; itIdx++) {
+          const it = itemsList[itIdx];
+          const isSecondary = it._sharedWithPrev || it._isMergedMember;
+          if (isSecondary) continue; // Secondary items in mixed cargo are grouped into head item
+          if (!it.description && !it.pkgNo) continue;
+
+          // Calculate spanCount for merged group (혼적)
+          let spanCount = 1;
+          for (let k = itIdx + 1; k < itemsList.length; k++) {
+            if (itemsList[k]._sharedWithPrev || itemsList[k]._isMergedMember) {
+              spanCount++;
+            } else {
+              break;
+            }
+          }
+
+          const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
+          const dims = cleanDims.split('x');
+          const w = Number(dims[0]) || 1100;
+          const d = Number(dims[1]) || 1100;
+          const h = Number(dims[2]) || 1000;
+
+          let desc = (it.description || '화물').replace(/^P#\d+\.\s*/i, '');
+          let sumNet = Number(it.netWeight) || 0;
+          let sumGross = Number(it.grossWeight) || 0;
+
+          if (spanCount > 1) {
+            const mergedItems = itemsList.slice(itIdx, itIdx + spanCount);
+            const descList = mergedItems.map((x: any) => (x.description || '').replace(/^P#\d+\.\s*/i, '')).filter(Boolean);
+            desc = `[혼적 ${spanCount}건] ` + descList.join(' + ');
+            if (sumNet === 0) {
+              sumNet = mergedItems.reduce((acc: number, x: any) => acc + (Number(x.netWeight) || 0), 0);
+            }
+            if (sumGross === 0) {
+              sumGross = mergedItems.reduce((acc: number, x: any) => acc + (Number(x.grossWeight) || 0), 0);
+            }
+          }
+
+          let count = parseInt(it.pkg, 10);
+          if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
+          if (count <= 0) count = 1;
+
+          itemsPayload.push({
+            desc: desc,
+            qty: count,
+            w: w,
+            d: d,
+            h: h,
+            netWeight: sumNet,
+            grossWeight: sumGross,
+            packageType: it.packageType || 'Pallet'
+          });
+        }
+      });
+    }
+
+    // Fallback to orderItems if packing list has no items yet
+    if (itemsPayload.length === 0) {
+      orderItems.forEach((item: any) => {
+        const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+        const itemCode = match ? match[1] : '-';
+        const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+        const list = matchedProd?.packingMethods || [];
+        const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
+        const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
+        const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
+        const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
+
+        itemsPayload.push({
+          desc: item.name || '화물',
+          qty: item.qty || 1,
+          w: w,
+          d: d,
+          h: h,
+          netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
+          grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
+          packageType: item.packageType || 'Pallet'
+        });
+      });
+    }
+
+    const containersPayload: Record<string, number> = {};
+    if (basicForm.packingList?.containers) {
+      basicForm.packingList.containers.forEach((c: any) => {
+        const type = c.containerType || '20GP';
+        containersPayload[type] = (containersPayload[type] || 0) + 1;
+      });
+    }
+    if (Object.keys(containersPayload).length === 0) {
+      containersPayload['20GP'] = 1;
+    }
+
+    return {
+      type: 'LOAD_PI_DATA',
+      customer: basicForm.customer || '',
+      piNumber: basicForm.piNumber || order?.id || '',
+      date: basicForm.etd || new Date().toISOString().split('T')[0],
+      containers: containersPayload,
+      items: itemsPayload
+    };
+  };
+
   // 3D적재 시뮬레이션 파일 보관함 핸들러 함수들
   const handleArchiveUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -9356,75 +9464,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                           <button
                             type="button"
                             onClick={() => {
-                              const itemsPayload: any[] = [];
-                              if (basicForm.packingList?.containers) {
-                                basicForm.packingList.containers.forEach((c: any) => {
-                                  (c.items || []).forEach((it: any) => {
-                                    if (!it.description && !it.pkgNo) return;
-                                    const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
-                                    const dims = cleanDims.split('x');
-                                    const w = Number(dims[0]) || 1100;
-                                    const d = Number(dims[1]) || 1100;
-                                    const h = Number(dims[2]) || 1000;
-                                    
-                                    itemsPayload.push({
-                                      desc: it.description || '화물',
-                                      qty: Number(it.pkg) || 1,
-                                      w: w,
-                                      d: d,
-                                      h: h,
-                                      netWeight: Number(it.netWeight) || 0,
-                                      grossWeight: Number(it.grossWeight) || 0,
-                                      packageType: it.packageType || 'Pallet'
-                                    });
-                                  });
-                                });
-                              }
-                              
-                              if (itemsPayload.length === 0) {
-                                orderItems.forEach((item: any) => {
-                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-                                  const itemCode = match ? match[1] : '-';
-                                  const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
-                                  const list = matchedProd?.packingMethods || [];
-                                  const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
-                                  const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
-                                  const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
-                                  const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
-                                  
-                                  itemsPayload.push({
-                                    desc: item.name || '화물',
-                                    qty: item.qty || 1,
-                                    w: w,
-                                    d: d,
-                                    h: h,
-                                    netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
-                                    grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
-                                    packageType: item.packageType || 'Pallet'
-                                  });
-                                });
-                              }
-
-                              const containersPayload: Record<string, number> = {};
-                              if (basicForm.packingList?.containers) {
-                                basicForm.packingList.containers.forEach((c: any) => {
-                                  const type = c.containerType || '20GP';
-                                  containersPayload[type] = (containersPayload[type] || 0) + 1;
-                                });
-                              }
-                              if (Object.keys(containersPayload).length === 0) {
-                                containersPayload['20GP'] = 1;
-                              }
-
-                              const payload = {
-                                type: 'LOAD_PI_DATA',
-                                customer: basicForm.customer || '',
-                                piNumber: basicForm.piNumber || order?.id || '',
-                                date: basicForm.etd || new Date().toISOString().split('T')[0],
-                                containers: containersPayload,
-                                items: itemsPayload
-                              };
-
+                              const payload = buildPackerSimulationPayload();
                               try {
                                 localStorage.setItem('PI_SIMULATION_DATA', JSON.stringify(payload));
                               } catch (err) {
@@ -14241,79 +14281,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                 onLoad={(e) => {
                   const iframe = e.currentTarget;
                   if (!iframe || !iframe.contentWindow) return;
-
-                  // Map currently entered Container Packing List items
-                  const itemsPayload: any[] = [];
-                  if (basicForm.packingList?.containers) {
-                    basicForm.packingList.containers.forEach((c: any) => {
-                      (c.items || []).forEach((it: any) => {
-                        if (!it.description && !it.pkgNo) return; // Skip empty container row mockups
-                        const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
-                        const dims = cleanDims.split('x');
-                        const w = Number(dims[0]) || 1100;
-                        const d = Number(dims[1]) || 1100;
-                        const h = Number(dims[2]) || 1000;
-                        
-                        itemsPayload.push({
-                          desc: it.description || '화물',
-                          qty: Number(it.pkg) || 1,
-                          w: w,
-                          d: d,
-                          h: h,
-                          netWeight: Number(it.netWeight) || 0,
-                          grossWeight: Number(it.grossWeight) || 0,
-                          packageType: it.packageType || 'Pallet'
-                        });
-                      });
-                    });
-                  }
-                  
-                  // Fallback to orderItems if packing list has no items yet
-                  if (itemsPayload.length === 0) {
-                    orderItems.forEach((item: any) => {
-                      const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-                      const itemCode = match ? match[1] : '-';
-                      const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
-                      
-                      // Map registered packing method default specs if available
-                      const list = matchedProd?.packingMethods || [];
-                      const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
-                      const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
-                      const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
-                      const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
-                      
-                      itemsPayload.push({
-                        desc: item.name || '화물',
-                        qty: item.qty || 1,
-                        w: w,
-                        d: d,
-                        h: h,
-                        netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
-                        grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
-                        packageType: item.packageType || 'Pallet'
-                      });
-                    });
-                  }
-
-                  const containersPayload: Record<string, number> = {};
-                  if (basicForm.packingList?.containers) {
-                    basicForm.packingList.containers.forEach((c: any) => {
-                      const type = c.containerType || '20GP';
-                      containersPayload[type] = (containersPayload[type] || 0) + 1;
-                    });
-                  }
-                  if (Object.keys(containersPayload).length === 0) {
-                    containersPayload['20GP'] = 1;
-                  }
-
-                  iframe.contentWindow.postMessage({
-                    type: 'LOAD_PI_DATA',
-                    customer: basicForm.customer || '',
-                    piNumber: basicForm.piNumber || order?.id || '',
-                    date: basicForm.etd || new Date().toISOString().split('T')[0],
-                    containers: containersPayload,
-                    items: itemsPayload
-                  }, '*');
+                  const payload = buildPackerSimulationPayload();
+                  iframe.contentWindow.postMessage(payload, '*');
                 }}
                 style={{
                   width: '100%',
