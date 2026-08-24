@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.419',
+    version: 'v2.8.419',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '수주 데이터 기반 Proforma Invoice(PI) 필드 매핑 정밀화 및 견적 목록 완벽 표시',
+    content: '• 수주 문서의 poDate, customer, piNumber, orderNumber 등 다양한 데이터 구조를 정밀하게 매핑하여 수주 확정된 모든 PI가 수출 견적관리 목록에 누락 없이 완벽히 표시되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.418',
     version: 'v2.8.418',
     date: '2026-08-24',

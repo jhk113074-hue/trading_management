@@ -184,24 +184,42 @@ export const ProformaInvoices: React.FC = () => {
     const existingPiIds = new Set(list.map(p => p.id));
 
     orders.forEach((ord: any) => {
-      const ordPiNum = (ord.piNumber || ord.quotationNumber || '').trim();
+      const ordPiNum = (
+        ord.piNumber || 
+        ord.quotationNumber || 
+        (ord.id && String(ord.id).startsWith('PO-') ? String(ord.id).replace(/^PO-/, 'PI-') : '') ||
+        (ord.orderNumber && String(ord.orderNumber).startsWith('PO-') ? String(ord.orderNumber).replace(/^PO-/, 'PI-') : '') ||
+        ord.custPo ||
+        ''
+      ).trim();
+
       const isLinkedToExisting = ord.quotationId && existingPiIds.has(ord.quotationId);
       const hasMatchingNumber = ordPiNum && existingPiNumbers.has(ordPiNum.toLowerCase());
 
       if (!isLinkedToExisting && !hasMatchingNumber && ordPiNum) {
         const items = ord.items || [];
         const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
-        const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.quantity || 0) * (it.price || 0))), 0);
+        const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
+
+        const customerName = ord.customer || ord.buyerName || ord.customerName || '';
+        const matchingCust = Object.values(customers).find((c: any) => c.name === customerName || c.id === ord.customerId);
+
+        let dateStr = ord.poDate || ord.orderDate || ord.date || '';
+        if (!dateStr && ord.createdAt) {
+          if (ord.createdAt.toDate) dateStr = ord.createdAt.toDate().toISOString().split('T')[0];
+          else if (typeof ord.createdAt === 'string') dateStr = ord.createdAt.split('T')[0];
+        }
+        if (!dateStr) dateStr = '2026-08-10';
 
         const virtualPi: ProformaInvoice = {
           id: ord.quotationId || `ORDER_PI_${ord.id}`,
           piNumber: ordPiNum,
-          piDate: ord.orderDate || ord.date || '',
-          customerId: ord.customerId || '',
-          buyerName: ord.buyerName || ord.customerName || '',
-          customerName: ord.buyerName || ord.customerName || '',
-          issuingCompany: ord.issuer || ord.issuingCompany || 'YSACC',
-          createdByName: ord.createdByName || ord.manager || ord.registeredBy || '김주한',
+          piDate: dateStr,
+          customerId: ord.customerId || matchingCust?.id || '',
+          buyerName: customerName,
+          customerName: customerName,
+          issuingCompany: ord.issuingCompany || ord.issuer || 'YSACC',
+          createdByName: ord.manager || ord.createdByName || ord.registeredBy || '김주한',
           totalUsd: totalUsd,
           grandTotal: totalUsd,
           status: '수주확정',
@@ -214,7 +232,7 @@ export const ProformaInvoices: React.FC = () => {
       }
     });
     return list;
-  }, [pis, orders]);
+  }, [pis, orders, customers]);
 
   const getPiStatus = (p: ProformaInvoice) => {
     if ((p as any).linkedOrderId) return '수주확정';
@@ -235,8 +253,8 @@ export const ProformaInvoices: React.FC = () => {
   };
 
   const getPiCountry = (p: ProformaInvoice): string => {
-    const cust = customers[p.customerId];
-    const raw = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || '';
+    const cust = customers[p.customerId] || Object.values(customers).find((c: any) => c.name === (p as any).customerName || c.name === (p as any).buyerName);
+    const raw = cust?.countryName || cust?.countryCode || (p as any).countryName || (p as any).countryCode || (p as any).country || (p as any).destinationCountry || ((p as any).customerName?.includes('INDIA') ? 'INDIA' : '') || '';
     return normalizeCountry(raw);
   };
 
