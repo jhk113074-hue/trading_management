@@ -1675,6 +1675,7 @@ export const OrderDetail: React.FC = () => {
 
           itemsPayload.push({
             desc: desc,
+            pkgNo: it.pkgNo || '',
             qty: count,
             w: w,
             d: d,

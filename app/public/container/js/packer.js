@@ -15,9 +15,12 @@ const Packer = (function() {
     function expandItems(items) {
         const boxes = [];
         items.forEach(item => {
+            const basePkgNo = parseInt(item.pkgNo, 10);
             for (let i = 0; i < item.qty; i++) {
+                const individualPkgNo = (!isNaN(basePkgNo) && basePkgNo > 0) ? String(basePkgNo + i) : (item.pkgNo || '');
                 boxes.push({
                     ...item,
+                    pkgNo: individualPkgNo,
                     originalId: item.id,
                     qty: 1
                 });

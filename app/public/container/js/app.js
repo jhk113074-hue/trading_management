@@ -1689,8 +1689,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
+            const pkgNoDisplay = item.pkgNo ? item.pkgNo : String(item.globalIndex);
             tr.innerHTML = `
                 <td><strong>${item.globalIndex}</strong></td>
+                <td style="text-align: center;">
+                    <span style="display: inline-block; padding: 3px 8px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 4px; font-weight: 800; font-size: 0.82rem;">
+                        ${pkgNoDisplay}
+                    </span>
+                </td>
                 <td>${item.name} <small class="text-muted">(${item.itemIndex})</small>${pkgTypeDisp}${detailsDisp}</td>
                 <td>${item.packedL} × ${item.packedW} × ${item.packedH}</td>
                 <td>${netDisp}</td>
@@ -1876,6 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <thead>
                         <tr>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">번호</th>
+                            <th style="background:#eff6ff; border:1px solid #cbd5e1; padding:8px; color:#1e40af;">PKG NO.</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">화물명(포장형태) 및 내용물</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">크기(W×D×H)</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">Net Wt.</th>
@@ -1892,6 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableHtml += `
                     <tr style="page-break-inside: avoid;">
                         <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${item.globalIndex}</td>
+                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:#1d4ed8;">${item.pkgNo || item.globalIndex}</td>
                         <td style="border:1px solid #cbd5e1; padding:8px;">
                             ${item.name}-${item.itemIndex}${pkgTypeDisp}
                             ${detailsDisp}
@@ -2685,6 +2693,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentItems.push({
                         id: generateId(),
                         name: piItem.desc,
+                        pkgNo: piItem.pkgNo || '',
                         packageType: piItem.packageType || 'Pallet',
                         contentDetails: piItem.remarks || '',
                         w: w, d: d, h: h,

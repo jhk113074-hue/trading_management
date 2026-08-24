@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.411',
+    version: 'v2.8.411',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 시뮬레이터 패킹 리스트에 PKG NO.(Pallet 번호) 컬럼 연동 및 표시',
+    content: '• 컨테이너 패킹리스트의 PKG NO. 번호를 3D 시뮬레이터에 실시간 연계하여 패킹 리스트 테이블 및 인쇄 미리보기에 PKG NO. 전용 컬럼 추가 및 정확한 번호 표시',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.410',
     version: 'v2.8.410',
     date: '2026-08-24',
