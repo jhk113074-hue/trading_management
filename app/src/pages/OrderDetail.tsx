@@ -1705,6 +1705,9 @@ export const OrderDetail: React.FC = () => {
           if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
           if (count <= 0) count = 1;
 
+          const isStackable = it.stackable !== undefined ? (it.stackable !== 'N' && it.stackable !== false) : true;
+          const isRotation = it.rotation !== undefined ? (it.rotation !== 'N' && it.rotation !== false) : true;
+
           itemsPayload.push({
             desc: desc,
             pkgNo: it.pkgNo || '',
@@ -1714,7 +1717,9 @@ export const OrderDetail: React.FC = () => {
             h: h,
             netWeight: sumNet,
             grossWeight: sumGross,
-            packageType: it.packageType || 'Pallet'
+            packageType: it.packageType || 'Pallet',
+            stackable: isStackable,
+            rotation: isRotation
           });
         }
       });
@@ -1740,7 +1745,9 @@ export const OrderDetail: React.FC = () => {
           h: h,
           netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
           grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
-          packageType: item.packageType || 'Pallet'
+          packageType: item.packageType || 'Pallet',
+          stackable: item.stackable !== undefined ? (item.stackable !== 'N' && item.stackable !== false) : (matchedProd?.stackable !== 'N'),
+          rotation: item.rotation !== undefined ? (item.rotation !== 'N' && item.rotation !== false) : (matchedProd?.rotation !== 'N')
         });
       });
     }
@@ -9228,7 +9235,9 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                       grossWeight: '0',
                                       cbm: '0',
                                       packageType: '',
-                                      dimensions: ''
+                                      dimensions: '',
+                                      stackable: 'Y',
+                                      rotation: 'Y'
                                     });
                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                   }}
@@ -9266,13 +9275,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   </th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Supplier (유통사)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>수량</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '11%', whiteSpace: 'nowrap' }}>Supplier (유통사)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '13%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
+                                  <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="2단 이상 다단적재 허용 여부 (클릭하여 수정)">다단적재</th>
+                                  <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="수평 90도 회전 허용 여부 (클릭하여 수정)">회전허용</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '140px', whiteSpace: 'nowrap' }}>동작</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '130px', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -9389,6 +9400,12 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                       const mfgName = foundProd.manufacturerName || foundProd.supplierName || (foundProd.suppliers?.find(s => s.isDefault)?.supplierName) || foundProd.suppliers?.[0]?.supplierName || '';
                                                       if (mfgName) {
                                                         nextContainers[cIdx].items[itIdx].supplier = mfgName;
+                                                      }
+                                                      if (!nextContainers[cIdx].items[itIdx].stackable && foundProd.stackable) {
+                                                        nextContainers[cIdx].items[itIdx].stackable = foundProd.stackable;
+                                                      }
+                                                      if (!nextContainers[cIdx].items[itIdx].rotation && foundProd.rotation) {
+                                                        nextContainers[cIdx].items[itIdx].rotation = foundProd.rotation;
                                                       }
                                                     }
                                                   }
@@ -9542,6 +9559,92 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                     onChange={e => handleItemDimChange('h', e.target.value)} 
                                                   />
                                                 </div>
+                                              );
+                                            })()}
+                                          </td>
+                                        )}
+
+                                        {/* 다단적재 가능 여부 (Stackable) - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            {(() => {
+                                              const isStack = it.stackable !== 'N' && it.stackable !== false;
+                                              return (
+                                                <button
+                                                  type="button"
+                                                  disabled={!isEditing}
+                                                  onClick={() => {
+                                                    const nextVal = isStack ? 'N' : 'Y';
+                                                    const nextContainers = [...basicForm.packingList.containers];
+                                                    for (let g = 0; g < spanCount; g++) {
+                                                      nextContainers[cIdx].items[itIdx + g].stackable = nextVal;
+                                                    }
+                                                    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                  }}
+                                                  title={isEditing ? (isStack ? '클릭 시 [다단 불가(1단만)]로 변경' : '클릭 시 [다단 적재 가능]으로 변경') : (isStack ? '다단 적재 가능' : '다단 불가')}
+                                                  style={{
+                                                    padding: '2px 4px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 750,
+                                                    borderRadius: '4px',
+                                                    cursor: isEditing ? 'pointer' : 'default',
+                                                    border: isStack ? '1px solid #86efac' : '1px solid #fca5a5',
+                                                    background: isStack ? '#dcfce7' : '#fee2e2',
+                                                    color: isStack ? '#15803d' : '#b91c1c',
+                                                    height: '28px',
+                                                    width: '100%',
+                                                    maxWidth: '52px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.15s ease'
+                                                  }}
+                                                >
+                                                  {isStack ? '🔼 가능' : '⛔ 불가'}
+                                                </button>
+                                              );
+                                            })()}
+                                          </td>
+                                        )}
+
+                                        {/* 회전 가능 여부 (Rotation) - rowSpan for merged group */}
+                                        {!isSecondary && (
+                                          <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
+                                            {(() => {
+                                              const isRot = it.rotation !== 'N' && it.rotation !== false;
+                                              return (
+                                                <button
+                                                  type="button"
+                                                  disabled={!isEditing}
+                                                  onClick={() => {
+                                                    const nextVal = isRot ? 'N' : 'Y';
+                                                    const nextContainers = [...basicForm.packingList.containers];
+                                                    for (let g = 0; g < spanCount; g++) {
+                                                      nextContainers[cIdx].items[itIdx + g].rotation = nextVal;
+                                                    }
+                                                    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                  }}
+                                                  title={isEditing ? (isRot ? '클릭 시 [회전 불가(방향 고정)]로 변경' : '클릭 시 [회전 가능]으로 변경') : (isRot ? '회전 가능' : '회전 불가')}
+                                                  style={{
+                                                    padding: '2px 4px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 750,
+                                                    borderRadius: '4px',
+                                                    cursor: isEditing ? 'pointer' : 'default',
+                                                    border: isRot ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                                                    background: isRot ? '#eff6ff' : '#f1f5f9',
+                                                    color: isRot ? '#1d4ed8' : '#64748b',
+                                                    height: '28px',
+                                                    width: '100%',
+                                                    maxWidth: '52px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.15s ease'
+                                                  }}
+                                                >
+                                                  {isRot ? '🔄 가능' : '🔒 불가'}
+                                                </button>
                                               );
                                             })()}
                                           </td>

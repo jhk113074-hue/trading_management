@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.442',
+    version: 'v2.8.442',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '패킹리스트 다단적재 및 회전허용 표시 및 실시간 토글 수정 기능 탑재',
+    content: '• 오더 상세 패킹리스트 테이블에 [다단적재 (🔼 가능 / ⛔ 불가)] 및 [회전허용 (🔄 가능 / 🔒 불가)] 직관적 토글 컨트롤 컬럼 추가\\n• 상품 DB 정보 자동 연동 및 테이블에서 1클릭으로 즉시 수정 가능\\n• 3D 컨테이너 적재 시뮬레이션 엔진과 100% 실시간 연동되어 다단불가/회전불가 제약조건 완벽 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.441',
     version: 'v2.8.441',
     date: '2026-08-24',
