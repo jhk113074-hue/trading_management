@@ -7,6 +7,7 @@ import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Supplier } from '../types/supplier';
 import type { Product } from '../types/product';
 import { ProductModal } from '../components/ProductModal';
+import { SupplierModal } from '../components/SupplierModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
 import { ArrivalReportModal } from '../components/ArrivalReportModal';
 import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
@@ -462,6 +463,28 @@ export const OrderDetail: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
+  const [selectedSupplierForModal, setSelectedSupplierForModal] = useState<Supplier | undefined>(undefined);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+
+  const handleOpenSupplierModal = (supplierName: string) => {
+    const matched = suppliersList.find(s => 
+      s.name?.trim().toLowerCase() === supplierName?.trim().toLowerCase() ||
+      s.id === supplierName
+    );
+    if (matched) {
+      setSelectedSupplierForModal(matched);
+    } else {
+      setSelectedSupplierForModal({
+        id: '',
+        supplierCode: '',
+        name: supplierName,
+        category: '공급사',
+        countryType: '국내',
+        contacts: []
+      } as any);
+    }
+    setIsSupplierModalOpen(true);
+  };
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
   const [isSourcingSearch, setIsSourcingSearch] = useState(false);
@@ -7635,6 +7658,21 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       >
                         + 발주사 추가
                       </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (selectedAddSupplier) {
+                            handleOpenSupplierModal(selectedAddSupplier);
+                          } else {
+                            setSelectedSupplierForModal(undefined);
+                            setIsSupplierModalOpen(true);
+                          }
+                        }}
+                        style={{ padding: '6px 14px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '6px', fontWeight: 700, fontSize: '14.5px', cursor: 'pointer' }}
+                        title="공급업체 DB 신규 등록 또는 선택된 공급사 정보 수정"
+                      >
+                        🏢 공급업체 관리 DB
+                      </button>
                     </div>
                     {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
@@ -7669,7 +7707,29 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '2px solid var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenSupplierModal(supplierName)}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        padding: '2px 7px',
+                                        background: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        fontWeight: 750,
+                                        color: '#1d4ed8',
+                                        cursor: 'pointer'
+                                      }}
+                                      title={`공급업체 [${supplierName}] 기본 정보(대표자, 사업자번호, 주소, 담당자, 계좌 등) 조회 및 DB 수정`}
+                                    >
+                                      🏢 공급사 DB 수정
+                                    </button>
+                                  </div>
                                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>NO:</span>
                                   <input 
                                     type="text"
@@ -14677,6 +14737,30 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             setIsForwarderSearchOpen(false);
             setForwarderSearchIndex(null);
           }}
+        />
+      )}
+
+      {isSupplierModalOpen && (
+        <SupplierModal
+          initialSupplier={selectedSupplierForModal}
+          onClose={() => {
+            setIsSupplierModalOpen(false);
+            setSelectedSupplierForModal(undefined);
+          }}
+          onSave={(savedSupplier) => {
+            setSuppliersList(prev => {
+              const exists = prev.findIndex(s => s.id === savedSupplier.id || s.name === savedSupplier.name);
+              if (exists >= 0) {
+                const next = [...prev];
+                next[exists] = savedSupplier;
+                return next;
+              }
+              return [...prev, savedSupplier];
+            });
+            setIsSupplierModalOpen(false);
+            setSelectedSupplierForModal(undefined);
+          }}
+          defaultCategory="공급사"
         />
       )}
 

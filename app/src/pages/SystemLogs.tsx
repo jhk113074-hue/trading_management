@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.445',
+    version: 'v2.8.445',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '발주서 상에서 공급업체 관리 DB 직접 연결 및 실시간 정보 수정 기능 탑재',
+    content: '• 오더 상세 소싱/발주 탭의 각 공급업체 발주서 헤더에 [🏢 공급사 DB 수정] 버튼 탑재\\n• 발주서 작성 중에도 공급업체의 대표자, 사업자등록번호, 주소, 담당자 연락처, 계좌 정보 등을 1클릭으로 조회 및 수정 가능\\n• 추가 발주사 관리 영역에도 [🏢 공급업체 관리 DB] 연동 버튼 추가',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.444',
     version: 'v2.8.444',
     date: '2026-08-24',
