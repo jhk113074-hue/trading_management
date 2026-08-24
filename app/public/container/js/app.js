@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = canvas ? canvas.getContext('2d') : null;
     const vizTabs = document.querySelectorAll('.viz-tab');
     let currentVizView = 'top';
+    let currentTierFilter = 'all'; // 'all', 'tier1' (z===0), 'tier2' (z>0)
     let itemColors = {};
     
     // 3D
@@ -2519,8 +2520,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!snappedY) targetY = Math.round(targetY / 50) * 50;
 
                     // Bounds clamp
-                    draggedPalletItem.x = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
-                    draggedPalletItem.y = Math.max(0, Math.min(container.w - draggedPalletItem.packedW, Math.round(targetY)));
+                    const finalX = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
+                    const finalY = Math.max(0, Math.min(container.w - draggedPalletItem.packedW, Math.round(targetY)));
+                    const shiftX = finalX - draggedPalletItem.x;
+                    const shiftY = finalY - draggedPalletItem.y;
+
+                    // If moving 1단 floor pallet, also shift stacked 2단 pallet sitting on top
+                    if (draggedPalletItem.z === 0) {
+                        currentResult.loaded.forEach(other => {
+                            if (other.globalIndex !== draggedPalletItem.globalIndex && other.z > 0) {
+                                if (Math.abs(other.x - draggedPalletItem.x) < 300 && Math.abs(other.y - draggedPalletItem.y) < 300) {
+                                    other.x = Math.max(0, Math.min(container.l - other.packedL, other.x + shiftX));
+                                    other.y = Math.max(0, Math.min(container.w - other.packedW, other.y + shiftY));
+                                }
+                            }
+                        });
+                    }
+
+                    draggedPalletItem.x = finalX;
+                    draggedPalletItem.y = finalY;
                 } else if (view === 'left_side' || view === 'right_side') {
                     const deltaZ = -(mouseY - dragStartMouseY) / scale;
                     let targetX = dragItemStartX + deltaX;
@@ -2639,6 +2657,117 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
+
+    // Tier Filter Button Event Listeners
+    document.querySelectorAll('.tier-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tier-filter-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.color = '#475569';
+            });
+            btn.classList.add('active');
+            btn.style.background = '#2563eb';
+            btn.style.color = '#fff';
+            currentTierFilter = btn.dataset.tier;
+            drawVisualization();
+        });
+    });
+
+    // Quick Tier Shift & Step Movement Handlers
+    const btnQuickTierFloor = document.getElementById('btn-quick-tier-floor');
+    if (btnQuickTierFloor) {
+        btnQuickTierFloor.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.z = 0;
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickTierUp = document.getElementById('btn-quick-tier-up');
+    if (btnQuickTierUp) {
+        btnQuickTierUp.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            // Find underlying floor item or default to pallet height
+            const under = currentResult.loaded.find(other => 
+                other.globalIndex !== item.globalIndex && 
+                other.z === 0 &&
+                Math.abs(other.x - item.x) < 500 &&
+                Math.abs(other.y - item.y) < 500
+            );
+            item.z = under ? under.packedH : 1000;
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickStepIn = document.getElementById('btn-quick-step-in');
+    if (btnQuickStepIn) {
+        btnQuickStepIn.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.x = Math.max(0, item.x - item.packedL);
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickStepOut = document.getElementById('btn-quick-step-out');
+    if (btnQuickStepOut) {
+        btnQuickStepOut.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            const container = currentResult.dimensions;
+            item.x = Math.min(container.l - item.packedL, item.x + item.packedL);
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickAlignLeft = document.getElementById('btn-quick-align-left');
+    if (btnQuickAlignLeft) {
+        btnQuickAlignLeft.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.y = 0;
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickAlignCenter = document.getElementById('btn-quick-align-center');
+    if (btnQuickAlignCenter) {
+        btnQuickAlignCenter.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            const container = currentResult.dimensions;
+            item.y = Math.round((container.w - item.packedW) / 2);
+            applyPalletPositionChange(item);
+        });
+    }
+
+    const btnQuickAlignRight = document.getElementById('btn-quick-align-right');
+    if (btnQuickAlignRight) {
+        btnQuickAlignRight.addEventListener('click', () => {
+            if (!currentResults || selectedPalletGlobalIndex === null) return;
+            const currentResult = currentResults[currentResultIndex];
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            const container = currentResult.dimensions;
+            item.y = container.w - item.packedW;
+            applyPalletPositionChange(item);
+        });
+    }
 
     // Tab Listeners
     vizTabs.forEach(tab => {

@@ -64,10 +64,19 @@
                             
                             <!-- 2D View -->
                             <div id="viz-2d-wrapper" class="hidden">
-                                <div class="viz-tabs">
-                                    <button class="viz-tab active" data-view="top">Top</button>
-                                    <button class="viz-tab" data-view="right_side">Right</button>
-                                    <button class="viz-tab" data-view="left_side">Left</button>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                                    <div class="viz-tabs" style="margin-bottom: 0;">
+                                        <button class="viz-tab active" data-view="top">Top (평면도)</button>
+                                        <button class="viz-tab" data-view="right_side">Right (우측면)</button>
+                                        <button class="viz-tab" data-view="left_side">Left (좌측면)</button>
+                                    </div>
+                                    <!-- 층별(단별) 레이어 분리 필터 -->
+                                    <div style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                        <span style="font-size: 11.5px; font-weight: 800; color: #475569;">🏢 층별 분리 보기:</span>
+                                        <button type="button" class="tier-filter-btn active" data-tier="all" style="padding: 4px 10px; font-size: 12px; font-weight: 750; border: none; border-radius: 4px; background: #2563eb; color: #fff; cursor: pointer;">전체층 (ALL)</button>
+                                        <button type="button" class="tier-filter-btn" data-tier="tier1" style="padding: 4px 10px; font-size: 12px; font-weight: 750; border: none; border-radius: 4px; background: transparent; color: #475569; cursor: pointer;">1️⃣ 1단 (바닥층)</button>
+                                        <button type="button" class="tier-filter-btn" data-tier="tier2" style="padding: 4px 10px; font-size: 12px; font-weight: 750; border: none; border-radius: 4px; background: transparent; color: #475569; cursor: pointer;">2️⃣ 2단 (상단층)</button>
+                                    </div>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 14px; margin-bottom: 8px; font-size: 13px; color: #1e40af; font-weight: 600; flex-wrap: wrap; gap: 6px;">
                                     <span style="display: flex; align-items: center; gap: 6px;">
@@ -116,6 +125,35 @@
                                         <button type="button" class="btn btn-sm" id="btn-adjust-close" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: bold; height: 32px; padding: 0 10px; cursor: pointer;">
                                             ✕ 닫기
                                         </button>
+                                    </div>
+                                </div>
+
+                                <!-- Quick 1-Click Direction & Tier Shift Bar -->
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 10px 14px;">
+                                    <!-- 층간 이동 (1단 ↔ 2단) -->
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <span style="font-size: 11.5px; font-weight: 800; color: #166534;">🏢 층간 원클릭 이동</span>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button type="button" id="btn-quick-tier-floor" style="flex: 1; height: 32px; background: #fff; color: #15803d; border: 1px solid #86efac; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">⬇️ 1단(바닥) 착지</button>
+                                            <button type="button" id="btn-quick-tier-up" style="flex: 1; height: 32px; background: #16a34a; color: #fff; border: 1px solid #15803d; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">⬆️ 2단(상단) 올리기</button>
+                                        </div>
+                                    </div>
+                                    <!-- X축 칸 이동 (안쪽 ↔ 문) -->
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <span style="font-size: 11.5px; font-weight: 800; color: #0369a1;">📏 안쪽 ↔ 문쪽 1칸 이동</span>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button type="button" id="btn-quick-step-in" style="flex: 1; height: 32px; background: #fff; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">◀ 안쪽 1칸</button>
+                                            <button type="button" id="btn-quick-step-out" style="flex: 1; height: 32px; background: #fff; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">문쪽 1칸 ▶</button>
+                                        </div>
+                                    </div>
+                                    <!-- Y축 좌/우 1칸 이동 -->
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <span style="font-size: 11.5px; font-weight: 800; color: #4338ca;">📐 좌 ↔ 우 원터치 정렬</span>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button type="button" id="btn-quick-align-left" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">좌측벽</button>
+                                            <button type="button" id="btn-quick-align-center" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">중앙</button>
+                                            <button type="button" id="btn-quick-align-right" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">우측벽</button>
+                                        </div>
                                     </div>
                                 </div>
 

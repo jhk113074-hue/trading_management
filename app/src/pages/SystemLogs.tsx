@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.415',
+    version: 'v2.8.415',
+    date: '2026-08-24',
+    category: '신규기능',
+    title: '다단 적재 화물 층별(1단/2단) 분리 보기 및 원클릭 층간/칸 이동 시스템 구축',
+    content: '• 2D 도면 상단에 [전체층 (ALL)], [1단 (바닥층)], [2단 (상단층)] 층별 분리 보기 탭 신설로 겹치는 화물도 손쉽게 독립 선택 및 드래그 가능\\n• 1단 화물 이동 시 얹혀진 2단 화물 동반 연동 이동 및 자석 착지 스냅 지원\\n• [⬇️ 1단 착지], [⬆️ 2단 올리기], [◀ 안쪽 1칸], [문쪽 1칸 ▶], [좌/우 정렬] 원클릭 간편 컨트롤 추가',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.414',
     version: 'v2.8.414',
     date: '2026-08-24',
