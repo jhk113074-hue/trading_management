@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.400',
+    version: 'v2.8.400',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '패킹리스트 Pallet 규격(WxLxH) 기반 CBM 자동 정확 계산',
+    content: '• 패킹리스트의 Pallet 규격(WxLxH) 및 PKG 수량을 기반으로 CBM이 자동 계산([W×L×H/1,000,000,000]×PKG)되도록 계산 로직 전면 개선 (분할 및 병합 시에도 팔레트별 CBM 정확 계산)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.399',
     version: 'v2.8.399',
     date: '2026-08-24',

@@ -1157,13 +1157,14 @@ export const OrderDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Auto-sync packing list item manufacturers/suppliers when products update
+  // Auto-sync packing list item manufacturers/suppliers & CBM from dimensions when products update
   useEffect(() => {
     if (!products.length || !basicForm.packingList?.containers) return;
     let changed = false;
     const nextContainers = basicForm.packingList.containers.map((c: any) => {
       let containerChanged = false;
       const nextItems = (c.items || []).map((it: any) => {
+        let updatedIt = { ...it };
         const match = (it.description || '').match(/^\[(.*?)\]/);
         const itemCode = match ? match[1] : (it.itemCode || '');
         if (itemCode) {
@@ -1172,11 +1173,36 @@ export const OrderDetail: React.FC = () => {
             const mfgName = prod.manufacturerName || prod.supplierName || (prod.suppliers?.find(s => s.isDefault)?.supplierName) || prod.suppliers?.[0]?.supplierName || '';
             if (mfgName && (!it.supplier || it.supplier === 'General Supplier' || it.supplier !== mfgName)) {
               containerChanged = true;
-              return { ...it, supplier: mfgName };
+              updatedIt.supplier = mfgName;
+            }
+            // Auto fill dimensions if missing on row but exists on product master
+            if (!updatedIt.dimensions || updatedIt.dimensions === '0x0x0' || updatedIt.dimensions === '0*0*0') {
+              const pW = prod.palletWidth || prod.specWidth || 0;
+              const pL = prod.palletLength || prod.specLength || 0;
+              const pH = prod.palletHeight || prod.specHeight || 0;
+              if (pW > 0 && pL > 0 && pH > 0) {
+                updatedIt.dimensions = `${pW}x${pL}x${pH}`;
+                containerChanged = true;
+              }
             }
           }
         }
-        return it;
+
+        // Auto-calculate CBM from dimensions if dimensions exist
+        const cleanDims = (updatedIt.dimensions || '').toLowerCase().replace(/\s+/g, '');
+        const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
+        if (dims[0] > 0 && dims[1] > 0 && dims[2] > 0) {
+          let count = parseInt(updatedIt.pkg, 10);
+          if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(updatedIt.pkgNo) || '1', 10);
+          if (count <= 0) count = 1;
+          const expectedCbm = String((((dims[0] * dims[1] * dims[2]) / 1000000000) * count).toFixed(3));
+          if (!updatedIt.cbm || Math.abs(parseFloat(updatedIt.cbm) - parseFloat(expectedCbm)) > 0.001) {
+            containerChanged = true;
+            updatedIt.cbm = expectedCbm;
+          }
+        }
+
+        return updatedIt;
       });
       if (containerChanged) changed = true;
       return containerChanged ? { ...c, items: nextItems } : c;
@@ -3207,6 +3233,11 @@ export const OrderDetail: React.FC = () => {
         if (input === null) continue;
         const chunkSize = Math.max(1, parseInt(input || '1', 10) || 1);
 
+        const cleanDims = (target.dimensions || '').toLowerCase().replace(/\s+/g, '');
+        const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
+        const hasValidDims = dims[0] > 0 && dims[1] > 0 && dims[2] > 0;
+        const singlePalletCbm = hasValidDims ? ((dims[0] * dims[1] * dims[2]) / 1000000000) : (totalCbm / count);
+
         const splitRows: any[] = [];
         let remainingCount = count;
 
@@ -3219,7 +3250,7 @@ export const OrderDetail: React.FC = () => {
             qty: String(Math.round(totalQty * ratio * 100) / 100),
             netWeight: String(Math.round(totalNet * ratio)),
             grossWeight: String(Math.round(totalGross * ratio)),
-            cbm: String((totalCbm * ratio).toFixed(3))
+            cbm: String((singlePalletCbm * curChunk).toFixed(3))
           });
           remainingCount -= curChunk;
         }
@@ -3239,6 +3270,11 @@ export const OrderDetail: React.FC = () => {
           numSplits = Math.max(2, Math.ceil(totalQty / parsedInput));
         }
 
+        const cleanDims = (target.dimensions || '').toLowerCase().replace(/\s+/g, '');
+        const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
+        const hasValidDims = dims[0] > 0 && dims[1] > 0 && dims[2] > 0;
+        const singlePalletCbm = hasValidDims ? ((dims[0] * dims[1] * dims[2]) / 1000000000) : (totalCbm / numSplits);
+
         const splitRows: any[] = [];
         const baseQty = Math.floor(totalQty / numSplits);
         const remainderQty = totalQty % numSplits;
@@ -3252,7 +3288,7 @@ export const OrderDetail: React.FC = () => {
             qty: String(curQty),
             netWeight: String(Math.round(totalNet * ratio)),
             grossWeight: String(Math.round(totalGross * ratio)),
-            cbm: String((totalCbm * ratio).toFixed(3))
+            cbm: String(singlePalletCbm.toFixed(3))
           });
         }
 
