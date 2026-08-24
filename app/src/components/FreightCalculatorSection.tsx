@@ -24,7 +24,8 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     coFee: { amount: 0, currency: 'KRW' },
     customsFee: { amount: 0, currency: 'KRW' },
     purchaseCertFee: { amount: 0, currency: 'KRW' },
-    inlandFreight: { amount: 0, currency: 'KRW' }
+    inlandFreight: { amount: 0, currency: 'KRW' },
+    roundUpType: 'none'
   };
 
   const currentExRate = Number(calc.oceanExchangeRate || formData.exchangeRate || 1400);
@@ -43,7 +44,18 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const customsUsd = toUsd(calc.customsFee);
   const purchaseCertUsd = toUsd(calc.purchaseCertFee);
   const inlandUsd = toUsd(calc.inlandFreight);
-  const totalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd;
+  
+  const rawTotalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd;
+  
+  let finalCalculated = parseFloat(rawTotalCalculated.toFixed(2));
+  const activeRoundType = calc.roundUpType || 'none';
+  if (activeRoundType === 'ceil_1') {
+    finalCalculated = Math.ceil(finalCalculated);
+  } else if (activeRoundType === 'ceil_5') {
+    finalCalculated = Math.ceil(finalCalculated / 5) * 5;
+  } else if (activeRoundType === 'ceil_10') {
+    finalCalculated = Math.ceil(finalCalculated / 10) * 10;
+  }
 
   const updateFreightCalculation = (updates: any) => {
     setFormData(prev => {
@@ -55,7 +67,8 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         coFee: { amount: 0, currency: 'KRW' },
         customsFee: { amount: 0, currency: 'KRW' },
         purchaseCertFee: { amount: 0, currency: 'KRW' },
-        inlandFreight: { amount: 0, currency: 'KRW' }
+        inlandFreight: { amount: 0, currency: 'KRW' },
+        roundUpType: 'none'
       };
 
       const newDetails = { ...prevDetails, ...updates };
@@ -80,7 +93,16 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       const pCertUsd = toUsdHelper(newDetails.purchaseCertFee);
       const inlUsd = toUsdHelper(newDetails.inlandFreight);
 
-      const totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd).toFixed(2));
+      let totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd).toFixed(2));
+      
+      const rType = newDetails.roundUpType || 'none';
+      if (rType === 'ceil_1') {
+        totalCalcUsd = Math.ceil(totalCalcUsd);
+      } else if (rType === 'ceil_5') {
+        totalCalcUsd = Math.ceil(totalCalcUsd / 5) * 5;
+      } else if (rType === 'ceil_10') {
+        totalCalcUsd = Math.ceil(totalCalcUsd / 10) * 10;
+      }
 
       let currentCharges = [...(prev.freightCharges || [])];
       if (currentCharges.length === 0) {
@@ -423,18 +445,54 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         })}
       </div>
 
-      {/* Final Decided Total Freight Badge */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: '6px', padding: '8px 14px', marginTop: '2px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>
-            🎯 최종 결정 운송비 (Final Total Freight)
-          </span>
-          <span style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 600 }}>
-            (해상운임 ${appliedOceanUsd.toFixed(2)} + 4종 부대비용 ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd).toFixed(2)})
-          </span>
+      {/* 4. Final Decided Total Freight Badge with Round Up Feature */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: '6px', padding: '10px 14px', marginTop: '2px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>
+              🎯 최종 결정 운송비 (Final Total Freight)
+            </span>
+            <span style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 600 }}>
+              (해상운임 ${appliedOceanUsd.toFixed(2)} + 4종 부대비용 ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd).toFixed(2)})
+            </span>
+          </div>
+          {activeRoundType !== 'none' && (
+            <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700 }}>
+              💡 원금액 ${rawTotalCalculated.toFixed(2)} ➔ 올림 적용: ${finalCalculated.toFixed(2)}
+            </div>
+          )}
         </div>
-        <div style={{ fontSize: '17px', fontWeight: 900, color: '#1d4ed8' }}>
-          ${(formData.freightTotal || totalCalculated || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+        {/* Round Up Selector & Final Amount */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>소수점 처리:</span>
+            <select
+              value={calc.roundUpType || 'none'}
+              onChange={e => updateFreightCalculation({ roundUpType: e.target.value as any })}
+              style={{
+                height: '32px',
+                padding: '0 8px',
+                border: activeRoundType !== 'none' ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 700,
+                background: activeRoundType !== 'none' ? '#dbeafe' : '#fff',
+                color: activeRoundType !== 'none' ? '#1d4ed8' : '#334155',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="none">소수점 유지 (그대로: ${rawTotalCalculated.toFixed(2)})</option>
+              <option value="ceil_1">🔼 1달러 정수 올림 (${Math.ceil(rawTotalCalculated).toFixed(2)})</option>
+              <option value="ceil_5">🔼 5달러 단위 올림 (${(Math.ceil(rawTotalCalculated / 5) * 5).toFixed(2)})</option>
+              <option value="ceil_10">🔼 10달러 단위 올림 (${(Math.ceil(rawTotalCalculated / 10) * 10).toFixed(2)})</option>
+            </select>
+          </div>
+
+          <div style={{ fontSize: '18px', fontWeight: 900, color: '#1d4ed8', minWidth: '100px', textAlign: 'right' }}>
+            ${(formData.freightTotal || finalCalculated || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
         </div>
       </div>
     </div>

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.429',
+    version: 'v2.8.429',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '운송비 정밀 산출기 최종 운송비 소수점 올림(Ceil) 기능(1달러/5달러/10달러 올림 옵션) 추가',
+    content: '• 해상운임 및 4종 부대비용 합산 후 발생하는 소수점을 정수 단위(Ceil)로 올림할 수 있는 소수점 처리 기능 탑재\\n• 소수점 유지, 1달러 단위 정수 올림, 5달러/10달러 단위 올림 옵션 지원\\n• 원금액과 올림 적용 금액을 실시간 비교 표시 및 견적 총액 자동 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.428',
     version: 'v2.8.428',
     date: '2026-08-24',

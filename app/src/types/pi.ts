@@ -98,6 +98,7 @@ export interface ProformaInvoice {
     customsFee?: { amount: number; currency: 'KRW' | 'USD' }; // 수출신고비
     purchaseCertFee?: { amount: number; currency: 'KRW' | 'USD' }; // 구매확인서 발급비
     inlandFreight?: { amount: number; currency: 'KRW' | 'USD' }; // 내륙운송비
+    roundUpType?: 'none' | 'ceil_1' | 'ceil_5' | 'ceil_10'; // 최종 운송비 올림 방식
   };
   freightTotal: number;
   insurance: number;
