@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.433',
+    version: 'v2.8.433',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '견적서(PI) 품목 패킹 방식 선택(드럼, 팔레트 등) 라디오 버튼 선택 오류 및 상태 덮어쓰기 해결',
+    content: '• 패킹 방식(단품/드럼/팔레트 등) 선택 시 중복 updateItem 호출로 인한 상태 덮어쓰기 및 id 매칭 오류를 수정하여 드럼 및 기타 패킹 방식을 클릭 즉시 100% 정상 선택/적용되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.432',
     version: 'v2.8.432',
     date: '2026-08-24',

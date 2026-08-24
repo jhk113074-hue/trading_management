@@ -31,8 +31,11 @@ const getProductPackingMethods = (product: any): any[] => {
     palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
     stackable: 'Y', rotation: 'Y'
   }];
-  const list = product.packingMethods ? JSON.parse(JSON.stringify(product.packingMethods)) : [];
-  const hasDefault = list.some((m: any) => m.name === 'Default');
+  const list = (product.packingMethods ? JSON.parse(JSON.stringify(product.packingMethods)) : []).map((m: any, idx: number) => ({
+    ...m,
+    id: m.id || `method_${idx}`
+  }));
+  const hasDefault = list.some((m: any) => m.name === 'Default' || m.packageType === '단품' || m.id === 'default_injected');
   if (!hasDefault) {
     list.unshift({
       id: 'default_injected',
@@ -1370,219 +1373,224 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
   const updateItem = (index: number, fieldOrUpdates: keyof PIItem | Partial<PIItem>, value?: any) => {
-    const newItems = [...items];
-    let it = { ...newItems[index] };
-    
-    let isSingleField = false;
-    let singleField: keyof PIItem | undefined;
-    let singleValue: any;
-
-    if (typeof fieldOrUpdates === 'string') {
-      isSingleField = true;
-      singleField = fieldOrUpdates as keyof PIItem;
-      singleValue = value;
-      (it as any)[singleField] = value;
-    } else {
-      Object.assign(it, fieldOrUpdates);
-    }
-
-    const hasField = (f: keyof PIItem) => {
-      if (isSingleField) return singleField === f;
-      return f in (fieldOrUpdates as object);
-    };
-
-    const getFieldValue = (f: keyof PIItem) => {
-      if (isSingleField && singleField === f) return singleValue;
-      return (it as any)[f];
-    };
-
-    // Zero out other purchase price when one is entered
-    if (hasField('purchasePriceKrw') && parseFloat(getFieldValue('purchasePriceKrw')) > 0) {
-      it.purchasePriceUsd = 0;
-    } else if (hasField('purchasePriceUsd') && parseFloat(getFieldValue('purchasePriceUsd')) > 0) {
-      it.purchasePriceKrw = 0;
-    }
-
-    // Auto calculate from palletQty
-    if (hasField('palletQty')) {
-      const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
-      let qpp = 0;
-      if (it.packingSpecOverride) {
-        qpp = it.packingSpecOverride.qtyPerPallet;
-      } else if (p) {
-        qpp = p.qtyPerPallet || p.weight || 0;
-      }
-      const numVal = parseFloat(getFieldValue('palletQty')) || 0;
-      if (qpp > 0) {
-        it.quantity = numVal * qpp;
-      } else {
-        it.quantity = numVal;
-      }
-    }
-
-    // Auto calculate
-    if (hasField('productCode')) {
-      const productCodeVal = getFieldValue('productCode');
-      const exactMatch = products.find(prod => prod.productCode === productCodeVal || `[${prod.productCode}] ${prod.nameEn || prod.nameKo || ''}` === productCodeVal);
-      if (exactMatch) {
-        const displayName = exactMatch.nameEn || exactMatch.nameKo || '';
-        it.productCode = `[${exactMatch.productCode}] ${displayName}`;
-        it.productName = displayName;
-        it.spec = exactMatch.spec || '';
-        it.description = displayName;
-        it.unit = (exactMatch.unit || 'KG').toUpperCase();
-        if (exactMatch.currency === 'KRW') {
-          it.purchasePriceKrw = exactMatch.purchasePrice || 0;
-          it.purchasePriceUsd = 0;
-        } else {
-          it.purchasePriceUsd = exactMatch.purchasePrice || 0;
-          it.purchasePriceKrw = 0;
-        }
-        
-        const methods = getProductPackingMethods(exactMatch);
-        const existingMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
-        const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
-        
-        if (existingMethod) {
-          it.selectedPackingMethodId = existingMethod.id;
-          if (existingMethod.unit) {
-            it.unit = existingMethod.unit;
-          }
-          const isPallet = existingMethod.packageType?.includes('Pallet') || existingMethod.packageType?.endsWith('+ Pallet');
-          if (!it.packingSpecOverride) {
-            it.packingSpecOverride = {
-              packageType: existingMethod.packageType,
-              qtyPerPallet: existingMethod.qtyPerPallet || 0,
-              specWidth: isPallet ? (existingMethod.palletWidth || existingMethod.unitWidth || 0) : (existingMethod.unitWidth || 0),
-              specLength: isPallet ? (existingMethod.palletLength || existingMethod.unitLength || 0) : (existingMethod.unitLength || 0),
-              specHeight: isPallet ? (existingMethod.palletHeight || existingMethod.unitHeight || 0) : (existingMethod.unitHeight || 0),
-              weight: isPallet ? (existingMethod.palletWeight || existingMethod.unitWeight || 0) : (existingMethod.unitWeight || 0),
-              grossWeight: isPallet ? (existingMethod.palletGrossWeight || existingMethod.unitGrossWeight || 0) : (existingMethod.unitGrossWeight || existingMethod.unitWeight || 0),
-            };
-          }
-          if (existingMethod.qtyPerPallet && existingMethod.qtyPerPallet > 0) {
-            it.quantity = (it.palletQty || 1) * existingMethod.qtyPerPallet;
-          } else {
-            it.quantity = it.quantity || 0;
-          }
-        } else if (defaultMethod) {
-          it.selectedPackingMethodId = defaultMethod.id;
-          if (defaultMethod.unit) {
-            it.unit = defaultMethod.unit;
-          }
-          const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
-          it.packingSpecOverride = {
-            packageType: defaultMethod.packageType,
-            qtyPerPallet: defaultMethod.qtyPerPallet || 0,
-            specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
-            specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
-            specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
-            weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
-            grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
-          };
-          if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
-            it.quantity = (it.palletQty || 1) * defaultMethod.qtyPerPallet;
-          } else {
-            it.quantity = it.quantity || 0;
-          }
-        } else {
-          it.selectedPackingMethodId = undefined;
-          it.packingSpecOverride = undefined;
-          if (exactMatch.qtyPerPallet && exactMatch.qtyPerPallet > 0) {
-            it.quantity = (it.palletQty || 1) * exactMatch.qtyPerPallet;
-          } else if (exactMatch.weight && exactMatch.weight > 0) {
-            it.quantity = (it.palletQty || 1) * exactMatch.weight;
-          } else {
-            it.quantity = it.quantity || 0;
-          }
-        }
-      } else {
-        it.productName = productCodeVal || '';
-        it.description = productCodeVal || '';
-        if (!it.unit) {
-          it.unit = 'EA';
-        }
-      }
-    }
-
-    if (hasField('selectedPackingMethodId')) {
-      const packingMethodIdVal = getFieldValue('selectedPackingMethodId');
-      const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
-      const methods = getProductPackingMethods(p);
-      if (p && methods.length > 0) {
-        const method = methods.find((m: any) => m.id === packingMethodIdVal);
-        if (method) {
-          if (method.unit) {
-            it.unit = method.unit;
-          }
-          const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
-          it.packingSpecOverride = {
-            packageType: method.packageType,
-            qtyPerPallet: method.qtyPerPallet || 0,
-            specWidth: isPallet ? (method.palletWidth || method.unitWidth || 0) : (method.unitWidth || 0),
-            specLength: isPallet ? (method.palletLength || method.unitLength || 0) : (method.unitLength || 0),
-            specHeight: isPallet ? (method.palletHeight || method.unitHeight || 0) : (method.unitHeight || 0),
-            weight: isPallet ? (method.palletWeight || method.unitWeight || 0) : (method.unitWeight || 0),
-            grossWeight: isPallet ? (method.palletGrossWeight || method.unitGrossWeight || 0) : (method.unitGrossWeight || method.unitWeight || 0),
-          };
-          
-          if (method.qtyPerPallet && method.qtyPerPallet > 0) {
-            it.quantity = (it.palletQty || 1) * method.qtyPerPallet;
-          } else {
-            it.quantity = it.quantity || 0;
-          }
-        } else {
-          it.selectedPackingMethodId = undefined;
-          it.packingSpecOverride = undefined;
-        }
-      }
-    }
-
-    if (hasField('productCode') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits')) {
-      let rawSalePrice = 0;
-      if (it.purchasePriceKrw > 0) {
-        rawSalePrice = (it.purchasePriceKrw || 0) / (it.exchangeRate || 1) / (1 - (it.marginRate || 0) / 100);
-      } else {
-        rawSalePrice = (it.purchasePriceUsd || 0) / (1 - (it.marginRate || 0) / 100);
-      }
-
-      if (typeof it.roundDigits === 'number') {
-        it.salePriceUsd = ceilValue(rawSalePrice, it.roundDigits);
-      } else {
-        it.salePriceUsd = rawSalePrice;
-      }
-    }
-
-    if (hasField('productCode') || hasField('salePriceUsd') || hasField('quantity') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits') || hasField('palletQty')) {
-      it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
+    setItems(prevItems => {
+      const newItems = [...prevItems];
+      if (!newItems[index]) return prevItems;
+      let it = { ...newItems[index] };
       
-      // Auto calculate palletQty when quantity changes
-      if (hasField('quantity')) {
-        const qtyVal = getFieldValue('quantity');
-        const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+      let isSingleField = false;
+      let singleField: keyof PIItem | undefined;
+      let singleValue: any;
+
+      if (typeof fieldOrUpdates === 'string') {
+        isSingleField = true;
+        singleField = fieldOrUpdates as keyof PIItem;
+        singleValue = value;
+        (it as any)[singleField] = value;
+      } else {
+        Object.assign(it, fieldOrUpdates);
+      }
+
+      const hasField = (f: keyof PIItem) => {
+        if (isSingleField) return singleField === f;
+        return f in (fieldOrUpdates as object);
+      };
+
+      const getFieldValue = (f: keyof PIItem) => {
+        if (isSingleField && singleField === f) return singleValue;
+        return (it as any)[f];
+      };
+
+      // Zero out other purchase price when one is entered
+      if (hasField('purchasePriceKrw') && parseFloat(getFieldValue('purchasePriceKrw')) > 0) {
+        it.purchasePriceUsd = 0;
+      } else if (hasField('purchasePriceUsd') && parseFloat(getFieldValue('purchasePriceUsd')) > 0) {
+        it.purchasePriceKrw = 0;
+      }
+
+      // Auto calculate from palletQty
+      if (hasField('palletQty')) {
+        const rawCode = getRawProductCode(it.productCode);
+        const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+        let qpp = 0;
         if (it.packingSpecOverride) {
-          const qpp = it.packingSpecOverride.qtyPerPallet;
-          if (qpp && qpp > 0) {
-            it.palletQty = parseFloat((qtyVal / qpp).toFixed(2));
-          } else {
-            it.palletQty = qtyVal;
-          }
+          qpp = it.packingSpecOverride.qtyPerPallet;
         } else if (p) {
-          if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.palletQty = parseFloat((qtyVal / p.qtyPerPallet).toFixed(2));
-          } else if (p.weight && p.weight > 0) {
-            it.palletQty = parseFloat((qtyVal / p.weight).toFixed(2));
-          } else {
-            it.palletQty = qtyVal;
-          }
+          qpp = p.qtyPerPallet || p.weight || 0;
+        }
+        const numVal = parseFloat(getFieldValue('palletQty')) || 0;
+        if (qpp > 0) {
+          it.quantity = numVal * qpp;
         } else {
-          it.palletQty = qtyVal;
+          it.quantity = numVal;
         }
       }
-    }
 
-    newItems[index] = it;
-    setItems(newItems);
+      // Auto calculate
+      if (hasField('productCode')) {
+        const productCodeVal = getFieldValue('productCode');
+        const rawCode = getRawProductCode(productCodeVal);
+        const exactMatch = products.find(prod => prod.productCode === rawCode || prod.id === rawCode || `[${prod.productCode}] ${prod.nameEn || prod.nameKo || ''}` === productCodeVal);
+        if (exactMatch) {
+          const displayName = exactMatch.nameEn || exactMatch.nameKo || '';
+          it.productCode = `[${exactMatch.productCode}] ${displayName}`;
+          it.productName = displayName;
+          it.spec = exactMatch.spec || '';
+          it.description = displayName;
+          it.unit = (exactMatch.unit || 'KG').toUpperCase();
+          if (exactMatch.currency === 'KRW') {
+            it.purchasePriceKrw = exactMatch.purchasePrice || 0;
+            it.purchasePriceUsd = 0;
+          } else {
+            it.purchasePriceUsd = exactMatch.purchasePrice || 0;
+            it.purchasePriceKrw = 0;
+          }
+          
+          const methods = getProductPackingMethods(exactMatch);
+          const existingMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
+          const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
+          
+          if (existingMethod) {
+            it.selectedPackingMethodId = existingMethod.id;
+            if (existingMethod.unit) {
+              it.unit = existingMethod.unit;
+            }
+            const isPallet = existingMethod.packageType?.includes('Pallet') || existingMethod.packageType?.endsWith('+ Pallet');
+            if (!it.packingSpecOverride) {
+              it.packingSpecOverride = {
+                packageType: existingMethod.packageType,
+                qtyPerPallet: existingMethod.qtyPerPallet || 0,
+                specWidth: isPallet ? (existingMethod.palletWidth || existingMethod.unitWidth || 0) : (existingMethod.unitWidth || 0),
+                specLength: isPallet ? (existingMethod.palletLength || existingMethod.unitLength || 0) : (existingMethod.unitLength || 0),
+                specHeight: isPallet ? (existingMethod.palletHeight || existingMethod.unitHeight || 0) : (existingMethod.unitHeight || 0),
+                weight: isPallet ? (existingMethod.palletWeight || existingMethod.unitWeight || 0) : (existingMethod.unitWeight || 0),
+                grossWeight: isPallet ? (existingMethod.palletGrossWeight || existingMethod.unitGrossWeight || 0) : (existingMethod.unitGrossWeight || existingMethod.unitWeight || 0),
+              };
+            }
+            if (existingMethod.qtyPerPallet && existingMethod.qtyPerPallet > 0) {
+              it.quantity = (it.palletQty || 1) * existingMethod.qtyPerPallet;
+            } else {
+              it.quantity = it.quantity || 0;
+            }
+          } else if (defaultMethod) {
+            it.selectedPackingMethodId = defaultMethod.id;
+            if (defaultMethod.unit) {
+              it.unit = defaultMethod.unit;
+            }
+            const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
+            it.packingSpecOverride = {
+              packageType: defaultMethod.packageType,
+              qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+              specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+              specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+              specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+              weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+              grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+            };
+            if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
+              it.quantity = (it.palletQty || 1) * defaultMethod.qtyPerPallet;
+            } else {
+              it.quantity = it.quantity || 0;
+            }
+          } else {
+            it.selectedPackingMethodId = undefined;
+            it.packingSpecOverride = undefined;
+            if (exactMatch.qtyPerPallet && exactMatch.qtyPerPallet > 0) {
+              it.quantity = (it.palletQty || 1) * exactMatch.qtyPerPallet;
+            } else if (exactMatch.weight && exactMatch.weight > 0) {
+              it.quantity = (it.palletQty || 1) * exactMatch.weight;
+            } else {
+              it.quantity = it.quantity || 0;
+            }
+          }
+        } else {
+          it.productName = productCodeVal || '';
+          it.description = productCodeVal || '';
+          if (!it.unit) {
+            it.unit = 'EA';
+          }
+        }
+      }
+
+      if (hasField('selectedPackingMethodId')) {
+        const packingMethodIdVal = getFieldValue('selectedPackingMethodId');
+        const rawCode = getRawProductCode(it.productCode);
+        const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+        const methods = getProductPackingMethods(p);
+        if (p && methods.length > 0) {
+          const method = methods.find((m: any) => m.id === packingMethodIdVal);
+          if (method) {
+            it.selectedPackingMethodId = method.id;
+            if (method.unit) {
+              it.unit = method.unit;
+            }
+            const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
+            it.packingSpecOverride = {
+              packageType: method.packageType,
+              qtyPerPallet: method.qtyPerPallet || 0,
+              specWidth: isPallet ? (method.palletWidth || method.unitWidth || 0) : (method.unitWidth || 0),
+              specLength: isPallet ? (method.palletLength || method.unitLength || 0) : (method.unitLength || 0),
+              specHeight: isPallet ? (method.palletHeight || method.unitHeight || 0) : (method.unitHeight || 0),
+              weight: isPallet ? (method.palletWeight || method.unitWeight || 0) : (method.unitWeight || 0),
+              grossWeight: isPallet ? (method.palletGrossWeight || method.unitGrossWeight || 0) : (method.unitGrossWeight || method.unitWeight || 0),
+            };
+            
+            if (method.qtyPerPallet && method.qtyPerPallet > 0) {
+              const palQty = it.palletQty && it.palletQty > 0 ? it.palletQty : 1;
+              it.palletQty = palQty;
+              it.quantity = palQty * method.qtyPerPallet;
+            }
+          }
+        }
+      }
+
+      if (hasField('productCode') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits')) {
+        let rawSalePrice = 0;
+        if (it.purchasePriceKrw > 0) {
+          rawSalePrice = (it.purchasePriceKrw || 0) / (it.exchangeRate || 1) / (1 - (it.marginRate || 0) / 100);
+        } else {
+          rawSalePrice = (it.purchasePriceUsd || 0) / (1 - (it.marginRate || 0) / 100);
+        }
+
+        if (typeof it.roundDigits === 'number') {
+          it.salePriceUsd = ceilValue(rawSalePrice, it.roundDigits);
+        } else {
+          it.salePriceUsd = rawSalePrice;
+        }
+      }
+
+      if (hasField('productCode') || hasField('salePriceUsd') || hasField('quantity') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits') || hasField('palletQty')) {
+        it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
+        
+        // Auto calculate palletQty when quantity changes
+        if (hasField('quantity')) {
+          const qtyVal = getFieldValue('quantity');
+          const rawCode = getRawProductCode(it.productCode);
+          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+          if (it.packingSpecOverride) {
+            const qpp = it.packingSpecOverride.qtyPerPallet;
+            if (qpp && qpp > 0) {
+              it.palletQty = parseFloat((qtyVal / qpp).toFixed(2));
+            } else {
+              it.palletQty = qtyVal;
+            }
+          } else if (p) {
+            if (p.qtyPerPallet && p.qtyPerPallet > 0) {
+              it.palletQty = parseFloat((qtyVal / p.qtyPerPallet).toFixed(2));
+            } else if (p.weight && p.weight > 0) {
+              it.palletQty = parseFloat((qtyVal / p.weight).toFixed(2));
+            } else {
+              it.palletQty = qtyVal;
+            }
+          } else {
+            it.palletQty = qtyVal;
+          }
+        }
+      }
+
+      newItems[index] = it;
+      return newItems;
+    });
   };
 
 
@@ -2887,7 +2895,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     {formData.type !== 'consulting' && (
                       <td style={{ padding: '4px' }}>
                         {(() => {
-                          const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                          const rawCode = getRawProductCode(it.productCode);
+                          const prod = products.find(p => p.productCode === rawCode || p.id === rawCode);
                           const methods = getProductPackingMethods(prod);
                           const selectedMethod = methods.find((m: any) => m.id === (it.selectedPackingMethodId || 'default_injected'))
                             || methods[0];
@@ -2968,38 +2977,56 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   gap: '6px',
                                 }}>
                                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1' }}>📦 패킹 방식 선택</div>
-                                  {methods.map((m: any) => (
-                                    <label
-                                      key={m.id}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        fontSize: '12px',
-                                        cursor: 'pointer',
-                                        padding: '3px 4px',
-                                        borderRadius: '4px',
-                                        background: (it.selectedPackingMethodId || 'default_injected') === m.id ? '#dbeafe' : 'transparent',
-                                      }}
-                                    >
-                                      <input
-                                        type="radio"
-                                        name={`packing-${idx}`}
-                                        value={m.id}
-                                        checked={(it.selectedPackingMethodId || 'default_injected') === m.id}
-                                        onChange={() => {
-                                          updateItem(idx, 'selectedPackingMethodId', m.id);
-                                          const newAutoQty = autoCalcPalletQty(it.quantity || 0, m.id, methods);
-                                          if (newAutoQty > 0) updateItem(idx, 'palletQty', newAutoQty);
-                                          togglePackingRow(idx);
+                                  {methods.map((m: any) => {
+                                    const isSelected = (it.selectedPackingMethodId || 'default_injected') === m.id;
+                                    const handleSelect = (e: React.MouseEvent | React.ChangeEvent) => {
+                                      e.stopPropagation();
+                                      const newAutoQty = autoCalcPalletQty(it.quantity || 0, m.id, methods);
+                                      const updates: Partial<PIItem> = {
+                                        selectedPackingMethodId: m.id
+                                      };
+                                      if (newAutoQty > 0) {
+                                        updates.palletQty = newAutoQty;
+                                      }
+                                      updateItem(idx, updates);
+                                      togglePackingRow(idx);
+                                    };
+
+                                    return (
+                                      <label
+                                        key={m.id}
+                                        onClick={handleSelect}
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '6px',
+                                          fontSize: '12px',
+                                          cursor: 'pointer',
+                                          padding: '4px 6px',
+                                          borderRadius: '4px',
+                                          background: isSelected ? '#dbeafe' : 'transparent',
+                                          border: isSelected ? '1px solid #93c5fd' : '1px solid transparent',
+                                          transition: 'all 0.15s ease'
                                         }}
-                                      />
-                                      <span style={{ fontWeight: 600 }}>{formatPackingName(m.name, m.qtyPerPallet)}</span>
-                                      {m.qtyPerPallet > 1 && (
-                                        <span style={{ color: '#64748b' }}>({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})</span>
-                                      )}
-                                    </label>
-                                  ))}
+                                      >
+                                        <input
+                                          type="radio"
+                                          name={`packing-${idx}`}
+                                          value={m.id}
+                                          checked={isSelected}
+                                          onChange={handleSelect}
+                                        />
+                                        <span style={{ fontWeight: 600, color: isSelected ? '#1e40af' : '#1e293b' }}>
+                                          {formatPackingName(m.name, m.qtyPerPallet)}
+                                        </span>
+                                        {m.qtyPerPallet > 1 && (
+                                          <span style={{ color: isSelected ? '#3b82f6' : '#64748b', fontSize: '11px' }}>
+                                            ({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})
+                                          </span>
+                                        )}
+                                      </label>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
