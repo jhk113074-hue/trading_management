@@ -9666,27 +9666,43 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         }
 
                         const isYS = order.issuingCompany === 'YS';
-                        let defaultConsignee = isYS 
-                          ? `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한` 
-                          : `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`;
+                        const myManagerName = userProfile?.name || auth.currentUser?.displayName || (auth.currentUser?.email ? auth.currentUser.email.split('@')[0] : '담당자');
+                        const myManagerPhone = userProfile?.mobile || userProfile?.phone || '';
+                        const myManagerEmail = userProfile?.email || auth.currentUser?.email || '';
+
+                        let compName = isYS ? '영성ACC' : '(주)와이에스에이씨씨(YSACC CO., LTD.)';
+                        let address = isYS ? '청주시 흥덕구 월명로 76, 111-201' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
+                        let phone = myManagerPhone || (isYS ? '01073611130' : '010-4494-1028');
 
                         try {
                           const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
                           if (compDoc.exists()) {
                             const data = compDoc.data();
-                            const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
-                            const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
-                            const phone = data.phone || '010-4494-1028';
-                            const manager = data.manager || '김주한';
-                            defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}`;
+                            compName = data.nameKo || data.name || compName;
+                            address = data.addressKo || address;
+                            phone = myManagerPhone || data.phone || phone;
                           }
                         } catch (e) {
                           console.error("Failed to load company info", e);
                         }
 
+                        let defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${myManagerName}${myManagerEmail ? `\nE-mail: ${myManagerEmail}` : ''}`;
+
                         let finalConsignee = repData.consignee || defaultConsignee;
-                        if (finalConsignee.includes('서울 강남구 테헤란로 419') || finalConsignee.includes('경기 김포시 양촌읍 듬박로 89')) {
-                          finalConsignee = defaultConsignee;
+                        if (myManagerName && myManagerName !== '담당자') {
+                          if (finalConsignee.includes('담당자:')) {
+                            finalConsignee = finalConsignee.replace(/담당자:\s*[^\n\r()]+/g, `담당자: ${myManagerName}`);
+                          } else {
+                            finalConsignee += `\n담당자: ${myManagerName}`;
+                          }
+                        }
+                        if (myManagerEmail) {
+                          if (finalConsignee.includes('E-mail:')) {
+                            finalConsignee = finalConsignee.replace(/E-mail:\s*[^\n\r()]+/g, `E-mail: ${myManagerEmail}`);
+                          } else {
+                            finalConsignee = finalConsignee.replace(/\s*\([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\)/g, '');
+                            finalConsignee += `\nE-mail: ${myManagerEmail}`;
+                          }
                         }
 
                         let finalCfsAddress = basicForm.cfsContactInfo || basicForm.cfsAddress || '';
@@ -13947,8 +13963,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       </tr>
                       <tr>
                         <td>
-                          <strong>2) For Account & Risk Messrs.</strong><br/>
-                          ${(rep.consignee || `(주)와이에스에이씨씨<br/>청주시 서원구 성봉로 180번길, 3층 302호<br/>TEL : 010-6277-7418<br/>담당자 : 이한중 이사`).replace(/\n/g, '<br/>')}
+                          <strong>2) Consignee</strong><br/>
+                          ${(rep.consignee || `(주)와이에스에이씨씨\n충북 청주시 흥덕구 가로수로 1251, 201-1호\nTEL : 010-4494-1028\n담당자: ${userProfile?.name || '담당자'}${userProfile?.email ? `\nE-mail: ${userProfile.email}` : ''}`).replace(/\n/g, '<br/>')}
                         </td>
                         <td>
                           <strong>9) Remarks</strong><br/>

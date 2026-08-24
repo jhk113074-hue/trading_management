@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.396',
+    version: 'v2.8.396',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '도착보고 담당자 및 이메일 정보 로그인 사용자 기반 동적 자동 반영',
+    content: '• 도착보고(Arrival Report) 생성/수정/인쇄 시 Consignee 담당자란에 고정된 이름 대신 현재 로그인한 사용자의 이름(담당자)과 이메일 주소(E-mail)가 자동으로 정확히 반영되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.395',
     version: 'v2.8.395',
     date: '2026-08-23',

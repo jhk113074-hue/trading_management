@@ -150,54 +150,55 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
   // Consignee setup
   useEffect(() => {
     const isYS = orderInfo.issuingCompany === 'YS';
-    const myManagerName = userProfile?.name || auth.currentUser?.displayName || '김주한';
-    const myManagerPhone = userProfile?.mobile || userProfile?.phone || '010-4494-1028';
+    const myManagerName = userProfile?.name || auth.currentUser?.displayName || (auth.currentUser?.email ? auth.currentUser.email.split('@')[0] : '담당자');
+    const myManagerPhone = userProfile?.mobile || userProfile?.phone || '';
     const myManagerEmail = userProfile?.email || auth.currentUser?.email || '';
 
     const loadMyCompany = async () => {
+      let compName = isYS ? '영성ACC' : '(주)와이에스에이씨씨(YSACC CO., LTD.)';
+      let address = isYS ? '청주시 흥덕구 월명로 76, 111-201' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
+      let phone = myManagerPhone || (isYS ? '01073611130' : '010-4494-1028');
+
       try {
         const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
         if (compDoc.exists()) {
           const data = compDoc.data();
-          const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
-          const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
-          const phone = myManagerPhone || data.phone || '010-4494-1028';
-          const manager = myManagerName || data.manager || '김주한';
-          
-          const newConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}${myManagerEmail ? ` (${myManagerEmail})` : ''}`;
-          
-          // Check if initialData.consignee is legacy or unset
-          const currentText = initialData?.consignee || '';
-          const isLegacy = currentText.includes('서울 강남구 테헤란로 419') || currentText.includes('경기 김포시 양촌읍 듬박로 89') || currentText.includes('01073611130') || currentText.includes('010-4494-1028');
-
-          if (!currentText || isLegacy) {
-            setConsigneeVal(newConsignee);
-          } else {
-            setConsigneeVal(currentText);
-          }
-          return;
+          compName = data.nameKo || data.name || compName;
+          address = data.addressKo || address;
+          phone = myManagerPhone || data.phone || phone;
         }
       } catch (e) {
         console.error("Failed to load company info", e);
       }
-      
-      // Fallback
-      const fallbackText = initialData?.consignee || '';
-      const isFallbackLegacy = fallbackText.includes('서울 강남구 테헤란로 419') || fallbackText.includes('경기 김포시 양촌읍 듬박로 89') || fallbackText.includes('01073611130') || fallbackText.includes('010-4494-1028');
 
-      if (fallbackText && !isFallbackLegacy) {
-        setConsigneeVal(fallbackText);
-      } else if (isYS) {
-        setConsigneeVal(
-          `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: ${myManagerPhone}\n담당자: ${myManagerName}${myManagerEmail ? ` (${myManagerEmail})` : ''}`
-        );
+      const managerLine = `담당자: ${myManagerName}`;
+      const emailLine = myManagerEmail ? `\nE-mail: ${myManagerEmail}` : '';
+      const newConsignee = `${compName}\n${address}\nTEL: ${phone}\n${managerLine}${emailLine}`;
+
+      const currentText = initialData?.consignee || '';
+      if (!currentText) {
+        setConsigneeVal(newConsignee);
       } else {
-        setConsigneeVal(
-          `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: ${myManagerPhone}\n담당자: ${myManagerName}${myManagerEmail ? ` (${myManagerEmail})` : ''}`
-        );
+        let updated = currentText;
+        if (myManagerName && myManagerName !== '담당자') {
+          if (updated.includes('담당자:')) {
+            updated = updated.replace(/담당자:\s*[^\n\r()]+/g, `담당자: ${myManagerName}`);
+          } else {
+            updated += `\n담당자: ${myManagerName}`;
+          }
+        }
+        if (myManagerEmail) {
+          if (updated.includes('E-mail:')) {
+            updated = updated.replace(/E-mail:\s*[^\n\r()]+/g, `E-mail: ${myManagerEmail}`);
+          } else {
+            updated = updated.replace(/\s*\([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\)/g, '');
+            updated += `\nE-mail: ${myManagerEmail}`;
+          }
+        }
+        setConsigneeVal(updated);
       }
     };
-    
+
     loadMyCompany();
   }, [orderInfo.issuingCompany, initialData, userProfile]);
 
