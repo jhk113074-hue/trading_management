@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.401',
+    version: 'v2.8.401',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '전체 테이블 행(Row) 드래그 순서 변경 전용 핸들(⋮⋮, ⠿)로 제한 전면 적용',
+    content: '• 수주 상세 품목 라인(Line Items), 소싱/발주 품목, 신규 수주 모달, PI 모달 등 시스템 내 모든 테이블에서 텍스트 입력 및 드래그 선택 시 행이 흔들리거나 드래그되는 현상을 전면 차단하고 오직 좌/우측 전용 드래그 핸들(⋮⋮, ⠿)로만 순서 이동되도록 전면 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.400',
     version: 'v2.8.400',
     date: '2026-08-24',

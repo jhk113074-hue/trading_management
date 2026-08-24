@@ -6737,8 +6737,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       return (
                         <tr 
                           key={`order-item-${item.lineNumber || (idx + 1)}-${item.name || idx}`}
-                          draggable={true}
-                          onDragStart={(e) => handleStep1DragStart(e, idx)}
                           onDragOver={(e) => handleStep1DragOver(e, idx)}
                           onDragLeave={handleStep1DragLeave}
                           onDrop={(e) => handleStep1Drop(e, idx)}
@@ -6749,7 +6747,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                         >
                           <td style={{ padding: '4px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                              <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                              <span 
+                                draggable={true}
+                                onDragStart={(e) => handleStep1DragStart(e, idx)}
+                                onDragEnd={() => { step1DraggedIndexRef.current = null; setStep1DragOverIndex(null); }}
+                                style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
+                                title="드래그하여 순서 변경"
+                              >
                                 ⋮⋮
                               </span>
                               <input
@@ -7551,8 +7555,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                       return (
                                         <tr 
                                           key={`sourcing-item-${it.itemId || idx}-${itemIndexInMain}`}
-                                          draggable={true}
-                                          onDragStart={(e) => handleSourcingDragStart(e, itemIndexInMain)}
                                           onDragOver={(e) => handleSourcingDragOver(e, itemIndexInMain)}
                                           onDragLeave={handleSourcingDragLeave}
                                           onDrop={(e) => handleSourcingDrop(e, itemIndexInMain)}
@@ -7564,7 +7566,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                           {/* 1. 상품코드 + 품목명 (병합 열) */}
                                           <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                              <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                                               <span 
+                                                 draggable={true}
+                                                 onDragStart={(e) => handleSourcingDragStart(e, itemIndexInMain)}
+                                                 onDragEnd={() => { sourcingDraggedIndexRef.current = null; setSourcingDragOverIndex(null); }}
+                                                 style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
+                                                 title="드래그하여 순서 변경"
+                                               >
                                                 ⋮⋮
                                               </span>
                                               <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>

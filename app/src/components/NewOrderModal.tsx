@@ -963,8 +963,6 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   return (
                   <tr 
                     key={`po-item-${item.itemId || (idx + 1)}-${item.name || idx}`}
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, idx)}
                     onDragOver={(e) => handleDragOver(e, idx)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, idx)}
@@ -975,7 +973,13 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   >
                     <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                        <span style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} title="드래그하여 순서 변경">
+                        <span 
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragEnd={() => { draggedItemIndexRef.current = null; setDragOverIndex(null); }}
+                          style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
+                          title="드래그하여 순서 변경"
+                        >
                           ⋮⋮
                         </span>
                         <input

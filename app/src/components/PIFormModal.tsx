@@ -2665,8 +2665,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   return (
                   <tr 
                     key={`pi-item-${idx}`} 
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, idx)}
                     onDragOver={(e) => handleDragOver(e, idx)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, idx)}
@@ -2682,6 +2680,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
                         <span 
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragEnd={() => { draggedItemIndexRef.current = null; setDragOverIndex(null); }}
                           style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }}
                           title="드래그하여 순서 변경"
                         >
