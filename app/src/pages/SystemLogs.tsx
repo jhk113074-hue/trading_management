@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.397',
+    version: 'v2.8.397',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '물류/선적 탭 컨테이너(CFS) 입고시간 입력 필드 복원 및 연동',
+    content: '• 물류/선적 탭의 컨테이너(CFS)입고일 옆에 [입고시간](기본값: 오전 10시까지) 입력 필드를 추가/복원하여 도착보고서 9) Remarks에 입고일과 입고시간이 완벽히 반영되도록 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.396',
     version: 'v2.8.396',
     date: '2026-08-24',

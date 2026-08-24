@@ -1205,6 +1205,7 @@ export const OrderDetail: React.FC = () => {
     forwarderConfirmed: '',
     cargoReadyDate: '',
     cfsEntryDate: '',
+    cfsEntryTime: '오전 10시까지',
     cfsContactInfo: '',
     docCutoffDate: '',
     cargoCutoffDate: '',
@@ -1880,6 +1881,7 @@ export const OrderDetail: React.FC = () => {
           forwarderConfirmed: data.forwarderConfirmed || '',
           cargoReadyDate: data.cargoReadyDate || '',
           cfsEntryDate: data.cfsEntryDate || '',
+          cfsEntryTime: data.cfsEntryTime || '오전 10시까지',
           cfsContactInfo: data.cfsContactInfo || '',
           docCutoffDate: data.docsDeadlineDate || data.docCutoffDate || '',
           cargoCutoffDate: data.cargoCutoffDate || '',
@@ -2331,6 +2333,7 @@ export const OrderDetail: React.FC = () => {
         forwarderConfirmed: basicForm.forwarderConfirmed,
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate,
+        cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
         cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
@@ -8402,8 +8405,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       </div>
                     </div>
 
-                    {/* 컨테이너작업장소/컨테이너(CFS)입고일/CFS 회사명/주소 및 담당(신규등록 및 저장기능)-1줄 표현 */}
-                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '120px 140px 1fr', gap: '10px' }}>
+                    {/* 컨테이너작업장소/컨테이너(CFS)입고일/입고시간/CFS 회사명/주소 및 담당(신규등록 및 저장기능)-1줄 표현 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '120px 145px 135px 1fr', gap: '10px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소</span>
                         {isEditing ? (
@@ -8420,6 +8423,18 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
                         <DateInput value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '37px' }} />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>입고시간</span>
+                        <input 
+                          type="text" 
+                          value={basicForm.cfsEntryTime || ''} 
+                          onChange={e => setBasicForm(p => ({ ...p, cfsEntryTime: e.target.value }))} 
+                          disabled={!isEditing} 
+                          placeholder="예: 오전 10시까지" 
+                          style={{ ...inputStyle(isEditing), height: '37px' }} 
+                        />
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -13889,6 +13904,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
             sailingOnOrAbout: basicForm.etd || '',
             cfsAddress: basicForm.cfsContactInfo || basicForm.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
             cfsEntryDate: basicForm.cfsEntryDate || '',
+            cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
             items: activeArrivalReport.items
           }}
           packingList={basicForm.packingList}
