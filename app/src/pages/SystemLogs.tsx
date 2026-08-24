@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.441',
+    version: 'v2.8.441',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 컨테이너 적재 시뮬레이터 글로벌 소프트웨어 표준 전면 개편 (시퀀스 플레이어 & 스마트 밀착 기즈모)',
+    content: '• EasyCargo/Cube-IQ 수준의 [스텝 바이 스텝 적재 시퀀스 플레이어] (0개 비우기/이전/재생/다음/완료 슬라이더) 탑재\\n• 화물 선택 시 1클릭으로 정렬하는 [스마트 밀착 기즈모 HUD] (앞/뒤/좌/우 밀착, 중앙 정렬, 90° 회전, 1단↔2단, 컨테이너 안/밖) 지원\\n• 3대 모드(시퀀스 보기 / 3D 직접 수정 / 수동 적재) 아키텍처 및 2D/3D 실시간 동기화 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.440',
     version: 'v2.8.440',
     date: '2026-08-24',

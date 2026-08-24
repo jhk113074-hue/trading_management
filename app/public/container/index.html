@@ -92,219 +92,155 @@
                                 </div>
                             </div>
                             
-                            <!-- 3D View -->
+                                                        <!-- 3D View: Global Standard Container Visualization -->
                             <div id="viz-3d-wrapper">
+                                <!-- 3D Main Toolbar -->
                                 <div class="viz-toolbar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                                    <!-- Camera View Angles -->
                                     <div style="display: flex; align-items: center; gap: 4px;">
                                         <button class="btn btn-icon btn-sm" data-cam="iso" title="등각 투영(Iso)">Iso</button>
                                         <button class="btn btn-icon btn-sm" data-cam="top" title="위(Top)">Top</button>
                                         <button class="btn btn-icon btn-sm" data-cam="side" title="옆(Side)">Side</button>
                                         <button class="btn btn-icon btn-sm" data-cam="front" title="앞(Front)">Front</button>
                                         <div class="separator"></div>
-                                        <button class="btn btn-icon btn-sm" data-cam="reset" title="초기화(Reset)"><i data-lucide="refresh-cw"></i></button>
+                                        <button class="btn btn-icon btn-sm" data-cam="reset" title="카메라 위치 초기화"><i data-lucide="refresh-cw"></i></button>
                                     </div>
 
-                                    <!-- 3D Mode Selector: View Mode vs Edit Mode vs Start from Scratch Mode -->
+                                    <!-- 3D Mode Selector: View vs Edit vs Staging -->
                                     <div style="display: flex; align-items: center; background: #e2e8f0; padding: 3px; border-radius: 6px; gap: 4px; flex-wrap: wrap;">
-                                        <button type="button" id="btn-mode-3d-view" class="btn btn-sm active" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #0284c7; color: #fff; border: 1px solid #0284c7; box-shadow: 0 2px 6px rgba(2,132,199,0.35);">
-                                            👁️ 보기 모드
+                                        <button type="button" id="btn-mode-3d-view" class="btn btn-sm active" style="font-weight: 750; font-size: 12px; padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #0284c7; color: #fff; border: 1px solid #0284c7; box-shadow: 0 2px 6px rgba(2,132,199,0.35);">
+                                            👁️ 시퀀스 보기 (재생)
                                         </button>
-                                        <button type="button" id="btn-mode-3d-edit" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
-                                            ✏️ 수정/이동 모드
+                                        <button type="button" id="btn-mode-3d-edit" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                                            ✏️ 3D 직접 이동/수정
                                         </button>
-                                        <button type="button" id="btn-mode-3d-fresh" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
-                                            📦 처음부터 시작 (수동 적재)
+                                        <button type="button" id="btn-mode-3d-fresh" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                                            📦 수동 적재 (대기실)
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Dynamic Mode Status & Action Banner -->
                                 <div id="mode-3d-banner" style="display: flex; justify-content: space-between; align-items: center; border-radius: 6px; padding: 8px 14px; margin-bottom: 8px; font-size: 13px; font-weight: 600; flex-wrap: wrap; gap: 8px; background: #f0f9ff; border: 1.5px solid #7dd3fc; color: #0369a1; transition: all 0.2s;">
                                     <span style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11.5px;">👁️ 3D 보기 모드</span>
-                                        <span>화면 어디서나 <b>마우스 드래그로 자유롭게 360° 회전 및 휠 줌</b>하여 화물 적재 상태를 확인하세요.</span>
+                                        <span style="background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 11.5px;">👁️ 시퀀스 보기</span>
+                                        <span>마우스 드래그로 <b>360° 회전 및 휠 줌</b>하여 점검하거나, 하단 플레이어로 <b>적재 순서를 재생</b>하세요.</span>
                                     </span>
                                     <button type="button" id="btn-banner-switch-edit" style="background: #3b82f6; color: #ffffff; border: 1px solid #2563eb; font-weight: 750; font-size: 12px; padding: 4px 12px; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 5px rgba(37,99,235,0.3);">
-                                        ✏️ 화물 이동/편집하기
+                                        ✏️ 화물 직접 수정하기
                                     </button>
                                 </div>
-                                <div id="container-3d" style="position: relative; overflow: hidden;">
-                                    <!-- 3D HUD Floating Controller for Selected Pallet -->
-                                    <div id="hud-3d-pallet-ctrl" style="display: none; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 10px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 20; color: #fff; width: 94%; max-width: 780px; box-sizing: border-box; transition: all 0.2s ease;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                                            <!-- Left: Selected Pallet Info -->
-                                            <div style="display: flex; align-items: center; gap: 10px; min-width: 180px;">
-                                                <span style="font-size: 1.4rem;">📦</span>
-                                                <div>
-                                                    <div id="hud-title" style="font-size: 13px; font-weight: 800; color: #38bdf8; line-height: 1.2;">[#1] 화물명</div>
-                                                    <div id="hud-coords" style="font-size: 11px; color: #94a3b8; margin-top: 2px;">X: 0mm, Y: 0mm, 1단</div>
-                                                </div>
+
+                                <!-- 3D Viewport Container -->
+                                <div id="container-3d" style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #cbd5e1; background: #0f172a; min-height: 440px;">
+                                    <!-- 3D Tooltip on Hover -->
+                                    <div id="tooltip-3d-pallet" style="display: none; position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1.5px solid #38bdf8; border-radius: 6px; padding: 7px 14px; color: #fff; font-size: 12px; z-index: 15; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,0.5);">
+                                        <div id="tooltip-3d-name" style="font-weight: 800; color: #38bdf8; font-size: 13px;"></div>
+                                        <div id="tooltip-3d-spec" style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;"></div>
+                                    </div>
+
+                                    <!-- 1. Cinematic Loading Sequence Player (Docked at bottom of 3D screen in View mode) -->
+                                    <div id="player-3d-sequence-bar" style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1.5px solid #0284c7; border-radius: 8px; padding: 8px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 20; color: #fff; width: 94%; max-width: 780px; box-sizing: border-box;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                            <!-- Player Controls -->
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <button type="button" id="seq-btn-first" class="btn btn-sm" style="background: #1e293b; color: #94a3b8; border: 1px solid #475569; padding: 4px 8px; font-size: 12px; font-weight: 750; border-radius: 4px; cursor: pointer;" title="처음으로 (0개 비우기)">
+                                                    ⏮️ 0개
+                                                </button>
+                                                <button type="button" id="seq-btn-prev" class="btn btn-sm" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 4px 10px; font-size: 12px; font-weight: 750; border-radius: 4px; cursor: pointer;" title="이전 단계">
+                                                    ◀ 이전
+                                                </button>
+                                                <button type="button" id="seq-btn-play" class="btn btn-sm" style="background: #0284c7; color: #fff; border: 1px solid #0284c7; padding: 4px 14px; font-size: 12px; font-weight: 800; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.4);" title="자동 적재 재생/일시정지">
+                                                    ▶ 재생
+                                                </button>
+                                                <button type="button" id="seq-btn-next" class="btn btn-sm" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 4px 10px; font-size: 12px; font-weight: 750; border-radius: 4px; cursor: pointer;" title="다음 단계">
+                                                    다음 ▶
+                                                </button>
+                                                <button type="button" id="seq-btn-last" class="btn btn-sm" style="background: #1e293b; color: #94a3b8; border: 1px solid #475569; padding: 4px 8px; font-size: 12px; font-weight: 750; border-radius: 4px; cursor: pointer;" title="전체 적재 완료">
+                                                    전체 ⏭️
+                                                </button>
                                             </div>
 
-                                            <!-- Center/Right: Quick Action & Direction Buttons -->
-                                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                                <!-- Position Step Buttons -->
-                                                <div style="display: flex; gap: 3px; background: rgba(30,41,59,0.8); padding: 2px; border-radius: 6px; border: 1px solid #475569;">
-                                                    <button type="button" id="hud-btn-fwd" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11.5px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="안쪽 벽면 방향으로 100mm 이동 (단축키: ↑ 또는 W)">
-                                                        ◀ 앞(안쪽)
-                                                    </button>
-                                                    <button type="button" id="hud-btn-back" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11.5px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="출입문 방향으로 100mm 이동 (단축키: ↓ 또는 S)">
-                                                        뒤(문) ▶
-                                                    </button>
-                                                    <button type="button" id="hud-btn-left" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11.5px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="좌측 벽면 방향으로 100mm 이동 (단축키: ← 또는 A)">
-                                                        ▲ 좌
-                                                    </button>
-                                                    <button type="button" id="hud-btn-right" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11.5px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="우측 벽면 방향으로 100mm 이동 (단축키: → 또는 D)">
-                                                        ▼ 우
-                                                    </button>
-                                                </div>
+                                            <!-- Progress Slider & Status Indicator -->
+                                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 220px;">
+                                                <input type="range" id="seq-slider" min="0" max="10" value="10" step="1" style="flex: 1; cursor: pointer; accent-color: #38bdf8; height: 6px;">
+                                                <span id="seq-counter" style="font-size: 12px; font-weight: 800; color: #38bdf8; min-width: 95px; text-align: right;">10 / 10 적재됨</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                <!-- Rotate Button -->
-                                                <button type="button" id="hud-btn-rotate" class="btn btn-sm" style="background: #4f46e5; color: #fff; border: 1px solid #6366f1; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="90도 회전 (단축키: R)">
+                                    <!-- 2. Smart Floating Alignment Gizmo HUD (Shown when a pallet is selected in Edit/Manual mode) -->
+                                    <div id="hud-3d-pallet-ctrl" style="display: none; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 2px solid #38bdf8; border-radius: 8px; padding: 10px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 25; color: #fff; width: 95%; max-width: 860px; box-sizing: border-box;">
+                                        <!-- Top Row: Selected Pallet Info & Dismiss -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 1.3rem;">📦</span>
+                                                <div>
+                                                    <span id="hud-title" style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">[#1] 화물명</span>
+                                                    <span id="hud-coords" style="font-size: 11px; color: #94a3b8; margin-left: 8px;">X: 0mm, Y: 0mm, 1단</span>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="hud-btn-deselect" class="btn btn-sm" style="background: #ef4444; color: #fff; border: none; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 4px; cursor: pointer;" title="선택 해제 (단축키: ESC 또는 빈 화면 클릭)">
+                                                ✕ 선택해제 (ESC)
+                                            </button>
+                                        </div>
+
+                                        <!-- Bottom Row: Smart 1-Click Alignment Presets & Actions -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                            <!-- Smart Wall Snap Presets -->
+                                            <div style="display: flex; align-items: center; gap: 4px; background: rgba(30,41,59,0.9); padding: 3px 6px; border-radius: 6px; border: 1px solid #475569;">
+                                                <span style="font-size: 11px; font-weight: 750; color: #94a3b8; margin-right: 2px;">⚡ 원클릭 밀착:</span>
+                                                <button type="button" id="gizmo-align-front" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="안쪽 끝 벽면으로 즉시 밀착">
+                                                    🚪 앞 밀착
+                                                </button>
+                                                <button type="button" id="gizmo-align-door" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="출입문 쪽으로 즉시 밀착">
+                                                    🚛 문 밀착
+                                                </button>
+                                                <button type="button" id="gizmo-align-left" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="좌측 벽면으로 즉시 밀착">
+                                                    ◀ 좌 밀착
+                                                </button>
+                                                <button type="button" id="gizmo-align-right" class="btn btn-sm" style="background: #0284c7; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="우측 벽면으로 즉시 밀착">
+                                                    우 밀착 ▶
+                                                </button>
+                                                <button type="button" id="gizmo-align-center" class="btn btn-sm" style="background: #1e293b; color: #38bdf8; border: 1px solid #38bdf8; font-size: 11px; font-weight: 750; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="폭(Y) 중앙 정렬">
+                                                    ↔ 중앙
+                                                </button>
+                                            </div>
+
+                                            <!-- Step Nudge Buttons -->
+                                            <div style="display: flex; gap: 3px; background: rgba(30,41,59,0.9); padding: 3px 5px; border-radius: 6px; border: 1px solid #475569;">
+                                                <button type="button" id="hud-btn-fwd" class="btn btn-sm" style="background: #334155; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 7px; border-radius: 4px; cursor: pointer;" title="안쪽 방향으로 100mm 이동 (단축키: ↑)">
+                                                    앞 ↑
+                                                </button>
+                                                <button type="button" id="hud-btn-back" class="btn btn-sm" style="background: #334155; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 7px; border-radius: 4px; cursor: pointer;" title="문 방향으로 100mm 이동 (단축키: ↓)">
+                                                    뒤 ↓
+                                                </button>
+                                                <button type="button" id="hud-btn-left" class="btn btn-sm" style="background: #334155; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 7px; border-radius: 4px; cursor: pointer;" title="좌측으로 100mm 이동 (단축키: ←)">
+                                                    좌 ←
+                                                </button>
+                                                <button type="button" id="hud-btn-right" class="btn btn-sm" style="background: #334155; color: #fff; border: none; font-size: 11px; font-weight: 750; padding: 3px 7px; border-radius: 4px; cursor: pointer;" title="우측으로 100mm 이동 (단축키: →)">
+                                                    우 →
+                                                </button>
+                                            </div>
+
+                                            <!-- Rotation, Tier & In/Out Actions -->
+                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                <button type="button" id="hud-btn-rotate" class="btn btn-sm" style="background: #4f46e5; color: #fff; border: 1px solid #6366f1; font-size: 11px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="90도 회전 (단축키: R)">
                                                     🔄 90° 회전
                                                 </button>
-
-                                                <!-- Tier Toggle Button -->
-                                                <button type="button" id="hud-btn-inout" class="btn btn-sm" style="background: #d97706; color: #fff; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="컨테이너 안으로 넣기 / 밖으로 꺼내기">
-                                                    📥 컨테이너 안으로
-                                                </button>
-                                                <button type="button" id="hud-btn-tier" class="btn btn-sm" style="background: #059669; color: #fff; border: 1px solid #10b981; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="1단 ↔ 2단 층간 이동 (단축키: T 또는 Space)">
+                                                <button type="button" id="hud-btn-tier" class="btn btn-sm" style="background: #059669; color: #fff; border: 1px solid #10b981; font-size: 11px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="1단 ↔ 2단 층간 이동 (단축키: T 또는 Space)">
                                                     🔼 2단 올리기
                                                 </button>
-
-                                                <!-- Deselect Button -->
-                                                <button type="button" id="hud-btn-deselect" class="btn btn-sm" style="background: #dc2626; color: #fff; border: 1px solid #ef4444; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="선택 해제 (단축키: ESC 또는 빈 화면 클릭)">
-                                                    ✕ 선택해제 (ESC)
+                                                <button type="button" id="hud-btn-inout" class="btn btn-sm" style="background: #d97706; color: #fff; border: 1px solid #f59e0b; font-size: 11px; font-weight: 750; padding: 4px 9px; border-radius: 4px; cursor: pointer;" title="컨테이너 안/밖 토글">
+                                                    📤 밖으로 꺼내기
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Pallet Position & Direction Adjustment Panel -->
-                            <div id="pallet-adjust-panel" class="card hidden" style="margin-top: 10px; border: 2px solid #3b82f6; background: #ffffff; padding: 14px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 1.3rem;">🛠️</span>
-                                        <div>
-                                            <div style="font-size: 0.95rem; font-weight: 800; color: #1e3a8a;" id="adjust-panel-title">선택된 화물: 없음</div>
-                                            <div style="font-size: 0.75rem; color: #64748b;" id="adjust-panel-subtitle">화물을 3D에서 클릭하거나 아래 패킹리스트에서 [조정]을 눌러 위치를 이동/회전할 수 있습니다.</div>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; gap: 8px; align-items: center;">
-                                        <button type="button" class="btn btn-sm btn-reset-all-layout" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 750; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="전체 화물 배치를 초기 자동 적재 위치로 되돌립니다.">
-                                            ↩️ 초기배치 원상복귀
-                                        </button>
-                                        <button type="button" class="btn btn-sm" id="btn-adjust-rotate" style="background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-weight: 700; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                                            🔄 90° 회전 (가로↔세로)
-                                        </button>
-                                        <button type="button" class="btn btn-sm" id="btn-adjust-close" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: bold; height: 32px; padding: 0 10px; cursor: pointer;">
-                                            ✕ 닫기
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Quick 1-Click Direction & Tier Shift Bar -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 10px 14px;">
-                                    <!-- 층간 이동 (1단 ↔ 2단) -->
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                                        <span style="font-size: 11.5px; font-weight: 800; color: #166534;">🏢 층간 원클릭 이동</span>
-                                        <div style="display: flex; gap: 6px;">
-                                            <button type="button" id="btn-quick-tier-floor" style="flex: 1; height: 32px; background: #fff; color: #15803d; border: 1px solid #86efac; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">⬇️ 1단(바닥) 착지</button>
-                                            <button type="button" id="btn-quick-tier-up" style="flex: 1; height: 32px; background: #16a34a; color: #fff; border: 1px solid #15803d; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">⬆️ 2단(상단) 올리기</button>
-                                        </div>
-                                    </div>
-                                    <!-- X축 칸 이동 (안쪽 ↔ 문) -->
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                                        <span style="font-size: 11.5px; font-weight: 800; color: #0369a1;">📏 안쪽 ↔ 문쪽 1칸 이동</span>
-                                        <div style="display: flex; gap: 6px;">
-                                            <button type="button" id="btn-quick-step-in" style="flex: 1; height: 32px; background: #fff; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">◀ 안쪽 1칸</button>
-                                            <button type="button" id="btn-quick-step-out" style="flex: 1; height: 32px; background: #fff; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">문쪽 1칸 ▶</button>
-                                        </div>
-                                    </div>
-                                    <!-- Y축 좌/우 1칸 이동 -->
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                                        <span style="font-size: 11.5px; font-weight: 800; color: #4338ca;">📐 좌 ↔ 우 원터치 정렬</span>
-                                        <div style="display: flex; gap: 6px;">
-                                            <button type="button" id="btn-quick-align-left" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">좌측벽</button>
-                                            <button type="button" id="btn-quick-align-center" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">중앙</button>
-                                            <button type="button" id="btn-quick-align-right" style="flex: 1; height: 32px; background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 4px; font-weight: 750; font-size: 12px; cursor: pointer;">우측벽</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 3-Axis Position Controls Grid -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
-                                    <!-- X Axis (Length: Door <-> Inside) -->
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                            <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7;">📏 X축 (길이 / 안쪽 ↔ 문)</span>
-                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-x">X: 0 mm</span>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; align-items: center;">
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-m100" style="padding: 3px 6px; font-size: 0.75rem;">◀ -100</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
-                                            <input type="number" id="input-pos-x" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▶</button>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-x-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">맨 안쪽 벽 (X=0)</button>
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-x-snap-end" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">문 끝쪽</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Y Axis (Width: Left <-> Right) -->
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                            <span style="font-size: 0.8rem; font-weight: 700; color: #16a34a;">📐 Y축 (폭 / 좌 ↔ 우)</span>
-                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-y">Y: 0 mm</span>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; align-items: center;">
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-m100" style="padding: 3px 6px; font-size: 0.75rem;">◀ -100</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
-                                            <input type="number" id="input-pos-y" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▶</button>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">좌측 벽 (Y=0)</button>
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-center" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">중앙 정렬</button>
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-end" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">우측 벽</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Z Axis (Height: Floor <-> Top) -->
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                            <span style="font-size: 0.8rem; font-weight: 700; color: #d97706;">⬆️ Z축 (높이 / 바닥 ↔ 상단)</span>
-                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-z">Z: 0 mm</span>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; align-items: center;">
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-m100" style="padding: 3px 6px; font-size: 0.75rem;">▼ -100</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
-                                            <input type="number" id="input-pos-z" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▲</button>
-                                        </div>
-                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
-                                            <button type="button" class="btn btn-sm btn-outline" id="btn-z-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">바닥 밀착 (Z=0)</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Swap Pallet Position -->
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
-                                        <div style="font-size: 0.8rem; font-weight: 700; color: #6366f1; margin-bottom: 6px;">🔀 다른 화물과 위치 맞바꾸기</div>
-                                        <div style="display: flex; gap: 6px; align-items: center;">
-                                            <select id="select-swap-target" style="flex: 1; height: 30px; font-size: 0.8rem; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                                                <option value="">맞바꿀 대상 화물 선택</option>
-                                            </select>
-                                            <button type="button" class="btn btn-sm" id="btn-swap-position" style="background: #6366f1; color: #fff; border: none; font-weight: 700; height: 30px; padding: 0 10px; font-size: 0.75rem; cursor: pointer;">맞바꾸기</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                    </div>
-                    
                     <!-- Packing List -->
                     <div id="packing-list-container" class="card hidden" style="margin-top: 1.5rem; padding: 1.25rem;">
                         <h3 style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 700; color: #1e293b;">패킹 리스트 (Packing List)</h3>
@@ -972,8 +908,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js?v=5"></script>
-    <script src="js/viewer3d.js?v=10"></script>
+    <script src="js/viewer3d.js?v=11"></script>
     <script src="js/packer.js?v=5"></script>
-    <script src="js/app.js?v=14"></script>
+    <script src="js/app.js?v=15"></script>
 </body>
 </html>
