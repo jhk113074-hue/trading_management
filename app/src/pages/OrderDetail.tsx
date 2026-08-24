@@ -1611,22 +1611,36 @@ export const OrderDetail: React.FC = () => {
     return () => document.removeEventListener('click', handleGlobalClick, true);
   }); // run on every render to capture the latest handleSaveBasic closure
 
+  // Helper to check if a packing item is a secondary member of a merged package (혼적)
+  const isItemMergedSecondary = (item: any, prevItem?: any) => {
+    if (!item) return false;
+    if (item._sharedWithPrev || item._isMergedMember) return true;
+    if (item.pkg === '0' || item.pkg === 0) return true;
+    if (prevItem && item.pkgNo && prevItem.pkgNo && item.pkgNo === prevItem.pkgNo) return true;
+    return false;
+  };
+
   // Helper to build 3D container loading simulation payload taking mixed cargo (혼적) into account
-  const buildPackerSimulationPayload = () => {
+  const buildPackerSimulationPayload = (overrideBasicForm?: any) => {
+    const targetBasicForm = overrideBasicForm || latestPackingDataRef.current?.basicForm || basicForm;
+    const targetOrderItems = latestPackingDataRef.current?.orderItems || orderItems;
+    const targetProducts = latestPackingDataRef.current?.products || products;
+    const targetOrder = latestPackingDataRef.current?.order || order;
+
     const itemsPayload: any[] = [];
-    if (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0) {
-      basicForm.packingList.containers.forEach((c: any) => {
+    if (targetBasicForm.packingList?.containers && targetBasicForm.packingList.containers.length > 0) {
+      targetBasicForm.packingList.containers.forEach((c: any) => {
         const itemsList = c.items || [];
         for (let itIdx = 0; itIdx < itemsList.length; itIdx++) {
           const it = itemsList[itIdx];
-          const isSecondary = it._sharedWithPrev || it._isMergedMember;
-          if (isSecondary) continue; // Secondary items in mixed cargo are grouped into head item
+          const prevIt = itIdx > 0 ? itemsList[itIdx - 1] : undefined;
+          if (isItemMergedSecondary(it, prevIt)) continue; // Secondary items in mixed cargo are grouped into head item
           if (!it.description && !it.pkgNo) continue;
 
           // Calculate spanCount for merged group (혼적)
           let spanCount = 1;
           for (let k = itIdx + 1; k < itemsList.length; k++) {
-            if (itemsList[k]._sharedWithPrev || itemsList[k]._isMergedMember) {
+            if (isItemMergedSecondary(itemsList[k], itemsList[k - 1])) {
               spanCount++;
             } else {
               break;
@@ -1675,10 +1689,10 @@ export const OrderDetail: React.FC = () => {
 
     // Fallback to orderItems if packing list has no items yet
     if (itemsPayload.length === 0) {
-      orderItems.forEach((item: any) => {
+      targetOrderItems.forEach((item: any) => {
         const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
         const itemCode = match ? match[1] : '-';
-        const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+        const matchedProd = targetProducts.find((p: any) => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
         const list = matchedProd?.packingMethods || [];
         const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
         const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
@@ -1699,8 +1713,8 @@ export const OrderDetail: React.FC = () => {
     }
 
     const containersPayload: Record<string, number> = {};
-    if (basicForm.packingList?.containers) {
-      basicForm.packingList.containers.forEach((c: any) => {
+    if (targetBasicForm.packingList?.containers) {
+      targetBasicForm.packingList.containers.forEach((c: any) => {
         const type = c.containerType || '20GP';
         containersPayload[type] = (containersPayload[type] || 0) + 1;
       });
@@ -1711,9 +1725,9 @@ export const OrderDetail: React.FC = () => {
 
     return {
       type: 'LOAD_PI_DATA',
-      customer: basicForm.customer || '',
-      piNumber: basicForm.piNumber || order?.id || '',
-      date: basicForm.etd || new Date().toISOString().split('T')[0],
+      customer: targetBasicForm.customer || '',
+      piNumber: targetBasicForm.piNumber || targetOrder?.id || '',
+      date: targetBasicForm.etd || new Date().toISOString().split('T')[0],
       containers: containersPayload,
       items: itemsPayload
     };
@@ -1887,77 +1901,8 @@ export const OrderDetail: React.FC = () => {
           return;
         }
         if (event.source) {
-          const { basicForm: latestBasicForm, orderItems: latestOrderItems, products: latestProducts, order: latestOrder } = latestPackingDataRef.current;
-
-          const itemsPayload: any[] = [];
-          if (latestBasicForm.packingList?.containers) {
-            latestBasicForm.packingList.containers.forEach((c: any) => {
-              (c.items || []).forEach((it: any) => {
-                if (!it.description && !it.pkgNo) return;
-                const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
-                const dims = cleanDims.split('x');
-                const w = Number(dims[0]) || 1100;
-                const d = Number(dims[1]) || 1100;
-                const h = Number(dims[2]) || 1000;
-                
-                itemsPayload.push({
-                  desc: it.description || '화물',
-                  qty: Number(it.pkg) || 1,
-                  w: w,
-                  d: d,
-                  h: h,
-                  netWeight: Number(it.netWeight) || 0,
-                  grossWeight: Number(it.grossWeight) || 0,
-                  packageType: it.packageType || 'Pallet'
-                });
-              });
-            });
-          }
-          
-          if (itemsPayload.length === 0) {
-            latestOrderItems.forEach((item: any) => {
-              const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-              const itemCode = match ? match[1] : '-';
-              const matchedProd = latestProducts.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
-              const list = matchedProd?.packingMethods || [];
-              const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
-              const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
-              const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
-              const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
-              
-              itemsPayload.push({
-                desc: item.name || '화물',
-                qty: item.qty || 1,
-                w: w,
-                d: d,
-                h: h,
-                netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
-                grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
-                packageType: item.packageType || 'Pallet'
-              });
-            });
-          }
-
-          const containersPayload: Record<string, number> = {};
-          if (latestBasicForm.packingList?.containers) {
-            latestBasicForm.packingList.containers.forEach((c: any) => {
-              const type = c.containerType || '20GP';
-              containersPayload[type] = (containersPayload[type] || 0) + 1;
-            });
-          }
-          if (Object.keys(containersPayload).length === 0) {
-            containersPayload['20GP'] = 1;
-          }
-
-          (event.source as WindowProxy).postMessage({
-            type: 'LOAD_PI_DATA',
-            customer: latestBasicForm.customer || '',
-            piNumber: latestBasicForm.piNumber || latestOrder?.id || '',
-            date: latestBasicForm.etd || new Date().toISOString().split('T')[0],
-            containers: containersPayload,
-            items: itemsPayload,
-            raw3DPlan: latestBasicForm.packingList?.raw3DPlan || null
-          }, '*');
+          const payload = buildPackerSimulationPayload();
+          (event.source as WindowProxy).postMessage(payload, '*');
         }
       }
     };

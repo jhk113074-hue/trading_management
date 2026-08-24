@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.404',
+    version: 'v2.8.404',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 IFRAME_READY 메시지 혼적 통합 페이로드 적용',
+    content: '• 3D 시뮬레이션 Iframe 초기 로딩 시(IFRAME_READY 이벤트) 개별 비통합 화물 데이터가 덮어써지던 문제를 완벽 해결하여, 혼적([혼적 N건])된 통합 화물이 정확하게 13개 패키지로 시뮬레이터에 전달되도록 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.403',
     version: 'v2.8.403',
     date: '2026-08-24',
