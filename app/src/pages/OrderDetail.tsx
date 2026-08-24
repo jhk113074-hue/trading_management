@@ -36,6 +36,17 @@ const STEP_LABEL_TO_STAGE_KEY: Record<string, StageKey | undefined> = {
 };
 
 
+const cleanItemDescription = (desc: string | undefined): string => {
+  if (!desc) return '';
+  return desc
+    .replace(/^P#\d+\.\s*/i, '')
+    .replace(/\s*\(완제\s*Pallet\)/gi, '')
+    .replace(/\s*\(완제\)/gi, '')
+    .replace(/완제\s*Pallet/gi, '')
+    .replace(/\s*-\s*[0-9,]+(?:\.[0-9]+)?\s*[A-Za-z가-힣%]+$/i, '')
+    .trim();
+};
+
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
   if (!pkgNo) return '0';
   const trimmed = pkgNo.trim();
@@ -2098,7 +2109,40 @@ export const OrderDetail: React.FC = () => {
           supplierPayments: data.supplierPayments || {},
           
           supplierTaxInvoice: data.supplierTaxInvoice || {},
-          packingList: data.packingList || (() => {
+          packingList: (() => {
+            const rawPacking = data.packingList;
+            if (rawPacking && rawPacking.containers && rawPacking.containers.length > 0) {
+              const cleanedContainers = rawPacking.containers.map((c: any) => ({
+                ...c,
+                items: (c.items || []).map((it: any) => {
+                  let desc = it.description || '';
+                  let qty = it.qty;
+
+                  // If description has appended quantity like " - 9,600 M" or " - 200 PCS"
+                  const match = desc.match(/^(.*?)\s*-\s*([0-9,]+(?:\.[0-9]+)?)\s*([A-Za-z가-힣%]+)?$/);
+                  if (match) {
+                    const pureDesc = match[1].trim();
+                    const parsedQty = match[2].replace(/,/g, '');
+                    if (!qty || qty === '0' || qty === 0 || qty === '') {
+                      qty = parsedQty;
+                    }
+                    desc = pureDesc;
+                  }
+
+                  return {
+                    ...it,
+                    description: desc,
+                    qty: (qty !== undefined && qty !== null && qty !== '') ? String(qty) : (it.qty ? String(it.qty) : '')
+                  };
+                })
+              }));
+
+              return {
+                ...rawPacking,
+                containers: cleanedContainers
+              };
+            }
+
             const defaultContainers = [
               {
                 containerNo: data.containerVolumeQuantities || '',
@@ -2107,16 +2151,20 @@ export const OrderDetail: React.FC = () => {
                   const netWeight = Math.round(it.qty || 0);
                   const grossWeight = Math.round(netWeight * 1.02);
                   const cbm = Number(((netWeight / 1000) * 1.5).toFixed(2));
-                    return {
-                      shippingMark: '',
-                      description: `${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
-                      supplier: it.supplier || 'General Supplier',
-                      pkgNo: String(idx + 1),
-                      pkg: '1',
-                      netWeight: String(netWeight),
-                      grossWeight: String(grossWeight),
-                      cbm: String(cbm)
-                    };
+                  return {
+                    shippingMark: '',
+                    description: it.name || '',
+                    qty: String(it.qty || 0),
+                    unit: it.unit || 'EA',
+                    supplier: it.supplier || 'General Supplier',
+                    pkgNo: String(idx + 1),
+                    pkg: '1',
+                    netWeight: String(netWeight),
+                    grossWeight: String(grossWeight),
+                    cbm: String(cbm),
+                    stackable: 'Y',
+                    rotation: 'Y'
+                  };
                 })
               }
             ];
@@ -9386,7 +9434,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                 placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                                 rows={2}
                                                 style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                                value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
+                                                value={cleanItemDescription(it.description)}
                                                 onChange={e => {
                                                   const val = e.target.value;
                                                   const cleanVal = val.replace(/^P#\d+\.\s*/i, '');
@@ -9792,7 +9840,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                 })()}
 {c.items?.length === 0 ? (
                                   <tr>
-                                    <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <td colSpan={12} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                       등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
                                     </td>
                                   </tr>
@@ -9826,6 +9874,8 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                         <td style={{ padding: '6px 4px', color: 'var(--text-secondary)' }}>총 {(c.items || []).length}개 항목</td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalQty.toLocaleString()}</td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalNetWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
                                         <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalGrossWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>

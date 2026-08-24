@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.444',
+    version: 'v2.8.444',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '패킹리스트 품명 및 수량 데이터 분리 정상화 및 테이블 하단 합계 정렬 보정',
+    content: '• 패킹리스트 품명(Description of Goods) 뒤에 수량이 중복 병합되어 표시되던 현상 완전 분리 (품명은 순수 상품명/사양만 표기, 수량은 [수량] 입력란에 정상 표기)\\n• 오더 로드 시 기존 품명 텍스트에 포함된 수량 문자열을 자동 파싱하여 [수량] 컬럼으로 안전하게 복원\\n• 패킹리스트 테이블 하단 합계 행의 컬럼 열 정렬(다단/회전/중량/CBM) 보정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.443',
     version: 'v2.8.443',
     date: '2026-08-24',
