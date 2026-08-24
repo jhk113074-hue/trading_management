@@ -12,7 +12,7 @@ export const ProformaInvoices: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [pis, setPIs] = useState<ProformaInvoice[]>([]);
   const [customers, setCustomers] = useState<Record<string, Customer>>({});
-  const [orders, setOrders] = useState<{id: string; quotationId?: string}[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -136,10 +136,17 @@ export const ProformaInvoices: React.FC = () => {
   }, []);
 
   const handleOpenForm = (piId?: string | null) => {
+    if (piId) {
+      const targetPi = allPis.find(p => p.id === piId);
+      if (targetPi && (targetPi as any).linkedOrderId) {
+        navigate(`/orders/${(targetPi as any).linkedOrderId}?step=수주정보`);
+        return;
+      }
+    }
     setSelectedPiId(piId || null);
     setIsFormOpen(true);
     if (piId) {
-      const targetPi = pis.find(p => p.id === piId);
+      const targetPi = allPis.find(p => p.id === piId);
       const urlId = targetPi?.piNumber || piId;
       setSearchParams({ id: urlId }, { replace: true });
     } else {
@@ -170,8 +177,48 @@ export const ProformaInvoices: React.FC = () => {
     }
   }, [searchParams, pis]);
 
+  // Merge PIs from proforma_invoices collection + Orders that have PI numbers
+  const allPis = useMemo(() => {
+    const list = [...pis];
+    const existingPiNumbers = new Set(list.map(p => (p.piNumber || '').trim().toLowerCase()));
+    const existingPiIds = new Set(list.map(p => p.id));
+
+    orders.forEach((ord: any) => {
+      const ordPiNum = (ord.piNumber || ord.quotationNumber || '').trim();
+      const isLinkedToExisting = ord.quotationId && existingPiIds.has(ord.quotationId);
+      const hasMatchingNumber = ordPiNum && existingPiNumbers.has(ordPiNum.toLowerCase());
+
+      if (!isLinkedToExisting && !hasMatchingNumber && ordPiNum) {
+        const items = ord.items || [];
+        const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
+        const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.quantity || 0) * (it.price || 0))), 0);
+
+        const virtualPi: ProformaInvoice = {
+          id: ord.quotationId || `ORDER_PI_${ord.id}`,
+          piNumber: ordPiNum,
+          piDate: ord.orderDate || ord.date || '',
+          customerId: ord.customerId || '',
+          buyerName: ord.buyerName || ord.customerName || '',
+          customerName: ord.buyerName || ord.customerName || '',
+          issuingCompany: ord.issuer || ord.issuingCompany || 'YSACC',
+          createdByName: ord.createdByName || ord.manager || ord.registeredBy || '김주한',
+          totalUsd: totalUsd,
+          grandTotal: totalUsd,
+          status: '수주확정',
+          piStatus: '수주확정',
+          items: items,
+          itemsSummary: itemsSummary,
+          linkedOrderId: ord.id
+        } as any;
+        list.push(virtualPi);
+      }
+    });
+    return list;
+  }, [pis, orders]);
+
   const getPiStatus = (p: ProformaInvoice) => {
-    const hasOrder = orders.some(o => o.quotationId === p.id);
+    if ((p as any).linkedOrderId) return '수주확정';
+    const hasOrder = orders.some(o => o.quotationId === p.id || (o.piNumber && p.piNumber && o.piNumber === p.piNumber));
     if (hasOrder) return '수주확정';
     return (p as any).piStatus || '협상중';
   };
@@ -194,7 +241,7 @@ export const ProformaInvoices: React.FC = () => {
   };
 
   const filteredAndSorted = useMemo(() => {
-    let filtered = pis.filter(p => {
+    let filtered = allPis.filter(p => {
       // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
       if (dateFilterType !== 'All') {
         if (!p.piDate) return false;
@@ -227,7 +274,7 @@ export const ProformaInvoices: React.FC = () => {
       if (filterCountry !== 'All') {
         if (country !== filterCountry) return false;
       }
-      if (filterCustomer && p.customerId !== filterCustomer) return false;
+      if (filterCustomer && p.customerId !== filterCustomer && (p as any).customerName !== filterCustomer && (customers[p.customerId]?.name !== filterCustomer)) return false;
       if (filterIssuer !== 'All' && p.issuingCompany !== filterIssuer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
 
@@ -261,7 +308,7 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCountry, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
+  }, [allPis, orders, customers, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, filterCountry, filterCustomer, filterIssuer, filterPiNum, filterPiStatus, sortKey, sortDir]);
 
   // 보유 국가 목록 계산 (드롭다운 필터용, 정규화된 영문 대문자 통일)
   const availableCountries = useMemo(() => {
@@ -270,32 +317,32 @@ export const ProformaInvoices: React.FC = () => {
       const country = normalizeCountry(c.countryName || c.countryCode);
       if (country) set.add(country);
     });
-    pis.forEach(p => {
+    allPis.forEach(p => {
       const country = getPiCountry(p);
       if (country) set.add(country);
     });
     return Array.from(set).sort();
-  }, [customers, pis]);
+  }, [customers, allPis]);
 
   const piStats = useMemo(() => {
     // 1. 총 견적 건수 & 각사 건수 (모든 상태 포함)
-    const totalQuotesCount = pis.length;
-    const quotesYsaccCount = pis.filter(p => p.issuingCompany === 'YSACC').length;
-    const quotesYsCount = pis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').length;
+    const totalQuotesCount = allPis.length;
+    const quotesYsaccCount = allPis.filter(p => p.issuingCompany === 'YSACC').length;
+    const quotesYsCount = allPis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').length;
 
     // 2. 총 견적 금액 & 각사 금액 (모든 상태 포함)
-    const totalQuotesAmount = pis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
-    const quotesYsaccAmount = pis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
-    const quotesYsAmount = pis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const totalQuotesAmount = allPis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const quotesYsaccAmount = allPis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const quotesYsAmount = allPis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
 
     // 3. 예상 총 영업이익
-    const totalExpectedProfit = pis.reduce((sum, p) => {
+    const totalExpectedProfit = allPis.reduce((sum, p) => {
       if (!p.items || !Array.isArray(p.items)) return sum;
       const piProfit = p.items.reduce((iSum, it) => {
         const costUsd = (it as any).purchasePriceUsd > 0 
           ? (it as any).purchasePriceUsd 
           : (((it as any).purchasePriceKrw || 0) / ((it as any).exchangeRate || p.exchangeRate || 1400));
-        const profit = ((it as any).salePriceUsd || 0) - costUsd;
+        const profit = ((it as any).salePriceUsd || (it as any).price || 0) - costUsd;
         return iSum + (profit * ((it as any).quantity || 0));
       }, 0);
       return sum + piProfit;
@@ -303,11 +350,11 @@ export const ProformaInvoices: React.FC = () => {
     const avgMarginRate = totalQuotesAmount > 0 ? (totalExpectedProfit / totalQuotesAmount) * 100 : 0;
 
     // 4. 수주 건수
-    const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p))).length;
+    const confirmedCount = allPis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p))).length;
     const conversionRate = totalQuotesCount > 0 ? (confirmedCount / totalQuotesCount) * 100 : 0;
 
     // 5. 총 수주 금액 & 각사 수주 금액 (수주확정/PO확정 상태만 포함)
-    const confirmedPis = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p)));
+    const confirmedPis = allPis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p)));
     const totalConfirmedAmount = confirmedPis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const confirmedYsaccAmount = confirmedPis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const confirmedYsAmount = confirmedPis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
@@ -327,7 +374,7 @@ export const ProformaInvoices: React.FC = () => {
       confirmedYsaccAmount,
       confirmedYsAmount
     };
-  }, [pis, orders]);
+  }, [allPis, orders]);
 
   const handleSort = (key: keyof ProformaInvoice | 'customerName' | 'countryName') => {
     if (sortKey === key) {
@@ -701,7 +748,7 @@ export const ProformaInvoices: React.FC = () => {
                 const sc = piStatusConfig[piStatus] || piStatusConfig['협상중'];
 
                 // 연결된 주문 찾기
-                const linkedOrder = orders.find(o => o.quotationId === p.id);
+                const linkedOrder = orders.find(o => o.quotationId === p.id || o.id === (p as any).linkedOrderId || (o.piNumber && p.piNumber && o.piNumber === p.piNumber));
 
                 return (
                   <tr 

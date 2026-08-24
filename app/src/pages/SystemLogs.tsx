@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.418',
+    version: 'v2.8.418',
+    date: '2026-08-24',
+    category: '신규기능',
+    title: '수출 견적관리(PI) 목록과 수주관리(Orders) 양방향 자동 연동 및 전체 인보이스 통합 노출',
+    content: '• 수주관리에서 바로 등록되었거나 확정된 오더의 Proforma Invoice(PI)도 수출 견적관리 목록에서 누락 없이 [수주확정] 상태로 자동 통합 노출되도록 개선\\n• 견적서 목록에서 원클릭으로 해당 수주 상세 및 인보이스(PI) 원본 확인/인쇄 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.417',
     version: 'v2.8.417',
     date: '2026-08-24',
