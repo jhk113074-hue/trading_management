@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.408',
+    version: 'v2.8.408',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '2D 도면 화물 마우스 직접 드래그앤드롭 위치 이동 & 자석 스냅 & 더블클릭 90° 회전 기능 지원',
+    content: '• 3D 컨테이너 시뮬레이터의 2D 도면 뷰(Top/Side)에서 화물을 마우스로 직접 클릭하고 드래그하여 원하는 위치로 직관적으로 이동할 수 있는 인터랙티브 드래그앤드롭 시스템 구현\\n• 컨테이너 내벽(앞/뒤/좌/우) 및 인접 화물 경계면에 착 달라붙는 자석 스냅(Magnetic Snap) 기능 지원\\n• 2D 도면에서 화물 더블클릭 시 즉시 90° 회전(L↔W 교체) 및 실시간 3D/패킹리스트 연동 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.407',
     version: 'v2.8.407',
     date: '2026-08-24',

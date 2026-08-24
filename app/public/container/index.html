@@ -66,8 +66,14 @@
                                     <button class="viz-tab" data-view="right_side">Right</button>
                                     <button class="viz-tab" data-view="left_side">Left</button>
                                 </div>
-                                <div class="canvas-wrapper">
-                                    <canvas id="viz-canvas"></canvas>
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 14px; margin-bottom: 8px; font-size: 13px; color: #1e40af; font-weight: 600; flex-wrap: wrap; gap: 6px;">
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <span>🖱️</span> <span>화물을 마우스로 <b>직접 드래그앤드롭</b>하여 위치를 이동하세요. (벽면/인접 화물 자석 스냅 지원)</span>
+                                    </span>
+                                    <span style="font-size: 12px; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">더블클릭: 🔄 90° 회전</span>
+                                </div>
+                                <div class="canvas-wrapper" style="position: relative;">
+                                    <canvas id="viz-canvas" style="cursor: grab;"></canvas>
                                 </div>
                             </div>
                             

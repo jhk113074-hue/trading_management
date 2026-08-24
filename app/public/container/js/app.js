@@ -2008,6 +2008,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    let hoveredPalletGlobalIndex = null;
+    let isDragging2D = false;
+    let draggedPalletItem = null;
+    let dragStartMouseX = 0;
+    let dragStartMouseY = 0;
+    let dragItemStartX = 0;
+    let dragItemStartY = 0;
+    let dragItemStartZ = 0;
+    let hasMovedDuringDrag = false;
+
     const drawVisualization = (targetCanvas = canvas, targetCtx = ctx, targetView = currentVizView, targetWidth = null, targetResult = null) => {
         const currentResult = targetResult || (currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null);
         if (!currentResult || !targetCtx) return;
@@ -2026,7 +2036,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Set canvas dimensions responsively
-        const wrapperWidth = targetWidth || (document.querySelector('.canvas-wrapper').clientWidth - 20); 
+        const wrapperEl = document.querySelector('.canvas-wrapper');
+        const wrapperWidth = targetWidth || (wrapperEl ? wrapperEl.clientWidth - 20 : 800); 
         const aspectRatio = worldHeight / worldWidth;
         
         targetCanvas.width = wrapperWidth;
@@ -2079,26 +2090,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const rw = Math.max(1, cw * scale);
             const rh = Math.max(1, ch * scale);
 
-            // Draw Block
+            const isSelected = selectedPalletGlobalIndex === item.globalIndex;
+            const isHovered = hoveredPalletGlobalIndex === item.globalIndex && !isDragging2D;
+            const isDragged = isDragging2D && draggedPalletItem && draggedPalletItem.globalIndex === item.globalIndex;
+
+            // Draw Block Fill
             targetCtx.fillStyle = itemColors[item.name] || '#3b82f6';
             targetCtx.fillRect(rx, ry, rw, rh);
             
-            // Draw Block Border
-            targetCtx.strokeStyle = 'rgba(0,0,0,0.5)';
-            targetCtx.lineWidth = 1;
-            targetCtx.strokeRect(rx, ry, rw, rh);
+            // Draw Block Border & Selection Highlight
+            if (isDragged) {
+                targetCtx.strokeStyle = '#f59e0b';
+                targetCtx.lineWidth = 3;
+                targetCtx.setLineDash([4, 4]);
+                targetCtx.strokeRect(rx, ry, rw, rh);
+                targetCtx.setLineDash([]);
+            } else if (isSelected) {
+                targetCtx.strokeStyle = '#eab308'; // Bright yellow
+                targetCtx.lineWidth = 3;
+                targetCtx.strokeRect(rx - 1, ry - 1, rw + 2, rh + 2);
+            } else if (isHovered) {
+                targetCtx.strokeStyle = '#38bdf8';
+                targetCtx.lineWidth = 2;
+                targetCtx.strokeRect(rx, ry, rw, rh);
+            } else {
+                targetCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+                targetCtx.lineWidth = 1;
+                targetCtx.strokeRect(rx, ry, rw, rh);
+            }
 
             // Text Label
-            if (rw > 30 && rh > 15) {
+            if (rw > 25 && rh > 12) {
                 targetCtx.fillStyle = '#ffffff';
-                targetCtx.font = 'bold 10px Inter';
+                targetCtx.font = isSelected ? 'bold 11px Inter, sans-serif' : 'bold 10px Inter, sans-serif';
                 targetCtx.textAlign = 'center';
                 targetCtx.textBaseline = 'middle';
                 
                 let label = `[${item.globalIndex}] ${item.name}-${item.itemIndex}`;
-                if (rw < 40) label = `[${item.globalIndex}]`;
+                if (rw < 50) label = `[${item.globalIndex}]`;
                 
-                const maxWidth = Math.max(10, rw - 8);
+                const maxWidth = Math.max(10, rw - 6);
                 let lines = [];
                 let words = label.split(' ');
                 let currentLine = words[0];
@@ -2137,8 +2168,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetCtx.rect(rx, ry, rw, rh);
                 targetCtx.clip();
 
-                targetCtx.shadowColor = 'rgba(0,0,0,0.8)';
-                targetCtx.shadowBlur = 2;
+                targetCtx.shadowColor = 'rgba(0,0,0,0.85)';
+                targetCtx.shadowBlur = 3;
 
                 const lineHeight = 12;
                 const totalHeight = finalLines.length * lineHeight;
@@ -2150,6 +2181,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 targetCtx.shadowBlur = 0;
+                targetCtx.restore();
+            }
+
+            // Draw Position Badge if Dragged
+            if (isDragged) {
+                targetCtx.save();
+                const badgeTxt = `X: ${item.x} | Y: ${item.y} | Z: ${item.z}`;
+                targetCtx.font = 'bold 11px Inter, sans-serif';
+                const bW = targetCtx.measureText(badgeTxt).width + 12;
+                targetCtx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                targetCtx.fillRect(rx + rw/2 - bW/2, ry - 22, bW, 20);
+                targetCtx.strokeStyle = '#f59e0b';
+                targetCtx.lineWidth = 1;
+                targetCtx.strokeRect(rx + rw/2 - bW/2, ry - 22, bW, 20);
+                targetCtx.fillStyle = '#fbbf24';
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+                targetCtx.fillText(badgeTxt, rx + rw/2, ry - 12);
                 targetCtx.restore();
             }
         });
@@ -2284,7 +2333,224 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const assignColorsToItems = (loadedItems) => {
+    // =========================================================================
+    // --- 2D Canvas Interactive Mouse Drag & Drop Positioning ---
+    // =========================================================================
+    const get2DItemAtCoords = (mouseX, mouseY) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded || !canvas) return null;
+
+        const container = currentResult.dimensions;
+        let worldWidth = container.l;
+        const scale = canvas.width / worldWidth;
+
+        const worldX = mouseX / scale;
+        const view = currentVizView;
+
+        if (view === 'top') {
+            const worldY = mouseY / scale;
+            // Find all matching items, select topmost (highest Z) or currently selected
+            const matching = currentResult.loaded.filter(item => 
+                worldX >= item.x && worldX <= item.x + item.packedL &&
+                worldY >= item.y && worldY <= item.y + item.packedW
+            );
+            if (matching.length === 0) return null;
+            if (matching.some(i => i.globalIndex === selectedPalletGlobalIndex)) {
+                return matching.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            }
+            matching.sort((a, b) => b.z - a.z);
+            return matching[0];
+        } else if (view === 'left_side' || view === 'right_side') {
+            const worldZ = (canvas.height - mouseY) / scale;
+            const matching = currentResult.loaded.filter(item => 
+                worldX >= item.x && worldX <= item.x + item.packedL &&
+                worldZ >= item.z && worldZ <= item.z + item.packedH
+            );
+            if (matching.length === 0) return null;
+            if (matching.some(i => i.globalIndex === selectedPalletGlobalIndex)) {
+                return matching.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            }
+            matching.sort((a, b) => (view === 'left_side' ? a.y - b.y : b.y - a.y));
+            return matching[0];
+        }
+        return null;
+    };
+
+    const getCanvasMousePos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const mouseX = (clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (clientY - rect.top) * (canvas.height / rect.height);
+        return { mouseX, mouseY };
+    };
+
+    if (canvas) {
+        // 1. Mouse Down (Drag Start / Selection)
+        const handleDragStart = (e) => {
+            const { mouseX, mouseY } = getCanvasMousePos(e);
+            const item = get2DItemAtCoords(mouseX, mouseY);
+            if (item) {
+                isDragging2D = true;
+                hasMovedDuringDrag = false;
+                draggedPalletItem = item;
+                dragStartMouseX = mouseX;
+                dragStartMouseY = mouseY;
+                dragItemStartX = item.x;
+                dragItemStartY = item.y;
+                dragItemStartZ = item.z;
+
+                selectPalletForAdjustment(item.globalIndex);
+                canvas.style.cursor = 'grabbing';
+                drawVisualization();
+            }
+        };
+
+        canvas.addEventListener('mousedown', handleDragStart);
+        canvas.addEventListener('touchstart', handleDragStart, { passive: true });
+
+        // 2. Mouse Move (Dragging with Smart Snapping)
+        const handleDragMove = (e) => {
+            const { mouseX, mouseY } = getCanvasMousePos(e);
+
+            if (isDragging2D && draggedPalletItem) {
+                hasMovedDuringDrag = true;
+                const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+                if (!currentResult) return;
+                const container = currentResult.dimensions;
+                const scale = canvas.width / container.l;
+
+                const deltaX = (mouseX - dragStartMouseX) / scale;
+                const view = currentVizView;
+
+                if (view === 'top') {
+                    const deltaY = (mouseY - dragStartMouseY) / scale;
+                    let targetX = dragItemStartX + deltaX;
+                    let targetY = dragItemStartY + deltaY;
+
+                    // Magnetic Snapping to Container Walls
+                    const snapDist = 45;
+                    if (Math.abs(targetX) < snapDist) targetX = 0;
+                    if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
+                        targetX = container.l - draggedPalletItem.packedL;
+                    }
+                    if (Math.abs(targetY) < snapDist) targetY = 0;
+                    if (Math.abs(targetY + draggedPalletItem.packedW - container.w) < snapDist) {
+                        targetY = container.w - draggedPalletItem.packedW;
+                    }
+                    if (Math.abs(targetY - (container.w - draggedPalletItem.packedW) / 2) < snapDist) {
+                        targetY = Math.round((container.w - draggedPalletItem.packedW) / 2);
+                    }
+
+                    // Magnetic Snapping to Other Loaded Pallets
+                    currentResult.loaded.forEach(other => {
+                        if (other.globalIndex === draggedPalletItem.globalIndex) return;
+
+                        // Snap X edges (left, right)
+                        if (Math.abs(targetX - (other.x + other.packedL)) < snapDist) targetX = other.x + other.packedL;
+                        if (Math.abs(targetX + draggedPalletItem.packedL - other.x) < snapDist) targetX = other.x - draggedPalletItem.packedL;
+                        if (Math.abs(targetX - other.x) < snapDist) targetX = other.x;
+
+                        // Snap Y edges (top, bottom)
+                        if (Math.abs(targetY - (other.y + other.packedW)) < snapDist) targetY = other.y + other.packedW;
+                        if (Math.abs(targetY + draggedPalletItem.packedW - other.y) < snapDist) targetY = other.y - draggedPalletItem.packedW;
+                        if (Math.abs(targetY - other.y) < snapDist) targetY = other.y;
+                    });
+
+                    // Bounds clamp
+                    draggedPalletItem.x = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
+                    draggedPalletItem.y = Math.max(0, Math.min(container.w - draggedPalletItem.packedW, Math.round(targetY)));
+                } else if (view === 'left_side' || view === 'right_side') {
+                    const deltaZ = -(mouseY - dragStartMouseY) / scale;
+                    let targetX = dragItemStartX + deltaX;
+                    let targetZ = dragItemStartZ + deltaZ;
+
+                    const snapDist = 45;
+                    if (Math.abs(targetX) < snapDist) targetX = 0;
+                    if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
+                        targetX = container.l - draggedPalletItem.packedL;
+                    }
+                    if (Math.abs(targetZ) < snapDist) targetZ = 0;
+
+                    // Snap to top of other pallets
+                    currentResult.loaded.forEach(other => {
+                        if (other.globalIndex === draggedPalletItem.globalIndex) return;
+                        if (Math.abs(targetZ - (other.z + other.packedH)) < snapDist) targetZ = other.z + other.packedH;
+                    });
+
+                    draggedPalletItem.x = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
+                    draggedPalletItem.z = Math.max(0, Math.min(container.h - draggedPalletItem.packedH, Math.round(targetZ)));
+                }
+
+                // Sync with bottom panel
+                if (inputPosX) inputPosX.value = draggedPalletItem.x;
+                if (inputPosY) inputPosY.value = draggedPalletItem.y;
+                if (inputPosZ) inputPosZ.value = draggedPalletItem.z;
+                if (dispPosX) dispPosX.textContent = `X: ${draggedPalletItem.x} mm`;
+                if (dispPosY) dispPosY.textContent = `Y: ${draggedPalletItem.y} mm`;
+                if (dispPosZ) dispPosZ.textContent = `Z: ${draggedPalletItem.z} mm`;
+
+                drawVisualization();
+                if (window.Viewer3D) {
+                    window.Viewer3D.update(currentResult, itemColors);
+                    window.Viewer3D.selectPallet(draggedPalletItem.globalIndex);
+                }
+            } else {
+                // Hover detection
+                const item = get2DItemAtCoords(mouseX, mouseY);
+                const nextHoverIndex = item ? item.globalIndex : null;
+                if (nextHoverIndex !== hoveredPalletGlobalIndex) {
+                    hoveredPalletGlobalIndex = nextHoverIndex;
+                    canvas.style.cursor = item ? 'grab' : 'default';
+                    drawVisualization();
+                }
+            }
+        };
+
+        canvas.addEventListener('mousemove', handleDragMove);
+        canvas.addEventListener('touchmove', handleDragMove, { passive: true });
+
+        // 3. Mouse Up / Leave (Drop & Finalize)
+        const handleDragEnd = () => {
+            if (isDragging2D) {
+                isDragging2D = false;
+                canvas.style.cursor = 'grab';
+                if (draggedPalletItem) {
+                    applyPalletPositionChange(draggedPalletItem);
+                }
+                draggedPalletItem = null;
+                drawVisualization();
+            }
+        };
+
+        canvas.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('mouseleave', handleDragEnd);
+        canvas.addEventListener('touchend', handleDragEnd);
+
+        // 4. Double Click (Rotate 90 deg)
+        canvas.addEventListener('dblclick', (e) => {
+            const { mouseX, mouseY } = getCanvasMousePos(e);
+            const item = get2DItemAtCoords(mouseX, mouseY);
+            if (item) {
+                selectPalletForAdjustment(item.globalIndex);
+                const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+                if (!currentResult) return;
+
+                const temp = item.packedL;
+                item.packedL = item.packedW;
+                item.packedW = temp;
+                item.rotated = !item.rotated;
+
+                const container = currentResult.dimensions || { l: 5898, w: 2352, h: 2393 };
+                if (item.x + item.packedL > container.l) item.x = Math.max(0, container.l - item.packedL);
+                if (item.y + item.packedW > container.w) item.y = Math.max(0, container.w - item.packedW);
+
+                applyPalletPositionChange(item);
+            }
+        });
+    }
+
+        const assignColorsToItems = (loadedItems) => {
         const uniqueNames = [...new Set(loadedItems.map(item => item.name))];
         const colors = [
             '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
