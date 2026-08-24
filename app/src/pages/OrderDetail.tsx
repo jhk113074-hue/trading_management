@@ -7715,19 +7715,19 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                       style={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '3px',
-                                        padding: '2px 7px',
+                                        justifyContent: 'center',
+                                        width: '26px',
+                                        height: '24px',
+                                        padding: '0',
                                         background: '#eff6ff',
                                         border: '1px solid #bfdbfe',
                                         borderRadius: '4px',
-                                        fontSize: '12px',
-                                        fontWeight: 750,
-                                        color: '#1d4ed8',
+                                        fontSize: '13px',
                                         cursor: 'pointer'
                                       }}
                                       title={`공급업체 [${supplierName}] 기본 정보(대표자, 사업자번호, 주소, 담당자, 계좌 등) 조회 및 DB 수정`}
                                     >
-                                      🏢 공급사 DB 수정
+                                      🏢
                                     </button>
                                   </div>
                                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>NO:</span>

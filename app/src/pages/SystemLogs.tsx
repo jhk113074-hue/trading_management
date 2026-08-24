@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.446',
+    version: 'v2.8.446',
+    date: '2026-08-25',
+    category: 'UI/UX',
+    title: '발주서 헤더 공급업체 관리 DB 연동 버튼 아이콘(🏢) 단독 적용',
+    content: '• 각 공급업체 발주서 상단 헤더의 공급사 DB 연결 버튼을 한글 텍스트 없이 깔끔한 🏢 아이콘 버튼으로 간소화\\n• 툴팁 마우스 호버 시 공급업체 기본 정보 수정 안내 문구 제공',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.445',
     version: 'v2.8.445',
     date: '2026-08-25',
