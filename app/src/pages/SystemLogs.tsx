@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.422',
+    version: 'v2.8.422',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: 'PI 견적서 수주(PO) 전환 시 다건 품목(46건 등) 전수 100% 매핑 및 누락 방지',
+    content: '• 견적서(PI)를 수주로 전환할 때 최신 리비전(R6 등)의 서브컬렉션 및 품목 배열을 전수 탐색하여 46개 등 대용량 품목이 단 1개도 누락 없이 수주 품목으로 100% 완벽히 전환되도록 개편',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.421',
+    version: 'v2.8.421',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '발주 품목 목록 상품명 및 입력란 글씨체 일반체(Regular)로 개선',
+    content: '• 수주 상세 페이지의 발주 품목 목록 테이블 내 상품코드/상품명 및 수량, 단가, 공급사 입력란 글씨체를 두꺼운 Bold체에서 깔끔한 일반체(fontWeight: 400)로 변경하여 가독성 대폭 향상',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.420',
     version: 'v2.8.420',
     date: '2026-08-24',

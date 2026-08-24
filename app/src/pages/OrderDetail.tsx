@@ -6917,7 +6917,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   width: '32px',
                                   textAlign: 'center',
                                   padding: '2px',
-                                  fontWeight: 700,
+                                  fontWeight: 400,
                                   color: '#1e293b',
                                   border: '1px solid #cbd5e1',
                                   borderRadius: '4px',
@@ -6944,13 +6944,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   border: '1px solid #cbd5e1',
                                   borderRadius: '4px',
                                   fontSize: '13px',
-                                  fontWeight: 600,
+                                  fontWeight: 400,
+                                  letterSpacing: 'normal',
                                   boxSizing: 'border-box',
                                   minHeight: '34px',
                                   resize: 'vertical',
                                   outline: 'none',
                                   color: '#1e293b',
-                                  lineHeight: 1.35
+                                  lineHeight: 1.4
                                 }}
                               />
                               {item.name && (
@@ -7038,7 +7039,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     padding: '2px 4px',
                                     cursor: p ? 'pointer' : 'not-allowed',
                                     fontSize: '13.5px',
-                                    fontWeight: 600,
+                                    fontWeight: 400,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -7062,7 +7063,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               value={item.supplier || ''}
                               onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
                               placeholder="공급사명"
-                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
+                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
                             />
                           </div>
                         </td>
@@ -7075,14 +7076,14 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               value={item.qty || ''}
                               onChange={e => handleItemChange(idx, 'qty', e.target.value)}
                               placeholder="수량"
-                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
+                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
                             />
                             <input
                               type="text"
                               value={item.unit || ''}
                               onChange={e => handleItemChange(idx, 'unit', e.target.value)}
                               placeholder="단위"
-                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', height: '32px', outline: 'none', textAlign: 'center', color: '#1e293b' }}
+                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', textAlign: 'center', color: '#1e293b' }}
                             />
                           </div>
                         </td>
@@ -7093,7 +7094,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                             <select
                               value={item.currency || 'USD'}
                               onChange={e => handleCurrencySelection(e.target.value, item.currency || 'USD', customCurrencies, val => handleItemChange(idx, 'currency', val))}
-                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b', background: '#fff', cursor: 'pointer' }}
+                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b', background: '#fff', cursor: 'pointer' }}
                             >
                               {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
                               <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
@@ -7104,13 +7105,13 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                               value={item.unitPrice || ''}
                               onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
                               placeholder="단가"
-                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
+                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
                             />
                           </div>
                         </td>
 
                         {/* 금액 */}
-                        <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600, color: '#1e293b', verticalAlign: 'middle', fontSize: '13.5px', fontVariantNumeric: 'tabular-nums' }}>
+                        <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 500, color: '#1e293b', verticalAlign: 'middle', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
                           {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                         </td>
 

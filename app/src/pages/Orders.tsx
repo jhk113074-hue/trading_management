@@ -225,74 +225,115 @@ export const Orders: React.FC = () => {
             const compPrefix = targetPi.issuingCompany === 'YS' ? 'YS' : 'YSACC';
             const ciNumber = `CI-${compPrefix}-${targetPi.piNumber || targetPi.id}`;
 
-            // 1. 최신 리비전 및 line_items 로드
+            // 1. 최신 리비전 및 line_items 로드 (최신 R6 등 모든 리비전 및 품목 전수 탐색)
             const revSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID, 'proforma_invoices', piId), 'revisions'));
             let mappedItems: any[] = [];
             
+            const parseRevNum = (v: any, piNumStr?: string) => {
+              if (typeof v === 'number') return v;
+              const match = String(v || '').match(/\d+/);
+              if (match) return parseInt(match[0], 10);
+              const piMatch = String(piNumStr || '').match(/R(\d+)/i);
+              if (piMatch) return parseInt(piMatch[1], 10);
+              return 0;
+            };
+
+            let quoteItems: any[] = [];
+
             if (!revSnap.empty) {
-              const sortedRevs = revSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any))
-                .sort((a: any, b: any) => (Number(b.version) || 0) - (Number(a.version) || 0));
-              const latestRev = sortedRevs[0];
-              const latestRevDoc = revSnap.docs.find((d: any) => d.id === latestRev.id);
-              
-              if (latestRevDoc) {
-                const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
-                const quoteItems = liSnap.docs
-                  .map((d: any) => d.data() as any)
-                  .sort((a: any, b: any) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
-                
-                if (quoteItems.length > 0) {
-                  const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
-                  const currentProducts = prodSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any));
-                  
-                  mappedItems = quoteItems.map((qi: any, idx: number) => {
-                    let rawCode = qi.productCode || '';
-                    if (rawCode.startsWith('[') && rawCode.includes(']')) {
-                      rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
-                    }
-                    const cleanRaw = rawCode.trim().toUpperCase();
-                    const matchedProd = currentProducts.find((p: any) => 
-                      (p.productCode || '').trim().toUpperCase() === cleanRaw || 
-                      p.id.trim().toUpperCase() === cleanRaw
-                    );
-                    
-                    const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
-                    const orderPrice = qi.salePriceUsd || 0;
-                    const qty = qi.quantity || 0;
-                    const amt = parseFloat((qty * orderPrice).toFixed(2));
-                    
-                    let purchasePrice = 0;
-                    let purchaseCurrency = 'USD';
-                    if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
-                      purchasePrice = qi.purchasePriceKrw;
-                      purchaseCurrency = 'KRW';
-                    } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
-                      purchasePrice = qi.purchasePriceUsd;
-                      purchaseCurrency = 'USD';
-                    } else if (matchedProd) {
-                      purchasePrice = matchedProd.purchasePrice || 0;
-                      purchaseCurrency = matchedProd.currency === 'KRW' ? 'KRW' : 'USD';
-                    }
-                    
-                    return {
-                      itemId: String(idx + 1),
-                      name: qi.productCode ? `[${qi.productCode}] ${qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''}` : (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''),
-                      supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
-                      supplierContact: contactInfo || '',
-                      grade: qi.spec || qi.grade || matchedProd?.spec || '',
-                      qty,
-                      unit: qi.unit || 'kg',
-                      unitPrice: orderPrice,
-                      purchaseUnitPrice: purchasePrice,
-                      purchaseUnitCurrency: purchaseCurrency,
-                      originalPurchasePrice: purchasePrice,
-                      originalPurchaseCurrency: purchaseCurrency,
-                      amount: amt,
-                      currency: 'USD'
-                    };
-                  });
+              const revList = revSnap.docs.map((d: any) => ({
+                id: d.id,
+                ref: d.ref,
+                data: d.data(),
+                versionNum: parseRevNum(d.data().version, targetPi.piNumber),
+                timeSec: d.data().updatedAt?.seconds || d.data().createdAt?.seconds || 0
+              }));
+
+              // 최신 리비전 순으로 정렬
+              revList.sort((a, b) => {
+                const vDiff = b.versionNum - a.versionNum;
+                if (vDiff !== 0) return vDiff;
+                return b.timeSec - a.timeSec;
+              });
+
+              // 최신 리비전의 line_items 및 items 배열 우선 확인
+              for (const revItem of revList) {
+                const rData = revItem.data;
+                const liSnap = await getDocs(collection(revItem.ref, 'line_items'));
+                const liDocs = liSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+                const arrayItems = Array.isArray(rData.items) ? rData.items : [];
+
+                const bestCandidate = liDocs.length >= arrayItems.length ? liDocs : arrayItems;
+                if (bestCandidate.length > quoteItems.length) {
+                  quoteItems = bestCandidate;
                 }
               }
+            }
+
+            // PI 메인 문서에 items가 더 많을 경우 반영
+            if (Array.isArray(targetPi.items) && targetPi.items.length > quoteItems.length) {
+              quoteItems = targetPi.items;
+            }
+
+            if (quoteItems.length > 0) {
+              // 번호 순 정렬
+              quoteItems.sort((a: any, b: any) => {
+                const numA = Number(a.lineNumber || a.itemId || a.itemNo) || 0;
+                const numB = Number(b.lineNumber || b.itemId || b.itemNo) || 0;
+                return numA - numB;
+              });
+
+              const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+              const currentProducts = prodSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any));
+              
+              mappedItems = quoteItems.map((qi: any, idx: number) => {
+                let rawCode = qi.productCode || '';
+                if (rawCode.startsWith('[') && rawCode.includes(']')) {
+                  rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+                }
+                const cleanRaw = rawCode.trim().toUpperCase();
+                const matchedProd = currentProducts.find((p: any) => 
+                  (p.productCode || '').trim().toUpperCase() === cleanRaw || 
+                  p.id.trim().toUpperCase() === cleanRaw
+                );
+                
+                const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
+                const orderPrice = qi.salePriceUsd || qi.unitPrice || qi.price || 0;
+                const qty = qi.quantity || qi.qty || 0;
+                const amt = qi.lineTotalUsd || qi.amount || parseFloat((qty * orderPrice).toFixed(2));
+                
+                let purchasePrice = 0;
+                let purchaseCurrency = 'USD';
+                if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                  purchasePrice = qi.purchasePriceKrw;
+                  purchaseCurrency = 'KRW';
+                } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                  purchasePrice = qi.purchasePriceUsd;
+                  purchaseCurrency = 'USD';
+                } else if (matchedProd) {
+                  purchasePrice = matchedProd.purchasePrice || 0;
+                  purchaseCurrency = matchedProd.currency === 'KRW' ? 'KRW' : 'USD';
+                }
+                
+                const prodName = qi.productCode ? (qi.description ? `[${qi.productCode}] ${qi.description}` : qi.productCode) : (qi.description || qi.name || matchedProd?.nameEn || matchedProd?.nameKo || '');
+
+                return {
+                  itemId: String(qi.lineNumber || (idx + 1)),
+                  name: prodName,
+                  supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
+                  supplierContact: contactInfo || '',
+                  grade: qi.spec || qi.grade || matchedProd?.spec || '',
+                  qty,
+                  unit: qi.unit || 'kg',
+                  unitPrice: orderPrice,
+                  purchaseUnitPrice: purchasePrice,
+                  purchaseUnitCurrency: purchaseCurrency,
+                  originalPurchasePrice: purchasePrice,
+                  originalPurchaseCurrency: purchaseCurrency,
+                  amount: amt,
+                  currency: 'USD'
+                };
+              });
             }
 
             // 매핑된 품목이 없을 때 예외 방지 대체값
