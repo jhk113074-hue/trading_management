@@ -330,6 +330,8 @@ class Viewer3D {
                 }
             }
         });
+    }
+
     resize() {
         if (!this.container || !this.renderer || !this.camera) return;
         const width = this.container.clientWidth || (this.container.parentElement ? this.container.parentElement.clientWidth : 800);

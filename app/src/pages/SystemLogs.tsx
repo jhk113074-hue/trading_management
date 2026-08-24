@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.438',
+    version: 'v2.8.438',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '3D 컨테이너 시뮬레이터 캔버스 렌더링 정상 복구 (JS 구문 오류 해결)',
+    content: '• viewer3d.js 이벤트 리스너 괄호 누락 오류를 즉시 수정하여 3D 뷰어 화면 및 플로팅 컨트롤러가 정상적으로 렌더링되도록 조치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.437',
     version: 'v2.8.437',
     date: '2026-08-24',
