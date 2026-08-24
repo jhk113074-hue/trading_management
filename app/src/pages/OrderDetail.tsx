@@ -2159,23 +2159,27 @@ export const OrderDetail: React.FC = () => {
           blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
           blNumber: data.blNumber || ''
         });
-        const itemsWithHs = (data.items || []).map((it) => {
+        const itemsWithHs = (data.items || []).map((it, idx) => {
           const codeMatch = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-          const code = codeMatch ? codeMatch[1] : (it.itemId || '');
+          const code = codeMatch ? codeMatch[1] : (it.itemId || (idx + 1).toString());
           const matchedProd = products.find(p => p.productCode === code || p.id === code);
           const custSpecificHs = matchedProd?.customerHsCodes?.[data.customer || ''] || '';
           return {
             ...it,
+            itemId: it.itemId || (idx + 1).toString(),
             hsCode: it.hsCode || custSpecificHs || matchedProd?.hsCode || ''
           };
         });
 
-        const rawSourcing = (data.sourcingItems && data.sourcingItems.length > 0) ? data.sourcingItems : (data.items || []);
+        const rawSourcing = ((data.sourcingItems && data.sourcingItems.length > 0) ? data.sourcingItems : (data.items || [])).map((sIt: any, idx: number) => ({
+          ...sIt,
+          itemId: sIt.itemId || (idx + 1).toString()
+        }));
 
         const restoredOrderItems = itemsWithHs.map((it: any, idx: number) => {
-          const sIt = rawSourcing.find((s: any) => s.itemId === it.itemId) || rawSourcing[idx];
-          const activeSupplier = it.supplier?.trim() || sIt?.supplier?.trim() || '';
-          const activeContact = it.supplierContact?.trim() || sIt?.supplierContact?.trim() || '';
+          const sIt = (it.itemId && rawSourcing.find((s: any) => s.itemId && s.itemId === it.itemId)) || rawSourcing[idx];
+          const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (sIt?.supplier?.trim() || '');
+          const activeContact = (it.supplierContact != null && it.supplierContact.trim() !== '') ? it.supplierContact.trim() : (sIt?.supplierContact?.trim() || '');
           return {
             ...it,
             supplier: activeSupplier,
@@ -2184,9 +2188,9 @@ export const OrderDetail: React.FC = () => {
         });
 
         const alignedSourcing = rawSourcing.map((sIt: any, idx: number) => {
-          const rIt = restoredOrderItems.find((r: any) => r.itemId === sIt.itemId) || restoredOrderItems[idx];
-          const activeSupplier = sIt.supplier?.trim() || rIt?.supplier?.trim() || '';
-          const activeContact = sIt.supplierContact?.trim() || rIt?.supplierContact?.trim() || '';
+          const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId)) || restoredOrderItems[idx];
+          const activeSupplier = (sIt.supplier != null && sIt.supplier.trim() !== '') ? sIt.supplier.trim() : (rIt?.supplier?.trim() || '');
+          const activeContact = (sIt.supplierContact != null && sIt.supplierContact.trim() !== '') ? sIt.supplierContact.trim() : (rIt?.supplierContact?.trim() || '');
           return {
             ...sIt,
             supplier: activeSupplier,
@@ -2574,10 +2578,10 @@ export const OrderDetail: React.FC = () => {
         blNumber: basicForm.blNumber || '',
         
         items: orderItems.map((it, idx) => {
-          const matchingSourcing = sourcingItems.find(s => s.itemId === it.itemId) || sourcingItems[idx];
-          const activeSupplier = it.supplier?.trim() || matchingSourcing?.supplier?.trim() || '';
+          const matchingSourcing = (it.itemId && sourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || sourcingItems[idx];
+          const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingSourcing?.supplier?.trim() || '');
           return {
-            itemId: it.itemId || '',
+            itemId: it.itemId || (idx + 1).toString(),
             name: it.name || '',
             supplier: activeSupplier,
             supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
@@ -2595,8 +2599,8 @@ export const OrderDetail: React.FC = () => {
           };
         }),
         sourcingItems: sourcingItems.map((it, idx) => {
-          const matchingOrderItem = orderItems.find(r => r.itemId === it.itemId) || orderItems[idx];
-          const activeSupplier = it.supplier?.trim() || matchingOrderItem?.supplier?.trim() || '';
+          const matchingOrderItem = (it.itemId && orderItems.find(r => r.itemId && r.itemId === it.itemId)) || orderItems[idx];
+          const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingOrderItem?.supplier?.trim() || '');
           return {
             itemId: it.itemId || '',
             name: it.name || '',
@@ -2704,6 +2708,8 @@ export const OrderDetail: React.FC = () => {
   };
 
   const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
+    let finalUpdatedItem: any = null;
+
     setOrderItems(prev => {
       const updated = [...prev];
       let it = { ...updated[index], [field]: value };
@@ -2764,16 +2770,6 @@ export const OrderDetail: React.FC = () => {
             }
           }
         }
-        
-        // Sync supplier to sourcingItems in real-time!
-        setSourcingItems(prevSourcing => {
-          return prevSourcing.map((sIt, sIdx) => {
-            if (sIt.itemId === it.itemId || sIdx === index) {
-              return { ...sIt, supplier: value };
-            }
-            return sIt;
-          });
-        });
       }
 
       if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
@@ -2788,29 +2784,35 @@ export const OrderDetail: React.FC = () => {
       }
       
       updated[index] = it;
+      finalUpdatedItem = it;
+      return updated;
+    });
 
-      // 동기화: 수주 품목 정보 변경 시, 소싱/발주 탭(sourcingItems)에도 실시간 반영
-      setSourcingItems(sourcingPrev => {
-        const sourcingUpdated = [...sourcingPrev];
-        if (sourcingUpdated[index]) {
+    // 동기화: 소싱/발주 탭(sourcingItems)에도 즉시 정확히 반영
+    setSourcingItems(sourcingPrev => {
+      const sourcingUpdated = [...sourcingPrev];
+      if (sourcingUpdated[index]) {
+        sourcingUpdated[index] = {
+          ...sourcingUpdated[index],
+          [field]: value
+        };
+        if (finalUpdatedItem) {
           sourcingUpdated[index] = {
             ...sourcingUpdated[index],
-            name: it.name,
-            qty: it.qty,
-            unit: it.unit,
-            supplier: it.supplier,
-            supplierContact: it.supplierContact,
-            grade: it.grade,
-            purchaseUnitPrice: it.purchaseUnitPrice,
-            purchaseUnitCurrency: it.purchaseUnitCurrency,
-            amount: it.amount,
-            currency: it.currency
+            name: finalUpdatedItem.name,
+            qty: finalUpdatedItem.qty,
+            unit: finalUpdatedItem.unit,
+            supplier: finalUpdatedItem.supplier,
+            supplierContact: finalUpdatedItem.supplierContact,
+            grade: finalUpdatedItem.grade,
+            purchaseUnitPrice: finalUpdatedItem.purchaseUnitPrice,
+            purchaseUnitCurrency: finalUpdatedItem.purchaseUnitCurrency,
+            amount: finalUpdatedItem.amount,
+            currency: finalUpdatedItem.currency
           };
         }
-        return sourcingUpdated;
-      });
-
-      return updated;
+      }
+      return sourcingUpdated;
     });
   };
 
@@ -3960,8 +3962,8 @@ export const OrderDetail: React.FC = () => {
         currency: (it.currency || 'USD') as any
       }));
 
-      const cleanItems = (order.items || []).map(it => {
-        const matched = sourcingItems.find(x => x.itemId === it.itemId);
+      const cleanItems = (order.items || []).map((it, idx) => {
+        const matched = (it.itemId && sourcingItems.find(x => x.itemId && x.itemId === it.itemId)) || sourcingItems[idx];
         if (matched) {
           return {
             ...it,
@@ -4655,8 +4657,8 @@ export const OrderDetail: React.FC = () => {
         currency: (it.currency || 'USD') as any
       }));
 
-      const cleanItems = (order.items || []).map(it => {
-        const matched = sourcingItems.find(x => x.itemId === it.itemId);
+      const cleanItems = (order.items || []).map((it, idx) => {
+        const matched = (it.itemId && sourcingItems.find(x => x.itemId && x.itemId === it.itemId)) || sourcingItems[idx];
         if (matched) {
           return {
             ...it,

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.430',
+    version: 'v2.8.430',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '미등록 품목 공급사 1회 입력 시 즉시 반영 및 orderItems/sourcingItems 동기화 매칭 오류 해결',
+    content: '• 상품 마스터에 미등록된 품목의 공급사 입력 시 itemId 부재로 인한 항목간 매칭 오류(undefined === undefined)를 수정하여 첫 입력 시 즉시 정상 저장되도록 개선\\n• orderItems 와 sourcingItems 간의 상태 업데이트 및 복원 로직 안정화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.429',
     version: 'v2.8.429',
     date: '2026-08-24',
