@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.436',
+    version: 'v2.8.436',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 컨테이너 적재 시뮬레이터 [안쪽 벽면(Front)] 및 [출입문(Door)] 3D 시각화 표식 추가',
+    content: '• 컨테이너 3D 화면 양 끝에 [🚪 안쪽 끝 (FRONT WALL)] 녹색 프레임 표식 및 [🚛 컨테이너 문 (DOOR / 입구)] 개방 도어/진입로 시각 표식을 추가하여 적재 방향과 전후면을 한눈에 식별할 수 있도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.435',
     version: 'v2.8.435',
     date: '2026-08-24',

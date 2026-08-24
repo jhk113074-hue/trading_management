@@ -304,6 +304,43 @@ class Viewer3D {
         }
     }
 
+    createHeaderBadgeSprite(text, bgColor, textColor) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+
+        // Rounded badge background
+        ctx.fillStyle = bgColor;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(10, 10, 492, 108, 20);
+        } else {
+            ctx.rect(10, 10, 492, 108);
+        }
+        ctx.fill();
+
+        // Border
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = textColor;
+        ctx.stroke();
+
+        // Text
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = textColor;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(text, 256, 64);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.renderOrder = 1000;
+        return sprite;
+    }
+
     clearScene() {
         this.meshes.forEach(mesh => {
             this.scene.remove(mesh);
@@ -372,10 +409,79 @@ class Viewer3D {
         // Draw Container (Wireframe / Edges)
         const boxGeo = new THREE.BoxGeometry(l, h, w);
         const edges = new THREE.EdgesGeometry(boxGeo);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x88aa88, transparent: true, opacity: 0.5 });
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.6 });
         this.containerMesh = new THREE.LineSegments(edges, lineMat);
         this.containerMesh.position.set(0, h/2, 0);
         this.scene.add(this.containerMesh);
+
+        // --- Container Floor Grid & Background Plane ---
+        const floorGeo = new THREE.PlaneGeometry(l, w);
+        const floorMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+        const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.set(0, 0, 0);
+        this.scene.add(floorMesh);
+        this.meshes.push(floorMesh);
+
+        // --- FRONT END (안쪽 벽면 / 깊숙한 안쪽, x = -l/2) ---
+        const frontWallGeo = new THREE.PlaneGeometry(w, h);
+        const frontWallMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const frontWallMesh = new THREE.Mesh(frontWallGeo, frontWallMat);
+        frontWallMesh.rotation.y = Math.PI / 2;
+        frontWallMesh.position.set(-l / 2, h / 2, 0);
+        this.scene.add(frontWallMesh);
+        this.meshes.push(frontWallMesh);
+
+        // Front Wall Wireframe Frame (Emerald Green Accent)
+        const frontWallFrameMat = new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 3 });
+        const frontWallFrame = new THREE.LineSegments(new THREE.EdgesGeometry(frontWallGeo), frontWallFrameMat);
+        frontWallMesh.add(frontWallFrame);
+
+        // Floating 3D Badge: FRONT (안쪽 벽면)
+        const frontBadge = this.createHeaderBadgeSprite('🚪 안쪽 끝 (FRONT WALL)', '#064e3b', '#34d399');
+        frontBadge.position.set(-l / 2, h + 340, 0);
+        frontBadge.scale.set(1300, 320, 1);
+        this.scene.add(frontBadge);
+        this.meshes.push(frontBadge);
+
+        // --- BACK END (컨테이너 문 / 상차 출입구, x = +l/2) ---
+        const doorW = w / 2;
+        const doorGeo = new THREE.PlaneGeometry(doorW, h);
+        const doorMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+
+        // Left Door (swung open 40 degrees outward)
+        const leftDoor = new THREE.Mesh(doorGeo, doorMat);
+        leftDoor.position.set(l / 2 + (doorW / 2) * Math.cos(Math.PI / 4.5), h / 2, -w / 2 - (doorW / 2) * Math.sin(Math.PI / 4.5));
+        leftDoor.rotation.y = Math.PI / 4.5;
+        this.scene.add(leftDoor);
+        this.meshes.push(leftDoor);
+        const leftDoorEdges = new THREE.LineSegments(new THREE.EdgesGeometry(doorGeo), new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+        leftDoor.add(leftDoorEdges);
+
+        // Right Door (swung open 40 degrees outward)
+        const rightDoor = new THREE.Mesh(doorGeo, doorMat);
+        rightDoor.position.set(l / 2 + (doorW / 2) * Math.cos(Math.PI / 4.5), h / 2, w / 2 + (doorW / 2) * Math.sin(Math.PI / 4.5));
+        rightDoor.rotation.y = -Math.PI / 4.5;
+        this.scene.add(rightDoor);
+        this.meshes.push(rightDoor);
+        const rightDoorEdges = new THREE.LineSegments(new THREE.EdgesGeometry(doorGeo), new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+        rightDoor.add(rightDoorEdges);
+
+        // Door Floor Entrance Strip (Yellow Hazard)
+        const rampGeo = new THREE.PlaneGeometry(450, w);
+        const rampMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        const rampMesh = new THREE.Mesh(rampGeo, rampMat);
+        rampMesh.rotation.x = -Math.PI / 2;
+        rampMesh.position.set(l / 2 + 225, 0, 0);
+        this.scene.add(rampMesh);
+        this.meshes.push(rampMesh);
+
+        // Floating 3D Badge: BACK (출입문 / DOOR)
+        const doorBadge = this.createHeaderBadgeSprite('🚛 컨테이너 문 (DOOR / 입구)', '#0c4a6e', '#38bdf8');
+        doorBadge.position.set(l / 2, h + 340, 0);
+        doorBadge.scale.set(1500, 360, 1);
+        this.scene.add(doorBadge);
+        this.meshes.push(doorBadge);
 
         const textureCache = {};
 
