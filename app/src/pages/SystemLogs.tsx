@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.409',
+    version: 'v2.8.409',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '컨테이너(CFS) 입고일 및 입고시간 수정 시 실시간 전역 동기화 및 즉시 반영 개선',
+    content: '• 포워딩/운송사 탭에서 컨테이너(CFS) 입고일 또는 입고시간 수정 시, 각 제조사별 도착보고서의 비고(Remarks) 및 입고일시(CFS ETA)에 즉시 양방향 실시간 동기화되도록 수정\\n• 도착보고서 인쇄 및 메일/카톡 PDF 생성 시 구버전 비고 텍스트를 최신 입고일시로 자동 치환 및 Firestore에 완벽 저장되도록 안정화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.408',
     version: 'v2.8.408',
     date: '2026-08-24',
