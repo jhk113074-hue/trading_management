@@ -54,9 +54,12 @@
                         </div>
                         
                         <div id="visualization-container" class="hidden">
-                            <div class="viz-mode-toggle">
+                            <div class="viz-mode-toggle" style="display: flex; align-items: center; gap: 8px;">
                                 <button class="btn btn-outline btn-sm" id="btn-mode-2d"><i data-lucide="layout"></i> 2D 도면</button>
                                 <button class="btn btn-outline btn-sm active" id="btn-mode-3d"><i data-lucide="box"></i> 3D 뷰어</button>
+                                <button type="button" class="btn btn-sm btn-reset-all-layout" id="btn-global-reset-layout" style="margin-left: auto; background: #fff; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 750; font-size: 0.8rem; height: 32px; padding: 0 12px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="모든 화물 위치를 초기 자동 적재(시뮬레이션) 상태로 원상복귀합니다.">
+                                    ↩️ 원상복귀 (초기 배치로 리셋)
+                                </button>
                             </div>
                             
                             <!-- 2D View -->
@@ -70,7 +73,10 @@
                                     <span style="display: flex; align-items: center; gap: 6px;">
                                         <span>🖱️</span> <span>화물을 마우스로 <b>직접 드래그앤드롭</b>하여 위치를 이동하세요. (벽면/인접 화물 자석 스냅 지원)</span>
                                     </span>
-                                    <span style="font-size: 12px; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">더블클릭: 🔄 90° 회전</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 12px; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">더블클릭: 🔄 90° 회전</span>
+                                        <button type="button" class="btn-reset-all-layout" style="background: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 2px 8px; border-radius: 4px; font-weight: 750; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">↩️ 원상복귀</button>
+                                    </div>
                                 </div>
                                 <div class="canvas-wrapper" style="position: relative;">
                                     <canvas id="viz-canvas" style="cursor: grab;"></canvas>
@@ -101,6 +107,9 @@
                                         </div>
                                     </div>
                                     <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button type="button" class="btn btn-sm btn-reset-all-layout" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 750; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="전체 화물 배치를 초기 자동 적재 위치로 되돌립니다.">
+                                            ↩️ 초기배치 원상복귀
+                                        </button>
                                         <button type="button" class="btn btn-sm" id="btn-adjust-rotate" style="background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-weight: 700; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
                                             🔄 90° 회전 (가로↔세로)
                                         </button>

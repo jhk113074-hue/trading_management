@@ -18,6 +18,33 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.414',
+    version: 'v2.8.414',
+    date: '2026-08-24',
+    category: '신규기능',
+    title: '컨테이너 시뮬레이터 [↩️ 원상복귀 (초기 배치 리셋)] 버튼 추가',
+    content: '• 마우스 드래그 또는 수동 위치 조정 후 언제든지 최초 자동 적재(시뮬레이션) 배치 상태로 즉시 되돌릴 수 있는 원상복귀 버튼 추가 (도면 툴바 상단, 2D 가이드 배너, 위치조정 패널)',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.413',
+    version: 'v2.8.413',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '2D 마우스 드래그 앤 드롭 정밀도 및 스마트 자석 스냅 50mm 그리드 보정',
+    content: '• 단순 클릭 시 의도치 않은 미세 위치 변경을 방지하기 위한 최소 이동 임계값(Threshold) 적용\\n• 인접 화물 및 벽면 자석 스냅 감도(100mm) 향상 및 깔끔한 정렬을 위한 50mm 그리드 라운딩 지원',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.412',
+    version: 'v2.8.412',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '3D 컨테이너 시뮬레이터 초기 카메라 초점 및 뷰포트 자동 정렬 최적화',
+    content: '• 3D 뷰어 최초 로드 및 탭 전환 시 카메라가 특정 화물에 극도로 확대되거나 틀어지는 문제를 해결하고, 컨테이너 전체 규격에 맞춰 Iso 아이소메트릭 뷰로 자동 줌 및 중앙 정렬되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.411',
     version: 'v2.8.411',
     date: '2026-08-24',

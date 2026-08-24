@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- State Management ---
     let currentProjectId = null;
     let currentItems = [];
-    let currentResults = []; // Changed to array for multiple containers
+    let currentResults = [];
+    let initialResults = []; // Changed to array for multiple containers
     let currentResultIndex = 0;
     let savedProjects = [];
 
@@ -1614,6 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 시뮬레이션 계산 수행
             currentResults = Packer.pack(containers, currentItems);
+            initialResults = JSON.parse(JSON.stringify(currentResults));
             currentResultIndex = 0;
 
             // 계산 결과가 포함된 상태로 프로젝트 자동 저장 (알림창 없이 조용히 저장)
@@ -1824,6 +1826,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Reset Layout to Initial Simulation State
+    const resetToInitialLayout = () => {
+        if (!initialResults || initialResults.length === 0) {
+            alert('초기 시뮬레이션 결과가 없습니다.');
+            return;
+        }
+        if (confirm('모든 화물의 위치를 초기 자동 적재(시뮬레이션) 상태로 원상복귀하시겠습니까?')) {
+            currentResults = JSON.parse(JSON.stringify(initialResults));
+            selectedPalletGlobalIndex = null;
+            if (palletAdjustPanel) palletAdjustPanel.classList.add('hidden');
+            renderSimulationResult();
+            if (window.Viewer3D) {
+                window.Viewer3D.clearScene();
+                window.Viewer3D.update(currentResults[currentResultIndex], itemColors);
+                window.Viewer3D.setCamera('iso');
+            }
+        }
+    };
+
+    document.querySelectorAll('.btn-reset-all-layout').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetToInitialLayout();
+        });
+    });
+
     // Print Preview Event Listener
     btnPrintPreview.addEventListener('click', () => {
         const printWin = window.open('', '_blank');
@@ -2000,9 +2028,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btnMode3d.classList.add('active');
         viz2dWrapper.classList.add('hidden');
         viz3dWrapper.classList.remove('hidden');
-        // Force resize on 3D viewer when it becomes visible
+        // Force resize and camera fit on 3D viewer when it becomes visible
         if (window.Viewer3D) {
-            setTimeout(() => window.Viewer3D.resize(), 50);
+            setTimeout(() => {
+                window.Viewer3D.resize();
+                window.Viewer3D.setCamera('iso');
+            }, 60);
         }
     });
 
@@ -2417,12 +2448,18 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.addEventListener('mousedown', handleDragStart);
         canvas.addEventListener('touchstart', handleDragStart, { passive: true });
 
-        // 2. Mouse Move (Dragging with Smart Snapping)
+        // 2. Mouse Move (Dragging with Smart Snapping & Drag Threshold)
         const handleDragMove = (e) => {
             const { mouseX, mouseY } = getCanvasMousePos(e);
 
             if (isDragging2D && draggedPalletItem) {
+                // Minimum movement threshold (8px) before actually modifying pallet position
+                const distMovedPx = Math.hypot(mouseX - dragStartMouseX, mouseY - dragStartMouseY);
+                if (!hasMovedDuringDrag && distMovedPx < 8) {
+                    return;
+                }
                 hasMovedDuringDrag = true;
+
                 const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
                 if (!currentResult) return;
                 const container = currentResult.dimensions;
@@ -2436,34 +2473,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     let targetX = dragItemStartX + deltaX;
                     let targetY = dragItemStartY + deltaY;
 
-                    // Magnetic Snapping to Container Walls
-                    const snapDist = 45;
-                    if (Math.abs(targetX) < snapDist) targetX = 0;
-                    if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
+                    // Smart Magnetic Snapping (100mm tolerance)
+                    const snapDist = 100;
+                    let snappedX = false;
+                    let snappedY = false;
+
+                    // Snap to Container Walls
+                    if (Math.abs(targetX) < snapDist) { targetX = 0; snappedX = true; }
+                    else if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
                         targetX = container.l - draggedPalletItem.packedL;
-                    }
-                    if (Math.abs(targetY) < snapDist) targetY = 0;
-                    if (Math.abs(targetY + draggedPalletItem.packedW - container.w) < snapDist) {
-                        targetY = container.w - draggedPalletItem.packedW;
-                    }
-                    if (Math.abs(targetY - (container.w - draggedPalletItem.packedW) / 2) < snapDist) {
-                        targetY = Math.round((container.w - draggedPalletItem.packedW) / 2);
+                        snappedX = true;
                     }
 
-                    // Magnetic Snapping to Other Loaded Pallets
+                    if (Math.abs(targetY) < snapDist) { targetY = 0; snappedY = true; }
+                    else if (Math.abs(targetY + draggedPalletItem.packedW - container.w) < snapDist) {
+                        targetY = container.w - draggedPalletItem.packedW;
+                        snappedY = true;
+                    }
+                    else if (Math.abs(targetY - (container.w - draggedPalletItem.packedW) / 2) < snapDist) {
+                        targetY = Math.round((container.w - draggedPalletItem.packedW) / 2);
+                        snappedY = true;
+                    }
+
+                    // Snap to Other Pallets
                     currentResult.loaded.forEach(other => {
                         if (other.globalIndex === draggedPalletItem.globalIndex) return;
 
-                        // Snap X edges (left, right)
-                        if (Math.abs(targetX - (other.x + other.packedL)) < snapDist) targetX = other.x + other.packedL;
-                        if (Math.abs(targetX + draggedPalletItem.packedL - other.x) < snapDist) targetX = other.x - draggedPalletItem.packedL;
-                        if (Math.abs(targetX - other.x) < snapDist) targetX = other.x;
+                        // X-axis alignment
+                        if (!snappedX) {
+                            if (Math.abs(targetX - (other.x + other.packedL)) < snapDist) { targetX = other.x + other.packedL; snappedX = true; }
+                            else if (Math.abs(targetX + draggedPalletItem.packedL - other.x) < snapDist) { targetX = other.x - draggedPalletItem.packedL; snappedX = true; }
+                            else if (Math.abs(targetX - other.x) < snapDist) { targetX = other.x; snappedX = true; }
+                        }
 
-                        // Snap Y edges (top, bottom)
-                        if (Math.abs(targetY - (other.y + other.packedW)) < snapDist) targetY = other.y + other.packedW;
-                        if (Math.abs(targetY + draggedPalletItem.packedW - other.y) < snapDist) targetY = other.y - draggedPalletItem.packedW;
-                        if (Math.abs(targetY - other.y) < snapDist) targetY = other.y;
+                        // Y-axis alignment
+                        if (!snappedY) {
+                            if (Math.abs(targetY - (other.y + other.packedW)) < snapDist) { targetY = other.y + other.packedW; snappedY = true; }
+                            else if (Math.abs(targetY + draggedPalletItem.packedW - other.y) < snapDist) { targetY = other.y - draggedPalletItem.packedW; snappedY = true; }
+                            else if (Math.abs(targetY - other.y) < snapDist) { targetY = other.y; snappedY = true; }
+                        }
                     });
+
+                    // Grid round (50mm step) if not snapped to an edge
+                    if (!snappedX) targetX = Math.round(targetX / 50) * 50;
+                    if (!snappedY) targetY = Math.round(targetY / 50) * 50;
 
                     // Bounds clamp
                     draggedPalletItem.x = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
@@ -2473,18 +2526,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     let targetX = dragItemStartX + deltaX;
                     let targetZ = dragItemStartZ + deltaZ;
 
-                    const snapDist = 45;
-                    if (Math.abs(targetX) < snapDist) targetX = 0;
-                    if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
+                    const snapDist = 100;
+                    let snappedX = false;
+                    let snappedZ = false;
+
+                    if (Math.abs(targetX) < snapDist) { targetX = 0; snappedX = true; }
+                    else if (Math.abs(targetX + draggedPalletItem.packedL - container.l) < snapDist) {
                         targetX = container.l - draggedPalletItem.packedL;
+                        snappedX = true;
                     }
-                    if (Math.abs(targetZ) < snapDist) targetZ = 0;
+
+                    if (Math.abs(targetZ) < snapDist) { targetZ = 0; snappedZ = true; }
+                    else if (Math.abs(targetZ + draggedPalletItem.packedH - container.h) < snapDist) {
+                        targetZ = container.h - draggedPalletItem.packedH;
+                        snappedZ = true;
+                    }
 
                     // Snap to top of other pallets
                     currentResult.loaded.forEach(other => {
                         if (other.globalIndex === draggedPalletItem.globalIndex) return;
-                        if (Math.abs(targetZ - (other.z + other.packedH)) < snapDist) targetZ = other.z + other.packedH;
+                        if (!snappedZ && Math.abs(targetZ - (other.z + other.packedH)) < snapDist) {
+                            targetZ = other.z + other.packedH;
+                            snappedZ = true;
+                        }
                     });
+
+                    if (!snappedX) targetX = Math.round(targetX / 50) * 50;
+                    if (!snappedZ) targetZ = Math.round(targetZ / 50) * 50;
 
                     draggedPalletItem.x = Math.max(0, Math.min(container.l - draggedPalletItem.packedL, Math.round(targetX)));
                     draggedPalletItem.z = Math.max(0, Math.min(container.h - draggedPalletItem.packedH, Math.round(targetZ)));
@@ -2523,10 +2591,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDragging2D) {
                 isDragging2D = false;
                 canvas.style.cursor = 'grab';
-                if (draggedPalletItem) {
+                if (draggedPalletItem && hasMovedDuringDrag) {
                     applyPalletPositionChange(draggedPalletItem);
                 }
                 draggedPalletItem = null;
+                hasMovedDuringDrag = false;
                 drawVisualization();
             }
         };

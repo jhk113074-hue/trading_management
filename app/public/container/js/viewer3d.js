@@ -14,6 +14,8 @@ class Viewer3D {
         this.mouse = new THREE.Vector2();
         
         this.dimensions = null; // {l, w, h}
+        this.hasInitializedCamera = false;
+        this.lastContainerType = null;
         
         // Expose to window for app.js
         window.Viewer3D = this;
@@ -34,10 +36,14 @@ class Viewer3D {
         this.scene.background = new THREE.Color('#111111'); // Dark background
 
         // Camera
-        this.camera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 1, 100000);
+        const initW = this.container.clientWidth || 800;
+        const initH = Math.max(340, initW * 0.42);
+        this.camera = new THREE.PerspectiveCamera(45, initW / initH, 1, 100000);
+        this.camera.position.set(7000, 5000, 7000);
         
         // Controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.target.set(0, 1200, 0);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
 
@@ -106,8 +112,9 @@ class Viewer3D {
 
     resize() {
         if (!this.container || !this.renderer || !this.camera) return;
-        const width = this.container.clientWidth;
-        const height = width * 0.42; 
+        const width = this.container.clientWidth || (this.container.parentElement ? this.container.parentElement.clientWidth : 800);
+        if (width <= 0) return;
+        const height = Math.max(340, width * 0.42); 
         this.container.style.height = height + 'px';
         
         this.renderer.setSize(width, height);
@@ -275,6 +282,14 @@ class Viewer3D {
         if (this.selectedGlobalIndex !== null) {
             this.selectPallet(this.selectedGlobalIndex);
         }
+
+        // Auto-fit and focus camera on first load or when switching container
+        if (!this.hasInitializedCamera || this.lastContainerType !== result.container) {
+            this.lastContainerType = result.container;
+            this.hasInitializedCamera = true;
+            this.resize();
+            this.setCamera('iso');
+        }
     }
 
     setCamera(preset) {
@@ -282,26 +297,27 @@ class Viewer3D {
         const { l, w, h } = this.dimensions;
         
         const maxDim = Math.max(l, w, h);
-        const dist = maxDim * 1.5;
+        const dist = maxDim * 1.35;
 
         this.controls.target.set(0, h/2, 0);
 
         switch(preset) {
             case 'iso':
             case 'reset':
-                this.camera.position.set(dist * 0.8, dist * 0.8, dist * 0.8);
+                this.camera.position.set(dist * 0.85, dist * 0.65, dist * 0.85);
                 break;
             case 'top':
-                this.camera.position.set(0, dist, 0);
+                this.camera.position.set(0, dist * 1.35, 0);
                 break;
             case 'side':
-                this.camera.position.set(0, h/2, dist);
+                this.camera.position.set(0, h/2, dist * 1.15);
                 break;
             case 'front':
-                this.camera.position.set(dist, h/2, 0);
+                this.camera.position.set(dist * 1.15, h/2, 0);
                 break;
         }
         
+        this.camera.lookAt(0, h/2, 0);
         this.controls.update();
     }
 }
