@@ -26,6 +26,7 @@ class Viewer3D {
         this.dragStartMousePos = { x: 0, y: 0 };
         this.dragItemStartCoords = { x: 0, y: 0, z: 0 };
         this.hasMovedIn3D = false;
+        this.mode = 'view'; // 'view' (3D 360 회전/줌 관찰) or 'edit' (화물 드래그앤드롭 이동/편집)
         
         // Expose to window for app.js
         window.Viewer3D = this;

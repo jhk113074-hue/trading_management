@@ -2051,6 +2051,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 3D View Mode vs Edit Mode Button Bindings
+    const btnMode3DView = document.getElementById('btn-mode-3d-view');
+    const btnMode3DEdit = document.getElementById('btn-mode-3d-edit');
+    if (btnMode3DView) {
+        btnMode3DView.addEventListener('click', () => {
+            if (window.Viewer3D) window.Viewer3D.setMode('view');
+        });
+    }
+    if (btnMode3DEdit) {
+        btnMode3DEdit.addEventListener('click', () => {
+            if (window.Viewer3D) window.Viewer3D.setMode('edit');
+        });
+    }
+
     let hoveredPalletGlobalIndex = null;
     let isDragging2D = false;
     let draggedPalletItem = null;

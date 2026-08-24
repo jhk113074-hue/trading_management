@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.435',
+    version: 'v2.8.435',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 컨테이너 적재 시뮬레이터 [보기 모드] / [편집 모드] 완벽 분리 구현',
+    content: '• 3D 화면에서 화물 오작동 없이 자유롭게 360° 카메라 회전/줌 관찰이 가능한 [3D 보기 모드]와, 마우스 드래그로 화물 위치 이동 및 90° 회전이 가능한 [3D 편집 모드] 토글 시스템 도입\\n• 상단 툴바 및 안내 배너에서 1클릭 모드 전환 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.434',
     version: 'v2.8.434',
     date: '2026-08-24',
