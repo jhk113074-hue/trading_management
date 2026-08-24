@@ -104,13 +104,16 @@
                                         <button class="btn btn-icon btn-sm" data-cam="reset" title="초기화(Reset)"><i data-lucide="refresh-cw"></i></button>
                                     </div>
 
-                                    <!-- 3D Mode Selector: View Mode vs Edit Mode -->
-                                    <div style="display: flex; align-items: center; background: #e2e8f0; padding: 3px; border-radius: 6px; gap: 4px;">
-                                        <button type="button" id="btn-mode-3d-view" class="btn btn-sm active" style="font-weight: 750; font-size: 12.5px; padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #0284c7; color: #fff; border: 1px solid #0284c7; box-shadow: 0 2px 6px rgba(2,132,199,0.35);">
-                                            👁️ 3D 보기 모드
+                                    <!-- 3D Mode Selector: View Mode vs Edit Mode vs Start from Scratch Mode -->
+                                    <div style="display: flex; align-items: center; background: #e2e8f0; padding: 3px; border-radius: 6px; gap: 4px; flex-wrap: wrap;">
+                                        <button type="button" id="btn-mode-3d-view" class="btn btn-sm active" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #0284c7; color: #fff; border: 1px solid #0284c7; box-shadow: 0 2px 6px rgba(2,132,199,0.35);">
+                                            👁️ 보기 모드
                                         </button>
-                                        <button type="button" id="btn-mode-3d-edit" class="btn btn-sm" style="font-weight: 750; font-size: 12.5px; padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
-                                            ✏️ 3D 편집 모드 (화물이동)
+                                        <button type="button" id="btn-mode-3d-edit" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                                            ✏️ 수정/이동 모드
+                                        </button>
+                                        <button type="button" id="btn-mode-3d-fresh" class="btn btn-sm" style="font-weight: 750; font-size: 12px; padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                                            📦 처음부터 시작 (수동 적재)
                                         </button>
                                     </div>
                                 </div>
@@ -160,6 +163,9 @@
                                                 </button>
 
                                                 <!-- Tier Toggle Button -->
+                                                <button type="button" id="hud-btn-inout" class="btn btn-sm" style="background: #d97706; color: #fff; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="컨테이너 안으로 넣기 / 밖으로 꺼내기">
+                                                    📥 컨테이너 안으로
+                                                </button>
                                                 <button type="button" id="hud-btn-tier" class="btn btn-sm" style="background: #059669; color: #fff; border: 1px solid #10b981; font-size: 11.5px; font-weight: 750; padding: 4px 10px; border-radius: 4px; cursor: pointer;" title="1단 ↔ 2단 층간 이동 (단축키: T 또는 Space)">
                                                     🔼 2단 올리기
                                                 </button>
@@ -966,8 +972,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js?v=5"></script>
-    <script src="js/viewer3d.js?v=8"></script>
+    <script src="js/viewer3d.js?v=9"></script>
     <script src="js/packer.js?v=5"></script>
-    <script src="js/app.js?v=12"></script>
+    <script src="js/app.js?v=13"></script>
 </body>
 </html>

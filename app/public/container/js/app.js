@@ -2051,9 +2051,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 3D View Mode vs Edit Mode Button Bindings
+    // 3D View Mode vs Edit Mode vs Fresh Mode Button Bindings
     const btnMode3DView = document.getElementById('btn-mode-3d-view');
     const btnMode3DEdit = document.getElementById('btn-mode-3d-edit');
+    const btnMode3DFresh = document.getElementById('btn-mode-3d-fresh');
     if (btnMode3DView) {
         btnMode3DView.addEventListener('click', () => {
             if (window.Viewer3D) window.Viewer3D.setMode('view');
@@ -2062,6 +2063,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnMode3DEdit) {
         btnMode3DEdit.addEventListener('click', () => {
             if (window.Viewer3D) window.Viewer3D.setMode('edit');
+        });
+    }
+    if (btnMode3DFresh) {
+        btnMode3DFresh.addEventListener('click', () => {
+            if (window.Viewer3D) {
+                window.Viewer3D.setMode('fresh');
+                window.moveAllPalletsOutside();
+            }
         });
     }
 
@@ -3751,6 +3760,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hudBtnRight) hudBtnRight.onclick = (e) => { e.stopPropagation(); moveSelectedPalletBy(0, 100); };
     if (hudBtnRotate) hudBtnRotate.onclick = (e) => { e.stopPropagation(); rotateSelectedPallet90(); };
     if (hudBtnTier) hudBtnTier.onclick = (e) => { e.stopPropagation(); toggleSelectedPalletTier(); };
+    const hudBtnInOut = document.getElementById('hud-btn-inout');
+    if (hudBtnInOut) hudBtnInOut.onclick = (e) => {
+        e.stopPropagation();
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || selectedPalletGlobalIndex === null) return;
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (item && window.togglePalletInsideOutside) {
+            window.togglePalletInsideOutside(item);
+        }
+    };
     if (hudBtnDeselect) hudBtnDeselect.onclick = (e) => { e.stopPropagation(); window.onPalletDeselected(); };
 
     // Global Keyboard Shortcuts
@@ -3814,3 +3833,130 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // --- Manual Staging & 1-by-1 Loading Functions ---
+    window.initialAutoPackedLoaded = null;
+
+    window.moveAllPalletsOutside = () => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+        if (!window.initialAutoPackedLoaded) {
+            window.initialAutoPackedLoaded = JSON.parse(JSON.stringify(currentResult.loaded));
+        }
+        const { l, w } = currentResult.dimensions;
+        currentResult.loaded.forEach((item, idx) => {
+            const row = Math.floor(idx / 2);
+            const col = idx % 2;
+            item.x = l + 450 + row * (item.packedL + 250);
+            item.y = col * (item.packedW + 120);
+            item.z = 0;
+        });
+        renderPackingList(currentResult.loaded);
+        if (window.Viewer3D) {
+            window.Viewer3D.update(currentResult, itemColors);
+            window.Viewer3D.selectPallet(null);
+            window.Viewer3D.setCamera('iso');
+        }
+    };
+
+    window.loadNextPalletIntoContainer = () => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+        const { l, w, h } = currentResult.dimensions;
+
+        // Find first pallet currently outside
+        const outsideItem = currentResult.loaded.find(item => item.x >= l);
+        if (!outsideItem) {
+            alert('모든 화물이 이미 컨테이너 안에 적재되었습니다!');
+            return;
+        }
+
+        const insideItems = currentResult.loaded.filter(item => item.x < l);
+        let placed = false;
+
+        const doesOverlap = (tx, ty, tz, tL, tW, tH) => {
+            return insideItems.some(other => {
+                return !(
+                    tx + tL <= other.x ||
+                    tx >= other.x + other.packedL ||
+                    ty + tW <= other.y ||
+                    ty >= other.y + other.packedW ||
+                    tz + tH <= other.z ||
+                    tz >= other.z + other.packedH
+                );
+            });
+        };
+
+        // Grid search candidate slots along floor from front wall (x = 0)
+        const candidateX = [0, ...insideItems.map(i => i.x + i.packedL)].filter(x => x + outsideItem.packedL <= l).sort((a, b) => a - b);
+        const candidateY = [0, ...insideItems.map(i => i.y + i.packedW)].filter(y => y + outsideItem.packedW <= w).sort((a, b) => a - b);
+
+        for (const cx of candidateX) {
+            for (const cy of candidateY) {
+                // Check 1단 floor
+                if (!doesOverlap(cx, cy, 0, outsideItem.packedL, outsideItem.packedW, outsideItem.packedH)) {
+                    outsideItem.x = cx;
+                    outsideItem.y = cy;
+                    outsideItem.z = 0;
+                    placed = true;
+                    break;
+                }
+                // Check 2단
+                const support = insideItems.find(i => Math.abs(i.x - cx) < 250 && Math.abs(i.y - cy) < 250 && i.z === 0);
+                if (support && (support.packedH + outsideItem.packedH <= h)) {
+                    if (!doesOverlap(cx, cy, support.packedH, outsideItem.packedL, outsideItem.packedW, outsideItem.packedH)) {
+                        outsideItem.x = cx;
+                        outsideItem.y = cy;
+                        outsideItem.z = support.packedH;
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+            if (placed) break;
+        }
+
+        if (!placed) {
+            outsideItem.x = 0;
+            outsideItem.y = 0;
+            outsideItem.z = 0;
+        }
+
+        applyPalletPositionChange(outsideItem);
+        if (window.Viewer3D) {
+            window.Viewer3D.selectPallet(outsideItem.globalIndex);
+        }
+    };
+
+    window.togglePalletInsideOutside = (item) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !item) return;
+        const { l, w } = currentResult.dimensions;
+
+        if (item.x >= l) {
+            window.loadNextPalletIntoContainer();
+        } else {
+            const outsideCount = currentResult.loaded.filter(i => i.x >= l).length;
+            const row = Math.floor(outsideCount / 2);
+            const col = outsideCount % 2;
+            item.x = l + 450 + row * (item.packedL + 250);
+            item.y = col * (item.packedW + 120);
+            item.z = 0;
+            applyPalletPositionChange(item);
+            if (window.Viewer3D) window.Viewer3D.selectPallet(item.globalIndex);
+        }
+    };
+
+    window.resetToAutoPacking = () => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult) return;
+        if (window.initialAutoPackedLoaded) {
+            currentResult.loaded = JSON.parse(JSON.stringify(window.initialAutoPackedLoaded));
+        }
+        renderPackingList(currentResult.loaded);
+        if (window.Viewer3D) {
+            window.Viewer3D.update(currentResult, itemColors);
+            window.Viewer3D.selectPallet(null);
+            window.Viewer3D.setCamera('iso');
+        }
+    };

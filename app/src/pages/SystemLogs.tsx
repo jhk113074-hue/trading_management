@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.439',
+    version: 'v2.8.439',
+    date: '2026-08-24',
+    category: '신규기능',
+    title: '3D 컨테이너 적재 3대 모드 [보기 모드 / 수정 모드 / 처음부터 시작(수동 적재) 모드] 구축',
+    content: '• 컨테이너 밖 대기장소(Staging Area)에 전체 화물을 꺼내두고 [1개씩 차례로 적재]하거나 직접 원하는 위치로 배치할 수 있는 [처음부터 시작 모드] 추가\\n• 3D 화면 보기/수정/처음부터시작 모드 원클릭 전환 및 HUD 화면 조작창(안으로 넣기/밖으로 빼기/회전/단수변경) 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.438',
     version: 'v2.8.438',
     date: '2026-08-24',

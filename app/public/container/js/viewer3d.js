@@ -453,9 +453,15 @@ class Viewer3D {
             if (hud) {
                 hud.style.display = 'block';
                 if (hudTitle) hudTitle.innerHTML = `[#${item.globalIndex}] ${item.name} <small style="color:#94a3b8; font-weight:normal;">(${item.packedL}×${item.packedW}×${item.packedH}mm)</small>`;
-                const tierText = item.z > 0 ? '2단 적재 (상단)' : '1단 적재 (바닥)';
-                if (hudCoords) hudCoords.textContent = `위치: X=${item.x}mm, Y=${item.y}mm, Z=${item.z}mm | ${tierText}`;
+                const isOutside = this.dimensions && item.x >= this.dimensions.l;
+                const locText = isOutside ? '📦 컨테이너 밖 (대기장소)' : (item.z > 0 ? '2단 적재 (상단)' : '1단 적재 (바닥)');
+                if (hudCoords) hudCoords.textContent = `위치: X=${item.x}mm, Y=${item.y}mm, Z=${item.z}mm | ${locText}`;
                 if (hudTierBtn) hudTierBtn.innerHTML = item.z > 0 ? '🔽 1단(바닥) 내리기' : '🔼 2단(상단) 올리기';
+                const hudInOutBtn = document.getElementById('hud-btn-inout');
+                if (hudInOutBtn) {
+                    hudInOutBtn.innerHTML = isOutside ? '📥 컨테이너 안으로 넣기' : '📤 컨테이너 밖으로 빼기';
+                    hudInOutBtn.style.background = isOutside ? '#059669' : '#d97706';
+                }
             }
         } else {
             if (hud) hud.style.display = 'none';
@@ -549,6 +555,32 @@ class Viewer3D {
         doorBadge.scale.set(1500, 360, 1);
         this.scene.add(doorBadge);
         this.meshes.push(doorBadge);
+
+        // --- STAGING YARD (컨테이너 밖 대기 공간, x > l/2) ---
+        const yardLength = 9000;
+        const yardGeo = new THREE.PlaneGeometry(yardLength, w * 1.5);
+        const yardMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const yardMesh = new THREE.Mesh(yardGeo, yardMat);
+        yardMesh.rotation.x = -Math.PI / 2;
+        yardMesh.position.set(l / 2 + yardLength / 2, -1, 0);
+        this.scene.add(yardMesh);
+        this.meshes.push(yardMesh);
+
+        // Staging Yard Boundary Outline
+        const yardEdgeGeo = new THREE.EdgesGeometry(yardGeo);
+        const yardEdgeMat = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.5 });
+        const yardEdgeMesh = new THREE.LineSegments(yardEdgeGeo, yardEdgeMat);
+        yardEdgeMesh.rotation.x = -Math.PI / 2;
+        yardEdgeMesh.position.set(l / 2 + yardLength / 2, 0, 0);
+        this.scene.add(yardEdgeMesh);
+        this.meshes.push(yardEdgeMesh);
+
+        // Staging Yard 3D Badge
+        const yardBadge = this.createHeaderBadgeSprite('📦 화물 대기 장소 (STAGING YARD / 밖)', '#1e1b4b', '#a5b4fc');
+        yardBadge.position.set(l / 2 + 2800, h + 340, 0);
+        yardBadge.scale.set(1900, 380, 1);
+        this.scene.add(yardBadge);
+        this.meshes.push(yardBadge);
 
         const textureCache = {};
 
