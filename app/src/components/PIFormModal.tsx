@@ -12,6 +12,7 @@ import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
+import { FreightCalculatorSection } from './FreightCalculatorSection';
 import * as XLSX from 'xlsx';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -185,7 +186,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         'incoterms', 'destinationPort', 'departurePort',
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
         'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'yourRef', 'handlingFee', 'freightTotal', 'insurance',
-        'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
+        'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw', 'freightCalculationDetails',
         'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments', 'containerSimulation'
       ];
       for (const key of safeFields) {
@@ -3162,119 +3163,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           {/* Extras and Totals */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
 
-            {/* Freight Charges (USD) */}
+            {/* Freight Charges & Logistics Precision Calculator (USD) */}
             {formData.type !== 'consulting' && (
-            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid var(--border-default)', padding: '12px 16px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
-                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid var(--border-default)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>＋ 운송비 추가</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Freight Headers */}
-                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  <div style={{ flex: 1.5 }}>Container Type</div>
-                  <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
-                  <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
-                  <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
-                  <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
-                </div>
-                {(formData.freightCharges || []).map((fc, fcIdx) => (
-                  <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {/* Container Type: 프리셋 선택 or 직접입력 */}
-                    <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <select
-                        value={
-                          ['LCL','20GP','20RF','20DG','40FT','40HQ','FOB CHARGES','DAP CHARGES','DDP CHARGES','CIF CHARGES','CFR CHARGES','TRUCKING','INLAND FREIGHT','CUSTOMS FEE','직접입력'].includes(fc.type || '')
-                            ? (fc.type || 'LCL')
-                            : '직접입력'
-                        }
-                        onChange={e => {
-                          if (e.target.value === '직접입력') {
-                            updateFreightCharge(fcIdx, 'type', '');
-                          } else {
-                            updateFreightCharge(fcIdx, 'type', e.target.value);
-                          }
-                        }}
-                        style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff' }}
-                      >
-                        <optgroup label="컨테이너">
-                          <option value="LCL">LCL</option>
-                          <option value="20GP">20GP</option>
-                          <option value="20RF">20RF</option>
-                          <option value="20DG">20DG</option>
-                          <option value="40FT">40FT</option>
-                          <option value="40HQ">40HQ</option>
-                        </optgroup>
-                        <optgroup label="운임 조건">
-                          <option value="FOB CHARGES">FOB CHARGES</option>
-                          <option value="DAP CHARGES">DAP CHARGES</option>
-                          <option value="DDP CHARGES">DDP CHARGES</option>
-                          <option value="CIF CHARGES">CIF CHARGES</option>
-                          <option value="CFR CHARGES">CFR CHARGES</option>
-                        </optgroup>
-                        <optgroup label="기타 비용">
-                          <option value="TRUCKING">TRUCKING</option>
-                          <option value="INLAND FREIGHT">INLAND FREIGHT</option>
-                          <option value="CUSTOMS FEE">CUSTOMS FEE</option>
-                        </optgroup>
-                        <option value="직접입력">✏️ 직접입력...</option>
-                      </select>
-                      {/* 직접입력 모드일 때 텍스트 필드 표시 */}
-                      {!['LCL','20GP','20RF','20DG','40FT','40HQ','FOB CHARGES','DAP CHARGES','DDP CHARGES','CIF CHARGES','CFR CHARGES','TRUCKING','INLAND FREIGHT','CUSTOMS FEE'].includes(fc.type || '') && (
-                        <input
-                          type="text"
-                          placeholder="항목명 직접 입력"
-                          value={fc.type || ''}
-                          onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)}
-                          style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid var(--focus-ring)', borderRadius: '4px', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
-                          autoFocus
-                        />
-                      )}
-                    </div>
-                    <input 
-                      type="number" 
-                      placeholder="수량" 
-                      value={fc.qty ?? 1} 
-                      onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
-                    />
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="금액 (USD)" 
-                      value={fc.price ?? 0} 
-                      onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1.5, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
-                    />
-                    <div style={{ flex: 1, textAlign: 'right', fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
-                      ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <textarea 
-                      placeholder="비고 (엔터 입력 및 크기 조절 가능)" 
-                      value={fc.remarks || ''} 
-                      onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
-                      rows={1}
-                      style={{ 
-                        flex: 3.5, 
-                        minHeight: '32px', 
-                        padding: '5px 6px', 
-                        border: '1px solid var(--border-default)', 
-                        borderRadius: '4px', 
-                        fontSize: '13.5px', 
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                        lineHeight: 1.35,
-                        boxSizing: 'border-box'
-                      }} 
-                    />
-                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '16px', color: '#0f172a', marginTop: '4px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
-                운송비 합계: <span style={{ color: '#0f172a' }}>${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
+              <FreightCalculatorSection
+                formData={formData}
+                setFormData={setFormData}
+                updateFreightCharge={updateFreightCharge}
+                addFreightCharge={addFreightCharge}
+                removeFreightCharge={removeFreightCharge}
+              />
             )}
 
           </div>

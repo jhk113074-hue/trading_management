@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.428',
+    version: 'v2.8.428',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '견적/PI 작성 운송비 & 4종 부대비용 정밀 산출기(해상운임 원화/USD, 환율연동, 변동률%, 원산지/수출신고/구매확인서/내륙운송비) 구축',
+    content: '• 기본 해상운임 통화 선택(KRW/USD), 기준환율 실시간 연동 및 변동률(%) 마진/할증 계산 지원\\n• 4종 부대비용(원산지증명서 발급비, 수출신고비, 구매확인서 발급비, 내륙운송비) 원화/USD 분리 입력 및 실시간 USD 자동 환산 합산\\n• 모든 항목이 합산되어 최종 운송비(Total Freight Charge USD)로 자동 결정 및 견적 총액에 즉시 반영\\n• 비고(Remarks) 자동 요약 생성 기능 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.427',
     version: 'v2.8.427',
     date: '2026-08-24',
