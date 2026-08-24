@@ -29,28 +29,23 @@ const Packer = (function() {
         return boxes;
     }
 
-    function sortBoxes(boxes) {
-        // Sort by area (w * d) descending, then by height descending
-        return boxes.sort((a, b) => {
-            const areaA = a.w * a.d;
-            const areaB = b.w * b.d;
-            if (areaB !== areaA) return areaB - areaA;
-            return b.h - a.h;
-        });
-    }
-
-    function sortSpaces(spaces) {
-        // Sort spaces: lowest X (deepest, back of container) first, 
-        // then lowest Z (bottom to top for vertical stacking), 
-        // then lowest Y (side to side)
+    function sortSpacesFloorFirst(spaces) {
         return spaces.sort((a, b) => {
-            if (a.x !== b.x) return a.x - b.x; // 최우선: 컨테이너 가장 안쪽(x=0)부터
-            if (a.z !== b.z) return a.z - b.z; // 그 다음: 같은 x위치에서는 바닥(z)부터 천장으로 쌓기
-            return a.y - b.y;                  // 마지막: 폭 방향으로 채우기
+            if (a.z !== b.z) return a.z - b.z; // 바닥(Z=0)에 먼저 1단 베이스를 배치
+            if (a.x !== b.x) return a.x - b.x; // 컨테이너 안쪽부터
+            return a.y - b.y;                  // 좌측부터
         });
     }
 
-    function packInternal(containerType, boxes, isTestMode) {
+    function sortSpacesDepthFirst(spaces) {
+        return spaces.sort((a, b) => {
+            if (a.x !== b.x) return a.x - b.x;
+            if (a.z !== b.z) return a.z - b.z;
+            return a.y - b.y;
+        });
+    }
+
+    function packPass(containerType, boxes, spaceSorter) {
         const container = CONTAINERS[containerType];
         if (!container) throw new Error("Invalid container type");
 
@@ -73,13 +68,10 @@ const Packer = (function() {
 
             // 2. Find a space
             let placed = false;
-            sortSpaces(spaces);
+            spaceSorter(spaces);
 
             for (let s = 0; s < spaces.length; s++) {
                 const space = spaces[s];
-
-                // If space is not on the floor and box is not stackable, skip
-                if (space.z > 0 && !box.stackable) continue;
 
                 let fitOriginal = (box.w <= space.l && box.d <= space.w && box.h <= space.h);
                 let fitRotated = false;
@@ -92,7 +84,6 @@ const Packer = (function() {
                     let useRotated = false;
                     
                     if (fitOriginal && fitRotated) {
-                        // Maximize the minimum remaining dimension to prevent thin slivers
                         let scoreOrig = Math.min(space.l - box.w, space.w - box.d);
                         let scoreRot = Math.min(space.l - box.d, space.w - box.w);
                         if (scoreRot > scoreOrig) {
@@ -122,8 +113,8 @@ const Packer = (function() {
                     // Remove used space
                     spaces.splice(s, 1);
 
-                    // Space 1: Top (only if box is stackable)
-                    if (box.stackable && space.h - usedH > 0) {
+                    // Space 1: Top (only if base box is stackable)
+                    if (box.stackable && space.h - usedH >= 500) {
                         spaces.push({
                             x: space.x,
                             y: space.y,
@@ -134,7 +125,7 @@ const Packer = (function() {
                         });
                     }
 
-                    // Dynamically split remaining space to maximize contiguous area
+                    // Dynamically split remaining space
                     let areaRight1 = (space.l - usedL) * space.w;
                     let areaFront1 = usedL * (space.w - usedW);
                     let maxArea1 = Math.max(areaRight1, areaFront1);
@@ -193,10 +184,8 @@ const Packer = (function() {
             }
 
             if (!placed) {
-                // Determine reason: space or height
-                // Simplistic MVP reason:
                 let heightIssue = spaces.some(s => box.w <= s.l && box.d <= s.w && box.h > s.h);
-                let reason = heightIssue ? '높이 제한 또는 다단 적재 불가' : '공간 부족';
+                let reason = heightIssue ? '높이 제한 또는 다단 적재 공간 부족' : '공간 부족';
                 unloaded.push({ box, reason });
             }
         }
@@ -211,9 +200,6 @@ const Packer = (function() {
         const remainingVolume = totalContainerVolume - loadedVolume;
         const utilizationRate = (loadedVolume / totalContainerVolume) * 100;
         const remainingWeight = container.maxWeight - currentWeight;
-
-        // Estimate fragmented vs continuous empty space
-        // Since our spaces are non-overlapping, sum of space volumes ≈ remaining volume (excluding some edge losses)
         let fragmentedCount = spaces.length;
 
         let sortedSpaces = spaces.map(s => ({
@@ -223,7 +209,6 @@ const Packer = (function() {
         })).sort((a, b) => b.vol - a.vol);
 
         let topSpaces = sortedSpaces.slice(0, 2);
-        
         let maxContinuousSpace = topSpaces.length > 0 ? topSpaces[0].vol : 0;
         let maxContinuousSpaceDim = topSpaces.length > 0 ? { l: topSpaces[0].l, w: topSpaces[0].w, h: topSpaces[0].h } : { l: 0, w: 0, h: 0 };
 
@@ -248,9 +233,72 @@ const Packer = (function() {
         };
     }
 
+    // Multi-Strategy Solver: Tries diverse sorting heuristics and picks the maximum loaded arrangement
+    function packOptimalInternal(containerType, boxes) {
+        const sortStrategies = [
+            // Strategy 1: Tall non-stackable items on floor, stackables with shorter height on floor to form wide bases
+            (a, b) => {
+                if (a.h > 1500 && b.h <= 1500) return -1;
+                if (b.h > 1500 && a.h <= 1500) return 1;
+                if (a.stackable !== b.stackable) return a.stackable ? -1 : 1;
+                const areaA = a.w * a.d;
+                const areaB = b.w * b.d;
+                if (areaB !== areaA) return areaB - areaA;
+                return b.h - a.h;
+            },
+            // Strategy 2: Stackable items first (build foundation), then area desc
+            (a, b) => {
+                if (a.stackable !== b.stackable) return a.stackable ? -1 : 1;
+                const areaA = a.w * a.d;
+                const areaB = b.w * b.d;
+                if (areaB !== areaA) return areaB - areaA;
+                return b.h - a.h;
+            },
+            // Strategy 3: Stackable items first, height asc (shorter base allows more headroom for upper tier)
+            (a, b) => {
+                if (a.stackable !== b.stackable) return a.stackable ? -1 : 1;
+                if (a.h !== b.h) return a.h - b.h;
+                return (b.w * b.d) - (a.w * a.d);
+            },
+            // Strategy 4: Area desc
+            (a, b) => {
+                const areaA = a.w * a.d;
+                const areaB = b.w * b.d;
+                if (areaB !== areaA) return areaB - areaA;
+                return b.h - a.h;
+            },
+            // Strategy 5: Volume desc
+            (a, b) => {
+                const volA = a.w * a.d * a.h;
+                const volB = b.w * b.d * b.h;
+                return volB - volA;
+            }
+        ];
+
+        const spaceSorters = [sortSpacesDepthFirst, sortSpacesFloorFirst];
+
+        let bestResult = null;
+
+        sortStrategies.forEach(sortFn => {
+            spaceSorters.forEach(spaceSorter => {
+                const sortedBoxes = JSON.parse(JSON.stringify(boxes)).sort(sortFn);
+                const res = packPass(containerType, sortedBoxes, spaceSorter);
+
+                if (!bestResult) {
+                    bestResult = res;
+                } else if (res.loaded.length > bestResult.loaded.length) {
+                    bestResult = res;
+                } else if (res.loaded.length === bestResult.loaded.length && res.metrics.utilizationRate > bestResult.metrics.utilizationRate) {
+                    bestResult = res;
+                }
+            });
+        });
+
+        return bestResult;
+    }
+
     function packSpecific(containerTypes, items) {
         let boxes = expandItems(items);
-        boxes = sortBoxes(boxes);
         
         // Sort containers from largest to smallest by volume
         let sortedContainerTypes = [...containerTypes].sort((a, b) => {
@@ -264,7 +312,6 @@ const Packer = (function() {
         
         for (let i = 0; i < sortedContainerTypes.length; i++) {
             if (currentRemaining.length === 0) {
-                // We add empty results for unused containers so the UI still shows them
                 finalResults.push({
                     container: sortedContainerTypes[i],
                     dimensions: CONTAINERS[sortedContainerTypes[i]],
@@ -276,7 +323,7 @@ const Packer = (function() {
             }
             
             const type = sortedContainerTypes[i];
-            const res = packInternal(type, currentRemaining, true);
+            const res = packOptimalInternal(type, currentRemaining);
             finalResults.push(res);
             currentRemaining = res.unloaded.map(u => u.box);
         }

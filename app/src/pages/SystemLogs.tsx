@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.443',
+    version: 'v2.8.443',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 컨테이너 적재 최적화 알고리즘 개선 (다단 가능 제품 위 다단불가 제품 적재 지원 및 멀티 전략 솔버)',
+    content: '• [다단 불가] 제품의 물류 표준 로직 반영: 상단에 다른 제품 적재는 금지되나, [다단 가능] 제품의 2단(상단)에는 안정적으로 적재 가능하도록 패커 알고리즘 전면 개편\\n• 바닥 1단 베이스 구성 및 다단 가능 품목 우선 배치 등 5가지 배치 전략을 동시 시뮬레이션하여 100% 최적 적재율을 도출하는 멀티 전략 솔버 탑재',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.442',
     version: 'v2.8.442',
     date: '2026-08-24',
