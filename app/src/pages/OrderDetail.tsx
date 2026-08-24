@@ -441,9 +441,7 @@ export const OrderDetail: React.FC = () => {
   // ────────────────────────────────────────────────────────────────────────
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | 'attachments' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
-  const [_uploadingCoaSupplier, setUploadingCoaSupplier] = useState<string | null>(null);
-  void _uploadingCoaSupplier;
-  void setUploadingCoaSupplier;
+  const [uploadingCoaSupplier, setUploadingCoaSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
@@ -3752,7 +3750,7 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  const _handleSupplierCoaUpload = async (e: React.ChangeEvent<HTMLInputElement>, supplierName: string) => {
+  const handleSupplierCoaUpload = async (e: React.ChangeEvent<HTMLInputElement>, supplierName: string) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -3800,9 +3798,8 @@ export const OrderDetail: React.FC = () => {
       setUploadingCoaSupplier(null);
     }
   };
-  void _handleSupplierCoaUpload;
 
-  const _handleSupplierCoaDelete = async (supplierName: string, fileIdx: number, fileName: string) => {
+  const handleSupplierCoaDelete = async (supplierName: string, fileIdx: number, fileName: string) => {
     if (!order || !window.confirm(`'${fileName}' 파일을 삭제하시겠습니까?`)) return;
     try {
       const currentCoaFiles = order.coaFilesBySupplier || {};
@@ -3819,7 +3816,6 @@ export const OrderDetail: React.FC = () => {
       alert("삭제 실패: " + err.message);
     }
   };
-  void _handleSupplierCoaDelete;
 
   const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
     const compEscaped = (comp || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -10811,6 +10807,281 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                     })
                   )}
 
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 5. 서류관리 */}
+          {activeStep === '서류관리' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* 서류관리 하위 탭 */}
+              <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
+                {[
+                  { id: 'CI_PL작성', label: 'CI/PL 작성' },
+                  { id: '서류업로드', label: '서류 업로드 및 수출신고' }
+                ].map(tab => {
+                  const isActive = activeDocumentTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => updateQuery({ documentTab: tab.id })}
+                      style={{
+                        padding: '8px 16px',
+                        border: 'none',
+                        background: 'none',
+                        borderBottom: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                        color: isActive ? '#2563eb' : 'var(--text-secondary)',
+                        fontWeight: 700,
+                        fontSize: '14.5px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        marginBottom: '-2px'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeDocumentTab === '서류업로드' && (
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* 수출신고번호, 수출면장 기준환율 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1478.44" />
+                  </div>
+
+                  {/* B/L 번호 목록 다중 입력 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {(basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])).some(bl => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                            setBasicForm(p => ({
+                              ...p,
+                              blNumbers: [...currentBls, '']
+                            }));
+                          }}
+                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          + 추가
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                      {(() => {
+                        const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                        if (currentBls.length === 0) {
+                          return (
+                            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>등록된 B/L 번호가 없습니다. (수정 모드에서 추가 가능)</div>
+                          );
+                        }
+                        return currentBls.map((bl: string, idx: number) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <input
+                              type="text"
+                              value={bl}
+                              disabled={!isEditing}
+                              onChange={(e) => {
+                                const nextBls = [...currentBls];
+                                nextBls[idx] = e.target.value;
+                                setBasicForm(p => ({
+                                  ...p,
+                                  blNumbers: nextBls,
+                                  blNumber: nextBls.filter(Boolean).join(', ')
+                                }));
+                              }}
+                              placeholder={`B/L 번호 #${idx + 1}`}
+                              style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
+                            />
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
+                                  setBasicForm(p => ({
+                                    ...p,
+                                    blNumbers: nextBls,
+                                    blNumber: nextBls.filter(Boolean).join(', ')
+                                  }));
+                                }}
+                                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
+                              >
+                                삭제
+                              </button>
+                            )}
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
+                  {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
+                  <div style={{ gridColumn: 'span 3', borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                      {renderFileField('CI / PL 유첨 (수동)', 'ciFiles', 'ci-file-input')}
+                      {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
+                      {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+                      {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                      {/* COA 및 시험성적서 (매입처별 개별/멀티 유첨 구조) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: 'span 1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                            COA 및 시험성적서 {(order.coaFilesBySupplier && Object.values(order.coaFilesBySupplier).some((files: any) => files && files.length > 0)) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                          {(() => {
+                            const suppliers = Array.from(new Set(orderItems.map(it => it.supplier?.trim()).filter(Boolean))) as string[];
+                            if (suppliers.length === 0) {
+                              suppliers.push('일반 매입처');
+                            }
+                            return suppliers.map((sup) => {
+                              const files = (order.coaFilesBySupplier || {})[sup] || [];
+                              const inputId = `coa-file-input-${sup.replace(/\s+/g, '-')}`;
+                              return (
+                                <div
+                                  key={sup}
+                                  tabIndex={isEditing ? 0 : undefined}
+                                  onDragOver={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#3b82f6';
+                                    e.currentTarget.style.background = '#f0f9ff';
+                                  }}
+                                  onDragLeave={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.background = '#fff';
+                                  }}
+                                  onDrop={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.background = '#fff';
+                                    if (uploadingCoaSupplier !== null) return;
+                                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                      const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
+                                      handleSupplierCoaUpload(fakeEvent, sup);
+                                    }
+                                  }}
+                                  onPaste={async e => {
+                                    if (!isEditing) return;
+                                    const clipboardItems = e.clipboardData.items;
+                                    const filesToUpload: File[] = [];
+                                    for (let i = 0; i < clipboardItems.length; i++) {
+                                      if (clipboardItems[i].type.indexOf('image') !== -1) {
+                                        const file = clipboardItems[i].getAsFile();
+                                        if (file) {
+                                          e.preventDefault();
+                                          const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                                          const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
+                                          const renamedFile = new File(
+                                            [file],
+                                            `screenshot_${dateStr}_${timeStr}.png`,
+                                            { type: file.type }
+                                          );
+                                          filesToUpload.push(renamedFile);
+                                        }
+                                      }
+                                    }
+                                    if (filesToUpload.length > 0) {
+                                      const fakeEvent = { target: { files: filesToUpload } } as any;
+                                      handleSupplierCoaUpload(fakeEvent, sup);
+                                    }
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '4px',
+                                    padding: '6px',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '4px',
+                                    background: '#fff',
+                                    outline: 'none',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup} {files.length > 0 && <span style={{ color: '#10b981', marginLeft: '2px' }}>✅</span>}</span>
+                                    {isEditing && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          disabled={uploadingCoaSupplier !== null}
+                                          onClick={() => document.getElementById(inputId)?.click()}
+                                          style={{
+                                            background: '#3b82f6',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '3px',
+                                            padding: '2px 6px',
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          {uploadingCoaSupplier === sup ? '...' : '추가'}
+                                        </button>
+                                        <input
+                                          type="file"
+                                          id={inputId}
+                                          style={{ display: 'none' }}
+                                          onChange={(e) => handleSupplierCoaUpload(e, sup)}
+                                          disabled={uploadingCoaSupplier !== null}
+                                          multiple
+                                        />
+                                      </>
+                                    )}
+                                  </div>
+                                  {files.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px' }}>
+                                      {files.map((file: any, fIdx: number) => (
+                                        <div key={fIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #f1f5f9' }}>
+                                          <span
+                                            onClick={() => previewFile(file.url, file.name)}
+                                            style={{ fontSize: '10.5px', color: '#1e293b', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}
+                                          >
+                                            📎 {file.name}
+                                          </span>
+                                          {isEditing && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSupplierCoaDelete(sup, fIdx, file.name)}
+                                              style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '9px', fontWeight: 700, cursor: 'pointer', padding: '0 2px' }}
+                                            >
+                                              ✕
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음 (드래그 가능)</span>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                      {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.410',
+    version: 'v2.8.410',
+    date: '2026-08-24',
+    category: '버그수정',
+    title: '서류관리 탭 렌더링 복구 및 제조사별 개별 문서함 UI 최적화',
+    content: '• 서류관리 탭(CI/PL 작성, 서류 업로드 등) 클릭 시 화면이 정상적으로 표시되도록 구조 복구 및 렌더링 정상화\\n• 각 제조사별 도착보고 카드 하단에 전용 발행 문서함 배치 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.409',
     version: 'v2.8.409',
     date: '2026-08-24',
