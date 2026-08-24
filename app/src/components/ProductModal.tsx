@@ -11,11 +11,12 @@ import { SupplierSearchModal } from './SupplierSearchModal';
 interface Props {
   initialProduct?: Product;
   onClose: () => void;
+  onSave?: (savedProduct: Product) => void;
   products?: Product[];
   isCopy?: boolean;
 }
 
-export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, products, isCopy }) => {
+export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, onSave, products, isCopy }) => {
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
@@ -691,6 +692,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
         } catch (delErr) {
           console.warn('Old product doc cleanup warning:', delErr);
         }
+      }
+
+      if (onSave) {
+        onSave({ ...finalData, id: targetCode || docId } as Product);
       }
 
       alert('✅ 성공적으로 저장되었습니다.');

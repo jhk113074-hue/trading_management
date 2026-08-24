@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.399',
+    version: 'v2.8.399',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '패킹리스트 드래그앤드롭 동작 영역 제한 (전용 핸들로만 순서 변경 가능)',
+    content: '• 테이블 행 전체에 적용되던 드래그 이벤트를 우측 전용 핸들(⠿) 아이콘으로만 한정하여, 텍스트박스 클릭 및 텍스트 선택/수정 시 테이블이 불안정하게 흔들리거나 드래그되는 현상 완벽 방지',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.398',
+    version: 'v2.8.398',
+    date: '2026-08-24',
+    category: 'UI/UX',
+    title: '패킹리스트 품목별 제조사(Manufacturer) 실시간 즉시 동기화',
+    content: '• 상품 마스터(Product Modal)에서 제조사/공급사를 변경 및 저장 시 패킹리스트 테이블의 제조사(Manufacturer) 컬럼 및 수주 품목 정보에 즉시 실시간 동기화 반영되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.397',
     version: 'v2.8.397',
     date: '2026-08-24',

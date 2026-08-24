@@ -1157,6 +1157,39 @@ export const OrderDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Auto-sync packing list item manufacturers/suppliers when products update
+  useEffect(() => {
+    if (!products.length || !basicForm.packingList?.containers) return;
+    let changed = false;
+    const nextContainers = basicForm.packingList.containers.map((c: any) => {
+      let containerChanged = false;
+      const nextItems = (c.items || []).map((it: any) => {
+        const match = (it.description || '').match(/^\[(.*?)\]/);
+        const itemCode = match ? match[1] : (it.itemCode || '');
+        if (itemCode) {
+          const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+          if (prod) {
+            const mfgName = prod.manufacturerName || prod.supplierName || (prod.suppliers?.find(s => s.isDefault)?.supplierName) || prod.suppliers?.[0]?.supplierName || '';
+            if (mfgName && (!it.supplier || it.supplier === 'General Supplier' || it.supplier !== mfgName)) {
+              containerChanged = true;
+              return { ...it, supplier: mfgName };
+            }
+          }
+        }
+        return it;
+      });
+      if (containerChanged) changed = true;
+      return containerChanged ? { ...c, items: nextItems } : c;
+    });
+
+    if (changed) {
+      setBasicForm(prev => ({
+        ...prev,
+        packingList: { ...prev.packingList, containers: nextContainers }
+      }));
+    }
+  }, [products]);
+
   const [editingPurchasePrice, setEditingPurchasePrice] = useState<{ [itemIdx: number]: string }>({});
   const [editingOriginalPurchasePrice, setEditingOriginalPurchasePrice] = useState<{ [itemIdx: number]: string }>({});
 
@@ -8830,8 +8863,6 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                     return (
                                       <tr 
                                         key={itIdx} 
-                                        draggable={isEditing}
-                                        onDragStart={e => handlePackingItemDragStart(e, cIdx, itIdx)}
                                         onDragOver={e => handlePackingItemDragOver(e, cIdx, itIdx)}
                                         onDragLeave={() => setDragOverItemIdx(null)}
                                         onDrop={e => handlePackingItemDrop(e, cIdx, itIdx)}
@@ -8907,8 +8938,20 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                                 value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
                                                 onChange={e => {
                                                   const val = e.target.value;
+                                                  const cleanVal = val.replace(/^P#\d+\.\s*/i, '');
                                                   const nextContainers = [...basicForm.packingList.containers];
-                                                  nextContainers[cIdx].items[itIdx].description = val.replace(/^P#\d+\.\s*/i, '');
+                                                  nextContainers[cIdx].items[itIdx].description = cleanVal;
+                                                  const match = cleanVal.match(/^\[(.*?)\]/);
+                                                  if (match) {
+                                                    const itemCode = match[1];
+                                                    const foundProd = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                                    if (foundProd) {
+                                                      const mfgName = foundProd.manufacturerName || foundProd.supplierName || (foundProd.suppliers?.find(s => s.isDefault)?.supplierName) || foundProd.suppliers?.[0]?.supplierName || '';
+                                                      if (mfgName) {
+                                                        nextContainers[cIdx].items[itIdx].supplier = mfgName;
+                                                      }
+                                                    }
+                                                  }
                                                   setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                                 }}
                                               />
@@ -9129,6 +9172,10 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                             <div 
                                               draggable={isEditing}
                                               onDragStart={e => handlePackingItemDragStart(e, cIdx, itIdx)}
+                                              onDragEnd={() => {
+                                                setDraggedPackingItem(null);
+                                                setDragOverItemIdx(null);
+                                              }}
                                               title="마우스로 잡고 위/아래로 드래그하여 순서 변경"
                                               style={{
                                                 cursor: isEditing ? 'grab' : 'not-allowed',
@@ -13882,6 +13929,29 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
         <ProductModal
           initialProduct={editingProd}
           products={products}
+          onSave={(savedProd) => {
+            const mfgName = savedProd.manufacturerName || savedProd.supplierName || (savedProd.suppliers?.find(s => s.isDefault)?.supplierName) || savedProd.suppliers?.[0]?.supplierName || '';
+            if (mfgName && basicForm.packingList?.containers) {
+              const nextContainers = basicForm.packingList.containers.map((c: any) => ({
+                ...c,
+                items: (c.items || []).map((it: any) => {
+                  if ((it.description || '').includes(`[${savedProd.productCode}]`) || (it.itemCode && it.itemCode === savedProd.productCode)) {
+                    return { ...it, supplier: mfgName };
+                  }
+                  return it;
+                })
+              }));
+              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+            }
+            if (mfgName) {
+              setOrderItems((prev: any[]) => prev.map(oi => {
+                if (oi.productCode === savedProd.productCode || (oi.name || '').includes(`[${savedProd.productCode}]`)) {
+                  return { ...oi, supplier: mfgName };
+                }
+                return oi;
+              }));
+            }
+          }}
           onClose={() => {
             setIsProdModalOpen(false);
             setEditingProd(undefined);
