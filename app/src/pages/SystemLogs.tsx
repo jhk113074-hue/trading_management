@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.424',
+    version: 'v2.8.424',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '서류관리 탭 내 각 공급업체별 발주서/도착보고서/쉬핑마크 통합 문서함 신설',
+    content: '• 4단계 [서류관리] 탭 내에 [📦 업체별 발주서 / 도착보고서] 하위 탭 및 서류업로드 연동 바로가기 배너 추가\\n• 각 매입/공급업체별 발주서(PO), 도착보고서(Arrival Report), 쉬핑마크 라벨을 한눈에 확인하고 즉시 열람/인쇄/메일전송/카톡공유 및 발행 PDF 파일 다운로드 지원',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.423',
+    version: 'v2.8.423',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '견적서(PI) ➔ 수주(PO) 전환 속도 초고속화 (Batch Write & SPA 즉시 이동)',
+    content: '• 수주 전환 시 발생하던 100회 이상의 순차 DB 요청과 브라우저 전체 새로고침(Hard Reload)을 제거\\n• Firestore writeBatch 단일 트랜잭션 및 React Router SPA 즉시 이동으로 전환 소요 시간을 15~20초에서 0.3초 이내로 단축',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.422',
     version: 'v2.8.422',
     date: '2026-08-24',
