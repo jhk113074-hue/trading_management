@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.402',
+    version: 'v2.8.402',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '패킹리스트 거래처(유통사/공급사) 우선 반영 및 컬럼명 변경',
+    content: '• 패킹리스트의 공급사 컬럼명을 "Supplier (유통사)"로 변경하고, 원 제조사가 아닌 거래처(기본 등록 유통사/공급사명)가 우선적으로 자동 반영되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.401',
     version: 'v2.8.401',
     date: '2026-08-24',

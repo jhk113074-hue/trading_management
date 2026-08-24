@@ -1170,10 +1170,10 @@ export const OrderDetail: React.FC = () => {
         if (itemCode) {
           const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
           if (prod) {
-            const mfgName = prod.manufacturerName || prod.supplierName || (prod.suppliers?.find(s => s.isDefault)?.supplierName) || prod.suppliers?.[0]?.supplierName || '';
-            if (mfgName && (!it.supplier || it.supplier === 'General Supplier' || it.supplier !== mfgName)) {
+            const supName = (prod.suppliers?.find(s => s.isDefault)?.supplierName) || prod.supplierName || prod.suppliers?.[0]?.supplierName || prod.manufacturerName || '';
+            if (supName && (!it.supplier || it.supplier === 'General Supplier' || it.supplier === prod.manufacturerName || it.supplier !== supName)) {
               containerChanged = true;
-              updatedIt.supplier = mfgName;
+              updatedIt.supplier = supName;
             }
             // Auto fill dimensions if missing on row but exists on product master
             if (!updatedIt.dimensions || updatedIt.dimensions === '0x0x0' || updatedIt.dimensions === '0*0*0') {
@@ -8870,7 +8870,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                   </th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Supplier (유통사)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>수량</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
@@ -9055,7 +9055,7 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
                                         <td style={{ padding: '4px' }}>
                                           <input
                                             type="text"
-                                            placeholder="제조사명"
+                                            placeholder="유통사명"
                                             disabled={!isEditing}
                                             style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                             value={it.supplier || ''}
@@ -13974,23 +13974,23 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
           initialProduct={editingProd}
           products={products}
           onSave={(savedProd) => {
-            const mfgName = savedProd.manufacturerName || savedProd.supplierName || (savedProd.suppliers?.find(s => s.isDefault)?.supplierName) || savedProd.suppliers?.[0]?.supplierName || '';
-            if (mfgName && basicForm.packingList?.containers) {
+            const supName = (savedProd.suppliers?.find(s => s.isDefault)?.supplierName) || savedProd.supplierName || savedProd.suppliers?.[0]?.supplierName || savedProd.manufacturerName || '';
+            if (supName && basicForm.packingList?.containers) {
               const nextContainers = basicForm.packingList.containers.map((c: any) => ({
                 ...c,
                 items: (c.items || []).map((it: any) => {
                   if ((it.description || '').includes(`[${savedProd.productCode}]`) || (it.itemCode && it.itemCode === savedProd.productCode)) {
-                    return { ...it, supplier: mfgName };
+                    return { ...it, supplier: supName };
                   }
                   return it;
                 })
               }));
               setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
             }
-            if (mfgName) {
+            if (supName) {
               setOrderItems((prev: any[]) => prev.map(oi => {
                 if (oi.productCode === savedProd.productCode || (oi.name || '').includes(`[${savedProd.productCode}]`)) {
-                  return { ...oi, supplier: mfgName };
+                  return { ...oi, supplier: supName };
                 }
                 return oi;
               }));
