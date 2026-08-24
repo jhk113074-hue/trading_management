@@ -1674,14 +1674,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const grossDisp = item.grossWeight !== undefined ? item.grossWeight.toLocaleString() : item.weight.toLocaleString();
             const pkgTypeDisp = item.packageType ? ` <small style="color:var(--text-secondary);">(${item.packageType})</small>` : '';
             const detailsDisp = item.contentDetails ? `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">${item.contentDetails}</div>` : '';
+            const isSelected = selectedPalletGlobalIndex === item.globalIndex;
+            
             const tr = document.createElement('tr');
+            tr.id = `packing-row-${item.globalIndex}`;
+            tr.style.cursor = 'pointer';
+            if (isSelected) {
+                tr.style.background = '#eff6ff';
+                tr.style.outline = '2px solid #3b82f6';
+            }
+            tr.onclick = (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    selectPalletForAdjustment(item.globalIndex);
+                }
+            };
+            
             tr.innerHTML = `
                 <td><strong>${item.globalIndex}</strong></td>
                 <td>${item.name} <small class="text-muted">(${item.itemIndex})</small>${pkgTypeDisp}${detailsDisp}</td>
-                <td>${item.w} × ${item.d} × ${item.h}</td>
+                <td>${item.packedL} × ${item.packedW} × ${item.packedH}</td>
                 <td>${netDisp}</td>
                 <td>${grossDisp}</td>
-                <td><span style="color: var(--success-color);">적재완료</span></td>
+                <td style="font-family: monospace; font-size: 0.8rem; color: #0369a1; font-weight: 600;">
+                    X: ${item.x} / Y: ${item.y} / Z: ${item.z}
+                </td>
+                <td><span style="color: var(--success-color); font-weight: 600;">적재완료</span></td>
+                <td>
+                    <button type="button" class="btn btn-sm" onclick="selectPalletForAdjustment(${item.globalIndex})" style="background: ${isSelected ? '#1d4ed8' : '#3b82f6'}; color: #fff; border: none; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; cursor: pointer;">
+                        🛠️ 위치조정
+                    </button>
+                </td>
             `;
             packingListTbody.appendChild(tr);
         });
@@ -2841,6 +2863,274 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Failed to load PI simulation data from safeLocalStorage:", e);
         }
     };
+
+        // =========================================================================
+    // --- Pallet Position & Rotation Interactive Adjustment System ---
+    // =========================================================================
+    let selectedPalletGlobalIndex = null;
+
+    const palletAdjustPanel = document.getElementById('pallet-adjust-panel');
+    const adjustPanelTitle = document.getElementById('adjust-panel-title');
+    const adjustPanelSubtitle = document.getElementById('adjust-panel-subtitle');
+    const inputPosX = document.getElementById('input-pos-x');
+    const inputPosY = document.getElementById('input-pos-y');
+    const inputPosZ = document.getElementById('input-pos-z');
+    const dispPosX = document.getElementById('disp-pos-x');
+    const dispPosY = document.getElementById('disp-pos-y');
+    const dispPosZ = document.getElementById('disp-pos-z');
+    const selectSwapTarget = document.getElementById('select-swap-target');
+
+    window.onPalletSelected = (item) => {
+        if (!item) return;
+        selectPalletForAdjustment(item.globalIndex);
+    };
+
+    window.selectPalletForAdjustment = (globalIndex) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || !currentResult.loaded) return;
+
+        const item = currentResult.loaded.find(i => i.globalIndex === globalIndex);
+        if (!item) return;
+
+        selectedPalletGlobalIndex = globalIndex;
+        if (window.Viewer3D) {
+            window.Viewer3D.selectPallet(globalIndex);
+        }
+
+        if (palletAdjustPanel) {
+            palletAdjustPanel.classList.remove('hidden');
+        }
+
+        if (adjustPanelTitle) {
+            adjustPanelTitle.innerHTML = `선택된 화물: <span style="color:#2563eb;">[#${item.globalIndex}] ${item.name}</span> <small style="color:#64748b; font-weight:normal;">(${item.packedL} × ${item.packedW} × ${item.packedH} mm)</small>`;
+        }
+        if (adjustPanelSubtitle) {
+            adjustPanelSubtitle.textContent = `현재 위치: X=${item.x}mm (길이), Y=${item.y}mm (폭), Z=${item.z}mm (높이) | 아래 버튼이나 입력창으로 위치를 자유롭게 변경할 수 있습니다.`;
+        }
+
+        if (inputPosX) inputPosX.value = item.x;
+        if (inputPosY) inputPosY.value = item.y;
+        if (inputPosZ) inputPosZ.value = item.z;
+        if (dispPosX) dispPosX.textContent = `X: ${item.x} mm`;
+        if (dispPosY) dispPosY.textContent = `Y: ${item.y} mm`;
+        if (dispPosZ) dispPosZ.textContent = `Z: ${item.z} mm`;
+
+        // Populate swap targets
+        if (selectSwapTarget) {
+            selectSwapTarget.innerHTML = '<option value="">맞바꿀 대상 화물 선택</option>';
+            currentResult.loaded.forEach(other => {
+                if (other.globalIndex !== globalIndex) {
+                    const opt = document.createElement('option');
+                    opt.value = other.globalIndex;
+                    opt.textContent = `[#${other.globalIndex}] ${other.name} (X:${other.x}, Y:${other.y}, Z:${other.z})`;
+                    selectSwapTarget.appendChild(opt);
+                }
+            });
+        }
+
+        // Highlight table row
+        renderPackingList(currentResult.loaded);
+        const targetRow = document.getElementById(`packing-row-${globalIndex}`);
+        if (targetRow) {
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+
+    const applyPalletPositionChange = (item) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult) return;
+
+        if (item.x < 0) item.x = 0;
+        if (item.y < 0) item.y = 0;
+        if (item.z < 0) item.z = 0;
+
+        if (inputPosX) inputPosX.value = item.x;
+        if (inputPosY) inputPosY.value = item.y;
+        if (inputPosZ) inputPosZ.value = item.z;
+        if (dispPosX) dispPosX.textContent = `X: ${item.x} mm`;
+        if (dispPosY) dispPosY.textContent = `Y: ${item.y} mm`;
+        if (dispPosZ) dispPosZ.textContent = `Z: ${item.z} mm`;
+
+        // Update 3D & 2D views
+        if (window.Viewer3D) {
+            window.Viewer3D.update(currentResult, itemColors);
+        }
+        drawVisualization();
+        renderPackingList(currentResult.loaded);
+    };
+
+    window.stepPalletPos = (axis, delta) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || selectedPalletGlobalIndex === null) return;
+
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (!item) return;
+
+        if (axis === 'x') {
+            item.x = Math.max(0, Math.round((item.x || 0) + delta));
+        } else if (axis === 'y') {
+            item.y = Math.max(0, Math.round((item.y || 0) + delta));
+        } else if (axis === 'z') {
+            item.z = Math.max(0, Math.round((item.z || 0) + delta));
+        }
+
+        applyPalletPositionChange(item);
+    };
+
+    window.snapPalletPos = (axis, posType) => {
+        const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+        if (!currentResult || selectedPalletGlobalIndex === null) return;
+
+        const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+        if (!item) return;
+        const container = currentResult.dimensions || { l: 5898, w: 2352, h: 2393 };
+
+        if (axis === 'x') {
+            if (posType === 'start') item.x = 0;
+            if (posType === 'end') item.x = Math.max(0, container.l - item.packedL);
+        } else if (axis === 'y') {
+            if (posType === 'start') item.y = 0;
+            if (posType === 'center') item.y = Math.max(0, Math.round((container.w - item.packedW) / 2));
+            if (posType === 'end') item.y = Math.max(0, container.w - item.packedW);
+        } else if (axis === 'z') {
+            if (posType === 'start') item.z = 0;
+        }
+
+        applyPalletPositionChange(item);
+    };
+
+    // Manual input listeners
+    if (inputPosX) {
+        inputPosX.addEventListener('change', (e) => {
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (!currentResult || selectedPalletGlobalIndex === null) return;
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.x = Math.max(0, parseInt(e.target.value, 10) || 0);
+            applyPalletPositionChange(item);
+        });
+    }
+    if (inputPosY) {
+        inputPosY.addEventListener('change', (e) => {
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (!currentResult || selectedPalletGlobalIndex === null) return;
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.y = Math.max(0, parseInt(e.target.value, 10) || 0);
+            applyPalletPositionChange(item);
+        });
+    }
+    if (inputPosZ) {
+        inputPosZ.addEventListener('change', (e) => {
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (!currentResult || selectedPalletGlobalIndex === null) return;
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+            item.z = Math.max(0, parseInt(e.target.value, 10) || 0);
+            applyPalletPositionChange(item);
+        });
+    }
+
+    // Rotate Pallet (90 deg L <-> W)
+    const btnAdjustRotate = document.getElementById('btn-adjust-rotate');
+    if (btnAdjustRotate) {
+        btnAdjustRotate.addEventListener('click', () => {
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (!currentResult || selectedPalletGlobalIndex === null) return;
+            const item = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            if (!item) return;
+
+            const temp = item.packedL;
+            item.packedL = item.packedW;
+            item.packedW = temp;
+            item.rotated = !item.rotated;
+
+            const container = currentResult.dimensions || { l: 5898, w: 2352, h: 2393 };
+            if (item.x + item.packedL > container.l) {
+                item.x = Math.max(0, container.l - item.packedL);
+            }
+            if (item.y + item.packedW > container.w) {
+                item.y = Math.max(0, container.w - item.packedW);
+            }
+
+            applyPalletPositionChange(item);
+        });
+    }
+
+    // Swap Position with target item
+    const btnSwapPosition = document.getElementById('btn-swap-position');
+    if (btnSwapPosition) {
+        btnSwapPosition.addEventListener('click', () => {
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (!currentResult || selectedPalletGlobalIndex === null || !selectSwapTarget) return;
+            const targetIdx = parseInt(selectSwapTarget.value, 10);
+            if (!targetIdx) {
+                alert('맞바꿀 대상 화물을 선택해주세요.');
+                return;
+            }
+
+            const itemA = currentResult.loaded.find(i => i.globalIndex === selectedPalletGlobalIndex);
+            const itemB = currentResult.loaded.find(i => i.globalIndex === targetIdx);
+            if (!itemA || !itemB) return;
+
+            const tempX = itemA.x;
+            const tempY = itemA.y;
+            const tempZ = itemA.z;
+
+            itemA.x = itemB.x;
+            itemA.y = itemB.y;
+            itemA.z = itemB.z;
+
+            itemB.x = tempX;
+            itemB.y = tempY;
+            itemB.z = tempZ;
+
+            applyPalletPositionChange(itemA);
+        });
+    }
+
+    // Button step bindings
+    const bindBtnStep = (id, axis, delta) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.onclick = () => stepPalletPos(axis, delta);
+    };
+    const bindBtnSnap = (id, axis, type) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.onclick = () => snapPalletPos(axis, type);
+    };
+
+    bindBtnStep('btn-x-m100', 'x', -100);
+    bindBtnStep('btn-x-m10', 'x', -10);
+    bindBtnStep('btn-x-p10', 'x', 10);
+    bindBtnStep('btn-x-p100', 'x', 100);
+    bindBtnSnap('btn-x-snap-start', 'x', 'start');
+    bindBtnSnap('btn-x-snap-end', 'x', 'end');
+
+    bindBtnStep('btn-y-m100', 'y', -100);
+    bindBtnStep('btn-y-m10', 'y', -10);
+    bindBtnStep('btn-y-p10', 'y', 10);
+    bindBtnStep('btn-y-p100', 'y', 100);
+    bindBtnSnap('btn-y-snap-start', 'y', 'start');
+    bindBtnSnap('btn-y-snap-center', 'y', 'center');
+    bindBtnSnap('btn-y-snap-end', 'y', 'end');
+
+    bindBtnStep('btn-z-m100', 'z', -100);
+    bindBtnStep('btn-z-m10', 'z', -10);
+    bindBtnStep('btn-z-p10', 'z', 10);
+    bindBtnStep('btn-z-p100', 'z', 100);
+    bindBtnSnap('btn-z-snap-start', 'z', 'start');
+
+    const btnAdjustClose = document.getElementById('btn-adjust-close');
+    if (btnAdjustClose) {
+        btnAdjustClose.addEventListener('click', () => {
+            selectedPalletGlobalIndex = null;
+            if (palletAdjustPanel) palletAdjustPanel.classList.add('hidden');
+            if (window.Viewer3D) window.Viewer3D.selectPallet(null);
+            const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
+            if (currentResult) renderPackingList(currentResult.loaded);
+        });
+    }
+
 
     // Load integration data first
     loadPiSimulationData();

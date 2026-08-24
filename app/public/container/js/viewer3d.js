@@ -1,5 +1,3 @@
-
-
 class Viewer3D {
     constructor() {
         this.container = null;
@@ -8,7 +6,12 @@ class Viewer3D {
         this.camera = null;
         this.controls = null;
         this.meshes = [];
+        this.palletMeshes = []; // { mesh, item }
         this.containerMesh = null;
+        this.selectedGlobalIndex = null;
+        this.highlightBox = null;
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
         
         this.dimensions = null; // {l, w, h}
         
@@ -61,13 +64,49 @@ class Viewer3D {
 
         // Resize Listener
         window.addEventListener('resize', this.resize.bind(this));
+
+        // Click on 3D Box Selection Listener
+        let isDragging = false;
+        let downPos = { x: 0, y: 0 };
+        
+        this.renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = false;
+            downPos = { x: e.clientX, y: e.clientY };
+        });
+        
+        this.renderer.domElement.addEventListener('mousemove', (e) => {
+            if (Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 5) {
+                isDragging = true;
+            }
+        });
+
+        this.renderer.domElement.addEventListener('mouseup', (e) => {
+            if (isDragging) return; // Ignore camera orbit drag
+            
+            const rect = this.renderer.domElement.getBoundingClientRect();
+            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const clickableMeshes = this.palletMeshes.map(pm => pm.mesh);
+            const intersects = this.raycaster.intersectObjects(clickableMeshes);
+            
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const pm = this.palletMeshes.find(p => p.mesh === hitMesh);
+                if (pm && pm.item) {
+                    this.selectPallet(pm.item.globalIndex);
+                    if (typeof window.onPalletSelected === 'function') {
+                        window.onPalletSelected(pm.item);
+                    }
+                }
+            }
+        });
     }
 
     resize() {
         if (!this.container || !this.renderer || !this.camera) return;
         const width = this.container.clientWidth;
-        // Keep a 4:3 or 16:9 aspect ratio if height isn't constrained, or just match container
-        // Since container height is 0 initially, let's force a height based on width
         const height = width * 0.42; 
         this.container.style.height = height + 'px';
         
@@ -97,12 +136,44 @@ class Viewer3D {
             }
         });
         this.meshes = [];
+        this.palletMeshes = [];
+
+        if (this.highlightBox) {
+            this.scene.remove(this.highlightBox);
+            if (this.highlightBox.geometry) this.highlightBox.geometry.dispose();
+            if (this.highlightBox.material) this.highlightBox.material.dispose();
+            this.highlightBox = null;
+        }
 
         if (this.containerMesh) {
             this.scene.remove(this.containerMesh);
             this.containerMesh.geometry.dispose();
             this.containerMesh.material.dispose();
             this.containerMesh = null;
+        }
+    }
+
+    selectPallet(globalIndex) {
+        this.selectedGlobalIndex = globalIndex;
+        
+        if (this.highlightBox) {
+            this.scene.remove(this.highlightBox);
+            if (this.highlightBox.geometry) this.highlightBox.geometry.dispose();
+            if (this.highlightBox.material) this.highlightBox.material.dispose();
+            this.highlightBox = null;
+        }
+        
+        if (globalIndex === null || globalIndex === undefined) return;
+        
+        const pm = this.palletMeshes.find(p => p.item && p.item.globalIndex === globalIndex);
+        if (pm && pm.mesh) {
+            const item = pm.item;
+            const hlGeo = new THREE.BoxGeometry(item.packedL + 25, item.packedH + 25, item.packedW + 25);
+            const hlEdges = new THREE.EdgesGeometry(hlGeo);
+            const hlMat = new THREE.LineBasicMaterial({ color: 0xffe600, linewidth: 4 }); // Bright Yellow highlight
+            this.highlightBox = new THREE.LineSegments(hlEdges, hlMat);
+            this.highlightBox.position.copy(pm.mesh.position);
+            this.scene.add(this.highlightBox);
         }
     }
 
@@ -113,13 +184,6 @@ class Viewer3D {
 
         const { l, w, h } = this.dimensions;
         
-        // We will center the container at (0, h/2, 0)
-        // ThreeJS Coordinate System: Y is up.
-        // Packer data: x (along L), y (along W), z (along H).
-        // Let's map: 
-        // Packer X -> Three X
-        // Packer Y -> Three Z
-        // Packer Z -> Three Y
         const offsetX = -l / 2;
         const offsetZ = -w / 2;
         const offsetY = 0;
@@ -137,7 +201,7 @@ class Viewer3D {
         // Draw Pallets
         result.loaded.forEach(item => {
             const itemColor = colors[item.name] || '#3b82f6';
-            const labelText = `[${item.globalIndex}] ${item.name}-${item.itemIndex}`;
+            const labelText = `[${item.globalIndex}] ${item.name}`;
             
             // Box size: length -> x, height -> y, width -> z
             const geom = new THREE.BoxGeometry(item.packedL, item.packedH, item.packedW);
@@ -153,7 +217,7 @@ class Viewer3D {
 
             // Edges for better visibility
             const edgeGeo = new THREE.EdgesGeometry(geom);
-            const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
             const edgeMesh = new THREE.LineSegments(edgeGeo, edgeMat);
             mesh.add(edgeMesh);
 
@@ -166,6 +230,7 @@ class Viewer3D {
             
             this.scene.add(mesh);
             this.meshes.push(mesh);
+            this.palletMeshes.push({ mesh, item });
 
             // Add Text Sprite
             let tex = textureCache[labelText];
@@ -177,7 +242,7 @@ class Viewer3D {
                 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = 'bold 50px sans-serif';
+                ctx.font = 'bold 44px sans-serif';
                 
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowColor = 'rgba(0,0,0,1)';
@@ -186,7 +251,7 @@ class Viewer3D {
                 ctx.shadowOffsetY = 2;
                 
                 ctx.fillText(labelText, 256, 64);
-                ctx.fillText(labelText, 256, 64); // draw twice for stronger shadow
+                ctx.fillText(labelText, 256, 64);
                 
                 tex = new THREE.CanvasTexture(canvas);
                 textureCache[labelText] = tex;
@@ -196,31 +261,29 @@ class Viewer3D {
             const sprite = new THREE.Sprite(spriteMat);
             sprite.renderOrder = 999;
             
-            // Scale sprite to fit inside box
             const maxDim = Math.max(item.packedL, item.packedW, item.packedH);
             const spriteW = Math.min(maxDim * 0.9, 800); 
             const spriteH = spriteW / 4;
             
             sprite.scale.set(spriteW, spriteH, 1);
-            // Position slightly above center to avoid Z-fighting
             sprite.position.set(posX, posY + 10, posZ);
             
             this.scene.add(sprite);
             this.meshes.push(sprite);
         });
 
-        this.setCamera('iso');
+        if (this.selectedGlobalIndex !== null) {
+            this.selectPallet(this.selectedGlobalIndex);
+        }
     }
 
     setCamera(preset) {
         if (!this.dimensions || !this.camera || !this.controls) return;
         const { l, w, h } = this.dimensions;
         
-        // Calculate a reasonable distance based on container size
         const maxDim = Math.max(l, w, h);
         const dist = maxDim * 1.5;
 
-        // Target is center of container
         this.controls.target.set(0, h/2, 0);
 
         switch(preset) {
@@ -246,7 +309,5 @@ class Viewer3D {
 // Auto-initialize when module loads
 const viewer = new Viewer3D();
 document.addEventListener('DOMContentLoaded', () => {
-    // We defer the actual DOM attachment until the 3D wrapper is visible 
-    // or just attach it to the hidden container. It will resize when shown.
     viewer.init('container-3d');
 });

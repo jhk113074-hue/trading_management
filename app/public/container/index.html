@@ -83,6 +83,98 @@
                                 </div>
                                 <div id="container-3d"></div>
                             </div>
+
+                            <!-- Pallet Position & Direction Adjustment Panel -->
+                            <div id="pallet-adjust-panel" class="card hidden" style="margin-top: 10px; border: 2px solid #3b82f6; background: #ffffff; padding: 14px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 1.3rem;">🛠️</span>
+                                        <div>
+                                            <div style="font-size: 0.95rem; font-weight: 800; color: #1e3a8a;" id="adjust-panel-title">선택된 화물: 없음</div>
+                                            <div style="font-size: 0.75rem; color: #64748b;" id="adjust-panel-subtitle">화물을 3D에서 클릭하거나 아래 패킹리스트에서 [조정]을 눌러 위치를 이동/회전할 수 있습니다.</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button type="button" class="btn btn-sm" id="btn-adjust-rotate" style="background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; font-weight: 700; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                                            🔄 90° 회전 (가로↔세로)
+                                        </button>
+                                        <button type="button" class="btn btn-sm" id="btn-adjust-close" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: bold; height: 32px; padding: 0 10px; cursor: pointer;">
+                                            ✕ 닫기
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 3-Axis Position Controls Grid -->
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+                                    <!-- X Axis (Length: Door <-> Inside) -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7;">📏 X축 (길이 / 안쪽 ↔ 문)</span>
+                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-x">X: 0 mm</span>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; align-items: center;">
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-m100" style="padding: 3px 6px; font-size: 0.75rem;">◀ -100</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
+                                            <input type="number" id="input-pos-x" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-x-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▶</button>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-x-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">맨 안쪽 벽 (X=0)</button>
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-x-snap-end" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">문 끝쪽</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Y Axis (Width: Left <-> Right) -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 0.8rem; font-weight: 700; color: #16a34a;">📐 Y축 (폭 / 좌 ↔ 우)</span>
+                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-y">Y: 0 mm</span>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; align-items: center;">
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-m100" style="padding: 3px 6px; font-size: 0.75rem;">◀ -100</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
+                                            <input type="number" id="input-pos-y" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-y-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▶</button>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">좌측 벽 (Y=0)</button>
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-center" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">중앙 정렬</button>
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-y-snap-end" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">우측 벽</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Z Axis (Height: Floor <-> Top) -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 0.8rem; font-weight: 700; color: #d97706;">⬆️ Z축 (높이 / 바닥 ↔ 상단)</span>
+                                            <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;" id="disp-pos-z">Z: 0 mm</span>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; align-items: center;">
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-m100" style="padding: 3px 6px; font-size: 0.75rem;">▼ -100</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-m10" style="padding: 3px 6px; font-size: 0.75rem;">-10</button>
+                                            <input type="number" id="input-pos-z" step="10" style="flex: 1; height: 30px; text-align: center; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px;" />
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-p10" style="padding: 3px 6px; font-size: 0.75rem;">+10</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="btn-z-p100" style="padding: 3px 6px; font-size: 0.75rem;">+100 ▲</button>
+                                        </div>
+                                        <div style="display: flex; gap: 4px; margin-top: 6px;">
+                                            <button type="button" class="btn btn-sm btn-outline" id="btn-z-snap-start" style="flex: 1; font-size: 0.7rem; padding: 2px 4px; cursor: pointer;">바닥 밀착 (Z=0)</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Swap Pallet Position -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                                        <div style="font-size: 0.8rem; font-weight: 700; color: #6366f1; margin-bottom: 6px;">🔀 다른 화물과 위치 맞바꾸기</div>
+                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                            <select id="select-swap-target" style="flex: 1; height: 30px; font-size: 0.8rem; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                                <option value="">맞바꿀 대상 화물 선택</option>
+                                            </select>
+                                            <button type="button" class="btn btn-sm" id="btn-swap-position" style="background: #6366f1; color: #fff; border: none; font-weight: 700; height: 30px; padding: 0 10px; font-size: 0.75rem; cursor: pointer;">맞바꾸기</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                     </div>
                     
                     <!-- Packing List -->
@@ -97,7 +189,9 @@
                                         <th>크기(W×D×H)</th>
                                         <th>Net Wt.</th>
                                         <th>Gross Wt.</th>
+                                        <th>적재 위치 (X, Y, Z)</th>
                                         <th>상태</th>
+                                        <th>위치조정</th>
                                     </tr>
                                 </thead>
                                 <tbody id="packing-list-tbody"></tbody>

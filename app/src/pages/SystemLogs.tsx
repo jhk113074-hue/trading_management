@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.405',
+    version: 'v2.8.405',
+    date: '2026-08-24',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 파렛트 위치/회전/맞바꾸기 수동 조정 지원 및 견적서 매입가 입력폭 확대',
+    content: '• 3D 컨테이너 적재 시뮬레이터에서 3D 뷰 및 패킹리스트의 파렛트를 클릭하여 X(길이), Y(폭), Z(높이) 위치를 10mm/100mm 단위로 미세 조정 및 90도 회전, 파렛트 간 위치 맞바꾸기(Swap) 기능 전면 추가\\n• 견적서(PI) 품목 테이블의 매입가 컬럼 너비를 대폭 확대(110px→165px)하여 천만 원 단위 이상의 고액 및 긴 숫자가 잘림 없이 완벽히 표시되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.404',
     version: 'v2.8.404',
     date: '2026-08-24',
