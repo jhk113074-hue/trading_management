@@ -48,36 +48,48 @@ const cleanItemDescription = (desc: string | undefined): string => {
     .trim();
 };
 
-const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[], productsList?: any[]): string => {
+const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[], productsList?: any[], itemIdx?: number): string => {
   if (!desc) return '';
   let clean = cleanItemDescription(desc).trim();
   
-  // 1. Try matching with order.items directly
-  const orderMatch = (orderItems || []).find((oi: any) => {
-    const oiCode = (oi.itemCode || oi.code || '').replace(/[\[\]]/g, '').trim();
-    const oiName = (oi.name || oi.itemName || '').trim();
-    const oiNameMatch = oiName.match(/^\[(.*?)\]/);
-    const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
+  // 1. Try matching with order.items directly (by index first if available, then by name/code)
+  let orderMatch: any = null;
+  if (orderItems && orderItems.length > 0) {
+    if (typeof itemIdx === 'number' && orderItems[itemIdx]) {
+      const candidate = orderItems[itemIdx];
+      const cName = (candidate.name || (candidate as any).itemName || '').trim();
+      const curCodeMatch = clean.match(/^\[(.*?)\]/);
+      const curCode = curCodeMatch ? curCodeMatch[1].trim() : clean;
+      if (!curCode || cName.includes(curCode) || clean.includes(curCode)) {
+        orderMatch = candidate;
+      }
+    }
+    if (!orderMatch) {
+      orderMatch = orderItems.find((oi: any) => {
+        const oiCode = (oi.itemCode || (oi as any).code || '').replace(/[\[\]]/g, '').trim();
+        const oiName = (oi.name || (oi as any).itemName || '').trim();
+        const oiNameMatch = oiName.match(/^\[(.*?)\]/);
+        const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
 
-    const curMatch = clean.match(/^\[(.*?)\]/);
-    const curCode = curMatch ? curMatch[1].trim() : clean;
+        const curMatch = clean.match(/^\[(.*?)\]/);
+        const curCode = curMatch ? curMatch[1].trim() : clean;
 
-    return (
-      (oiCode && curCode && oiCode.toLowerCase() === curCode.toLowerCase()) ||
-      (extractedCode && curCode && extractedCode.toLowerCase() === curCode.toLowerCase()) ||
-      (oiName && clean && (oiName.toLowerCase().includes(clean.toLowerCase()) || clean.toLowerCase().includes(oiName.toLowerCase())))
-    );
-  });
+        return (
+          (oiCode && curCode && oiCode.toLowerCase() === curCode.toLowerCase()) ||
+          (extractedCode && curCode && extractedCode.toLowerCase() === curCode.toLowerCase()) ||
+          (oiName && clean && (oiName.toLowerCase().includes(clean.toLowerCase()) || clean.toLowerCase().includes(oiName.toLowerCase())))
+        );
+      });
+    }
+  }
 
   if (orderMatch) {
-    let fullFromOrder = (orderMatch.name || orderMatch.itemName || '').trim();
-    const spec = (orderMatch.specification || orderMatch.spec || orderMatch.quality || '').trim();
+    let fullFromOrder = (orderMatch.name || (orderMatch as any).itemName || '').trim();
+    const spec = (orderMatch.grade || orderMatch.specification || orderMatch.spec || orderMatch.quality || '').trim();
     if (spec && !fullFromOrder.toLowerCase().includes(spec.toLowerCase())) {
       fullFromOrder = `${fullFromOrder} (${spec})`;
     }
-    if (fullFromOrder.length > clean.length || clean.endsWith('VUP') || clean.endsWith('JP') || clean.endsWith('K') || clean.endsWith('CBA') || clean.endsWith('CBU')) {
-      return cleanItemDescription(fullFromOrder);
-    }
+    return cleanItemDescription(fullFromOrder);
   }
 
   // 2. Try matching with master products list
@@ -100,9 +112,7 @@ const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[]
     if (spec && !constructed.toLowerCase().includes(spec.toLowerCase())) {
       constructed = `${constructed} (${spec})`;
     }
-    if (constructed.length > clean.length || clean.endsWith('VUP') || clean.endsWith('JP') || clean.endsWith('K') || clean.endsWith('CBA') || clean.endsWith('CBU')) {
-      return constructed;
-    }
+    return constructed;
   }
 
   return clean;
@@ -2219,11 +2229,16 @@ export const OrderDetail: React.FC = () => {
                   });
 
                   if (matchedOrderItem) {
-                    const orderedName = (matchedOrderItem.name || (matchedOrderItem as any).itemName || '').trim();
-                    if (orderedName && (!desc || orderedName.length >= desc.length || desc.endsWith('VUP') || desc.endsWith('JP') || desc.endsWith('K') || desc.endsWith('CBA') || desc.endsWith('CBU'))) {
+                    let orderedName = (matchedOrderItem.name || (matchedOrderItem as any).itemName || '').trim();
+                    const oiAny = matchedOrderItem as any;
+                    const spec = (oiAny.grade || oiAny.specification || oiAny.spec || oiAny.quality || '').trim();
+                    if (spec && !orderedName.toLowerCase().includes(spec.toLowerCase())) {
+                      orderedName = `${orderedName} (${spec})`;
+                    }
+                    if (orderedName) {
                       desc = orderedName;
                     }
-                    if ((!supplier || supplier === 'General Supplier' || supplier === '기타 공급사') && matchedOrderItem.supplier) {
+                    if ((!supplier || supplier === 'General Supplier' || supplier === '기타 공급사' || !supplier.trim()) && matchedOrderItem.supplier) {
                       supplier = matchedOrderItem.supplier;
                     }
                   }
@@ -3424,7 +3439,7 @@ export const OrderDetail: React.FC = () => {
     const selectedIndexes = selectedPackingItems[containerIdx] || [];
 
     if (selectedIndexes.length < 2) {
-      alert('체크박스(☑️)로 1개의 PKG로 묶을 2개 이상의 품목을 선택한 후 [PKG 합치기]를 눌러주세요.');
+      alert('체크박스(☑️)로 1개의 팔레트(PALLET)로 묶을 2개 이상의 품목을 선택한 후 [PALLET 합치기]를 눌러주세요.');
       return;
     }
 
@@ -9433,28 +9448,28 @@ ${downloadLink}`;
                                   type="button"
                                   disabled={!isEditing}
                                   onClick={() => mergeStep2Items(cIdx)}
-                                  title="선택된 항목 또는 동일 품목들을 1줄(범위)로 합칩니다"
+                                  title="선택된 항목 또는 동일 품목들을 1개 팔레트(범위)로 합칩니다"
                                   style={{ padding: '4px 12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  🔗 PKG 합치기 {(selectedPackingItems[cIdx]?.length || 0) > 1 ? `(${selectedPackingItems[cIdx].length})` : ''}
+                                  🔗 PALLET 합치기 {(selectedPackingItems[cIdx]?.length || 0) > 1 ? `(${selectedPackingItems[cIdx].length})` : ''}
                                 </button>
                                 <button
                                   type="button"
                                   disabled={!isEditing}
                                   onClick={() => splitStep2Item(cIdx)}
-                                  title="선택된 항목 또는 패키지 수가 많은 항목을 분할합니다"
+                                  title="선택된 항목 또는 수량이 많은 팔레트를 분할합니다"
                                   style={{ padding: '4px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  ✂️ PKG 분할 {(selectedPackingItems[cIdx]?.length || 0) > 0 ? `(${selectedPackingItems[cIdx].length})` : ''}
+                                  ✂️ PALLET 분할 {(selectedPackingItems[cIdx]?.length || 0) > 0 ? `(${selectedPackingItems[cIdx].length})` : ''}
                                 </button>
                                 <button
                                   type="button"
                                   disabled={!isEditing}
                                   onClick={() => resetStep2PkgNumbers(cIdx)}
-                                  title="모든 품목의 PKG 번호를 1, 2, 3... 개별 순차 번호로 원복합니다"
+                                  title="모든 품목의 Pallet 번호를 1, 2, 3... 개별 순차 번호로 원복합니다"
                                   style={{ padding: '4px 12px', background: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  ↩️ PKG 원복
+                                  ↩️ PALLET 원복
                                 </button>
                                 <button
                                   type="button"
@@ -9622,7 +9637,7 @@ ${downloadLink}`;
                                                 placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                                 rows={2}
                                                 style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                                value={restoreFullItemDescription(it.description, (order as any)?.items, products)}
+                                                value={restoreFullItemDescription(it.description, (order as any)?.items, products, itIdx)}
                                                 onChange={e => {
                                                   const val = e.target.value;
                                                   const cleanVal = cleanItemDescription(val);

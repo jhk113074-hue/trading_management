@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.457',
+    version: 'v2.8.457',
+    date: '2026-08-25',
+    category: 'UI/UX',
+    title: '패킹리스트 발주 원본 규격사양(스펙) 완벽 표기 및 [PALLET 합치기/분할/원복] 명칭 표준화',
+    content: '• 수주/발주 품목의 스펙(Spec / grade / 규격사양)을 품명과 함께 100% 온전하게 연동하여 표시\\n• 상단 기능 버튼 명칭을 [🔗 PALLET 합치기], [✂️ PALLET 분할], [↩️ PALLET 원복]으로 통일',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.456',
     version: 'v2.8.456',
     date: '2026-08-25',
