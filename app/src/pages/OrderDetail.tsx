@@ -50,41 +50,58 @@ const cleanItemDescription = (desc: string | undefined): string => {
 
 const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[], productsList?: any[]): string => {
   if (!desc) return '';
-  const clean = cleanItemDescription(desc);
+  let clean = cleanItemDescription(desc).trim();
   
-  // Extract item code inside brackets e.g. [P0005]
-  const match = clean.match(/^\[(.*?)\]\s*(.*)$/);
-  if (match) {
-    const code = match[1].trim();
-    
-    // 1. Check matching order items
-    const orderMatch = (orderItems || []).find((oi: any) => {
-      const oiCode = (oi.itemCode || oi.code || '').replace(/[\[\]]/g, '').trim();
-      const oiNameMatch = (oi.name || '').match(/^\[(.*?)\]/);
-      const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
-      return (oiCode && oiCode.toLowerCase() === code.toLowerCase()) || 
-             (extractedCode && extractedCode.toLowerCase() === code.toLowerCase()) || 
-             (oi.name && oi.name.toLowerCase().includes(code.toLowerCase()));
-    });
+  // 1. Try matching with order.items directly
+  const orderMatch = (orderItems || []).find((oi: any) => {
+    const oiCode = (oi.itemCode || oi.code || '').replace(/[\[\]]/g, '').trim();
+    const oiName = (oi.name || oi.itemName || '').trim();
+    const oiNameMatch = oiName.match(/^\[(.*?)\]/);
+    const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
 
-    if (orderMatch && orderMatch.name) {
-      const targetFullName = cleanItemDescription(orderMatch.name);
-      if (targetFullName.length > clean.length && targetFullName.toLowerCase().startsWith(`[${code.toLowerCase()}]`)) {
-        return targetFullName;
-      }
-    }
+    const curMatch = clean.match(/^\[(.*?)\]/);
+    const curCode = curMatch ? curMatch[1].trim() : clean;
 
-    // 2. Check matching products database
-    const prodMatch = (productsList || []).find((p: any) => 
-      (p.productCode && p.productCode.trim().toLowerCase() === code.toLowerCase()) ||
-      (p.id && p.id.trim().toLowerCase() === code.toLowerCase())
+    return (
+      (oiCode && curCode && oiCode.toLowerCase() === curCode.toLowerCase()) ||
+      (extractedCode && curCode && extractedCode.toLowerCase() === curCode.toLowerCase()) ||
+      (oiName && clean && (oiName.toLowerCase().includes(clean.toLowerCase()) || clean.toLowerCase().includes(oiName.toLowerCase())))
     );
+  });
 
-    if (prodMatch) {
-      const fullNameWithCode = `[${prodMatch.productCode || code}] ${prodMatch.name || ''}`.trim();
-      if (fullNameWithCode.length > clean.length) {
-        return fullNameWithCode;
-      }
+  if (orderMatch) {
+    let fullFromOrder = (orderMatch.name || orderMatch.itemName || '').trim();
+    const spec = (orderMatch.specification || orderMatch.spec || orderMatch.quality || '').trim();
+    if (spec && !fullFromOrder.toLowerCase().includes(spec.toLowerCase())) {
+      fullFromOrder = `${fullFromOrder} (${spec})`;
+    }
+    if (fullFromOrder.length > clean.length || clean.endsWith('VUP') || clean.endsWith('JP') || clean.endsWith('K') || clean.endsWith('CBA') || clean.endsWith('CBU')) {
+      return cleanItemDescription(fullFromOrder);
+    }
+  }
+
+  // 2. Try matching with master products list
+  const curMatch = clean.match(/^\[(.*?)\]/);
+  const searchKey = curMatch ? curMatch[1].trim() : clean;
+
+  const prodMatch = (productsList || []).find((p: any) => 
+    (p.productCode && p.productCode.trim().toLowerCase() === searchKey.toLowerCase()) ||
+    (p.id && p.id.trim().toLowerCase() === searchKey.toLowerCase()) ||
+    (p.nameKo && p.nameKo.trim().toLowerCase() === searchKey.toLowerCase()) ||
+    (p.nameEn && p.nameEn.trim().toLowerCase() === searchKey.toLowerCase())
+  );
+
+  if (prodMatch) {
+    const code = prodMatch.productCode || searchKey;
+    const name = prodMatch.nameEn || prodMatch.nameKo || prodMatch.name || '';
+    const spec = (prodMatch.specification || prodMatch.spec || '').trim();
+
+    let constructed = `[${code}] ${name}`.trim();
+    if (spec && !constructed.toLowerCase().includes(spec.toLowerCase())) {
+      constructed = `${constructed} (${spec})`;
+    }
+    if (constructed.length > clean.length || clean.endsWith('VUP') || clean.endsWith('JP') || clean.endsWith('K') || clean.endsWith('CBA') || clean.endsWith('CBU')) {
+      return constructed;
     }
   }
 
@@ -2179,28 +2196,43 @@ export const OrderDetail: React.FC = () => {
           supplierTaxInvoice: data.supplierTaxInvoice || {},
           packingList: (() => {
             const rawPacking = data.packingList;
+            const orderItems = data.items || [];
+
             if (rawPacking && rawPacking.containers && rawPacking.containers.length > 0) {
               const cleanedContainers = rawPacking.containers.map((c: any) => ({
                 ...c,
-                items: (c.items || []).map((it: any) => {
+                items: (c.items || []).map((it: any, itIdx: number) => {
                   let desc = it.description || '';
-                  let qty = it.qty;
+                  let supplier = it.supplier || '';
 
-                  // If description has appended quantity like " - 9,600 M" or " - 200 PCS"
-                  const match = desc.match(/^(.*?)\s*-\s*([0-9,]+(?:\.[0-9]+)?)\s*([A-Za-z가-힣%]+)?$/);
-                  if (match) {
-                    const pureDesc = match[1].trim();
-                    const parsedQty = match[2].replace(/,/g, '');
-                    if (!qty || qty === '0' || qty === 0 || qty === '') {
-                      qty = parsedQty;
+                  // Match with exact order item from order.items
+                  const matchedOrderItem = orderItems.find((oi: any, oiIdx: number) => {
+                    const oiName = (oi.name || (oi as any).itemName || '').trim();
+                    const oiCode = (oi.itemCode || (oi as any).code || '').replace(/[\[\]]/g, '').trim();
+                    const curCodeMatch = desc.match(/^\[(.*?)\]/);
+                    const curCode = curCodeMatch ? curCodeMatch[1].trim() : '';
+
+                    if (curCode && oiCode && curCode.toLowerCase() === oiCode.toLowerCase()) return true;
+                    if (curCode && oiName.toLowerCase().includes(`[${curCode.toLowerCase()}]`)) return true;
+                    if (desc && oiName && (desc.toLowerCase().includes(oiName.toLowerCase()) || oiName.toLowerCase().includes(desc.toLowerCase()))) return true;
+                    return oiIdx === itIdx;
+                  });
+
+                  if (matchedOrderItem) {
+                    const orderedName = (matchedOrderItem.name || (matchedOrderItem as any).itemName || '').trim();
+                    if (orderedName && (!desc || orderedName.length >= desc.length || desc.endsWith('VUP') || desc.endsWith('JP') || desc.endsWith('K') || desc.endsWith('CBA') || desc.endsWith('CBU'))) {
+                      desc = orderedName;
                     }
-                    desc = pureDesc;
+                    if ((!supplier || supplier === 'General Supplier' || supplier === '기타 공급사') && matchedOrderItem.supplier) {
+                      supplier = matchedOrderItem.supplier;
+                    }
                   }
 
                   return {
                     ...it,
                     description: desc,
-                    qty: (qty !== undefined && qty !== null && qty !== '') ? String(qty) : (it.qty ? String(it.qty) : '')
+                    supplier: supplier || it.supplier || '',
+                    qty: (it.qty !== undefined && it.qty !== null && it.qty !== '') ? String(it.qty) : ''
                   };
                 })
               }));
@@ -9568,7 +9600,6 @@ ${downloadLink}`;
                                                   const nextContainers = [...basicForm.packingList.containers];
                                                   for (let g = 0; g < spanCount; g++) {
                                                     nextContainers[cIdx].items[itIdx + g].pkgNo = val;
-                                                    nextContainers[cIdx].items[itIdx + g].pkg = g === 0 ? calculatePkgFromPkgNo(val) : '0';
                                                   }
                                                   setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                                 }} 
@@ -9668,6 +9699,8 @@ ${downloadLink}`;
                                             })()}
                                           </div>
                                         </td>
+
+                                        
 
                                         {/* 4. Manufacturer (Individual per row) */}
                                         <td style={{ padding: '4px' }}>

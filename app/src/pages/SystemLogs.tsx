@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.456',
+    version: 'v2.8.456',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '패킹리스트 Pallet No와 PKG수 속성 완전 분리 및 독립 관리 보장',
+    content: '• Pallet No(팔레트 번호/범위)와 PKG수(개별 패키지/캔/드럼 수량)를 완전히 독립된 필드로 분리\\n• Pallet No 수정 시 PKG수가 임의로 덮어써지거나 변경되지 않도록 상호 간섭 원천 제거',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.455',
+    version: 'v2.8.455',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '패킹리스트 발주 원본 품명·사양·유통사 100% 동일 연동 및 유통사 컬럼 유지',
+    content: '• 오더(발주서) 등록 품목의 정본 품명 및 규격사양, 유통사를 패킹리스트에 그대로 1:1 자동 매핑하여 완벽 동기화\\n• 패킹리스트 테이블 내 [Supplier (유통사)] 컬럼 표시 유지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.454',
     version: 'v2.8.454',
     date: '2026-08-25',
