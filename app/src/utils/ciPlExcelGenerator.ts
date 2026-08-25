@@ -674,6 +674,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       for (let c = 1; c <= 12; c++) {
         ws.getCell(totalRow, c).border = { top: thinBorder, bottom: doubleBorder, left: thinBorder, right: thinBorder };
       }
+
+
+
       currRow++;
 
       // Separator Line
@@ -992,12 +995,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       containersList.forEach((cData, cIdx) => {
         const cItems = cData.items || [];
-        if (cItems.length === 0) return;
-
-        // Group cItems by package (identifying merged/shared packages)
         interface PlPkgGroup {
           pkgNo: string;
-          items: { name: string; qty: number; unit?: string }[];
+          items: { name: string; qty: number; unit?: string; pkgCount?: number }[];
           netWeight: number;
           grossWeight: number;
           cbm: number;
@@ -1015,22 +1015,24 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           const itNet = Number(it.netWeight) || 0;
           const itGross = Number(it.grossWeight) || 0;
           const itCbm = Number(it.cbm) || 0;
+          const itPkg = Number(it.pkg) || 1;
 
           if (isSecondary && curGroup) {
-            curGroup.items.push({ name: cleanName, qty: itQty, unit: itUnit });
+            curGroup.items.push({ name: cleanName, qty: itQty, unit: itUnit, pkgCount: itPkg });
             if (itNet > 0 && curGroup.netWeight === 0) curGroup.netWeight += itNet;
             if (itGross > 0 && curGroup.grossWeight === 0) curGroup.grossWeight += itGross;
             if (itCbm > 0 && curGroup.cbm === 0) curGroup.cbm += itCbm;
           } else {
-            curGroup = {
+            const newGroup: PlPkgGroup = {
               pkgNo: it.pkgNo || String(packageGroups.length + 1),
-              items: [{ name: cleanName, qty: itQty, unit: itUnit }],
+              items: [{ name: cleanName, qty: itQty, unit: itUnit, pkgCount: itPkg }],
               netWeight: itNet,
               grossWeight: itGross,
               cbm: itCbm,
-              pkgCount: Number(it.pkg) || 1
+              pkgCount: itPkg
             };
-            packageGroups.push(curGroup);
+            curGroup = newGroup;
+            packageGroups.push(newGroup);
           }
         });
 
@@ -1089,6 +1091,25 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           for (let c = 1; c <= 12; c++) {
             ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
           }
+
+          // Column 13: Item PKG value in outside print area
+          let pkgValueText = '';
+          if (pkg.items.length === 1) {
+            pkgValueText = String(pkg.items[0].pkgCount || pkg.pkgCount || 1);
+          } else {
+            const lines: string[] = ['']; // blank header line matching P#1 (xxxxKG)
+            pkg.items.forEach(it => {
+              lines.push(String(it.pkgCount || 1));
+            });
+            pkgValueText = lines.join('\n');
+          }
+          const pkgValCell = ws.getCell(r, 13);
+          pkgValCell.value = pkgValueText;
+          pkgValCell.font = { name: 'Tahoma', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+          pkgValCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          pkgValCell.border = { top: thinBorder, bottom: thinBorder, left: thickBorder, right: thickBorder };
+          pkgValCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+
           currRow++;
         });
 

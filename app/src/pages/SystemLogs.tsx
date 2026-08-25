@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.466',
+    version: 'v2.8.466',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: 'Packing List Excel 인쇄 밖 영역(M열) 각 아이템 줄별 PKG수 1:1 완벽 출력',
+    content: '• 혼적 품목 및 단품 품목 전체에 걸쳐 각 Description of Goods 항목 줄과 1:1로 일치하는 PKG 수량 값을 인쇄 밖 M열에 정확하게 표기\\n• 상단 [PKG] 전용 헤더 및 하단 [TOTAL PKG] 합계 셀까지 완벽 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.465',
     version: 'v2.8.465',
     date: '2026-08-25',
