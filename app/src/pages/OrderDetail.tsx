@@ -3406,16 +3406,25 @@ export const OrderDetail: React.FC = () => {
     let i = 0;
     while (i < items.length) {
       const it = items[i];
-      if (it._sharedGroupHead || (it._isMergedGroup && !it._sharedWithPrev)) {
+      const grpId = it._mergeGroupId;
+      if (grpId && it._sharedGroupHead) {
         it.pkgNo = String(curNo);
         i++;
-        while (i < items.length && (items[i]._sharedWithPrev || items[i]._isMergedMember)) {
+        while (i < items.length && items[i]._mergeGroupId === grpId && items[i]._sharedWithPrev) {
           items[i].pkgNo = String(curNo);
           i++;
         }
         curNo++;
       } else {
         it.pkgNo = String(curNo);
+        // If an item has lingering _sharedWithPrev without valid group head, clean it
+        if (!grpId || !it._sharedGroupHead) {
+          delete it._sharedWithPrev;
+          delete it._isMergedMember;
+          delete it._sharedGroupHead;
+          delete it._isMergedGroup;
+          delete it._mergeGroupId;
+        }
         curNo++;
         i++;
       }
@@ -3431,7 +3440,7 @@ export const OrderDetail: React.FC = () => {
       return;
     }
 
-    const selectedIndexes = selectedPackingItems[containerIdx] || [];
+    const selectedIndexes = (selectedPackingItems[containerIdx] || []).filter((idx: number) => idx >= 0 && idx < rawItems.length);
 
     if (selectedIndexes.length < 2) {
       alert('체크박스(☑️)로 1개의 팔레트(PALLET)로 묶을 2개 이상의 품목을 선택한 후 [PALLET 합치기]를 눌러주세요.');
@@ -3441,6 +3450,10 @@ export const OrderDetail: React.FC = () => {
     // Deep clone all items
     const items = rawItems.map((it: any) => ({ ...it }));
     const sortedIdxs = [...selectedIndexes].sort((a: number, b: number) => a - b);
+    const targetInsertIdx = sortedIdxs[0];
+
+    // Unique Group ID for this specific merge operation
+    const newGroupId = 'plt_grp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 
     // Calculate aggregated dimensions and weights for the merged package
     let sumNet = 0;
@@ -3465,29 +3478,38 @@ export const OrderDetail: React.FC = () => {
     if (maxH === 0) maxH = 1600;
     const groupCbm = ((maxW * maxL * maxH) / 1000000000).toFixed(3);
 
-    // Mark selected items as part of the same shared group
+    // Mark ONLY selected items as part of the newly created groupId
+    const mergedItemsList: any[] = [];
     sortedIdxs.forEach((idx: number, order: number) => {
+      const it = { ...items[idx] };
       if (order === 0) {
-        items[idx]._sharedGroupHead = true;
-        items[idx]._isMergedGroup = true;
-        items[idx].dimensions = `${maxW}x${maxL}x${maxH}`;
-        if (sumNet > 0) items[idx].netWeight = String(Math.round(sumNet));
-        if (sumGross > 0) items[idx].grossWeight = String(Math.round(sumGross));
-        items[idx].cbm = String(groupCbm);
-        delete items[idx]._sharedWithPrev;
-        delete items[idx]._isMergedMember;
+        it._sharedGroupHead = true;
+        it._isMergedGroup = true;
+        it._mergeGroupId = newGroupId;
+        it.dimensions = `${maxW}x${maxL}x${maxH}`;
+        if (sumNet > 0) it.netWeight = String(Math.round(sumNet));
+        if (sumGross > 0) it.grossWeight = String(Math.round(sumGross));
+        it.cbm = String(groupCbm);
+        delete it._sharedWithPrev;
+        delete it._isMergedMember;
       } else {
-        items[idx]._sharedWithPrev = true;
-        items[idx]._isMergedMember = true;
-        delete items[idx]._sharedGroupHead;
-        delete items[idx]._isMergedGroup;
+        it._sharedWithPrev = true;
+        it._isMergedMember = true;
+        it._mergeGroupId = newGroupId;
+        delete it._sharedGroupHead;
+        delete it._isMergedGroup;
       }
+      mergedItemsList.push(it);
     });
 
-    // Move selected items so they are contiguous starting at sortedIdxs[0]
-    const selectedItemsList = sortedIdxs.map((idx: number) => items[idx]);
+    // Remove selected items and place them contiguously at targetInsertIdx
     const remainingItems = items.filter((_: any, idx: number) => !sortedIdxs.includes(idx));
-    remainingItems.splice(sortedIdxs[0], 0, ...selectedItemsList);
+    
+    let insertAt = 0;
+    for (let k = 0; k < targetInsertIdx; k++) {
+      if (!sortedIdxs.includes(k)) insertAt++;
+    }
+    remainingItems.splice(insertAt, 0, ...mergedItemsList);
 
     recalculateContainerPkgNos(remainingItems);
 
@@ -3675,86 +3697,22 @@ export const OrderDetail: React.FC = () => {
   const resetStep2PkgNumbers = (containerIdx: number) => {
     const containers = basicForm.packingList?.containers || [];
     if (!containers[containerIdx]) return;
-
-    if (!orderItems || orderItems.length === 0) {
-      alert('가져올 소싱/발주 품목 데이터가 없습니다.');
-      return;
-    }
-
-    const reloadedItems: any[] = [];
-    orderItems.forEach((item, itemIdx) => {
-      const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-      const itemCode = match ? match[1] : ((item as any).productCode || '-');
-      const itemName = match ? match[2] : (item.name || '');
-      const qty = item.qty || 0;
-
-      const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-      const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
-        id: 'default_single',
-        packageType: '단품',
-        unitWidth: p?.unitWidth || 0,
-        unitLength: p?.unitLength || 0,
-        unitHeight: p?.unitHeight || 0,
-        unitWeight: p?.unitWeight || 0,
-        unitGrossWeight: p?.unitGrossWeight || 0,
-        palletWidth: p?.palletWidth || 0,
-        palletLength: p?.palletLength || 0,
-        palletHeight: p?.palletHeight || 0,
-        palletWeight: p?.palletWeight || 0,
-        palletGrossWeight: p?.palletGrossWeight || 0
-      };
-
-      const isPlt = (matchedMethod.packageType || '').toLowerCase().includes('pallet');
-      const w = isPlt ? (matchedMethod.palletWidth || p?.palletWidth || matchedMethod.unitWidth || 0) : (matchedMethod.unitWidth || p?.unitWidth || 0);
-      const l = isPlt ? (matchedMethod.palletLength || p?.palletLength || matchedMethod.unitLength || 0) : (matchedMethod.unitLength || p?.unitLength || 0);
-      const h = isPlt ? (matchedMethod.palletHeight || p?.palletHeight || matchedMethod.unitHeight || 0) : (matchedMethod.unitHeight || p?.unitHeight || 0);
-
-      const netW = isPlt ? (matchedMethod.palletWeight || p?.palletWeight || matchedMethod.unitWeight || 0) : (matchedMethod.unitWeight || p?.unitWeight || 0);
-      const grossW = isPlt ? (matchedMethod.palletGrossWeight || p?.palletGrossWeight || matchedMethod.unitGrossWeight || 0) : (matchedMethod.unitGrossWeight || p?.unitGrossWeight || 0);
-      const cbm = (w > 0 && l > 0 && h > 0) ? Number(((w * l * h) / 1000000000).toFixed(4)) : 0;
-
-      const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
-                              p?.suppliers?.[0]?.supplierName || 
-                              p?.supplierName || 
-                              '';
-      const supplierName = item.supplier || defaultSupplier || '';
-
-      reloadedItems.push({
-        pkgNo: String(itemIdx + 1),
-        pkg: '1',
-        qty: String(qty),
-        description: `[${itemCode}] ${itemName}`,
-        packageType: matchedMethod.packageType || '단품',
-        dimensions: `${w}x${l}x${h}`,
-        supplier: supplierName,
-        netWeight: String(Math.round(netW)),
-        grossWeight: String(Math.round(grossW)),
-        cbm: String(cbm.toFixed(3))
-      });
+    const rawItems = containers[containerIdx].items || [];
+    const cleaned = rawItems.map((it: any) => {
+      const itemClone = { ...it };
+      delete itemClone._mergeGroupId;
+      delete itemClone._sharedGroupHead;
+      delete itemClone._sharedWithPrev;
+      delete itemClone._isMergedGroup;
+      delete itemClone._isMergedMember;
+      return itemClone;
     });
-
-    const nextContainers = containers.map((c: any, idx: number) => {
-      if (idx === containerIdx) {
-        return {
-          ...c,
-          items: reloadedItems.map((it: any) => ({ ...it }))
-        };
-      }
-      return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
-    });
-
-    setBasicForm(prev => ({
-      ...prev,
-      packingList: {
-        ...prev.packingList,
-        containers: nextContainers
-      }
-    }));
+    recalculateContainerPkgNos(cleaned);
+    const nextContainers = containers.map((c: any, idx: number) => idx === containerIdx ? { ...c, items: cleaned } : c);
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
-
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
-
     savePackingListToFirestore(nextContainers, nextReports);
   };
 
@@ -9537,13 +9495,14 @@ ${downloadLink}`;
                                 {(() => {
                                   const itemsList = c.items || [];
                                   return itemsList.map((it: any, itIdx: number) => {
-                                    const isSecondary = it._sharedWithPrev || it._isMergedMember;
+                                    const hasGroup = !!it._mergeGroupId;
+                                    const isSecondary = hasGroup && !!it._sharedWithPrev && itIdx > 0 && itemsList[itIdx - 1]?._mergeGroupId === it._mergeGroupId;
                                     
                                     // Calculate how many rows this group spans if this is the head
                                     let spanCount = 1;
-                                    if (!isSecondary) {
+                                    if (!isSecondary && hasGroup && it._sharedGroupHead) {
                                       for (let k = itIdx + 1; k < itemsList.length; k++) {
-                                        if (itemsList[k]._sharedWithPrev || itemsList[k]._isMergedMember) {
+                                        if (itemsList[k]._mergeGroupId === it._mergeGroupId && itemsList[k]._sharedWithPrev) {
                                           spanCount++;
                                         } else {
                                           break;

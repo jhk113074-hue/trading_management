@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.459',
+    version: 'v2.8.459',
+    date: '2026-08-25',
+    category: '버그수정',
+    title: 'PALLET 합치기 시 선택한 항목만 정확히 결합되도록 그룹 격리 ID 체계 적용',
+    content: '• 체크박스로 선택하지 않은 인접 품목이 혼적 그룹에 포함되던 현상 원천 해결\\n• 개별 혼적 건마다 고유 Group ID를 발급하여 선택된 항목들만 1개의 팔레트로 정확하게 결합\\n• [PALLET 원복] 클릭 시 전체 품목을 1, 2, 3... 개별 팔레트로 완벽 초기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.458',
     version: 'v2.8.458',
     date: '2026-08-25',
