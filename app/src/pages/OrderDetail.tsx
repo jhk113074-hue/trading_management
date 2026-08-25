@@ -2209,9 +2209,8 @@ export const OrderDetail: React.FC = () => {
             const orderItems = data.items || [];
 
             if (rawPacking && rawPacking.containers && rawPacking.containers.length > 0) {
-              const cleanedContainers = rawPacking.containers.map((c: any) => ({
-                ...c,
-                items: (c.items || []).map((it: any, itIdx: number) => {
+              const cleanedContainers = rawPacking.containers.map((c: any) => {
+                const items = (c.items || []).map((it: any, itIdx: number) => {
                   let desc = it.description || '';
                   let supplier = it.supplier || '';
 
@@ -2249,8 +2248,15 @@ export const OrderDetail: React.FC = () => {
                     supplier: supplier || it.supplier || '',
                     qty: (it.qty !== undefined && it.qty !== null && it.qty !== '') ? String(it.qty) : ''
                   };
-                })
-              }));
+                });
+
+                recalculateContainerPkgNos(items);
+
+                return {
+                  ...c,
+                  items
+                };
+              });
 
               return {
                 ...rawPacking,
@@ -3402,26 +3408,15 @@ export const OrderDetail: React.FC = () => {
       const it = items[i];
       if (it._sharedGroupHead || (it._isMergedGroup && !it._sharedWithPrev)) {
         it.pkgNo = String(curNo);
-        it.pkg = '1';
         i++;
         while (i < items.length && (items[i]._sharedWithPrev || items[i]._isMergedMember)) {
           items[i].pkgNo = String(curNo);
-          items[i].pkg = '0';
           i++;
         }
         curNo++;
       } else {
-        let c = parseInt(it.pkg, 10);
-        if (isNaN(c) || c <= 0) c = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
-        if (c > 1) {
-          it.pkgNo = `${curNo}-${curNo + c - 1}`;
-          it.pkg = String(c);
-          curNo += c;
-        } else {
-          it.pkgNo = String(curNo);
-          it.pkg = '1';
-          curNo++;
-        }
+        it.pkgNo = String(curNo);
+        curNo++;
         i++;
       }
     }

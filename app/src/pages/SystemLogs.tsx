@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.458',
+    version: 'v2.8.458',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '패킹리스트 Pallet No 단일 순차 번호 넘버링(1, 2, 3...) 표준화',
+    content: '• 복수 범위 번호(예: 39-42) 방식을 제거하고 각 행별 1개의 단일 순차 번호(1, 2, 3, 4...)로 깔끔하게 넘버링\\n• 혼적(Merge)된 팔레트는 동일한 단일 번호로 통일 관리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.457',
     version: 'v2.8.457',
     date: '2026-08-25',
