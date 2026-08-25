@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.467',
+    version: 'v2.8.467',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: 'Packing List Excel 혼적 품목 아이템당 1행 분리 및 인쇄 밖 M열 숫자형 PKG 합산(=SUM) 완벽 지원',
+    content: '• 혼적(Pallet 합치기)된 그룹 품목도 Excel에서 각 아이템별로 1행씩 독립 분리하여 우측 M열에 실제 숫자(Number)로 PKG수 표기\\n• Excel에서 열 전체 드래그 시 즉시 자동합산 및 =SUM() 수식 계산 완벽 지원\\n• 중량 및 CBM은 팔레트 그룹 전체에 걸쳐 병합 표시되어 규격 서식 깔끔 유지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.466',
     version: 'v2.8.466',
     date: '2026-08-25',
