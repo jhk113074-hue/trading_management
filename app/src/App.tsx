@@ -29,6 +29,7 @@ import { Credentials } from './pages/Credentials';
 import { DomesticTrade } from './pages/DomesticTrade';
 import { DomesticQuotes } from './pages/DomesticQuotes';
 import { SystemLogs } from './pages/SystemLogs';
+import { DocViewerPage } from './pages/DocViewerPage';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -89,6 +90,7 @@ const App: React.FC = () => {
               <Route path="domestic-orders" element={<DomesticTrade />} />
               <Route path="domestic-trade" element={<Navigate to="/domestic-orders" replace />} />
             </Route>
+            <Route path="/doc-view" element={<DocViewerPage />} />
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

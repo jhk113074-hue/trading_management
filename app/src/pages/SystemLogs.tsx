@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.450',
+    version: 'v2.8.450',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '카카오톡 모바일 PDF 다운로드 403 권한 오류 해결 및 깔끔한 모바일 웹 뷰어 링크 연동',
+    content: '• Firebase Storage 발주서/서류 저장소 보안 규칙 수정 (외부 모바일 및 카카오톡 인앱 브라우저 다운로드 허용)\\n• 카카오톡 공유 메시지 내 복잡하고 긴 원본 토큰 링크 대신 깔끔한 모바일 웹 뷰어(/doc-view) 링크 탑재\\n• 모바일 접속 시 발주서 정보 확인 및 원클릭 PDF 다운로드/열기 화면 제공',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.449',
     version: 'v2.8.449',
     date: '2026-08-25',

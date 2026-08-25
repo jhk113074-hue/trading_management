@@ -5401,6 +5401,10 @@ export const OrderDetail: React.FC = () => {
 
       const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
 
+      const downloadLink = pdfUrl 
+        ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 발주서(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(pdfUrl)}`
+        : '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발행 및 저장해 주세요.)';
+
       const msg = `[${companyTitleName} 발주서 발행 및 메일전송 알림]
 ------------------------------------
 ▪ 발주번호: ${poNum}
@@ -5414,8 +5418,8 @@ ${itemsText}
 ▪ 참조(CC): ${ccEmails.join(', ')}
 ▪ 발행일시: ${dateFormatted}
 ------------------------------------
-📄 발주서 PDF 원본 다운로드:
-${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발행 및 저장해 주세요.)'}`;
+📄 발주서 PDF 다운로드:
+${downloadLink}`;
 
       setKatalkModalSupplier(supplierName);
       setKatalkModalMsg(msg);
@@ -6243,7 +6247,15 @@ ${pdfUrl || '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발�
     const toEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
 
-    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 원본 다운로드:\n${arrivalPdfUrl || '발행 예정'}\n\n🏷️ 쉬핑마크 라벨 PDF 원본 다운로드:\n${shippingPdfUrl || '발행 예정'}`;
+    const arrivalLink = arrivalPdfUrl 
+      ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 도착보고서(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(arrivalPdfUrl)}`
+      : '발행 예정';
+
+    const shippingLink = shippingPdfUrl 
+      ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 쉬핑마크 라벨(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(shippingPdfUrl)}`
+      : '발행 예정';
+
+    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 다운로드:\n${arrivalLink}\n\n🏷️ 쉬핑마크 라벨 PDF 다운로드:\n${shippingLink}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).catch(() => {});
