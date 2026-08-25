@@ -22,6 +22,7 @@ import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
 import { PoEmailSendModal } from '../components/PoEmailSendModal';
+import { PackingSplitModal } from '../components/PackingSplitModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { getOverallProgress, getStageProgress, getEffectiveStageCompletion, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
@@ -318,6 +319,7 @@ export const OrderDetail: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [selectedPackingItems, setSelectedPackingItems] = useState<{ [containerIdx: number]: number[] }>({});
+  const [splitModalTarget, setSplitModalTarget] = useState<{ containerIdx: number; itemIdx: number; item: any } | null>(null);
   const [draggedPackingItem, setDraggedPackingItem] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
   const [dragOverItemIdx, setDragOverItemIdx] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
 
@@ -3532,6 +3534,20 @@ export const OrderDetail: React.FC = () => {
       return;
     }
 
+    // If a single item is targeted, open the precise PackingSplitModal with 1PLT custom qty and remainder calculation
+    if (selectedIndexes.length === 1) {
+      const singleIdx = selectedIndexes[0];
+      const targetItem = items[singleIdx];
+      if (targetItem) {
+        setSplitModalTarget({
+          containerIdx,
+          itemIdx: singleIdx,
+          item: targetItem
+        });
+        return;
+      }
+    }
+
     selectedIndexes.sort((a: number, b: number) => b - a);
 
     let splitOccurred = false;
@@ -3545,77 +3561,14 @@ export const OrderDetail: React.FC = () => {
       }
 
       const totalQty = parseFloat(target.qty) || 0;
-      const totalNet = parseFloat(target.netWeight) || 0;
-      const totalGross = parseFloat(target.grossWeight) || 0;
-      const totalCbm = parseFloat(target.cbm) || 0;
 
-      if (count > 1) {
-        // Multi-package item (e.g. 1-38)
-        const input = window.prompt(`[${target.description || '품목'}]\n현재 총 ${count}개의 PKG입니다.\n몇 개 단위로 분할하시겠습니까?\n(예: 1 입력시 1개씩 ${count}줄로 분할, 10 입력시 10개씩 분할)`, '1');
-        if (input === null) continue;
-        const chunkSize = Math.max(1, parseInt(input || '1', 10) || 1);
-
-        const cleanDims = (target.dimensions || '').toLowerCase().replace(/\s+/g, '');
-        const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
-        const hasValidDims = dims[0] > 0 && dims[1] > 0 && dims[2] > 0;
-        const singlePalletCbm = hasValidDims ? ((dims[0] * dims[1] * dims[2]) / 1000000000) : (totalCbm / count);
-
-        const splitRows: any[] = [];
-        let remainingCount = count;
-
-        while (remainingCount > 0) {
-          const curChunk = Math.min(remainingCount, chunkSize);
-          const ratio = curChunk / count;
-          splitRows.push({
-            ...target,
-            pkg: String(curChunk),
-            qty: String(Math.round(totalQty * ratio * 100) / 100),
-            netWeight: String(Math.round(totalNet * ratio)),
-            grossWeight: String(Math.round(totalGross * ratio)),
-            cbm: String((singlePalletCbm * curChunk).toFixed(3))
-          });
-          remainingCount -= curChunk;
-        }
-
-        items.splice(itemIdx, 1, ...splitRows);
-        splitOccurred = true;
-      } else if (totalQty > 1) {
-        // Single package with multiple quantity (e.g. Qty 2800)
-        const input = window.prompt(`[${target.description || '품목'}]\n현재 수량: ${totalQty.toLocaleString()}개\n\n몇 개 행(PKG)으로 균등 분할하시겠습니까?\n(예: 2 입력시 2개로 분할, 또는 1400 입력시 1400개 단위로 분할)`, '2');
-        if (input === null) continue;
-        const parsedInput = parseFloat(input || '2') || 2;
-        
-        let numSplits = 2;
-        if (parsedInput <= 50) {
-          numSplits = Math.max(2, Math.round(parsedInput));
-        } else {
-          numSplits = Math.max(2, Math.ceil(totalQty / parsedInput));
-        }
-
-        const cleanDims = (target.dimensions || '').toLowerCase().replace(/\s+/g, '');
-        const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
-        const hasValidDims = dims[0] > 0 && dims[1] > 0 && dims[2] > 0;
-        const singlePalletCbm = hasValidDims ? ((dims[0] * dims[1] * dims[2]) / 1000000000) : (totalCbm / numSplits);
-
-        const splitRows: any[] = [];
-        const baseQty = Math.floor(totalQty / numSplits);
-        const remainderQty = totalQty % numSplits;
-
-        for (let s = 0; s < numSplits; s++) {
-          const curQty = baseQty + (s === 0 ? remainderQty : 0);
-          const ratio = curQty / totalQty;
-          splitRows.push({
-            ...target,
-            pkg: '1',
-            qty: String(curQty),
-            netWeight: String(Math.round(totalNet * ratio)),
-            grossWeight: String(Math.round(totalGross * ratio)),
-            cbm: String(singlePalletCbm.toFixed(3))
-          });
-        }
-
-        items.splice(itemIdx, 1, ...splitRows);
-        splitOccurred = true;
+      if (count > 1 || totalQty > 1) {
+        setSplitModalTarget({
+          containerIdx,
+          itemIdx,
+          item: target
+        });
+        return;
       }
     }
 
@@ -3643,6 +3596,38 @@ export const OrderDetail: React.FC = () => {
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
     savePackingListToFirestore(nextContainers, nextReports);
+  };
+
+  const handleConfirmSplit = (splitRows: any[]) => {
+    if (!splitModalTarget) return;
+    const { containerIdx, itemIdx } = splitModalTarget;
+    const containers = basicForm.packingList?.containers || [];
+    if (!containers[containerIdx]) return;
+
+    const rawItems = containers[containerIdx].items || [];
+    const items = rawItems.map((it: any) => ({ ...it }));
+
+    items.splice(itemIdx, 1, ...splitRows);
+    recalculateContainerPkgNos(items);
+
+    const nextContainers = containers.map((c: any, idx: number) => {
+      if (idx === containerIdx) {
+        return {
+          ...c,
+          items: items.map((it: any) => ({ ...it }))
+        };
+      }
+      return { ...c, items: (c.items || []).map((it: any) => ({ ...it })) };
+    });
+
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+    setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
+
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+
+    savePackingListToFirestore(nextContainers, nextReports);
+    setSplitModalTarget(null);
   };
 
   const resetStep2PkgNumbers = (containerIdx: number) => {
@@ -15358,6 +15343,13 @@ ${downloadLink}`;
           </>
         );
       })()}
+
+      <PackingSplitModal
+        isOpen={!!splitModalTarget}
+        onClose={() => setSplitModalTarget(null)}
+        item={splitModalTarget?.item}
+        onConfirm={handleConfirmSplit}
+      />
 
       {poEmailModalData && (
         <PoEmailSendModal

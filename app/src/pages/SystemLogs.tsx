@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.454',
+    version: 'v2.8.454',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '패킹리스트 분할 시 "1PLT당 수량/중량 + 나머지 자동 계산" 정밀 분할 모달 신설',
+    content: '• 브라우저 기본 prompt 팝업 제거 및 전용 [팔레트(PLT) 패키지 정밀 분할 모달] 도입\\n• [1 PLT당 기준 수량/중량] 입력 시 정량 PLT 개수와 잔여(나머지) PLT를 자동으로 계산하여 분할\\n• 분할될 행(Pallet No, 수량, NET/GROSS 중량, CBM)을 실시간 표로 사전 검증 후 원클릭 분할 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.453',
     version: 'v2.8.453',
     date: '2026-08-25',
