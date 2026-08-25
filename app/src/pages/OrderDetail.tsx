@@ -44,8 +44,50 @@ const cleanItemDescription = (desc: string | undefined): string => {
     .replace(/\s*\(완제\s*Pallet\)/gi, '')
     .replace(/\s*\(완제\)/gi, '')
     .replace(/완제\s*Pallet/gi, '')
-    .replace(/\s*-\s*[0-9,]+(?:\.[0-9]+)?\s*[A-Za-z가-힣%]+$/i, '')
     .trim();
+};
+
+const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[], productsList?: any[]): string => {
+  if (!desc) return '';
+  const clean = cleanItemDescription(desc);
+  
+  // Extract item code inside brackets e.g. [P0005]
+  const match = clean.match(/^\[(.*?)\]\s*(.*)$/);
+  if (match) {
+    const code = match[1].trim();
+    
+    // 1. Check matching order items
+    const orderMatch = (orderItems || []).find((oi: any) => {
+      const oiCode = (oi.itemCode || oi.code || '').replace(/[\[\]]/g, '').trim();
+      const oiNameMatch = (oi.name || '').match(/^\[(.*?)\]/);
+      const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
+      return (oiCode && oiCode.toLowerCase() === code.toLowerCase()) || 
+             (extractedCode && extractedCode.toLowerCase() === code.toLowerCase()) || 
+             (oi.name && oi.name.toLowerCase().includes(code.toLowerCase()));
+    });
+
+    if (orderMatch && orderMatch.name) {
+      const targetFullName = cleanItemDescription(orderMatch.name);
+      if (targetFullName.length > clean.length && targetFullName.toLowerCase().startsWith(`[${code.toLowerCase()}]`)) {
+        return targetFullName;
+      }
+    }
+
+    // 2. Check matching products database
+    const prodMatch = (productsList || []).find((p: any) => 
+      (p.productCode && p.productCode.trim().toLowerCase() === code.toLowerCase()) ||
+      (p.id && p.id.trim().toLowerCase() === code.toLowerCase())
+    );
+
+    if (prodMatch) {
+      const fullNameWithCode = `[${prodMatch.productCode || code}] ${prodMatch.name || ''}`.trim();
+      if (fullNameWithCode.length > clean.length) {
+        return fullNameWithCode;
+      }
+    }
+  }
+
+  return clean;
 };
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
@@ -9450,10 +9492,11 @@ ${downloadLink}`;
                                       style={{ cursor: isEditing ? 'pointer' : 'not-allowed', width: '15px', height: '15px' }}
                                     />
                                   </th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>Pallet No</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'left', width: '11%', whiteSpace: 'nowrap' }}>Supplier (유통사)</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }} title="위험물/개별 포장 등 실제 패키지 수량 직접 입력">PKG수</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '13%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
                                   <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="2단 이상 다단적재 허용 여부 (클릭하여 수정)">다단적재</th>
                                   <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="수평 90도 회전 허용 여부 (클릭하여 수정)">회전허용</th>
@@ -9563,10 +9606,10 @@ ${downloadLink}`;
                                                 placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                                 rows={2}
                                                 style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                                value={cleanItemDescription(it.description)}
+                                                value={restoreFullItemDescription(it.description, (order as any)?.items, products)}
                                                 onChange={e => {
                                                   const val = e.target.value;
-                                                  const cleanVal = val.replace(/^P#\d+\.\s*/i, '');
+                                                  const cleanVal = cleanItemDescription(val);
                                                   const nextContainers = [...basicForm.packingList.containers];
                                                   nextContainers[cIdx].items[itIdx].description = cleanVal;
                                                   const match = cleanVal.match(/^\[(.*?)\]/);
@@ -9670,6 +9713,23 @@ ${downloadLink}`;
                                               const val = e.target.value;
                                               const nextContainers = [...basicForm.packingList.containers];
                                               nextContainers[cIdx].items[itIdx].qty = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                          />
+                                        </td>
+
+                                        {/* 5-2. PKG수 (Individual per row) */}
+                                        <td style={{ padding: '4px' }}>
+                                          <input
+                                            type="number"
+                                            placeholder="PKG수"
+                                            disabled={!isEditing}
+                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
+                                            value={it.pkg !== undefined ? it.pkg : ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].pkg = val;
                                               setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                             }}
                                           />
@@ -9977,6 +10037,7 @@ ${downloadLink}`;
                                   (() => {
                                     const items = c.items || [];
                                     const totalQty = items.reduce((acc: number, it: any) => acc + (Number(it.qty) || 0), 0);
+                                    const totalPkg = items.reduce((acc: number, it: any) => acc + (Number(it.pkg) || 0), 0);
                                     const totalNetWeight = items.reduce((acc: number, it: any) => acc + (Number(it.netWeight) || 0), 0);
                                     const totalGrossWeight = items.reduce((acc: number, it: any) => acc + (Number(it.grossWeight) || 0), 0);
                                     const totalCbm = items.reduce((acc: number, it: any) => {
@@ -10003,6 +10064,7 @@ ${downloadLink}`;
                                         <td style={{ padding: '6px 4px', color: 'var(--text-secondary)' }}>총 {(c.items || []).length}개 항목</td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalQty.toLocaleString()}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '8px' }}>{totalPkg > 0 ? totalPkg.toLocaleString() : '-'}</td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px' }}></td>
                                         <td style={{ padding: '6px 4px' }}></td>
@@ -12696,11 +12758,12 @@ ${downloadLink}`;
                                         <td style={{ padding: '4px 6px' }}>
                                           <input
                                             type="text"
-                                            value={(it.description || '').replace(/^P#\d+\.\s*/i, '').replace(/\s*\(완제\s*Pallet\)/gi, '').replace(/\s*\(완제\)/gi, '').replace(/완제\s*Pallet/gi, '')}
+                                            value={restoreFullItemDescription(it.description, (order as any)?.items, products)}
                                             onChange={e => {
                                               const val = e.target.value;
+                                              const cleanVal = cleanItemDescription(val);
                                               const nextContainers = [...basicForm.packingList.containers];
-                                              nextContainers[cIdx].items[itIdx].description = val;
+                                              nextContainers[cIdx].items[itIdx].description = cleanVal;
                                               setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                             }}
                                             placeholder="품명 및 사양"

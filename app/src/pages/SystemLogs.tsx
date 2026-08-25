@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.453',
+    version: 'v2.8.453',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '패킹리스트 Pallet No 명칭 변경 및 위험물/개별 포장용 "PKG수" 수동 입력 컬럼 신설',
+    content: '• 컬럼 헤더 [PKG NO.]를 [Pallet No]로 직관적 명칭 변경\\n• [수량] 우측에 [PKG수] 직접 입력 컬럼 신설 (위험물 드럼/캔 포장 등 수량과 패키지 개수가 상이한 품목의 정확한 관리 지원)\\n• 하단 합계 요약행에 총 PKG수 실시간 집계 추가',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.452',
+    version: 'v2.8.452',
+    date: '2026-08-25',
+    category: '버그수정',
+    title: '패킹리스트 품명 및 사양(Description of Goods) 모델명 잘림 현상 원상 복구',
+    content: '• 상품 모델명 내 하이픈(-) 및 번호(예: -1002, -109FR, -613 등)가 수량 정규식에 의해 잘리던 현상 완전 제거\\n• 오더 원본 품목 및 마스터 제품 DB와 자동 대조하여 잘려있던 품명/모델명 자동 복원(restoreFullItemDescription) 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.451',
     version: 'v2.8.451',
     date: '2026-08-25',
