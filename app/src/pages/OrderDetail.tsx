@@ -58,6 +58,7 @@ const formatFullCiName = (it: any): string => {
     name = `${name} (${spec})`;
   }
   return (name || '')
+    .replace(/^\[.*?\]\s*/, '')
     .replace(/\(완제\s*Pallet\)/gi, '')
     .replace(/\(완제품\)/gi, '')
     .replace(/\(반제품\)/gi, '')

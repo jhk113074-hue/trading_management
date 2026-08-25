@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.465',
+    version: 'v2.8.465',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: 'CI / PL 서식에서 내부 당사 상품코드([CODE]) 제외 및 순수 영문 품명+스펙만 표시',
+    content: '• Commercial Invoice(CI) 및 Packing List(PL) 서식 출력 시 내부 관리용 상품코드([상품코드])를 깔끔하게 제외하고 품명 및 세부 스펙(Spec)만 표기\\n• 예: STEEL SKID CONNETOR (WBR-7575Z), AIR VENT (100A)-PE Mesh,RAL9002 (100A, RAL9002)\\n• 화면 미리보기 모달 및 Excel 내보내기 전체 동시 적용',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.464',
+    version: 'v2.8.464',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: 'PACKING LIST Excel 내보내기 시 인쇄 밖 영역(우측)에 아이템별 PKG수 열 추가',
+    content: '• Packing List Excel 시트의 인쇄 영역(A~L열) 우측 외곽(M열)에 [PKG] 헤더 및 행별 PKG수(위험물/캔/드럼/포장 단위) 데이터 표시\\n• 인쇄 및 PDF 출력 시에는 본문(A~L)만 깔끔하게 출력되고, 엑셀 파일 열람 시에는 각 품목별 패키지 수량을 손쉽게 확인 가능하도록 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.463',
     version: 'v2.8.463',
     date: '2026-08-25',

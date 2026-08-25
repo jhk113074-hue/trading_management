@@ -256,8 +256,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
     const thickBorder = { style: 'medium' as ExcelJS.BorderStyle, color: { argb: 'FF0F172A' } };
     const doubleBorder = { style: 'double' as ExcelJS.BorderStyle, color: { argb: 'FF0F172A' } };
 
-        const cleanCiName = (rawName: string) => {
+            const cleanCiName = (rawName: string) => {
       return (rawName || '')
+        .replace(/^\[.*?\]\s*/, '')
         .replace(/\(완제\s*Pallet\)/gi, '')
         .replace(/\(완제품\)/gi, '')
         .replace(/\(반제품\)/gi, '')
