@@ -23,7 +23,13 @@ service cloud.firestore {
 
     // 회사 데이터 (PI, 주문, 제품, 고객, 공급업체 등): 로그인한 사용자만
     match /companies/{companyId}/{document=**} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+    // 외부 거래처/모바일 공유용 공개 문서 (발주서, 도착보고서 등)
+    match /public_docs/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
     // 나머지 모든 컬렉션: 로그인한 사용자만

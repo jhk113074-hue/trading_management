@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.451',
+    version: 'v2.8.451',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '카카오톡 공유 링크 극초소형 단축 URL(/doc-view?id=...) 및 404/인코딩 오류 완전 해결',
+    content: '• 복잡한 쿼리 파라미터 대신 간결한 단일 ID 기반 단축 URL(doc-view?id=...) 체계 구축\\n• Firestore public_docs 연동으로 이중 URL 인코딩 및 404 오류 원천 차단\\n• 모바일/스마트폰 및 카카오톡 브라우저에서 즉시 1초 내 PDF 다운로드 및 열기 가능',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.450',
     version: 'v2.8.450',
     date: '2026-08-25',

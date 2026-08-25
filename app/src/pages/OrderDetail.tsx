@@ -5340,6 +5340,19 @@ export const OrderDetail: React.FC = () => {
         history_logs: nextHistoryLogs
       });
 
+      // Register public_docs entry for super clean short URL sharing
+      const publicDocKey = `${order?.id}_${poNum}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      await setDoc(doc(db, 'public_docs', publicDocKey), {
+        id: publicDocKey,
+        orderId: order?.id,
+        poNum: poNum,
+        supplierName: supplierName,
+        title: `${isYS ? '영성ACC' : '(주)와이에스에이씨씨'} 발주서 (${poNum})`,
+        fileName: safeFileName,
+        fileUrl: downloadURL,
+        issuedAt: new Date().toISOString()
+      }, { merge: true }).catch(() => {});
+
       alert('✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
       setIssuedDocs(updatedDocs);
       
@@ -5401,8 +5414,22 @@ export const OrderDetail: React.FC = () => {
 
       const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
 
+      const publicDocKey = `${order?.id}_${poNum}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      if (pdfUrl && order?.id) {
+        setDoc(doc(db, 'public_docs', publicDocKey), {
+          id: publicDocKey,
+          orderId: order.id,
+          poNum: poNum,
+          supplierName: supplierName,
+          title: `${companyTitleName} 발주서 (${poNum})`,
+          fileName: latestDoc?.fileName || `${supplierName}_PO.pdf`,
+          fileUrl: pdfUrl,
+          issuedAt: latestDoc?.issuedAt || new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+
       const downloadLink = pdfUrl 
-        ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 발주서(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(pdfUrl)}`
+        ? `https://tradingmanagement-c1cf4.web.app/doc-view?id=${publicDocKey}`
         : '(발행된 발주서 PDF가 없습니다. 먼저 발주서를 발행 및 저장해 주세요.)';
 
       const msg = `[${companyTitleName} 발주서 발행 및 메일전송 알림]
