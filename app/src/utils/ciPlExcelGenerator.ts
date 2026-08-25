@@ -1039,7 +1039,6 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         const cStartRow = currRow;
 
         packageGroups.forEach((pkg) => {
-          const r = currRow;
           const pkgNum = pkg.pkgNo;
           const netW = pkg.netWeight;
           const grossW = pkg.grossWeight;
@@ -1050,67 +1049,107 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
           totalCbmV += cbm;
           totalPkgCount += pkg.pkgCount;
 
-          let descText = '';
           if (pkg.items.length === 1) {
+            const r = currRow;
+            const item = pkg.items[0];
             const weightSuffix = netW > 0 ? `-${netW.toLocaleString()}KG` : '';
-            descText = `P#${pkgNum} ${pkg.items[0].name}${weightSuffix}`;
+            const qtySuffix = item.qty > 0 ? ` (${item.qty.toLocaleString()} ${item.unit || 'PCS'})` : '';
+            const descText = `P#${pkgNum} ${item.name}${qtySuffix || weightSuffix}`;
+
             ws.getRow(r).height = 20;
+
+            ws.mergeCells(`D${r}:H${r}`);
+            ws.getCell(`D${r}`).value = descText;
+            ws.getCell(`D${r}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`D${r}`).alignment = { vertical: 'middle', wrapText: true };
+
+            ws.getCell(`I${r}`).value = netW;
+            ws.getCell(`I${r}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`I${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`I${r}`).numFmt = '#,##0';
+
+            ws.getCell(`J${r}`).value = grossW;
+            ws.getCell(`J${r}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`J${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`J${r}`).numFmt = '#,##0';
+
+            ws.mergeCells(`K${r}:L${r}`);
+            ws.getCell(`K${r}`).value = cbm;
+            ws.getCell(`K${r}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`K${r}`).numFmt = '#,##0.00';
+
+            for (let c = 1; c <= 12; c++) {
+              ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+            }
+
+            // Column 13: Numeric PKG value in outside print area
+            const pkgValCell = ws.getCell(r, 13);
+            pkgValCell.value = Number(item.pkgCount || pkg.pkgCount || 1);
+            pkgValCell.font = { name: 'Tahoma', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+            pkgValCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            pkgValCell.numFmt = '#,##0';
+            pkgValCell.border = { top: thinBorder, bottom: thinBorder, left: thickBorder, right: thickBorder };
+            pkgValCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+
+            currRow++;
           } else {
-            // Combined package with multiple items
-            const lines: string[] = [];
-            lines.push(`P#${pkgNum}${netW > 0 ? ` (${netW.toLocaleString()}KG)` : ''}`);
-            pkg.items.forEach(it => {
-              const qtyStr = it.qty > 0 ? ` (${it.qty.toLocaleString()} ${it.unit || 'PCS'})` : '';
-              lines.push(`  • ${it.name}${qtyStr}`);
+            // Multi-item merged package: 1 row per item so each item has a distinct numeric PKG cell
+            const pkgStartRow = currRow;
+            const pkgEndRow = pkgStartRow + pkg.items.length - 1;
+
+            pkg.items.forEach((item, itemIdx) => {
+              const r = currRow;
+              ws.getRow(r).height = 20;
+
+              const qtySuffix = item.qty > 0 ? ` (${item.qty.toLocaleString()} ${item.unit || 'PCS'})` : '';
+              let lineDesc = '';
+              if (itemIdx === 0) {
+                lineDesc = `P#${pkgNum} • ${item.name}${qtySuffix}`;
+              } else {
+                lineDesc = `  • ${item.name}${qtySuffix}`;
+              }
+
+              ws.mergeCells(`D${r}:H${r}`);
+              ws.getCell(`D${r}`).value = lineDesc;
+              ws.getCell(`D${r}`).font = { name: 'Tahoma', size: 8.5 };
+              ws.getCell(`D${r}`).alignment = { vertical: 'middle', wrapText: true };
+
+              // Column 13: Numeric PKG for THIS item row
+              const pkgValCell = ws.getCell(r, 13);
+              pkgValCell.value = Number(item.pkgCount || 1);
+              pkgValCell.font = { name: 'Tahoma', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
+              pkgValCell.alignment = { horizontal: 'center', vertical: 'middle' };
+              pkgValCell.numFmt = '#,##0';
+              pkgValCell.border = { top: thinBorder, bottom: thinBorder, left: thickBorder, right: thickBorder };
+              pkgValCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+
+              for (let c = 1; c <= 12; c++) {
+                ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+              }
+
+              currRow++;
             });
-            descText = lines.join('\n');
-            ws.getRow(r).height = Math.max(22, lines.length * 15 + 6);
+
+            // Merge I, J, K:L across all item rows for this package group
+            ws.mergeCells(`I${pkgStartRow}:I${pkgEndRow}`);
+            ws.getCell(`I${pkgStartRow}`).value = netW;
+            ws.getCell(`I${pkgStartRow}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`I${pkgStartRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`I${pkgStartRow}`).numFmt = '#,##0';
+
+            ws.mergeCells(`J${pkgStartRow}:J${pkgEndRow}`);
+            ws.getCell(`J${pkgStartRow}`).value = grossW;
+            ws.getCell(`J${pkgStartRow}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`J${pkgStartRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`J${pkgStartRow}`).numFmt = '#,##0';
+
+            ws.mergeCells(`K${pkgStartRow}:L${pkgEndRow}`);
+            ws.getCell(`K${pkgStartRow}`).value = cbm;
+            ws.getCell(`K${pkgStartRow}`).font = { name: 'Tahoma', size: 8.5 };
+            ws.getCell(`K${pkgStartRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+            ws.getCell(`K${pkgStartRow}`).numFmt = '#,##0.00';
           }
-
-          ws.mergeCells(`D${r}:H${r}`);
-          ws.getCell(`D${r}`).value = descText;
-          ws.getCell(`D${r}`).font = { name: 'Tahoma', size: 8.5 };
-          ws.getCell(`D${r}`).alignment = { vertical: 'middle', wrapText: true };
-
-          ws.getCell(`I${r}`).value = netW;
-          ws.getCell(`I${r}`).font = { name: 'Tahoma', size: 8.5 };
-          ws.getCell(`I${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-          ws.getCell(`I${r}`).numFmt = '#,##0';
-
-          ws.getCell(`J${r}`).value = grossW;
-          ws.getCell(`J${r}`).font = { name: 'Tahoma', size: 8.5 };
-          ws.getCell(`J${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-          ws.getCell(`J${r}`).numFmt = '#,##0';
-
-          ws.mergeCells(`K${r}:L${r}`);
-          ws.getCell(`K${r}`).value = cbm;
-          ws.getCell(`K${r}`).font = { name: 'Tahoma', size: 8.5 };
-          ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
-          ws.getCell(`K${r}`).numFmt = '#,##0.00';
-
-          for (let c = 1; c <= 12; c++) {
-            ws.getCell(r, c).border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
-          }
-
-          // Column 13: Item PKG value in outside print area
-          let pkgValueText = '';
-          if (pkg.items.length === 1) {
-            pkgValueText = String(pkg.items[0].pkgCount || pkg.pkgCount || 1);
-          } else {
-            const lines: string[] = ['']; // blank header line matching P#1 (xxxxKG)
-            pkg.items.forEach(it => {
-              lines.push(String(it.pkgCount || 1));
-            });
-            pkgValueText = lines.join('\n');
-          }
-          const pkgValCell = ws.getCell(r, 13);
-          pkgValCell.value = pkgValueText;
-          pkgValCell.font = { name: 'Tahoma', size: 8.5, bold: true, color: { argb: 'FF1E293B' } };
-          pkgValCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-          pkgValCell.border = { top: thinBorder, bottom: thinBorder, left: thickBorder, right: thickBorder };
-          pkgValCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
-
-          currRow++;
         });
 
         const cEndRow = currRow - 1;
