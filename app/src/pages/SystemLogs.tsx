@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.449',
+    version: 'v2.8.449',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '구버전 화면 캐시 및 롤백 현상 근본적 해결 (Service Worker 완전 해제 및 캐시 무효화)',
+    content: '• 브라우저 캐시 스토리지(CacheStorage) 및 구버전 서비스 워커 자동 등록 해제\\n• 빌드 번들 파일 최신화 시 즉시 새 코드가 로드되도록 정적 캐시 간섭 구조 완전 제거\\n• HTML 진입점 Cache-Control(no-store, no-cache, max-age=0) 헤더 강화로 실시간 배포 즉시 반영 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.448',
     version: 'v2.8.448',
     date: '2026-08-25',
