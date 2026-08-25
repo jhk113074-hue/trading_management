@@ -50,6 +50,24 @@ const cleanItemDescription = (desc: string | undefined): string => {
 
 
 
+const formatFullCiName = (it: any): string => {
+  if (!it) return '';
+  let name = typeof it === 'string' ? it : (it.name || it.description || it.itemName || '');
+  const spec = (typeof it === 'object' && it ? (it.grade || it.specification || it.spec || it.quality || '') : '').trim();
+  if (spec && !name.toLowerCase().includes(spec.toLowerCase())) {
+    name = `${name} (${spec})`;
+  }
+  return (name || '')
+    .replace(/\(완제\s*Pallet\)/gi, '')
+    .replace(/\(완제품\)/gi, '')
+    .replace(/\(반제품\)/gi, '')
+    .replace(/\(SAMPLE\)/gi, '')
+    .replace(/\s*\(완제\)/gi, '')
+    .replace(/완제\s*Pallet/gi, '')
+    .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
+    .trim();
+};
+
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
   if (!pkgNo) return '0';
   const trimmed = pkgNo.trim();
@@ -2043,10 +2061,26 @@ export const OrderDetail: React.FC = () => {
         skipNextDirtyCheck.current = true;
         setOrder(data);
         if ((data as any).customCiItems && (data as any).customCiItems.length > 0) {
-          setCustomCiItems((data as any).customCiItems);
+          const rawCi = (data as any).customCiItems;
+          const orderItemsList = data.items || [];
+          const enriched = rawCi.map((ci: any, ciIdx: number) => {
+            if (ci.isFreight) return ci;
+            const matchedOrder = orderItemsList[ciIdx] || orderItemsList.find((oi: any) => {
+              const oiName = (oi.name || (oi as any).itemName || '').trim();
+              return ci.name && oiName && (ci.name.includes(oiName) || oiName.includes(ci.name));
+            });
+            if (matchedOrder) {
+              const fullName = formatFullCiName(matchedOrder);
+              if (fullName && (!ci.name || !ci.name.startsWith('[') || !ci.name.includes('('))) {
+                return { ...ci, name: fullName };
+              }
+            }
+            return ci;
+          });
+          setCustomCiItems(enriched);
         } else if (!initialLoadRef.current && data.items && data.items.length > 0) {
           setCustomCiItems(data.items.map((it: any) => ({
-            name: (it.name || '').replace(/^\[.*?\]\s*/, '').replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적|TAESUNG|ECOCLEAR)[^)]*\)/gi, '').trim(),
+            name: formatFullCiName(it),
             hsCode: it.hsCode || '',
             qty: Number(it.qty) || 0,
             unit: it.unit || 'PCS',

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.463',
+    version: 'v2.8.463',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '기존 저장된 Commercial Invoice 품목에도 상품코드 및 스펙 자동 마이그레이션 적용',
+    content: '• 기존 DB에 저장되어 있던 CI 품목(customCiItems)을 발주 품목 원본과 매칭하여 상품코드([CODE]) 및 세부 스펙(Spec)이 없는 경우 자동으로 전체 품명으로 자동 보정 및 갱신\\n• 화면 로드 시 CI 탭 입력창 및 미리보기에 완전한 [상품코드] 품명 (스펙) 구조가 즉시 반영되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.462',
     version: 'v2.8.462',
     date: '2026-08-25',
