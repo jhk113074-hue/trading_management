@@ -116,8 +116,16 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     ? '111-201, 76, WOLMYEONG-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28569, REPUBLIC OF KOREA\nTEL: +82 70 4141 2927 / FAX: +82 303 3444 1130'
     : '111-201, 76, WOLMYEONG-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28569, REPUBLIC OF KOREA\nTEL: +82 70 4141 2927 / FAX: +82 303 3444 1130';
 
-  const cleanCiName = (rawName: string) => {
-    return (rawName || '').replace(/^\[.*?\]\s*/, '').trim();
+    const cleanCiName = (rawName: string) => {
+    return (rawName || '')
+      .replace(/\(완제\s*Pallet\)/gi, '')
+      .replace(/\(완제품\)/gi, '')
+      .replace(/\(반제품\)/gi, '')
+      .replace(/\(SAMPLE\)/gi, '')
+      .replace(/\s*\(완제\)/gi, '')
+      .replace(/완제\s*Pallet/gi, '')
+      .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
+      .trim();
   };
 
   const renderGraphicShippingMark = () => {

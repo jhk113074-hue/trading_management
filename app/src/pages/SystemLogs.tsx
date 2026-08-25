@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.462',
+    version: 'v2.8.462',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: 'Commercial Invoice 품목에 상품코드([CODE]) 및 세부 스펙(Spec) 전체 포함 출력',
+    content: '• Commercial Invoice(CI)의 Description of Goods 열에 상품코드([상품코드]) 및 스펙(Spec)이 빠짐없이 전체 표기되도록 표준화 (예: [STEEL SKID CONNETOR] STEEL SKID CONNETOR (WBR-7575Z))\\n• CI/PL 미리보기 모달, CI 편집 탭 및 Excel 내보내기 문서 전체 동시 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.461',
     version: 'v2.8.461',
     date: '2026-08-25',

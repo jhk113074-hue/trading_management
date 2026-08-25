@@ -11744,18 +11744,23 @@ ${downloadLink}`;
                 const originMark = commonShippingMark.origin || 'MADE IN KOREA';
                 const formattedMarkText = `${shapeSymbol}\n${compMark}\n${portCountryMark}\n${palletNoText}\n${originMark}`;
 
-                const cleanCiName = (rawName: string) => {
-                  return (rawName || '')
-                    .replace(/^\[.*?\]\s*/, '')
-                    .replace(/\(완제\s*Pallet\)/gi, '')
-                    .replace(/\(완제품\)/gi, '')
-                    .replace(/\(반제품\)/gi, '')
-                    .replace(/\(SAMPLE\)/gi, '')
-                    .replace(/\s*\(완제\)/gi, '')
-                    .replace(/완제\s*Pallet/gi, '')
-                    .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
-                    .trim();
-                };
+                const formatFullCiName = (it: any) => {
+    let name = typeof it === 'string' ? it : (it?.name || it?.description || it?.itemName || '');
+    const spec = (typeof it === 'object' && it ? (it.grade || it.specification || it.spec || it.quality || '') : '').trim();
+    if (spec && !name.toLowerCase().includes(spec.toLowerCase())) {
+      name = `${name} (${spec})`;
+    }
+    return (name || '')
+      .replace(/\(완제\s*Pallet\)/gi, '')
+      .replace(/\(완제품\)/gi, '')
+      .replace(/\(반제품\)/gi, '')
+      .replace(/\(SAMPLE\)/gi, '')
+      .replace(/\s*\(완제\)/gi, '')
+      .replace(/완제\s*Pallet/gi, '')
+      .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
+      .trim();
+  };
+
 
                 const forwarderTotalUsd = forwardersList.reduce((sum, fw) => {
                   return sum + (parseFloat(fw.budgetAmountUsd as any) || Number(fw.amountUsd) || (fw.freightCurrency === 'USD' ? Number(fw.freightAmount) : 0) || 0);
@@ -11783,7 +11788,7 @@ ${downloadLink}`;
                   return [
                     ...(orderItems || []).map(it => {
                       return {
-                        name: cleanCiName(it.name || ''),
+                        name: formatFullCiName(it),
                         hsCode: getProductHsCode(it, products, basicForm.customer),
                         qty: Number(it.qty) || 0,
                         unit: it.unit || 'PCS',
@@ -11807,7 +11812,7 @@ ${downloadLink}`;
                           (oi.productCode && it.description && it.description.includes(oi.productCode))
                         );
                         allItems.push({
-                          name: cleanCiName(it.description || it.itemName || matchedPO?.name || ''),
+                          name: formatFullCiName(it.description || it.itemName || matchedPO?.name || ''),
                           qty: Number(it.qty) || 0,
                           unit: it.unit || matchedPO?.unit || 'EA',
                           unitPrice: matchedPO?.unitPrice || 0,
@@ -12269,7 +12274,7 @@ ${downloadLink}`;
                               if (confirm('수주 품목 및 포워딩 운송비 데이터를 기준으로 CI 품목 및 운임 목록을 다시 초기화하시겠습니까?')) {
                                 const next = [
                                   ...(orderItems || []).map(it => ({
-                                    name: cleanCiName(it.name || ''),
+                                    name: formatFullCiName(it),
                                     hsCode: getProductHsCode(it, products, basicForm.customer),
                                     qty: Number(it.qty) || 0,
                                     unit: it.unit || 'PCS',
@@ -15248,25 +15253,30 @@ ${downloadLink}`;
           return ciItemsList;
         })();
 
-        const cleanCiName = (rawName: string) => {
-          return (rawName || '')
-            .replace(/^\[.*?\]\s*/, '')
-            .replace(/\(완제\s*Pallet\)/gi, '')
-            .replace(/\(완제품\)/gi, '')
-            .replace(/\(반제품\)/gi, '')
-            .replace(/\(SAMPLE\)/gi, '')
-            .replace(/\s*\(완제\)/gi, '')
-            .replace(/완제\s*Pallet/gi, '')
-            .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
-            .trim();
-        };
+        const formatFullCiName = (it: any) => {
+    let name = typeof it === 'string' ? it : (it?.name || it?.description || it?.itemName || '');
+    const spec = (typeof it === 'object' && it ? (it.grade || it.specification || it.spec || it.quality || '') : '').trim();
+    if (spec && !name.toLowerCase().includes(spec.toLowerCase())) {
+      name = `${name} (${spec})`;
+    }
+    return (name || '')
+      .replace(/\(완제\s*Pallet\)/gi, '')
+      .replace(/\(완제품\)/gi, '')
+      .replace(/\(반제품\)/gi, '')
+      .replace(/\(SAMPLE\)/gi, '')
+      .replace(/\s*\(완제\)/gi, '')
+      .replace(/완제\s*Pallet/gi, '')
+      .replace(/\s*\([^)]*(Pallet|완제|적재|대상|단품|혼적)[^)]*\)/gi, '')
+      .trim();
+  };
+
 
         const currentCiItems = customCiItems && customCiItems.length > 0
           ? customCiItems
           : (orderItems || []).map(it => {
               const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
               return {
-                name: cleanCiName(it.name || ''),
+                name: formatFullCiName(it),
                 hsCode: it.hsCode || ((matchedProd?.customerHsCodes && basicForm.customer) ? (matchedProd.customerHsCodes as any)[basicForm.customer] : '') || matchedProd?.hsCode || '',
                 qty: Number(it.qty) || 0,
                 unit: it.unit || 'PCS',
