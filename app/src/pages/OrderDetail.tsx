@@ -12062,7 +12062,12 @@ ${downloadLink}`;
                   const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
 
                   const isYSComp = (basicForm.issuingCompany as string) === 'YS' || (basicForm.issuingCompany as string) === '영성ACC';
-                  const activeCompDoc = myCompaniesList.find(c => isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS')) : (c.id === 'YSACC' || !c.nameEn?.includes('YS')));
+                  const activeCompDoc = myCompaniesList.find(c => 
+                    c.id === basicForm.issuingCompany ||
+                    c.nameKo === basicForm.issuingCompany ||
+                    c.nameEn === basicForm.issuingCompany ||
+                    (isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS') || c.nameKo?.includes('영성')) : (c.id === 'YSACC' || (!c.nameEn?.includes('YS') && !c.nameKo?.includes('영성'))))
+                  ) || myCompaniesList.find(c => c.letterheadUrl) || myCompaniesList[0];
                   const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
 
                   const finalIncludeLetterhead = overrideIncludeLetterhead !== undefined ? overrideIncludeLetterhead : includeLetterhead;
@@ -15604,7 +15609,12 @@ ${downloadLink}`;
             });
 
         const isYSComp = (basicForm.issuingCompany as string) === 'YS' || (basicForm.issuingCompany as string) === '영성ACC';
-        const activeCompDoc = myCompaniesList.find(c => isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS')) : (c.id === 'YSACC' || !c.nameEn?.includes('YS')));
+        const activeCompDoc = myCompaniesList.find(c => 
+          c.id === basicForm.issuingCompany ||
+          c.nameKo === basicForm.issuingCompany ||
+          c.nameEn === basicForm.issuingCompany ||
+          (isYSComp ? (c.id === 'YS' || c.nameEn?.includes('YS') || c.nameKo?.includes('영성')) : (c.id === 'YSACC' || (!c.nameEn?.includes('YS') && !c.nameKo?.includes('영성'))))
+        ) || myCompaniesList.find(c => c.letterheadUrl) || myCompaniesList[0];
         const letterheadUrl = activeCompDoc?.letterheadUrl || (isYSComp ? '/ys_acc_letterhead.png' : '/ysacc_letterhead.png');
 
         return (

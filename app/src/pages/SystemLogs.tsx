@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.469',
+    version: 'v2.8.469',
+    date: '2026-08-25',
+    category: '버그수정',
+    title: '자사정보관리(MyCompany)에 등록된 공식 레터헤드(Letterhead) 이미지 Excel 정상 출력 보장',
+    content: '• Excel 내보내기 시 자사정보관리에 등록된 레터헤드(Firebase Storage URL / 이미지 파일)를 브라우저 Canvas 및 다중 프로토콜로 로드하여 CI/PL 상단에 완벽하게 삽입\\n• 발행회사(YSACC, YS 등) 매칭 실패 시에도 자사정보의 레터헤드 이미지를 최우선 보존하도록 보강',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.468',
     version: 'v2.8.468',
     date: '2026-08-25',
