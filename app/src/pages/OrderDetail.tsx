@@ -48,75 +48,7 @@ const cleanItemDescription = (desc: string | undefined): string => {
     .trim();
 };
 
-const restoreFullItemDescription = (desc: string | undefined, orderItems?: any[], productsList?: any[], itemIdx?: number): string => {
-  if (!desc) return '';
-  let clean = cleanItemDescription(desc).trim();
-  
-  // 1. Try matching with order.items directly (by index first if available, then by name/code)
-  let orderMatch: any = null;
-  if (orderItems && orderItems.length > 0) {
-    if (typeof itemIdx === 'number' && orderItems[itemIdx]) {
-      const candidate = orderItems[itemIdx];
-      const cName = (candidate.name || (candidate as any).itemName || '').trim();
-      const curCodeMatch = clean.match(/^\[(.*?)\]/);
-      const curCode = curCodeMatch ? curCodeMatch[1].trim() : clean;
-      if (!curCode || cName.includes(curCode) || clean.includes(curCode)) {
-        orderMatch = candidate;
-      }
-    }
-    if (!orderMatch) {
-      orderMatch = orderItems.find((oi: any) => {
-        const oiCode = (oi.itemCode || (oi as any).code || '').replace(/[\[\]]/g, '').trim();
-        const oiName = (oi.name || (oi as any).itemName || '').trim();
-        const oiNameMatch = oiName.match(/^\[(.*?)\]/);
-        const extractedCode = oiNameMatch ? oiNameMatch[1].trim() : '';
 
-        const curMatch = clean.match(/^\[(.*?)\]/);
-        const curCode = curMatch ? curMatch[1].trim() : clean;
-
-        return (
-          (oiCode && curCode && oiCode.toLowerCase() === curCode.toLowerCase()) ||
-          (extractedCode && curCode && extractedCode.toLowerCase() === curCode.toLowerCase()) ||
-          (oiName && clean && (oiName.toLowerCase().includes(clean.toLowerCase()) || clean.toLowerCase().includes(oiName.toLowerCase())))
-        );
-      });
-    }
-  }
-
-  if (orderMatch) {
-    let fullFromOrder = (orderMatch.name || (orderMatch as any).itemName || '').trim();
-    const spec = (orderMatch.grade || orderMatch.specification || orderMatch.spec || orderMatch.quality || '').trim();
-    if (spec && !fullFromOrder.toLowerCase().includes(spec.toLowerCase())) {
-      fullFromOrder = `${fullFromOrder} (${spec})`;
-    }
-    return cleanItemDescription(fullFromOrder);
-  }
-
-  // 2. Try matching with master products list
-  const curMatch = clean.match(/^\[(.*?)\]/);
-  const searchKey = curMatch ? curMatch[1].trim() : clean;
-
-  const prodMatch = (productsList || []).find((p: any) => 
-    (p.productCode && p.productCode.trim().toLowerCase() === searchKey.toLowerCase()) ||
-    (p.id && p.id.trim().toLowerCase() === searchKey.toLowerCase()) ||
-    (p.nameKo && p.nameKo.trim().toLowerCase() === searchKey.toLowerCase()) ||
-    (p.nameEn && p.nameEn.trim().toLowerCase() === searchKey.toLowerCase())
-  );
-
-  if (prodMatch) {
-    const code = prodMatch.productCode || searchKey;
-    const name = prodMatch.nameEn || prodMatch.nameKo || prodMatch.name || '';
-    const spec = (prodMatch.specification || prodMatch.spec || '').trim();
-
-    let constructed = `[${code}] ${name}`.trim();
-    if (spec && !constructed.toLowerCase().includes(spec.toLowerCase())) {
-      constructed = `${constructed} (${spec})`;
-    }
-    return constructed;
-  }
-
-  return clean;
-};
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
   if (!pkgNo) return '0';
@@ -2210,35 +2142,36 @@ export const OrderDetail: React.FC = () => {
 
             if (rawPacking && rawPacking.containers && rawPacking.containers.length > 0) {
               const cleanedContainers = rawPacking.containers.map((c: any) => {
-                const items = (c.items || []).map((it: any, itIdx: number) => {
+                const items = (c.items || []).map((it: any) => {
                   let desc = it.description || '';
                   let supplier = it.supplier || '';
 
-                  // Match with exact order item from order.items
-                  const matchedOrderItem = orderItems.find((oi: any, oiIdx: number) => {
-                    const oiName = (oi.name || (oi as any).itemName || '').trim();
-                    const oiCode = (oi.itemCode || (oi as any).code || '').replace(/[\[\]]/g, '').trim();
+                  // Only enrich if description is missing or bare code without full title
+                  if (!desc || desc.endsWith('VUP') || desc.endsWith('JP') || desc.endsWith('K') || desc.endsWith('CBA') || desc.endsWith('CBU')) {
                     const curCodeMatch = desc.match(/^\[(.*?)\]/);
                     const curCode = curCodeMatch ? curCodeMatch[1].trim() : '';
 
-                    if (curCode && oiCode && curCode.toLowerCase() === oiCode.toLowerCase()) return true;
-                    if (curCode && oiName.toLowerCase().includes(`[${curCode.toLowerCase()}]`)) return true;
-                    if (desc && oiName && (desc.toLowerCase().includes(oiName.toLowerCase()) || oiName.toLowerCase().includes(desc.toLowerCase()))) return true;
-                    return oiIdx === itIdx;
-                  });
+                    if (curCode) {
+                      const matchedOrderItem = orderItems.find((oi: any) => {
+                        const oiName = (oi.name || (oi as any).itemName || '').trim();
+                        const oiCode = (oi.itemCode || (oi as any).code || '').replace(/[\[\]]/g, '').trim();
+                        return (oiCode && oiCode.toLowerCase() === curCode.toLowerCase()) || (oiName && oiName.toLowerCase().includes(`[${curCode.toLowerCase()}]`));
+                      });
 
-                  if (matchedOrderItem) {
-                    let orderedName = (matchedOrderItem.name || (matchedOrderItem as any).itemName || '').trim();
-                    const oiAny = matchedOrderItem as any;
-                    const spec = (oiAny.grade || oiAny.specification || oiAny.spec || oiAny.quality || '').trim();
-                    if (spec && !orderedName.toLowerCase().includes(spec.toLowerCase())) {
-                      orderedName = `${orderedName} (${spec})`;
-                    }
-                    if (orderedName) {
-                      desc = orderedName;
-                    }
-                    if ((!supplier || supplier === 'General Supplier' || supplier === '기타 공급사' || !supplier.trim()) && matchedOrderItem.supplier) {
-                      supplier = matchedOrderItem.supplier;
+                      if (matchedOrderItem) {
+                        let orderedName = (matchedOrderItem.name || (matchedOrderItem as any).itemName || '').trim();
+                        const oiAny = matchedOrderItem as any;
+                        const spec = (oiAny.grade || oiAny.specification || oiAny.spec || oiAny.quality || '').trim();
+                        if (spec && !orderedName.toLowerCase().includes(spec.toLowerCase())) {
+                          orderedName = `${orderedName} (${spec})`;
+                        }
+                        if (orderedName) {
+                          desc = orderedName;
+                        }
+                        if ((!supplier || supplier === 'General Supplier' || supplier === '기타 공급사' || !supplier.trim()) && matchedOrderItem.supplier) {
+                          supplier = matchedOrderItem.supplier;
+                        }
+                      }
                     }
                   }
 
@@ -9591,7 +9524,7 @@ ${downloadLink}`;
                                                 placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                                 rows={2}
                                                 style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
-                                                value={restoreFullItemDescription(it.description, (order as any)?.items, products, itIdx)}
+                                                value={it.description || ''}
                                                 onChange={e => {
                                                   const val = e.target.value;
                                                   const cleanVal = cleanItemDescription(val);
@@ -12745,7 +12678,7 @@ ${downloadLink}`;
                                         <td style={{ padding: '4px 6px' }}>
                                           <input
                                             type="text"
-                                            value={restoreFullItemDescription(it.description, (order as any)?.items, products)}
+                                            value={it.description || ''}
                                             onChange={e => {
                                               const val = e.target.value;
                                               const cleanVal = cleanItemDescription(val);

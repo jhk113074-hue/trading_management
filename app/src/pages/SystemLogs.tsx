@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.460',
+    version: 'v2.8.460',
+    date: '2026-08-25',
+    category: '버그수정',
+    title: '패킹리스트 분할 품목 값 보존 및 임의 덮어쓰기 방지 처리',
+    content: '• 분할된 행(수량, 중량, 품명, CBM 등)의 데이터가 오더 재로딩 시 다른 오더 품목에 의해 덮어써지던 현상 원천 차단\\n• UI 입력란과 저장 데이터의 1:1 직결을 보장하여 분할 및 직접 수정한 내용이 온전히 보존되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.459',
     version: 'v2.8.459',
     date: '2026-08-25',
