@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.461',
+    version: 'v2.8.461',
+    date: '2026-08-25',
+    category: '기능개선',
+    title: '[PALLET 원복] 시 발주 원본 품목 전체(46건) 1:1 완벽 초기화 복구',
+    content: '• [PALLET 원복] 클릭 시 발주서 원본 품목(품명, 스펙, 유통사, 수량, 중량, CBM)을 기반으로 전체 1, 2, 3... 개별 순차 팔레트로 완벽 복구\\n• 혼적 및 분할 상태가 완전히 초기화되어 언제든 초기 상태로 되돌릴 수 있도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.460',
     version: 'v2.8.460',
     date: '2026-08-25',

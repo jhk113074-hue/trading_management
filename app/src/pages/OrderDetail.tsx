@@ -3630,18 +3630,90 @@ export const OrderDetail: React.FC = () => {
   const resetStep2PkgNumbers = (containerIdx: number) => {
     const containers = basicForm.packingList?.containers || [];
     if (!containers[containerIdx]) return;
-    const rawItems = containers[containerIdx].items || [];
-    const cleaned = rawItems.map((it: any) => {
-      const itemClone = { ...it };
-      delete itemClone._mergeGroupId;
-      delete itemClone._sharedGroupHead;
-      delete itemClone._sharedWithPrev;
-      delete itemClone._isMergedGroup;
-      delete itemClone._isMergedMember;
-      return itemClone;
-    });
-    recalculateContainerPkgNos(cleaned);
-    const nextContainers = containers.map((c: any, idx: number) => idx === containerIdx ? { ...c, items: cleaned } : c);
+
+    const sourceItems = (orderItems && orderItems.length > 0) ? orderItems : ((order as any)?.items || []);
+    
+    let reloadedItems: any[] = [];
+
+    if (sourceItems.length > 0) {
+      reloadedItems = sourceItems.map((item: any, itemIdx: number) => {
+        const match = (item.name || '').match(/^[(.*?)]s*(.*)$/);
+        const itemCode = match ? match[1] : ((item as any).productCode || '-');
+        const itemName = match ? match[2] : (item.name || '');
+        const qty = item.qty || 0;
+
+        const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+        const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+          id: 'default_single',
+          packageType: '단품',
+          unitWidth: p?.unitWidth || 0,
+          unitLength: p?.unitLength || 0,
+          unitHeight: p?.unitHeight || 0,
+          unitWeight: p?.unitWeight || 0,
+          unitGrossWeight: p?.unitGrossWeight || 0,
+          palletWidth: p?.palletWidth || 0,
+          palletLength: p?.palletLength || 0,
+          palletHeight: p?.palletHeight || 0,
+          palletWeight: p?.palletWeight || 0,
+          palletGrossWeight: p?.palletGrossWeight || 0
+        };
+
+        const isPlt = (matchedMethod.packageType || '').toLowerCase().includes('pallet');
+        const w = isPlt ? (matchedMethod.palletWidth || p?.palletWidth || matchedMethod.unitWidth || 0) : (matchedMethod.unitWidth || p?.unitWidth || 0);
+        const l = isPlt ? (matchedMethod.palletLength || p?.palletLength || matchedMethod.unitLength || 0) : (matchedMethod.unitLength || p?.unitLength || 0);
+        const h = isPlt ? (matchedMethod.palletHeight || p?.palletHeight || matchedMethod.unitHeight || 0) : (matchedMethod.unitHeight || p?.unitHeight || 0);
+
+        let netW = isPlt ? (matchedMethod.palletWeight || p?.palletWeight || matchedMethod.unitWeight || 0) : (matchedMethod.unitWeight || p?.unitWeight || 0);
+        let grossW = isPlt ? (matchedMethod.palletGrossWeight || p?.palletGrossWeight || matchedMethod.unitGrossWeight || 0) : (matchedMethod.unitGrossWeight || p?.unitGrossWeight || 0);
+        if (netW === 0 && qty > 0) {
+          netW = qty;
+          grossW = Math.round(qty * 1.02);
+        }
+
+        const cbm = (w > 0 && l > 0 && h > 0) ? Number(((w * l * h) / 1000000000).toFixed(4)) : Number(((netW / 1000) * 1.5).toFixed(3));
+
+        const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
+                                p?.suppliers?.[0]?.supplierName || 
+                                p?.supplierName || 
+                                '';
+        const supplierName = item.supplier || defaultSupplier || '';
+
+        const spec = (item.grade || (item as any).specification || (item as any).spec || (item as any).quality || '').trim();
+        let fullDesc = (item.name || `[${itemCode}] ${itemName}`).trim();
+        if (spec && !fullDesc.toLowerCase().includes(spec.toLowerCase())) {
+          fullDesc = `${fullDesc} (${spec})`;
+        }
+
+        return {
+          pkgNo: String(itemIdx + 1),
+          pkg: '1',
+          qty: String(qty),
+          description: fullDesc,
+          packageType: matchedMethod.packageType || '단품',
+          dimensions: `${w}x${l}x${h}`,
+          supplier: supplierName,
+          netWeight: String(Math.round(netW)),
+          grossWeight: String(Math.round(grossW)),
+          cbm: String(cbm > 0 ? cbm.toFixed(3) : '0.010'),
+          stackable: 'Y',
+          rotation: 'Y'
+        };
+      });
+    } else {
+      const rawItems = containers[containerIdx].items || [];
+      reloadedItems = rawItems.map((it: any) => {
+        const clean = { ...it };
+        delete clean._mergeGroupId;
+        delete clean._sharedGroupHead;
+        delete clean._sharedWithPrev;
+        delete clean._isMergedGroup;
+        delete clean._isMergedMember;
+        return clean;
+      });
+      recalculateContainerPkgNos(reloadedItems);
+    }
+
+    const nextContainers = containers.map((c: any, idx: number) => idx === containerIdx ? { ...c, items: reloadedItems } : c);
     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
     setSelectedPackingItems(prev => ({ ...prev, [containerIdx]: [] }));
     const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
