@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.468',
+    version: 'v2.8.468',
+    date: '2026-08-25',
+    category: '신규기능',
+    title: '발주 품목 중 미등록 상품 감지 시 신규 상품코드(P0001 순차 채번) 자동생성 및 일괄 상품DB 등록 기능 추가',
+    content: '• 발주서 품목 중 상품DB에 등록되지 않은 항목들을 실시간 감지하여 [품명 + 스펙]을 결합한 신규 상품으로 자동 변환\\n• 상품 마스터 DB의 최고 번호를 기준으로 P0245, P0246 등 순차 자동 채번\\n• 매입처(공급사), 단가, 단위, 중량, 치수 등 발주 데이터를 보존하여 상품 마스터 DB에 일괄 저장 및 현재 발주서에 즉시 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.467',
     version: 'v2.8.467',
     date: '2026-08-25',

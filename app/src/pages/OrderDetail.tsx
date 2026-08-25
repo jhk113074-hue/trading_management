@@ -482,9 +482,13 @@ export const OrderDetail: React.FC = () => {
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
   
+
+
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [isBulkProdModalOpen, setIsBulkProdModalOpen] = useState(false);
+  const [isRegisteringBulkProds, setIsRegisteringBulkProds] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
   const [selectedSupplierForModal, setSelectedSupplierForModal] = useState<Supplier | undefined>(undefined);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -673,6 +677,155 @@ export const OrderDetail: React.FC = () => {
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
   const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
   const [allExistingPoNumbers, setAllExistingPoNumbers] = useState<string[]>([]);
+
+  // Unregistered items in current order without formal P0000 style product code
+  const unregisteredOrderItems = React.useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set<string>();
+
+    (orderItems || []).forEach((it: any) => {
+      const rawName = (it.name || it.description || it.itemName || '').trim();
+      const cleanBaseName = rawName.replace(/^\[.*?\]\s*/, '').trim();
+      const spec = (it.grade || it.specification || it.spec || it.quality || '').trim();
+      
+      const hasPCode = it.productCode && /^P\d+$/i.test(String(it.productCode).trim());
+      const matchedProduct = products.find(p => 
+        (hasPCode && p.productCode === it.productCode) ||
+        (p.productCode && /^P\d+$/i.test(p.productCode) && p.nameKo && cleanBaseName && p.nameKo.toLowerCase() === (spec ? `${cleanBaseName} (${spec})` : cleanBaseName).toLowerCase())
+      );
+
+      if (!hasPCode && !matchedProduct && cleanBaseName) {
+        const key = `${cleanBaseName}__${spec}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            name: cleanBaseName,
+            spec: spec,
+            fullTitle: spec ? `${cleanBaseName} (${spec})` : cleanBaseName,
+            unit: it.unit || 'PCS',
+            supplier: it.supplier || '',
+            unitPrice: Number(it.unitPrice) || Number(it.price) || 0,
+            qty: Number(it.qty) || 0,
+            netWeight: Number(it.netWeight) || 0,
+            grossWeight: Number(it.grossWeight) || 0,
+            cbm: Number(it.cbm) || 0,
+            width: Number(it.width) || 0,
+            length: Number(it.length) || 0,
+            height: Number(it.height) || 0,
+            packageType: it.packageType || 'Pallet'
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [orderItems, products]);
+
+  // Execute bulk registration of unregistered items to Firestore products collection
+  const handleExecuteBulkProductRegister = async () => {
+    if (unregisteredOrderItems.length === 0) return;
+    setIsRegisteringBulkProds(true);
+    try {
+      // 1. Find current max product code number
+      let maxNum = 0;
+      products.forEach(p => {
+        const code = p.productCode || p.id;
+        if (code && typeof code === 'string' && /^P\d+$/i.test(code)) {
+          const num = parseInt(code.substring(1), 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+
+      const newProductsToAdd: Product[] = [];
+      const codeMap: { [key: string]: string } = {}; // key -> newCode
+
+      // 2. Build product documents and write to Firestore
+      for (let i = 0; i < unregisteredOrderItems.length; i++) {
+        const it = unregisteredOrderItems[i];
+        maxNum += 1;
+        const newCode = `P${String(maxNum).padStart(4, '0')}`;
+        const key = `${it.name}__${it.spec}`;
+        codeMap[key] = newCode;
+
+        const defaultMethod = {
+          id: 'default_' + Math.random().toString(36).substr(2, 9),
+          name: 'Default',
+          packageType: it.packageType || '단품',
+          palletWidth: Number(it.width) || 1100,
+          palletLength: Number(it.length) || 1100,
+          palletHeight: Number(it.height) || 1000,
+          palletWeight: Number(it.netWeight) || 0,
+          palletGrossWeight: Number(it.grossWeight) || 0,
+          cbm: Number(it.cbm) || 0,
+          qtyPerPallet: 1
+        };
+
+        const prodDoc: any = {
+          productCode: newCode,
+          nameKo: it.fullTitle,
+          nameEn: it.fullTitle,
+          spec: it.spec || '',
+          unit: it.unit || 'PCS',
+          packageType: it.packageType || '단품',
+          supplierName: it.supplier || '',
+          purchasePrice: Number(it.unitPrice) || 0,
+          currency: (order as any)?.currency || 'KRW',
+          priceValidFrom: new Date().toISOString().split('T')[0],
+          unitWidth: Number(it.width) || 0,
+          unitLength: Number(it.length) || 0,
+          unitHeight: Number(it.height) || 0,
+          unitWeight: Number(it.netWeight) || 0,
+          unitGrossWeight: Number(it.grossWeight) || 0,
+          stackable: 'Y',
+          rotation: 'Y',
+          packingMethods: [defaultMethod],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(doc(db, 'companies', COMPANY_ID, 'products', newCode), prodDoc);
+        newProductsToAdd.push({ id: newCode, ...prodDoc } as Product);
+      }
+
+      // 3. Update orderItems with the new product codes
+      const updatedOrderItems = (orderItems || []).map((it: any) => {
+        const rawName = (it.name || it.description || it.itemName || '').trim();
+        const cleanBaseName = rawName.replace(/^\[.*?\]\s*/, '').trim();
+        const spec = (it.grade || it.specification || it.spec || it.quality || '').trim();
+        const key = `${cleanBaseName}__${spec}`;
+        if (codeMap[key]) {
+          return {
+            ...it,
+            productCode: codeMap[key],
+            itemCode: codeMap[key],
+            name: it.name || it.fullTitle || cleanBaseName
+          };
+        }
+        return it;
+      });
+
+      // 4. Update Firestore Order document
+      if (order && order.id) {
+        await updateDoc(doc(db, 'companies', COMPANY_ID, 'orders', order.id), {
+          items: updatedOrderItems,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      // 5. Update local state
+      setProducts(prev => [...prev, ...newProductsToAdd]);
+      setOrderItems(updatedOrderItems);
+      setBasicForm(prev => ({ ...prev, items: updatedOrderItems }));
+      setIsBulkProdModalOpen(false);
+
+      alert(`총 ${newProductsToAdd.length}개 품목이 신규 상품(상품코드: P${String(maxNum - newProductsToAdd.length + 1).padStart(4, '0')} ~ P${String(maxNum).padStart(4, '0')})으로 상품DB에 등록되었으며, 현재 발주서에 성공적으로 연동되었습니다!`);
+    } catch (err) {
+      console.error('일괄 상품 등록 오류:', err);
+      alert('상품 일괄 등록 중 오류가 발생했습니다: ' + (err as any)?.message);
+    } finally {
+      setIsRegisteringBulkProds(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAllPos = async () => {
@@ -12290,6 +12443,27 @@ ${downloadLink}`;
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
                             type="button"
+                            onClick={() => setIsBulkProdModalOpen(true)}
+                            style={{
+                              padding: '4px 12px',
+                              background: unregisteredOrderItems.length > 0 ? '#8b5cf6' : '#94a3b8',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12.5px',
+                              fontWeight: 750,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              boxShadow: unregisteredOrderItems.length > 0 ? '0 1px 3px rgba(139,92,246,0.3)' : 'none'
+                            }}
+                            title="발주 품목 중 상품DB에 없는 항목을 신규 상품코드로 자동 채번하여 일괄 등록합니다"
+                          >
+                            📦 미등록 품목 일괄 상품DB 등록 {unregisteredOrderItems.length > 0 ? `(${unregisteredOrderItems.length}건)` : '(0건)'}
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => {
                               const base = (customCiItems && customCiItems.length > 0) ? customCiItems : currentCiItems;
                               const next = [
@@ -14926,6 +15100,114 @@ ${downloadLink}`;
           }}
           defaultCategory="공급사"
         />
+      )}
+
+      {/* 📦 미등록 품목 일괄 상품DB 등록 모달 */}
+      {isBulkProdModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(3px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 20px 40px rgba(15,23,42,0.25)', width: '100%', maxWidth: '850px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Modal Header */}
+            <div style={{ background: '#fafafa', borderBottom: '1px solid #cbd5e1', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  📦 미등록 품목 일괄 상품DB 등록 (품명+스펙 신규코드 자동생성)
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+                  현재 발주 품목 중 상품DB에 등록되지 않은 항목들을 감지하여, 신규 상품코드(P0001 순차 채번)를 부여하고 상품 마스터 DB에 일괄 저장합니다.
+                </p>
+              </div>
+              <button type="button" onClick={() => setIsBulkProdModalOpen(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', color: '#64748b', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {unregisteredOrderItems.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>모든 발주 품목이 이미 상품DB에 등록되어 있습니다.</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>추가로 등록할 미등록 품목이 없습니다.</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', border: '1px solid #86efac', padding: '10px 14px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#166534' }}>
+                      총 <b style={{ color: '#15803d', fontSize: '14px' }}>{unregisteredOrderItems.length}개</b>의 미등록 품목이 감지되었습니다.
+                    </span>
+                    <span style={{ fontSize: '11.5px', color: '#15803d', fontWeight: 600 }}>
+                      ※ 등록 시 현재 발주서의 품목 코드도 신규 상품코드로 자동 연동됩니다.
+                    </span>
+                  </div>
+
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                          <th style={{ padding: '8px 10px', width: '35px', textAlign: 'center', fontWeight: 750, color: '#475569' }}>No</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 750, color: '#475569' }}>품명 + 스펙 (상품명으로 등록)</th>
+                          <th style={{ padding: '8px 10px', width: '130px', fontWeight: 750, color: '#475569' }}>규격(Spec)</th>
+                          <th style={{ padding: '8px 10px', width: '140px', fontWeight: 750, color: '#475569' }}>공급사 (매입처)</th>
+                          <th style={{ padding: '8px 10px', width: '90px', textAlign: 'right', fontWeight: 750, color: '#475569' }}>단가 / 단위</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {unregisteredOrderItems.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#fcfcfc' }}>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                            <td style={{ padding: '8px 10px', fontWeight: 700, color: '#1e293b' }}>
+                              <span style={{ color: '#8b5cf6', marginRight: '6px', fontSize: '11px', fontWeight: 800 }}>[자동발번]</span>
+                              {item.fullTitle}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: '#475569' }}>{item.spec || '-'}</td>
+                            <td style={{ padding: '8px 10px', color: '#334155', fontWeight: 600 }}>{item.supplier || '-'}</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                              {item.unitPrice ? item.unitPrice.toLocaleString() : '0'} <span style={{ fontSize: '10.5px', color: '#64748b' }}>{item.unit || 'PCS'}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ background: '#fafafa', borderTop: '1px solid #cbd5e1', padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIsBulkProdModalOpen(false)}
+                disabled={isRegisteringBulkProds}
+                style={{ height: '34px', padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+              >
+                닫기
+              </button>
+              {unregisteredOrderItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExecuteBulkProductRegister}
+                  disabled={isRegisteringBulkProds}
+                  style={{
+                    height: '34px',
+                    padding: '0 20px',
+                    background: isRegisteringBulkProds ? '#93c5fd' : '#3b82f6',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 750,
+                    color: '#fff',
+                    cursor: isRegisteringBulkProds ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(59,130,246,0.3)'
+                  }}
+                >
+                  {isRegisteringBulkProds ? '⏳ 등록 중...' : `⚡ 총 ${unregisteredOrderItems.length}건 일괄 상품DB 등록 및 연동`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {isProdModalOpen && (
