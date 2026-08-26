@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.470',
+    version: 'v2.8.470',
+    date: '2026-08-26',
+    category: '신규기능',
+    title: '컨테이너 타입 / 운임 구분 항목 동적 신규 추가(Custom Container Types) 기능 지원',
+    content: '• 운송비 계산기 및 수주/발주 FCL 컨테이너 스펙 선택창에서 [➕ 신규 타입 직접 추가...] 옵션 제공\\n• 새로 추가한 컨테이너/운임 타입(예: 20FL, 40NOR, AIR FREIGHT, TRUCK 등)이 Firestore 및 로컬 캐시에 영구 보존되어 전체 시스템에 즉시 공유',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.469',
     version: 'v2.8.469',
     date: '2026-08-25',

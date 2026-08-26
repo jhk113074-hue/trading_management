@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { subscribeCustomContainerTypes, handleContainerTypeSelection, DEFAULT_CONTAINER_TYPES } from '../utils/containerType';
 import type { ProformaInvoice } from '../types/pi';
 
 interface Props {
@@ -16,6 +17,14 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   addFreightCharge,
   removeFreightCharge
 }) => {
+  const [customContainerTypes, setCustomContainerTypes] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomContainerTypes(setCustomContainerTypes);
+  }, []);
+
+  const combinedContainerTypes = useMemo(() => {
+    return Array.from(new Set([...DEFAULT_CONTAINER_TYPES, ...customContainerTypes]));
+  }, [customContainerTypes]);
   const calc = formData.freightCalculationDetails || {
     oceanCurrency: 'USD',
     oceanPriceRaw: formData.freightCharges?.[0]?.price || 0,
@@ -192,25 +201,25 @@ export const FreightCalculatorSection: React.FC<Props> = ({
             <select
               value={formData.freightCharges?.[0]?.type || 'LCL'}
               onChange={e => {
-                if (formData.freightCharges && formData.freightCharges.length > 0) {
-                  updateFreightCharge(0, 'type', e.target.value);
-                } else {
-                  addFreightCharge();
-                }
+                const selectedVal = e.target.value;
+                const currentVal = formData.freightCharges?.[0]?.type || 'LCL';
+                handleContainerTypeSelection(selectedVal, currentVal, customContainerTypes, (newType) => {
+                  if (formData.freightCharges && formData.freightCharges.length > 0) {
+                    updateFreightCharge(0, 'type', newType);
+                  } else {
+                    addFreightCharge();
+                    updateFreightCharge(0, 'type', newType);
+                  }
+                });
               }}
               style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, background: '#fff', outline: 'none' }}
             >
-              <option value="LCL">LCL</option>
-              <option value="20GP">20GP</option>
-              <option value="20RF">20RF</option>
-              <option value="20DG">20DG</option>
-              <option value="40FT">40FT</option>
-              <option value="40HQ">40HQ</option>
-              <option value="FOB CHARGES">FOB CHARGES</option>
-              <option value="CIF CHARGES">CIF CHARGES</option>
-              <option value="CFR CHARGES">CFR CHARGES</option>
-              <option value="DAP CHARGES">DAP CHARGES</option>
-              <option value="DDP CHARGES">DDP CHARGES</option>
+              {combinedContainerTypes.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+              <option value="ADD_NEW_CONTAINER_TYPE" style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                ➕ 신규 타입 직접 추가...
+              </option>
             </select>
           </div>
 

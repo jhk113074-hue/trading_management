@@ -24,6 +24,7 @@ import { KatalkMessageModal } from '../components/KatalkMessageModal';
 import { PoEmailSendModal } from '../components/PoEmailSendModal';
 import { PackingSplitModal } from '../components/PackingSplitModal';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
+import { subscribeCustomContainerTypes, handleContainerTypeSelection, DEFAULT_CONTAINER_TYPES } from '../utils/containerType';
 import { getOverallProgress, getStageProgress, getEffectiveStageCompletion, type StageKey } from '../utils/orderProgress';
 import type { Customer } from '../types/customer';
 import { useAuth } from '../contexts/AuthContext';
@@ -211,6 +212,11 @@ export const OrderDetail: React.FC = () => {
   const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
+
+  const [customContainerTypes, setCustomContainerTypes] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomContainerTypes(setCustomContainerTypes);
   }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -9128,15 +9134,22 @@ ${downloadLink}`;
                                     value={c.type}
                                     disabled={!isEditing}
                                     onChange={e => {
-                                      const updated = [...(basicForm.fclSpecs || [])];
-                                      updated[idx].type = e.target.value as any;
-                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      const selectedVal = e.target.value;
+                                      const currentVal = c.type || '20GP';
+                                      handleContainerTypeSelection(selectedVal, currentVal, customContainerTypes, (newType) => {
+                                        const updated = [...(basicForm.fclSpecs || [])];
+                                        updated[idx].type = newType as any;
+                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      });
                                     }}
-                                    style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', background: '#fff', width: '90px' }}
+                                    style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', background: '#fff', width: '110px' }}
                                   >
-                                    {['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG'].map(opt => (
+                                    {Array.from(new Set(['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', ...DEFAULT_CONTAINER_TYPES, ...customContainerTypes])).map(opt => (
                                       <option key={opt} value={opt}>{opt}</option>
                                     ))}
+                                    <option value="ADD_NEW_CONTAINER_TYPE" style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                                      ➕ 신규 추가...
+                                    </option>
                                   </select>
                                   <input
                                     type="number"
