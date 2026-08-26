@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.471',
+    version: 'v2.8.471',
+    date: '2026-08-26',
+    category: '기능개선',
+    title: '고객사 선택 시 바이어 담당자 명부의 대표 담당자(Primary Contact) 자동 연동',
+    content: '• 견적서(PI) 및 수주/발주서 작성 시 고객사를 선택하면, 고객 약칭 대신 바이어 담당자 명부에 등록된 대표 담당자명(이메일 포함)이 담당(Contact)란에 정확하게 자동 바인딩되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.470',
     version: 'v2.8.470',
     date: '2026-08-26',

@@ -202,7 +202,7 @@ export const DomesticQuotes: React.FC = () => {
   const handleSelectCustomer = (cust: Customer) => {
     const displayName = cust.nameKo || cust.name || '';
     setCustomerName(displayName);
-    setReceiverAttention(cust.contactPerson || cust.representative || '');
+    setReceiverAttention((cust.contacts?.find(c => c.isPrimary) || cust.contacts?.[0])?.name || cust.contactPerson || cust.representative || '');
     setReceiverTel(cust.contactPhone || cust.phone || '');
     setReceiverFax(cust.fax || '');
     setShowCustomerSearchModal(false);
