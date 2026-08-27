@@ -6490,6 +6490,36 @@ ${downloadLink}`;
 
     const { arrivalPdfUrl, shippingPdfUrl, poNum } = await autoEnsureArrivalAndShippingDocs(supplierName);
 
+    // 1. Register Arrival Document in public_docs
+    const arrivalDocKey = `${order?.id}_arrival_${poNum}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (arrivalPdfUrl && order?.id) {
+      setDoc(doc(db, 'public_docs', arrivalDocKey), {
+        id: arrivalDocKey,
+        orderId: order.id,
+        poNum: poNum,
+        supplierName: supplierName,
+        title: `${companyTitleName} 도착보고서 (${poNum})`,
+        fileName: `${companyTitleName}_도착보고서_${poNum}.pdf`,
+        fileUrl: arrivalPdfUrl,
+        issuedAt: new Date().toISOString()
+      }, { merge: true }).catch((err: any) => console.warn('Save public arrival doc failed:', err));
+    }
+
+    // 2. Register Shipping Document in public_docs
+    const shippingDocKey = `${order?.id}_shipping_${poNum}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (shippingPdfUrl && order?.id) {
+      setDoc(doc(db, 'public_docs', shippingDocKey), {
+        id: shippingDocKey,
+        orderId: order.id,
+        poNum: poNum,
+        supplierName: supplierName,
+        title: `${companyTitleName} 쉬핑마크 라벨 (${poNum})`,
+        fileName: `${companyTitleName}_쉬핑마크_${poNum}.pdf`,
+        fileUrl: shippingPdfUrl,
+        issuedAt: new Date().toISOString()
+      }, { merge: true }).catch((err: any) => console.warn('Save public shipping doc failed:', err));
+    }
+
     const currentSender = `${userProfile?.name || '김주한'} ${(userProfile as any)?.rank || userProfile?.role || '대표이사'} (${userProfile?.phone || '010-7361-1130'})`;
     const items = groupedSupplierItems[supplierName] || [];
     const matchedSupplierObj = suppliersList.find((s: any) => 
@@ -6501,11 +6531,11 @@ ${downloadLink}`;
     const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
 
     const arrivalLink = arrivalPdfUrl 
-      ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 도착보고서(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(arrivalPdfUrl)}`
+      ? `https://tradingmanagement-c1cf4.web.app/doc-view?id=${arrivalDocKey}`
       : '발행 예정';
 
     const shippingLink = shippingPdfUrl 
-      ? `https://tradingmanagement-c1cf4.web.app/doc-view?title=${encodeURIComponent(`${companyTitleName} 쉬핑마크 라벨(${poNum})`)}&supplier=${encodeURIComponent(supplierName)}&poNum=${encodeURIComponent(poNum)}&url=${encodeURIComponent(shippingPdfUrl)}`
+      ? `https://tradingmanagement-c1cf4.web.app/doc-view?id=${shippingDocKey}`
       : '발행 예정';
 
     const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 다운로드:\n${arrivalLink}\n\n🏷️ 쉬핑마크 라벨 PDF 다운로드:\n${shippingLink}`;

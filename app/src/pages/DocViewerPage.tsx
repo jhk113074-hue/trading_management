@@ -35,8 +35,15 @@ export const DocViewerPage: React.FC = () => {
         }
       }
 
-      if (queryUrl) {
-        let clean = queryUrl;
+      if (queryUrl || (typeof window !== 'undefined' && window.location.search.includes('url='))) {
+        let clean = queryUrl || '';
+        if (typeof window !== 'undefined') {
+          const rawSearch = window.location.search;
+          const urlIdx = rawSearch.indexOf('url=');
+          if (urlIdx !== -1) {
+            clean = rawSearch.substring(urlIdx + 4);
+          }
+        }
         try {
           if (clean.includes('%')) clean = decodeURIComponent(clean);
           if (clean.includes('%')) clean = decodeURIComponent(clean);
