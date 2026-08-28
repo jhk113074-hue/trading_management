@@ -3790,109 +3790,268 @@ customsDuty,
                     등록된 지급 회차가 없습니다. '지급 회차 추가' 버튼을 눌러 등록해주세요.
                   </div>
                 ) : (
-                  (request.payments || []).map((pay) => (
-                    <div key={pay.id} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 10px', display: 'grid', gridTemplateColumns: '55px 120px 170px 1.4fr 1.4fr 1.6fr 36px', gap: '8px', alignItems: 'center' }}>
-                      {/* 1. 회차 */}
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', textAlign: 'center', background: '#eff6ff', padding: '4px 2px', borderRadius: '4px' }}>
-                        {pay.round}차
-                      </div>
+                                    (request.payments || []).map((pay) => {
+                    const appliedExRate = Number(pay.exchangeRate) || Number(request.costBreakdown?.appliedExchangeRate) || 1350;
+                    const foreignFeeAmt = Number(pay.foreignFee) || 0;
+                    const foreignFeeKrwAmt = Number(pay.foreignFeeKrw) || (pay.foreignFeeCurrency === 'KRW' ? foreignFeeAmt : (foreignFeeAmt ? Math.round(foreignFeeAmt * appliedExRate) : 0));
+                    const cableFeeAmt = Number(pay.cableFee) || 0;
+                    const cableFeeKrwAmt = Number(pay.cableFeeKrw) || (pay.cableFeeCurrency === 'KRW' ? cableFeeAmt : (cableFeeAmt ? Math.round(cableFeeAmt * appliedExRate) : 0));
+                    const totalFeeKrwThisRound = foreignFeeKrwAmt + cableFeeKrwAmt;
 
-                      {/* 2. 송금일자 */}
-                      <input 
-                        type="date"
-                        value={pay.date || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, date: val } : p);
-                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
-                        }}
-                        style={{ height: '30px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
-                      />
+                    return (
+                    <div key={pay.id} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                      {/* Top Row: 기본 송금정보, 첨부, 비고 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '55px 120px 180px 1.3fr 1.3fr 1.5fr 36px', gap: '8px', alignItems: 'center' }}>
+                        {/* 1. 회차 */}
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a', textAlign: 'center', background: '#eff6ff', padding: '4px 2px', borderRadius: '4px' }}>
+                          {pay.round}차
+                        </div>
 
-                      {/* 3. 송금 통화 및 금액 */}
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <select
-                          value={pay.currency || 'USD'}
-                          onChange={(e) => {
-                            const val = e.target.value as any;
-                            const updatedPayments = (request.payments || []).map(p => {
-                              if (p.id === pay.id) {
-                                const nextAmt = p.amount || p.amountUsd || 0;
-                                return { 
-                                  ...p, 
-                                  currency: val,
-                                  amount: nextAmt,
-                                  amountUsd: val === 'USD' ? nextAmt : 0
-                                };
-                              }
-                              return p;
-                            });
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
-                          }}
-                          style={{ width: '65px', height: '30px', padding: '0 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#1e293b', outline: 'none', background: '#fff' }}
-                        >
-                          <option value="USD">USD</option>
-                          <option value="RMB">RMB</option>
-                          <option value="EUR">EUR</option>
-                          <option value="KRW">KRW</option>
-                        </select>
+                        {/* 2. 송금일자 */}
                         <input 
-                          type="number"
-                          placeholder="송금액"
-                          value={pay.amount || pay.amountUsd || ''}
+                          type="date"
+                          value={pay.date || ''}
                           onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
-                            const updatedPayments = (request.payments || []).map(p => {
-                              if (p.id === pay.id) {
-                                const curr = p.currency || 'USD';
-                                return { 
-                                  ...p, 
-                                  amount: val, 
-                                  amountUsd: curr === 'USD' ? val : 0 
-                                };
-                              }
-                              return p;
-                            });
+                            const val = e.target.value;
+                            const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, date: val } : p);
                             saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
                           }}
-                          style={{ flex: 1, height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          style={{ height: '30px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
                         />
+
+                        {/* 3. 송금 통화 및 금액 */}
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <select
+                            value={pay.currency || 'USD'}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              const updatedPayments = (request.payments || []).map(p => {
+                                if (p.id === pay.id) {
+                                  const nextAmt = p.amount || p.amountUsd || 0;
+                                  return { 
+                                    ...p, 
+                                    currency: val,
+                                    amount: nextAmt,
+                                    amountUsd: val === 'USD' ? nextAmt : 0
+                                  };
+                                }
+                                return p;
+                              });
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '65px', height: '30px', padding: '0 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#1e293b', outline: 'none', background: '#fff' }}
+                          >
+                            <option value="USD">USD</option>
+                            <option value="RMB">RMB</option>
+                            <option value="EUR">EUR</option>
+                            <option value="KRW">KRW</option>
+                          </select>
+                          <input 
+                            type="number"
+                            placeholder="외대 송금액"
+                            value={pay.amount || pay.amountUsd || ''}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              const updatedPayments = (request.payments || []).map(p => {
+                                if (p.id === pay.id) {
+                                  const curr = p.currency || 'USD';
+                                  const curRate = Number(p.exchangeRate) || appliedExRate;
+                                  return { 
+                                    ...p, 
+                                    amount: val, 
+                                    amountUsd: curr === 'USD' ? val : 0,
+                                    amountKrw: Math.round(val * curRate)
+                                  };
+                                }
+                                return p;
+                              });
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ flex: 1, height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          />
+                        </div>
+
+                        {/* 4. 외환계산서 유첨 */}
+                        {renderMultiUploadZone(`paymentFxMemo_${pay.id}`, '외환계산서(드래그/붙여넣기)', pay.fxMemoFiles, true)}
+
+                        {/* 5. 송금영수증/입금증 유첨 */}
+                        {renderMultiUploadZone(`paymentRemittanceSlip_${pay.id}`, '송금영수증(드래그/붙여넣기)', pay.remittanceSlipFiles, true)}
+
+                        {/* 6. 비고 */}
+                        <input 
+                          type="text"
+                          placeholder="비고 (특이사항)"
+                          value={pay.remarks || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, remarks: val } : p);
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                          }}
+                          style={{ height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                        />
+
+                        {/* 7. 삭제 */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`${pay.round}차 결제 내역을 삭제하시겠습니까?`)) {
+                              const updatedPayments = (request.payments || []).filter(p => p.id !== pay.id).map((p, idx) => ({ ...p, round: idx + 1 }));
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }
+                          }}
+                          style={{ height: '30px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          🗑️
+                        </button>
                       </div>
 
-                      {/* 4. 외환계산서 유첨 */}
-                      {renderMultiUploadZone(`paymentFxMemo_${pay.id}`, '외환계산서(드래그/붙여넣기)', pay.fxMemoFiles, true)}
+                      {/* Bottom Row: 외환거래계산서 상세 (적용환율, 외대)해외수수료, 외대)전신수수료) */}
+                      <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '4px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        {/* 1. 적용 환율 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>
+                            적용환율:
+                          </span>
+                          <input 
+                            type="number"
+                            placeholder="예: 1383.00"
+                            value={pay.exchangeRate || ''}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              const updatedPayments = (request.payments || []).map(p => {
+                                if (p.id === pay.id) {
+                                  const amt = p.amount || p.amountUsd || 0;
+                                  return { 
+                                    ...p, 
+                                    exchangeRate: val,
+                                    amountKrw: Math.round(amt * (val || appliedExRate)),
+                                    foreignFeeKrw: p.foreignFee ? Math.round(p.foreignFee * (val || appliedExRate)) : p.foreignFeeKrw,
+                                    cableFeeKrw: p.cableFee ? Math.round(p.cableFee * (val || appliedExRate)) : p.cableFeeKrw
+                                  };
+                                }
+                                return p;
+                              });
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '85px', height: '26px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: '#1e3a8a', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>₩/$</span>
+                        </div>
 
-                      {/* 5. 송금영수증/입금증 유첨 */}
-                      {renderMultiUploadZone(`paymentRemittanceSlip_${pay.id}`, '송금영수증(드래그/붙여넣기)', pay.remittanceSlipFiles, true)}
+                        {/* 구분선 */}
+                        <div style={{ width: '1px', height: '18px', background: '#cbd5e1' }} />
 
-                      {/* 6. 비고 */}
-                      <input 
-                        type="text"
-                        placeholder="비고 (특이사항)"
-                        value={pay.remarks || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, remarks: val } : p);
-                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
-                        }}
-                        style={{ height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
-                      />
+                        {/* 2. 외대) 해외수수료 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>
+                            외대)해외수수료:
+                          </span>
+                          <select
+                            value={pay.foreignFeeCurrency || 'USD'}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, foreignFeeCurrency: val } : p);
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ height: '26px', padding: '0 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#334155', background: '#fff' }}
+                          >
+                            <option value="USD">USD</option>
+                            <option value="KRW">KRW</option>
+                          </select>
+                          <input 
+                            type="number"
+                            placeholder="외화 (예: 18.00)"
+                            value={pay.foreignFee ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              const updatedPayments = (request.payments || []).map(p => {
+                                if (p.id === pay.id) {
+                                  const r = Number(p.exchangeRate) || appliedExRate;
+                                  const calculatedKrw = val !== undefined ? Math.round(val * r) : undefined;
+                                  return { ...p, foreignFee: val, foreignFeeKrw: calculatedKrw };
+                                }
+                                return p;
+                              });
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '75px', height: '26px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>≈ ₩</span>
+                          <input 
+                            type="number"
+                            placeholder="원화 (예: 24894)"
+                            value={pay.foreignFeeKrw ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, foreignFeeKrw: val } : p);
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '80px', height: '26px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          />
+                        </div>
 
-                      {/* 7. 삭제 */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm(`${pay.round}차 결제 내역을 삭제하시겠습니까?`)) {
-                            const updatedPayments = (request.payments || []).filter(p => p.id !== pay.id).map((p, idx) => ({ ...p, round: idx + 1 }));
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
-                          }
-                        }}
-                        style={{ height: '30px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        🗑️
-                      </button>
+                        {/* 구분선 */}
+                        <div style={{ width: '1px', height: '18px', background: '#cbd5e1' }} />
+
+                        {/* 3. 외대) 전신수수료 (전신료) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>
+                            외대)전신수수료:
+                          </span>
+                          <select
+                            value={pay.cableFeeCurrency || 'USD'}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, cableFeeCurrency: val } : p);
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ height: '26px', padding: '0 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#334155', background: '#fff' }}
+                          >
+                            <option value="USD">USD</option>
+                            <option value="KRW">KRW</option>
+                          </select>
+                          <input 
+                            type="number"
+                            placeholder="외화 (예: 5.78)"
+                            value={pay.cableFee ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              const updatedPayments = (request.payments || []).map(p => {
+                                if (p.id === pay.id) {
+                                  const r = Number(p.exchangeRate) || appliedExRate;
+                                  const calculatedKrw = val !== undefined ? Math.round(val * r) : undefined;
+                                  return { ...p, cableFee: val, cableFeeKrw: calculatedKrw };
+                                }
+                                return p;
+                              });
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '75px', height: '26px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>≈ ₩</span>
+                          <input 
+                            type="number"
+                            placeholder="원화 (예: 8000)"
+                            value={pay.cableFeeKrw ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              const updatedPayments = (request.payments || []).map(p => p.id === pay.id ? { ...p, cableFeeKrw: val } : p);
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, payments: updatedPayments } : r));
+                            }}
+                            style={{ width: '80px', height: '26px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, outline: 'none' }}
+                          />
+                        </div>
+
+                        {/* 4. 회차별 수수료 소계 */}
+                        {totalFeeKrwThisRound > 0 && (
+                          <div style={{ marginLeft: 'auto', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 750, color: '#1d4ed8' }}>
+                            소계: ₩{totalFeeKrwThisRound.toLocaleString()}원
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))
+                  );
+                  })
                 )}
               </div>
             </div>

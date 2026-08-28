@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.473',
+    version: 'v2.8.473',
+    date: '2026-08-29',
+    category: '신규기능',
+    title: '수입 대금결제 외환거래 수수료(외대 해외수수료/전신료) 입력 및 손익검토 실적 반영',
+    content: '• 수입 상세 대금결제 탭에서 회차별 송금액 외에 외환거래계산서 상의 [적용환율], [외대)해외수수료], [외대)전신수수료]를 통화별(USD/KRW)로 입력할 수 있는 기능 추가\\n• 손익검토 탭의 매입원가 및 마진 계산에 외환/금융수수료 실적을 자동으로 반영하여 정산 손익 정확도 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.472',
     version: 'v2.8.472',
     date: '2026-08-29',
