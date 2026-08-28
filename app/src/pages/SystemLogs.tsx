@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.472',
+    version: 'v2.8.472',
+    date: '2026-08-29',
+    category: '버그수정',
+    title: '수출 주문관리 필터 중 "완료건 제외" 정상 동작하도록 로직 수정',
+    content: '• 완료건 필터가 "완료건 제외"로 선택되었을 때 100% 완료 및 모든 업무 완료된 오더가 목록에서 정상적으로 제외되도록 필터링 연산 로직 보강\\n• 필터 변경 시 상태 업데이트 setter 함수 바인딩 오류 수정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.471',
     version: 'v2.8.471',
     date: '2026-08-26',

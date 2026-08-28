@@ -136,7 +136,7 @@ export const Orders: React.FC = () => {
   const [customerFilter, setCustomerFilter] = useState(() => getSavedFilter('customer', 'All'));
   const [stepFilter, setStepFilter] = useState(() => getSavedFilter('step', 'All'));
   const [viewFilter, setViewFilter] = useState(() => getSavedFilter('view', 'All'));
-  const [completedFilter, setCollapsedFilter] = useState(() => getSavedFilter('completed', 'Hide')); // 'All' | 'Hide'
+  const [completedFilter, setCompletedFilter] = useState(() => getSavedFilter('completed', 'Hide')); // 'All' | 'Hide'
   const [etdStatusFilter, setEtdStatusFilter] = useState(() => getSavedFilter('etdStatus', 'All')); // 'All' | 'Unset' | 'Set'
 
   const [dateFilterType, setDateFilterType] = useState<string>(() => getSavedFilter('dateFilterType', 'Last3Months'));
@@ -457,6 +457,14 @@ export const Orders: React.FC = () => {
     }
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
+    if (completedFilter === 'Hide') {
+      result = result.filter(o => {
+        const isStepDone = mapStatusToStep(o.status || '', o) === '완료';
+        const isProgressDone = getOverallProgress(o).pct === 100;
+        const isActionDone = o.nextAction.text === '모든 업무 완료' || getNextTodoItem(o) === '모든 업무 완료';
+        return !(isStepDone || isProgressDone || isActionDone);
+      });
+    }
     const todayStr = new Date().toISOString().slice(0, 10);
     if (etdStatusFilter === 'UnsetOrFuture') {
       // ETD 미정 또는 오늘 이후(출항 전) 오더만 표시
@@ -686,7 +694,7 @@ export const Orders: React.FC = () => {
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
-            { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
+            { label: '완료건', value: completedFilter, set: setCompletedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
             { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
           ].map(({ label, value, set, opts, highlight }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
