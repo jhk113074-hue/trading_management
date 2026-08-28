@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.474',
+    version: 'v2.8.474',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '외대) 해외수수료 및 전신수수료 개별 환율 입력 지원',
+    content: '• 은행 외환거래계산서 서식에 맞추어 [송금환율], [해외수수료 환율], [전신료 환율]을 각각 독립적으로 입력 및 관리할 수 있도록 개선\\n• 개별 환율 적용 시 외화 금액에 따른 원화 환산액 자동 계산 및 정산/손익검토 실적 자동 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.473',
     version: 'v2.8.473',
     date: '2026-08-29',

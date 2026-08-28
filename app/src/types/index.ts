@@ -220,11 +220,13 @@ export interface ImportRequest {
     currency?: 'USD' | 'RMB' | 'EUR' | 'KRW';
     amount?: number;
     exchangeRate?: number; // 송금 적용환율
-    foreignFee?: number; // 외대) 해외수수료
+    foreignFee?: number; // 외대) 해외수수료 외화금액
     foreignFeeCurrency?: 'USD' | 'KRW';
+    foreignFeeRate?: number; // 외대) 해외수수료 환율
     foreignFeeKrw?: number; // 외대) 해외수수료 원화금액
-    cableFee?: number; // 외대) 전신료/전신수수료
+    cableFee?: number; // 외대) 전신료/전신수수료 외화금액
     cableFeeCurrency?: 'USD' | 'KRW';
+    cableFeeRate?: number; // 외대) 전신료/전신수수료 환율
     cableFeeKrw?: number; // 외대) 전신료/전신수수료 원화금액
     fxMemoFiles?: Array<{ name: string; url: string; path?: string }>;
     remittanceSlipFiles?: Array<{ name: string; url: string; path?: string }>;
