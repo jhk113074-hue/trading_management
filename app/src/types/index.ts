@@ -173,6 +173,11 @@ export interface ImportRequest {
   paymentTerms?: string;
   pol?: string;
   pod?: string;
+  quoteCurrencyMode?: 'KRW' | 'USD' | 'SPLIT_USD_KRW'; // 견적 통화 방식 (원화일괄, 달러일괄, 물품대USD+운송비KRW 분리)
+  quoteProductAmountUsd?: number; // 분리견적 시 물품대 제시금액 (USD)
+  quoteFreightAmountKrw?: number; // 분리견적 시 운송비/부대비용 제시금액 (KRW)
+  quoteProductMarginRate?: number; // 분리견적 시 물품대 마진율 (%)
+  quoteFreightMarginRate?: number; // 분리견적 시 운송비 마진율 (%)
   packingPallets?: Array<{ palletSize: string; qty: string; cbm: string; weight: string }>;
   
   

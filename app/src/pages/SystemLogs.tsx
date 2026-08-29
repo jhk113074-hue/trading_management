@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.475',
+    version: 'v2.8.475',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '국내 고객 견적서 [물품대 USD + 운송비 KRW] 복합 분리 견적 지원',
+    content: '• 수입품 국내 고객 견적 시 물건값은 외화(USD $), 운송 및 수입부대비용은 원화(KRW ₩)로 각각 독립 견적 및 마진을 설정할 수 있는 복합 분리 견적 체계 구축\\n• 견적서 출력 및 PDF 저장 시 제품행(USD)과 운송료행(KRW)이 명확히 분리 표기되며 결제조건에 외화송금 및 세금계산서 발행 안내 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.474',
     version: 'v2.8.474',
     date: '2026-08-29',
