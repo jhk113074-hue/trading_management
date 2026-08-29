@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.485',
+    version: 'v2.8.485',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '견적서 인쇄 시 달러(USD) 및 원화(KRW) 복합 분리 별도 기재 완벽 지원',
+    content: '• 견적서 인쇄 시 각 품목별 통화(물품대 USD, 운송비 KRW 등)를 각 행에 맞추어 정확한 화폐 기호($ / ₩)로 개별 표기\\n• 상단 총 견적 금액에 [ $ 97,000.00 (USD) + ₩ 3,800,000 (KRW) (VAT 별도) ]와 같이 통화별 합계를 명확히 분리 기재',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.484',
     version: 'v2.8.484',
     date: '2026-08-29',

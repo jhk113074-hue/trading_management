@@ -5993,21 +5993,23 @@ customsDuty,
                   <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>견적 화폐 (CURRENCY):</span>
                   <select
                     value={printCurrency}
-                    onChange={(e) => setPrintCurrency(e.target.value as 'KRW' | 'USD')}
+                    onChange={(e) => setPrintCurrency(e.target.value as 'KRW' | 'USD' | 'SPLIT_USD_KRW')}
                     style={{
                       height: '28px',
                       padding: '0 8px',
                       borderRadius: '4px',
                       border: '1px solid #cbd5e1',
-                      fontSize: '12.5px',
-                      fontWeight: 600,
+                      fontSize: '12px',
+                      fontWeight: 700,
                       outline: 'none',
                       background: '#fff',
+                      color: '#1e3a8a',
                       cursor: 'pointer'
                     }}
                   >
-                    <option value="KRW">원화 (KRW)</option>
-                    <option value="USD">달러 (USD)</option>
+                    <option value="SPLIT_USD_KRW">⭐ 복합 분리 표시 (품목별 통화 그대로: USD + KRW)</option>
+                    <option value="KRW">원화 (KRW) 일괄 환산</option>
+                    <option value="USD">달러 (USD) 일괄 환산</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -6032,10 +6034,11 @@ customsDuty,
               const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
               const cb = request.costBreakdown || {};
 
-              // 각 품목별 인쇄 통화(KRW/USD) 환산 단가 및 총액 정확한 계산
+              // 각 품목별 인쇄 통화(KRW / USD / 복합 분리) 환산 단가 및 총액 계산
               const printItemsData = (request.piItems && request.piItems.length > 0)
                 ? request.piItems.map((item) => {
                     const itemCurrency = item.currency || 'USD';
+                    const sym = itemCurrency === 'KRW' ? '₩' : itemCurrency === 'EUR' ? '€' : itemCurrency === 'RMB' ? '¥' : '$';
                     const qty = Number(item.qty) || 1;
                     const rawQuoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '')
                       ? Number(item.quoteUnitPrice)
@@ -6043,12 +6046,23 @@ customsDuty,
 
                     let unitPriceInPrint = 0;
                     let totalInPrint = 0;
+                    let printSymbol = sym;
+                    let printCur = itemCurrency;
 
                     if (printCurrency === 'KRW') {
+                      printSymbol = '₩';
+                      printCur = 'KRW';
                       unitPriceInPrint = itemCurrency === 'KRW' ? rawQuoteUPrice : Math.round(rawQuoteUPrice * appliedRate);
                       totalInPrint = unitPriceInPrint * qty;
-                    } else { // printCurrency === 'USD'
+                    } else if (printCurrency === 'USD') {
+                      printSymbol = '$';
+                      printCur = 'USD';
                       unitPriceInPrint = itemCurrency === 'KRW' ? Math.round((rawQuoteUPrice / appliedRate) * 100) / 100 : rawQuoteUPrice;
+                      totalInPrint = unitPriceInPrint * qty;
+                    } else { // 'SPLIT_USD_KRW' (각 품목 지정 통화 그대로 분리 기재)
+                      printSymbol = sym;
+                      printCur = itemCurrency;
+                      unitPriceInPrint = rawQuoteUPrice;
                       totalInPrint = unitPriceInPrint * qty;
                     }
 
@@ -6056,23 +6070,42 @@ customsDuty,
                       name: item.name || request.itemName,
                       qty,
                       unit: item.unit || 'EA',
+                      currency: printCur,
+                      symbol: printSymbol,
                       unitPriceInPrint,
                       totalInPrint,
-                      displayUnitPrice: printCurrency === 'KRW'
+                      displayUnitPrice: printCur === 'KRW'
                         ? `₩ ${Math.round(unitPriceInPrint).toLocaleString()}`
-                        : `$ ${unitPriceInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                      displayTotalAmount: printCurrency === 'KRW'
+                        : `${printSymbol} ${unitPriceInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                      displayTotalAmount: printCur === 'KRW'
                         ? `₩ ${Math.round(totalInPrint).toLocaleString()}`
-                        : `$ ${totalInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `${printSymbol} ${totalInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     };
                   })
                 : [];
 
-              const totalPrintSum = printItemsData.reduce((sum, it) => sum + it.totalInPrint, 0);
+              let displayTotalQuote = '';
+              if (printCurrency === 'KRW') {
+                const sumKrw = printItemsData.reduce((sum, it) => sum + it.totalInPrint, 0);
+                displayTotalQuote = `₩ ${Math.round(sumKrw).toLocaleString()}`;
+              } else if (printCurrency === 'USD') {
+                const sumUsd = printItemsData.reduce((sum, it) => sum + it.totalInPrint, 0);
+                displayTotalQuote = `$ ${sumUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              } else { // 'SPLIT_USD_KRW'
+                const usdItems = printItemsData.filter(it => it.currency !== 'KRW');
+                const krwItems = printItemsData.filter(it => it.currency === 'KRW');
+                const sumUsd = usdItems.reduce((sum, it) => sum + it.totalInPrint, 0);
+                const sumKrw = krwItems.reduce((sum, it) => sum + it.totalInPrint, 0);
 
-              const displayTotalQuote = printCurrency === 'KRW'
-                ? `₩ ${Math.round(totalPrintSum).toLocaleString()}`
-                : `$ ${totalPrintSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                const parts: string[] = [];
+                if (sumUsd > 0) {
+                  parts.push(`$ ${sumUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (USD)`);
+                }
+                if (sumKrw > 0) {
+                  parts.push(`₩ ${Math.round(sumKrw).toLocaleString()} (KRW)`);
+                }
+                displayTotalQuote = parts.length > 0 ? parts.join(' + ') : '₩ 0';
+              };
 
               return (
                 <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
