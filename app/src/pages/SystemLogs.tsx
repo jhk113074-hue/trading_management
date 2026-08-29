@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.477',
+    version: 'v2.8.477',
+    date: '2026-08-29',
+    category: 'UI/UX',
+    title: '견적 포함 품목 목록 통화 구분(CURRENCY) 열 및 기호($/₩) 정밀 반영',
+    content: '• 수입견적 작성 탭의 [견적 포함 품목 목록] 테이블에 통화 선택(CURRENCY) 열을 정확히 추가하여 USD($)/KRW(₩)/EUR(€)/RMB(¥) 구분 제공\\n• 단가 입력창 및 공급금액에 통화 기호 표시 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.476',
     version: 'v2.8.476',
     date: '2026-08-29',

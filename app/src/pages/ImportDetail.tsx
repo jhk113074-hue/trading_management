@@ -2481,12 +2481,13 @@ customsDuty,
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '32px' }}>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '35px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>No</th>
                       <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>DESCRIPTION OF COMMODITY</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '90px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>QTY</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '60px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>UNIT</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '95px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>U.PRICE</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '40px' }}></th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '85px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '70px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>QTY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '55px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>UNIT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '90px', fontSize: '11.5px', fontWeight: 750, color: '#2563eb' }}>CURRENCY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '115px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>U.PRICE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '125px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '35px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2555,29 +2556,52 @@ customsDuty,
                             <option value="PALLET">PALLET</option>
                           </select>
                         </td>
+                        {/* 통화 구분 선택 (USD, KRW, EUR, RMB) */}
                         <td style={{ padding: '2px 4px' }}>
-                          <input
-                            type="number"
-                            value={item.unitPrice}
+                          <select
+                            value={item.currency || 'USD'}
                             onChange={(e) => {
-                              const val = e.target.value;
                               const nextItems = [...(request.piItems || [])];
-                              const qtyVal = Number(item.qty) || 0;
-                              const priceVal = Number(val) || 0;
-                              nextItems[idx] = { ...item, unitPrice: val, amount: (qtyVal * priceVal).toFixed(2) };
-                              
-                              let nextB = { ...(request.costBreakdown || {}) };
-                              if (idx === 0) {
-                                nextB = { ...nextB, buyingPriceUsd: priceVal };
-                              }
-                              const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
-                              saveToStorage(recalculateDetailCosts(updated, nextB));
+                              nextItems[idx] = { ...item, currency: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                             }}
-                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                          />
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, color: item.currency === 'KRW' ? '#047857' : '#1d4ed8', background: '#fff', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                          >
+                            <option value="USD">USD ($)</option>
+                            <option value="KRW">KRW (₩)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="RMB">RMB (¥)</option>
+                          </select>
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b', paddingRight: '8px' }}>
-                          {Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td style={{ padding: '2px 4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: item.currency === 'KRW' ? '#047857' : '#1d4ed8' }}>
+                              {item.currency === 'KRW' ? '₩' : item.currency === 'EUR' ? '€' : item.currency === 'RMB' ? '¥' : '$'}
+                            </span>
+                            <input
+                              type="number"
+                              value={item.unitPrice}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                const qtyVal = Number(item.qty) || 0;
+                                const priceVal = Number(val) || 0;
+                                nextItems[idx] = { ...item, unitPrice: val, amount: (qtyVal * priceVal).toFixed(2) };
+                                
+                                let nextB = { ...(request.costBreakdown || {}) };
+                                if (idx === 0) {
+                                  nextB = { ...nextB, buyingPriceUsd: priceVal };
+                                }
+                                const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
+                                saveToStorage(recalculateDetailCosts(updated, nextB));
+                              }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: item.currency === 'KRW' ? '#047857' : '#1e3a8a', paddingRight: '8px' }}>
+                          {item.currency === 'KRW' ? '₩ ' : item.currency === 'EUR' ? '€ ' : item.currency === 'RMB' ? '¥ ' : '$ '}
+                          {Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: item.currency === 'KRW' ? 0 : 2, maximumFractionDigits: item.currency === 'KRW' ? 0 : 2 })}
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <button
