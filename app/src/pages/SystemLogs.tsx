@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.480',
+    version: 'v2.8.480',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '견적단가(QUOTE U.P) 올림/반올림 자리수(1단위·10단위·100단위·천단위·만단위) 선택 기능 추가',
+    content: '• 견적 포함 품목 목록 상단에 [견적단가 올림/반올림 자리수] 일괄 선택 드롭다운 신설\\n• 각 품목별 견적단가 셀 우측에 개별 단수처리 톱니바퀴(⚙) 선택 메뉴 제공 (1/10/100/1,000/10,000 단위 올림 및 반올림)',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.479',
     version: 'v2.8.479',
     date: '2026-08-29',

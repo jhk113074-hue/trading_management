@@ -251,7 +251,27 @@ export const ImportDetail: React.FC = () => {
   useEffect(() => {
     return subscribeCustomCurrencies(setCustomCurrencies);
   }, []);
-  const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
+  // 올림/반올림 자리수 처리 유틸리티 함수
+const roundByDigit = (val: number, rule: string, isKrw: boolean = false): number => {
+  if (val <= 0) return val;
+  switch (rule) {
+    case 'CEIL_1': return Math.ceil(val);
+    case 'ROUND_1': return Math.round(val);
+    case 'CEIL_10': return Math.ceil(val / 10) * 10;
+    case 'ROUND_10': return Math.round(val / 10) * 10;
+    case 'CEIL_100': return Math.ceil(val / 100) * 100;
+    case 'ROUND_100': return Math.round(val / 100) * 100;
+    case 'CEIL_1000': return Math.ceil(val / 1000) * 1000;
+    case 'ROUND_1000': return Math.round(val / 1000) * 1000;
+    case 'CEIL_10000': return Math.ceil(val / 10000) * 10000;
+    case 'ROUND_10000': return Math.round(val / 10000) * 10000;
+    case 'NONE':
+    default:
+      return isKrw ? Math.round(val) : Math.round(val * 100) / 100;
+  }
+};
+
+const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
     const applied = cb.appliedExchangeRate || 1450;
     const priceUsd = cb.buyingPriceUsd || 0;
     const qty = cb.buyingQty || 1;
@@ -2462,7 +2482,51 @@ customsDuty,
             {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
             <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 견적 포함 품목 목록</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 견적 포함 품목 목록</span>
+                  
+                  {/* 단수/올림·반올림 자리수 일괄 선택 드롭다운 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#eff6ff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af' }}>⚡ 견적단가 올림/반올림 자리수:</span>
+                    <select
+                      onChange={(e) => {
+                        const rule = e.target.value;
+                        if (!rule) return;
+                        const nextItems = (request.piItems || []).map(it => {
+                          const bPrice = Number(it.buyingUnitPrice || it.unitPrice) || 0;
+                          const mRate = Number(it.marginRate !== undefined ? it.marginRate : (request.quoteProductMarginRate ?? 10));
+                          const rawQPrice = bPrice * (1 + mRate / 100);
+                          const qPrice = roundByDigit(rawQPrice, rule, it.currency === 'KRW');
+                          const qAmt = ((Number(it.qty) || 0) * qPrice).toFixed(2);
+                          const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+                          return {
+                            ...it,
+                            quoteUnitPrice: String(qPrice),
+                            marginRate: Math.round(recalculatedMargin * 10) / 10,
+                            amount: qAmt
+                          };
+                        });
+                        const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
+                        saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r));
+                      }}
+                      defaultValue="NONE"
+                      style={{ height: '24px', fontSize: '11.5px', fontWeight: 700, color: '#1e3a8a', border: '1px solid #93c5fd', borderRadius: '3px', background: '#fff', outline: 'none', padding: '0 4px', cursor: 'pointer' }}
+                    >
+                      <option value="NONE">소수점 그대로 (기본)</option>
+                      <option value="CEIL_1">1단위 (정수) 올림 ⬆</option>
+                      <option value="ROUND_1">1단위 (정수) 반올림 ≈</option>
+                      <option value="CEIL_10">10단위 (십자리) 올림 ⬆ (예: 96,960)</option>
+                      <option value="ROUND_10">10단위 (십자리) 반올림 ≈ (예: 96,950)</option>
+                      <option value="CEIL_100">100단위 (백자리) 올림 ⬆ (예: 97,000)</option>
+                      <option value="ROUND_100">100단위 (백자리) 반올림 ≈ (예: 97,000)</option>
+                      <option value="CEIL_1000">1,000단위 (천자리) 올림 ⬆ (예: 97,000)</option>
+                      <option value="ROUND_1000">1,000단위 (천자리) 반올림 ≈ (예: 97,000)</option>
+                      <option value="CEIL_10000">10,000단위 (만자리) 올림 ⬆ (예: 100,000)</option>
+                      <option value="ROUND_10000">10,000단위 (만자리) 반올림 ≈ (예: 100,000)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -2487,7 +2551,7 @@ customsDuty,
                       <th style={{ padding: '6px 4px', textAlign: 'center', width: '75px', fontSize: '11px', fontWeight: 750, color: '#2563eb' }}>통화</th>
                       <th style={{ padding: '6px 4px', textAlign: 'right', width: '95px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입단가 (BUY)</th>
                       <th style={{ padding: '6px 4px', textAlign: 'right', width: '65px', fontSize: '11px', fontWeight: 750, color: '#1d4ed8', background: '#eff6ff' }}>마진율(%)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '105px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '135px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
                       <th style={{ padding: '6px 6px', textAlign: 'right', width: '115px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>견적총액 (AMOUNT)</th>
                       <th style={{ padding: '6px 4px', textAlign: 'center', width: '30px' }}></th>
                     </tr>
@@ -2660,7 +2724,7 @@ customsDuty,
                               <span style={{ fontSize: '10.5px', color: '#1d4ed8', fontWeight: 700 }}>%</span>
                             </div>
                           </td>
-                          {/* 3. 견적단가 (QUOTE U.P) */}
+                          {/* 3. 견적단가 (QUOTE U.P) + 개별 자리수 선택 */}
                           <td style={{ padding: '2px 4px', background: '#eff6ff' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                               <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>{sym}</span>
@@ -2686,8 +2750,49 @@ customsDuty,
                                   const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r);
                                   saveToStorage(updated);
                                 }}
-                                style={{ width: '100%', height: '26px', border: '1.5px solid #3b82f6', borderRadius: '4px', fontSize: '12px', fontWeight: 750, color: '#1e3a8a', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#fff' }}
+                                style={{ width: '100%', minWidth: '70px', height: '26px', border: '1.5px solid #3b82f6', borderRadius: '4px', fontSize: '12px', fontWeight: 750, color: '#1e3a8a', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#fff' }}
                               />
+                              {/* 개별 품목 올림/반올림 자리수 셀렉트 */}
+                              <select
+                                title="이 품목 단수 올림/반올림 단위 선택"
+                                onChange={(e) => {
+                                  const rule = e.target.value;
+                                  if (!rule) return;
+                                  const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
+                                  const mRate = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
+                                  const rawQPrice = bPrice * (1 + mRate / 100);
+                                  const qPrice = roundByDigit(rawQPrice, rule, itemCurrency === 'KRW');
+                                  const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
+                                  const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+
+                                  const nextItems = [...(request.piItems || [])];
+                                  nextItems[idx] = { 
+                                    ...item, 
+                                    quoteUnitPrice: String(qPrice), 
+                                    marginRate: Math.round(recalculatedMargin * 10) / 10, 
+                                    amount: qAmt 
+                                  };
+                                  
+                                  const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
+                                  const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r);
+                                  saveToStorage(updated);
+                                }}
+                                defaultValue=""
+                                style={{ height: '26px', width: '22px', fontSize: '11px', fontWeight: 800, color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '3px', background: '#eff6ff', outline: 'none', padding: '0', cursor: 'pointer', textAlign: 'center' }}
+                              >
+                                <option value="" disabled>⚙</option>
+                                <option value="NONE">원래대로 (소수점)</option>
+                                <option value="CEIL_1">1단위 올림 ⬆</option>
+                                <option value="ROUND_1">1단위 반올림 ≈</option>
+                                <option value="CEIL_10">10단위 올림 ⬆ (십자리)</option>
+                                <option value="ROUND_10">10단위 반올림 ≈ (십자리)</option>
+                                <option value="CEIL_100">100단위 올림 ⬆ (백자리)</option>
+                                <option value="ROUND_100">100단위 반올림 ≈ (백자리)</option>
+                                <option value="CEIL_1000">1,000단위 올림 ⬆ (천자리)</option>
+                                <option value="ROUND_1000">1,000단위 반올림 ≈ (천자리)</option>
+                                <option value="CEIL_10000">10,000단위 올림 ⬆ (만자리)</option>
+                                <option value="ROUND_10000">10,000단위 반올림 ≈ (만자리)</option>
+                              </select>
                             </div>
                           </td>
                           {/* 4. 견적총액 (TOTAL AMOUNT) */}
