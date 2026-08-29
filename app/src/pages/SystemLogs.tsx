@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.483',
+    version: 'v2.8.483',
+    date: '2026-08-29',
+    category: 'UI/UX',
+    title: '견적서 작성 탭 하단 중복 요약 카드 제거 및 품목 테이블 중심 간소화',
+    content: '• 품목 목록 테이블 내에서 매입단가·마진율·단수처리·견적단가·견적총액이 모두 통합 처리됨에 따라, 하단의 중복 견적/운송비 3개 요약 카드 영역을 제거하여 깔끔하고 직관적인 레이아웃 제공',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.482',
+    version: 'v2.8.482',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '품목 목록 테이블 내 [올림/반올림 단위] 개별 열 추가 (아이템별 독립 단수처리)',
+    content: '• 각 품목(아이템)마다 [올림/반올림 단위] 선택 열을 전면 배치하여 개별 단위(소수점/1단위/10단위/100단위/천단위/만단위) 선택 지원\\n• 개별 품목 단수 선택 시 해당 품목의 견적단가, 마진율 및 총액 즉시 개별 재계산 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.481',
     version: 'v2.8.481',
     date: '2026-08-29',

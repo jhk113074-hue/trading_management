@@ -2485,9 +2485,9 @@ customsDuty,
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 견적 포함 품목 목록</span>
                   
-                  {/* 단수/올림·반올림 자리수 일괄 선택 드롭다운 */}
+                  {/* 단수/올림·반올림 자리수 일괄 적용 드롭다운 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#eff6ff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af' }}>⚡ 견적단가 올림/반올림 자리수:</span>
+                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af' }}>⚡ 전체 품목 일괄 올림/반올림:</span>
                     <select
                       onChange={(e) => {
                         const rule = e.target.value;
@@ -2502,6 +2502,7 @@ customsDuty,
                           const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
                           return {
                             ...it,
+                            roundingMode: rule,
                             quoteUnitPrice: String(qPrice),
                             marginRate: Math.round(recalculatedMargin * 10) / 10,
                             amount: qAmt
@@ -2542,7 +2543,7 @@ customsDuty,
                 <button
                   type="button"
                   onClick={() => {
-                    const nextItems = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
+                    const nextItems = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '', roundingMode: 'NONE' }];
                     saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                   }}
                   style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -2561,9 +2562,10 @@ customsDuty,
                       <th style={{ padding: '6px 4px', textAlign: 'right', width: '55px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>수량</th>
                       <th style={{ padding: '6px 4px', textAlign: 'center', width: '50px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>단위</th>
                       <th style={{ padding: '6px 4px', textAlign: 'center', width: '75px', fontSize: '11px', fontWeight: 750, color: '#2563eb' }}>통화</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '95px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입단가 (BUY)</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '90px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입단가 (BUY)</th>
                       <th style={{ padding: '6px 4px', textAlign: 'right', width: '65px', fontSize: '11px', fontWeight: 750, color: '#1d4ed8', background: '#eff6ff' }}>마진율(%)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '135px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '130px', fontSize: '11px', fontWeight: 750, color: '#2563eb', background: '#eff6ff' }}>올림/반올림 단위</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '105px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
                       <th style={{ padding: '6px 6px', textAlign: 'right', width: '115px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>견적총액 (AMOUNT)</th>
                       <th style={{ padding: '6px 4px', textAlign: 'center', width: '30px' }}></th>
                     </tr>
@@ -2574,9 +2576,9 @@ customsDuty,
                       const sym = itemCurrency === 'KRW' ? '₩' : itemCurrency === 'EUR' ? '€' : itemCurrency === 'RMB' ? '¥' : '$';
                       const buyingUPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
                       const marginVal = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
-                      const defaultQuoteUPrice = itemCurrency === 'KRW'
-                        ? Math.round(buyingUPrice * (1 + marginVal / 100))
-                        : Math.round(buyingUPrice * (1 + marginVal / 100) * 100) / 100;
+                      const itemRule = item.roundingMode || 'NONE';
+                      const rawQuote = buyingUPrice * (1 + marginVal / 100);
+                      const defaultQuoteUPrice = roundByDigit(rawQuote, itemRule, itemCurrency === 'KRW');
                       const quoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '') ? Number(item.quoteUnitPrice) : defaultQuoteUPrice;
                       const itemQty = Number(item.qty) || 0;
                       const totalQuoteAmt = itemQty * quoteUPrice;
@@ -2675,9 +2677,8 @@ customsDuty,
                                   const val = e.target.value;
                                   const bPrice = Number(val) || 0;
                                   const curMargin = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
-                                  const qPrice = itemCurrency === 'KRW'
-                                    ? Math.round(bPrice * (1 + curMargin / 100))
-                                    : Math.round(bPrice * (1 + curMargin / 100) * 100) / 100;
+                                  const rawQ = bPrice * (1 + curMargin / 100);
+                                  const qPrice = roundByDigit(rawQ, item.roundingMode || 'NONE', itemCurrency === 'KRW');
                                   const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
 
                                   const nextItems = [...(request.piItems || [])];
@@ -2712,9 +2713,8 @@ customsDuty,
                                   const val = e.target.value;
                                   const mRate = Number(val) || 0;
                                   const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
-                                  const qPrice = itemCurrency === 'KRW'
-                                    ? Math.round(bPrice * (1 + mRate / 100))
-                                    : Math.round(bPrice * (1 + mRate / 100) * 100) / 100;
+                                  const rawQ = bPrice * (1 + mRate / 100);
+                                  const qPrice = roundByDigit(rawQ, item.roundingMode || 'NONE', itemCurrency === 'KRW');
                                   const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
 
                                   const nextItems = [...(request.piItems || [])];
@@ -2726,7 +2726,18 @@ customsDuty,
                                   };
                                   
                                   const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                  const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r);
+                                  const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
+                                  const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
+                                  const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
+                                  const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
+
+                                  const updated = importRequests.map(r => r.id === id ? { 
+                                    ...r, 
+                                    piItems: nextItems, 
+                                    quoteProductAmountUsd: totalQUsd,
+                                    quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
+                                    customerQuoteAmount: nextCombinedKrw
+                                  } : r);
                                   saveToStorage(updated);
                                 }}
                                 style={{ width: '100%', height: '26px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, color: '#1d4ed8', padding: '0 2px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
@@ -2734,13 +2745,64 @@ customsDuty,
                               <span style={{ fontSize: '10.5px', color: '#1d4ed8', fontWeight: 700 }}>%</span>
                             </div>
                           </td>
-                          {/* 3. 견적단가 (QUOTE U.P) + 개별 자리수 선택 */}
+                          {/* 3. [신규] 아이템별 올림/반올림 자리수 선택 드롭다운 */}
                           <td style={{ padding: '2px 4px', background: '#eff6ff' }}>
+                            <select
+                              value={item.roundingMode || 'NONE'}
+                              onChange={(e) => {
+                                const rule = e.target.value;
+                                const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
+                                const mRate = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
+                                const rawQ = bPrice * (1 + mRate / 100);
+                                const qPrice = roundByDigit(rawQ, rule, itemCurrency === 'KRW');
+                                const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
+                                const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { 
+                                  ...item, 
+                                  roundingMode: rule,
+                                  quoteUnitPrice: String(qPrice), 
+                                  marginRate: Math.round(recalculatedMargin * 10) / 10, 
+                                  amount: qAmt 
+                                };
+                                
+                                const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
+                                const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
+                                const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
+                                const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
+                                const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
+
+                                saveToStorage(importRequests.map(r => r.id === id ? { 
+                                  ...r, 
+                                  piItems: nextItems, 
+                                  quoteProductAmountUsd: totalQUsd,
+                                  quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
+                                  customerQuoteAmount: nextCombinedKrw
+                                } : r));
+                              }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#1e40af', background: '#fff', padding: '0 2px', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}
+                            >
+                              <option value="NONE">소수점 (기본)</option>
+                              <option value="CEIL_1">1단위 올림 ⬆</option>
+                              <option value="ROUND_1">1단위 반올림 ≈</option>
+                              <option value="CEIL_10">10단위 올림 ⬆ (십자리)</option>
+                              <option value="ROUND_10">10단위 반올림 ≈ (십자리)</option>
+                              <option value="CEIL_100">100단위 올림 ⬆ (백자리)</option>
+                              <option value="ROUND_100">100단위 반올림 ≈ (백자리)</option>
+                              <option value="CEIL_1000">1,000단위 올림 ⬆ (천자리)</option>
+                              <option value="ROUND_1000">1,000단위 반올림 ≈ (천자리)</option>
+                              <option value="CEIL_10000">10,000단위 올림 ⬆ (만자리)</option>
+                              <option value="ROUND_10000">10,000단위 반올림 ≈ (만자리)</option>
+                            </select>
+                          </td>
+                          {/* 4. 견적단가 (QUOTE U.P) */}
+                          <td style={{ padding: '2px 4px', background: '#dbeafe' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                               <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>{sym}</span>
                               <input
                                 type="number"
-                                value={item.quoteUnitPrice !== undefined ? item.quoteUnitPrice : defaultQuoteUPrice}
+                                value={item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '' ? item.quoteUnitPrice : defaultQuoteUPrice}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const qPrice = Number(val) || 0;
@@ -2757,55 +2819,25 @@ customsDuty,
                                   };
                                   
                                   const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                  const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r);
-                                  saveToStorage(updated);
-                                }}
-                                style={{ width: '100%', minWidth: '70px', height: '26px', border: '1.5px solid #3b82f6', borderRadius: '4px', fontSize: '12px', fontWeight: 750, color: '#1e3a8a', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#fff' }}
-                              />
-                              {/* 개별 품목 올림/반올림 자리수 셀렉트 */}
-                              <select
-                                title="이 품목 단수 올림/반올림 단위 선택"
-                                onChange={(e) => {
-                                  const rule = e.target.value;
-                                  if (!rule) return;
-                                  const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
-                                  const mRate = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
-                                  const rawQPrice = bPrice * (1 + mRate / 100);
-                                  const qPrice = roundByDigit(rawQPrice, rule, itemCurrency === 'KRW');
-                                  const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
-                                  const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+                                  const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
+                                  const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
+                                  const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
+                                  const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
 
-                                  const nextItems = [...(request.piItems || [])];
-                                  nextItems[idx] = { 
-                                    ...item, 
-                                    quoteUnitPrice: String(qPrice), 
-                                    marginRate: Math.round(recalculatedMargin * 10) / 10, 
-                                    amount: qAmt 
-                                  };
-                                  
-                                  const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                  const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r);
+                                  const updated = importRequests.map(r => r.id === id ? { 
+                                    ...r, 
+                                    piItems: nextItems, 
+                                    quoteProductAmountUsd: totalQUsd,
+                                    quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
+                                    customerQuoteAmount: nextCombinedKrw
+                                  } : r);
                                   saveToStorage(updated);
                                 }}
-                                defaultValue=""
-                                style={{ height: '26px', width: '22px', fontSize: '11px', fontWeight: 800, color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '3px', background: '#eff6ff', outline: 'none', padding: '0', cursor: 'pointer', textAlign: 'center' }}
-                              >
-                                <option value="" disabled>⚙</option>
-                                <option value="NONE">원래대로 (소수점)</option>
-                                <option value="CEIL_1">1단위 올림 ⬆</option>
-                                <option value="ROUND_1">1단위 반올림 ≈</option>
-                                <option value="CEIL_10">10단위 올림 ⬆ (십자리)</option>
-                                <option value="ROUND_10">10단위 반올림 ≈ (십자리)</option>
-                                <option value="CEIL_100">100단위 올림 ⬆ (백자리)</option>
-                                <option value="ROUND_100">100단위 반올림 ≈ (백자리)</option>
-                                <option value="CEIL_1000">1,000단위 올림 ⬆ (천자리)</option>
-                                <option value="ROUND_1000">1,000단위 반올림 ≈ (천자리)</option>
-                                <option value="CEIL_10000">10,000단위 올림 ⬆ (만자리)</option>
-                                <option value="ROUND_10000">10,000단위 반올림 ≈ (만자리)</option>
-                              </select>
+                                style={{ width: '100%', height: '26px', border: '1.5px solid #2563eb', borderRadius: '4px', fontSize: '12px', fontWeight: 800, color: '#1e3a8a', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#fff' }}
+                              />
                             </div>
                           </td>
-                          {/* 4. 견적총액 (TOTAL AMOUNT) */}
+                          {/* 5. 견적총액 (TOTAL AMOUNT) */}
                           <td style={{ textAlign: 'right', fontWeight: 800, color: itemCurrency === 'KRW' ? '#047857' : '#1e3a8a', paddingRight: '8px' }}>
                             {sym} {Number(totalQuoteAmt || 0).toLocaleString(undefined, { minimumFractionDigits: itemCurrency === 'KRW' ? 0 : 2, maximumFractionDigits: itemCurrency === 'KRW' ? 0 : 2 })}
                           </td>
@@ -2830,319 +2862,6 @@ customsDuty,
                 </table>
               </div>
             </div>
-
-            {/* 견적 통화 및 방식 선택 탭 바 */}
-            {(() => {
-              const cb = request.costBreakdown || {};
-              const appliedRate = cb.appliedExchangeRate || 1450;
-              const {
-                goodsAmountKrw,
-                totalImportCost,
-                totalCashRequired,
-                unitCost
-              } = calculateTotalCostHelper(cb, request.piItems || []);
-
-              const logisticsAndCustomsCostKrw = Math.max(0, totalImportCost - goodsAmountKrw);
-              const totalBuyingPriceUsd = request.piItems?.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0) || ((cb.buyingPriceUsd || 0) * (cb.buyingQty || 1)) || 1;
-              const totalItemQty = (request.piItems && request.piItems.length > 0)
-                ? request.piItems.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0)
-                : (cb.buyingQty || 1);
-              const actualQty = totalItemQty > 0 ? totalItemQty : 1;
-
-              const quoteMode = request.quoteCurrencyMode || 'SPLIT_USD_KRW'; // 'KRW' | 'USD' | 'SPLIT_USD_KRW'
-
-              // 1. 분리 견적 기본값 계산
-              const prodMarginRate = request.quoteProductMarginRate ?? (request.marginRate ?? 10);
-              const freightMarginRate = request.quoteFreightMarginRate ?? (request.marginRate ?? 10);
-
-              const defaultProdUsd = Math.round((totalBuyingPriceUsd * (1 + prodMarginRate / 100)) * 100) / 100;
-              const defaultFreightKrw = Math.round(logisticsAndCustomsCostKrw * (1 + freightMarginRate / 100));
-
-              const quoteProdUsd = request.quoteProductAmountUsd !== undefined ? request.quoteProductAmountUsd : defaultProdUsd;
-              const quoteFreightKrw = request.quoteFreightAmountKrw !== undefined ? request.quoteFreightAmountKrw : defaultFreightKrw;
-
-              const totalCombinedSellingKrw = Math.round(quoteProdUsd * appliedRate) + quoteFreightKrw;
-              const totalCombinedMarginKrw = totalCombinedSellingKrw - totalImportCost;
-              const totalCombinedMarginRate = totalImportCost > 0 ? (totalCombinedMarginKrw / totalImportCost) * 100 : 0;
-
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-                  {/* 견적 통화 방식 선택 툴바 */}
-                  <div style={{ background: '#fff', padding: '12px 16px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>
-                        🌐 견적 통화 및 발행 방식 :
-                      </span>
-                      <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '3px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
-                        {[
-                          { id: 'SPLIT_USD_KRW', label: '⭐ 복합 분리 견적 (물품대 USD + 운송비 KRW)', desc: '물건값은 달러($), 운송/부대비용은 원화(₩)로 분리 견적' },
-                          { id: 'KRW', label: '원화 (KRW) 일괄', desc: '전체 합산 원화 단일 견적' },
-                          { id: 'USD', label: '달러 (USD) 일괄', desc: '전체 합산 달러 단일 견적' },
-                        ].map(opt => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => {
-                              saveToStorage(importRequests.map(r => r.id === id ? { 
-                                ...r, 
-                                quoteCurrencyMode: opt.id as any,
-                                customerQuoteAmount: opt.id === 'SPLIT_USD_KRW' ? totalCombinedSellingKrw : r.customerQuoteAmount
-                              } : r));
-                              setPrintCurrency(opt.id as any);
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: '3px',
-                              border: 'none',
-                              fontSize: '12px',
-                              fontWeight: quoteMode === opt.id ? 800 : 600,
-                              background: quoteMode === opt.id ? '#2563eb' : 'transparent',
-                              color: quoteMode === opt.id ? '#fff' : '#475569',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s'
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
-                      {quoteMode === 'SPLIT_USD_KRW' ? '📌 국내 고객사에 물품대는 외화(USD), 운송비/세금은 원화(KRW)로 별도 청구' : '📌 단일 통화로 합산하여 견적서 발행'}
-                    </div>
-                  </div>
-
-                  {quoteMode === 'SPLIT_USD_KRW' ? (
-                    /* 복합 분리 견적 카드 (물품대 USD + 운송비 KRW) */
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
-                      {/* 1. 물품대 USD 견적 설정 */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1.5px solid #3b82f6', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #bfdbfe', paddingBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>
-                            💵 1. 물품대 견적 (USD $)
-                          </span>
-                          <span style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>외화 T/T 송금</span>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
-                          <span style={{ color: '#64748b' }}>물품 매입원가 (FOB/USD):</span>
-                          <strong style={{ color: '#1e293b' }}>${totalBuyingPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>물품 마진율 (%)</label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <input 
-                              type="number"
-                              value={request.quoteProductMarginRate ?? prodMarginRate}
-                              onChange={(e) => {
-                                const rate = Number(e.target.value) || 0;
-                                const nextAmt = Math.round((totalBuyingPriceUsd * (1 + rate / 100)) * 100) / 100;
-                                const nextCombinedKrw = Math.round(nextAmt * appliedRate) + quoteFreightKrw;
-                                saveToStorage(importRequests.map(r => r.id === id ? { 
-                                  ...r, 
-                                  quoteProductMarginRate: rate, 
-                                  quoteProductAmountUsd: nextAmt,
-                                  customerQuoteAmount: nextCombinedKrw
-                                } : r));
-                              }}
-                              style={{ width: '70px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', padding: '0 4px', outline: 'none' }}
-                            />
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>%</span>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a', textTransform: 'uppercase' }}>고객 제시 물품대 ($)</label>
-                          <input 
-                            type="number"
-                            value={request.quoteProductAmountUsd ?? quoteProdUsd}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-                              const rate = totalBuyingPriceUsd > 0 ? ((val - totalBuyingPriceUsd) / totalBuyingPriceUsd) * 100 : 0;
-                              const nextCombinedKrw = Math.round(val * appliedRate) + quoteFreightKrw;
-                              saveToStorage(importRequests.map(r => r.id === id ? { 
-                                ...r, 
-                                quoteProductAmountUsd: val, 
-                                quoteProductMarginRate: Math.round(rate * 10) / 10,
-                                customerQuoteAmount: nextCombinedKrw
-                              } : r));
-                            }}
-                            style={{ width: '120px', height: '32px', border: '1.5px solid #2563eb', borderRadius: '4px', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', textAlign: 'right', padding: '0 6px', outline: 'none', background: '#eff6ff' }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', background: '#fff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#475569' }}>물품 판매단가:</span>
-                          <strong style={{ color: '#2563eb' }}>${(quoteProdUsd / actualQty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {(request.piItems?.[0]?.unit || 'EA')}</strong>
-                        </div>
-                      </div>
-
-                      {/* 2. 운송비 및 부대비용 KRW 견적 설정 */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1.5px solid #10b981', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #a7f3d0', paddingBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#065f46' }}>
-                            🚢 2. 운송비/부대비용 견적 (KRW ₩)
-                          </span>
-                          <span style={{ fontSize: '11px', background: '#d1fae5', color: '#065f46', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>원화 세금계산서</span>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
-                          <span style={{ color: '#64748b' }}>운송/관세/통관 원가:</span>
-                          <strong style={{ color: '#1e293b' }}>₩{logisticsAndCustomsCostKrw.toLocaleString()}원</strong>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송비 마진율 (%)</label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <input 
-                              type="number"
-                              value={request.quoteFreightMarginRate ?? freightMarginRate}
-                              onChange={(e) => {
-                                const rate = Number(e.target.value) || 0;
-                                const nextAmt = Math.round(logisticsAndCustomsCostKrw * (1 + rate / 100));
-                                const nextCombinedKrw = Math.round(quoteProdUsd * appliedRate) + nextAmt;
-                                saveToStorage(importRequests.map(r => r.id === id ? { 
-                                  ...r, 
-                                  quoteFreightMarginRate: rate, 
-                                  quoteFreightAmountKrw: nextAmt,
-                                  customerQuoteAmount: nextCombinedKrw
-                                } : r));
-                              }}
-                              style={{ width: '70px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', padding: '0 4px', outline: 'none' }}
-                            />
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>%</span>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 750, color: '#065f46', textTransform: 'uppercase' }}>고객 제시 운송비 (₩)</label>
-                          <input 
-                            type="number"
-                            value={request.quoteFreightAmountKrw ?? quoteFreightKrw}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-                              const rate = logisticsAndCustomsCostKrw > 0 ? ((val - logisticsAndCustomsCostKrw) / logisticsAndCustomsCostKrw) * 100 : 0;
-                              const nextCombinedKrw = Math.round(quoteProdUsd * appliedRate) + val;
-                              saveToStorage(importRequests.map(r => r.id === id ? { 
-                                ...r, 
-                                quoteFreightAmountKrw: val, 
-                                quoteFreightMarginRate: Math.round(rate * 10) / 10,
-                                customerQuoteAmount: nextCombinedKrw
-                              } : r));
-                            }}
-                            style={{ width: '130px', height: '32px', border: '1.5px solid #10b981', borderRadius: '4px', fontSize: '13px', fontWeight: 800, color: '#065f46', textAlign: 'right', padding: '0 6px', outline: 'none', background: '#ecfdf5' }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', background: '#fff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ color: '#475569' }}>운송 청구 항목:</span>
-                          <strong style={{ color: '#059669' }}>국제운임 + 관세/통관 + 내륙운송</strong>
-                        </div>
-                      </div>
-
-                      {/* 3. 복합 견적 총액 및 마진 종합 카드 */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1.5px solid #8b5cf6', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd6fe', paddingBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#5b21b6' }}>
-                            📊 3. 복합 견적 총액 종합
-                          </span>
-                          <span style={{ fontSize: '11px', background: '#f5f3ff', color: '#6d28d9', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>VAT 별도</span>
-                        </div>
-
-                        <div style={{ background: '#fff', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>고객 견적서 총 청구 표시 :</div>
-                          <div style={{ fontSize: '14px', fontWeight: 900, color: '#1e3a8a' }}>
-                            ${quoteProdUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (USD)
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: 900, color: '#059669' }}>
-                            + ₩{quoteFreightKrw.toLocaleString()}원 (KRW)
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
-                          <span style={{ color: '#64748b' }}>원화 환산 합계(참고):</span>
-                          <strong style={{ color: '#475569' }}>₩{totalCombinedSellingKrw.toLocaleString()}원</strong>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', background: '#f5f3ff', padding: '6px 8px', borderRadius: '4px' }}>
-                          <span style={{ color: '#6d28d9', fontWeight: 700 }}>종합 순마진:</span>
-                          <strong style={{ color: '#5b21b6' }}>₩{totalCombinedMarginKrw.toLocaleString()}원 ({totalCombinedMarginRate.toFixed(1)}%)</strong>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* 단일 통화 견적 (기존 2열 카드) */
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
-                      {/* 왼쪽 카드: 수입원가 요약 정보 */}
-                      <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>수입원가 계산 요약 (Summary)</span>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                          <span style={{ color: '#475569', fontWeight: 600 }}>총 수입원가 (Total Import Cost)</span>
-                          <strong style={{ color: '#1e3a8a' }}>{totalImportCost.toLocaleString()} 원</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                          <span style={{ color: '#475569', fontWeight: 600 }}>총 현금소요액 (Total Cash Required)</span>
-                          <strong style={{ color: '#475569' }}>{totalCashRequired.toLocaleString()} 원</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                          <span style={{ color: '#475569', fontWeight: 600 }}>단위당 수입원가 (Cost per Unit)</span>
-                          <strong style={{ color: '#b45309' }}>{unitCost.toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}</strong>
-                        </div>
-                      </div>
-
-                      {/* 오른쪽 카드: 마진 및 견적액 설정 */}
-                      <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>마진 및 고객 견적액 설정 (Margin &amp; Quote)</span>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>마진율 (%)</label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <input 
-                              type="number" 
-                              value={request.marginRate ?? ''} 
-                              onChange={(e) => {
-                                const rate = Number(e.target.value) || 0;
-                                const totalCost = calculateDetailTotalCost(request);
-                                const marginAmount = Math.round(totalCost * (rate / 100));
-                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
-                              }} 
-                              style={{ width: '100px', height: '34px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', padding: '0 6px', fontWeight: 600, color: '#1e293b' }} 
-                            />
-                            <span style={{ fontSize: '12px', color: '#64748b' }}>%</span>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>마진 금액 (₩)</label>
-                          <strong style={{ fontSize: '13px', color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>고객 제시 견적금액</label>
-                          <input 
-                            type="number" 
-                            value={request.customerQuoteAmount || ''} 
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-                              const totalCost = calculateDetailTotalCost(request);
-                              const marginAmount = val - totalCost;
-                              const marginRate = totalCost > 0 ? (marginAmount / totalCost) * 100 : 0;
-                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, customerQuoteAmount: val, marginAmount, marginRate } : r));
-                            }} 
-                            style={{ width: '130px', height: '34px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', padding: '0 6px', fontWeight: 600, color: '#1e3a8a' }} 
-                          />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>최종 판매단가 (Unit Price)</label>
-                          <strong style={{ fontSize: '13px', color: '#10b981' }}>
-                            {Math.round((request.customerQuoteAmount || 0) / actualQty).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
 
             {/* 거래 조건 및 특기사항 설정 */}
             <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
