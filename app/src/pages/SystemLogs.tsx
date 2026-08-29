@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.481',
+    version: 'v2.8.481',
+    date: '2026-08-29',
+    category: '버그수정',
+    title: '견적총액(AMOUNT) 수식 보정 및 올림/반올림 실시간 연동 강화',
+    content: '• 품목 목록의 견적총액(AMOUNT)이 기존 매입금액이 아닌 수량 × 견적단가(QUOTE U.P)로 정확히 출력되도록 수식 보정\\n• 자리수 드롭다운 선택 시 전체 합산 견적금액 및 마진율 즉시 재계산 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.480',
     version: 'v2.8.480',
     date: '2026-08-29',

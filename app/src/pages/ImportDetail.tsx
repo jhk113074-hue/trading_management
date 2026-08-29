@@ -2492,6 +2492,7 @@ customsDuty,
                       onChange={(e) => {
                         const rule = e.target.value;
                         if (!rule) return;
+                        const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
                         const nextItems = (request.piItems || []).map(it => {
                           const bPrice = Number(it.buyingUnitPrice || it.unitPrice) || 0;
                           const mRate = Number(it.marginRate !== undefined ? it.marginRate : (request.quoteProductMarginRate ?? 10));
@@ -2507,10 +2508,21 @@ customsDuty,
                           };
                         });
                         const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                        saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd } : r));
+                        const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
+                        const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
+                        const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
+                        const nextCombinedKrw = Math.round(totalQUsd * appliedRate) + freightAmtKrw;
+                        
+                        saveToStorage(importRequests.map(r => r.id === id ? { 
+                          ...r, 
+                          piItems: nextItems, 
+                          quoteProductAmountUsd: totalQUsd,
+                          quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
+                          customerQuoteAmount: nextCombinedKrw
+                        } : r));
                       }}
                       defaultValue="NONE"
-                      style={{ height: '24px', fontSize: '11.5px', fontWeight: 700, color: '#1e3a8a', border: '1px solid #93c5fd', borderRadius: '3px', background: '#fff', outline: 'none', padding: '0 4px', cursor: 'pointer' }}
+                      style={{ height: '24px', fontSize: '11.5px', fontWeight: 750, color: '#1e3a8a', border: '1px solid #93c5fd', borderRadius: '3px', background: '#fff', outline: 'none', padding: '0 4px', cursor: 'pointer' }}
                     >
                       <option value="NONE">소수점 그대로 (기본)</option>
                       <option value="CEIL_1">1단위 (정수) 올림 ⬆</option>
@@ -2565,11 +2577,9 @@ customsDuty,
                       const defaultQuoteUPrice = itemCurrency === 'KRW'
                         ? Math.round(buyingUPrice * (1 + marginVal / 100))
                         : Math.round(buyingUPrice * (1 + marginVal / 100) * 100) / 100;
-                      const quoteUPrice = item.quoteUnitPrice !== undefined ? Number(item.quoteUnitPrice) : defaultQuoteUPrice;
+                      const quoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '') ? Number(item.quoteUnitPrice) : defaultQuoteUPrice;
                       const itemQty = Number(item.qty) || 0;
-                      const totalQuoteAmt = item.quoteUnitPrice !== undefined
-                        ? (itemQty * quoteUPrice)
-                        : (Number(item.amount) || (itemQty * quoteUPrice));
+                      const totalQuoteAmt = itemQty * quoteUPrice;
 
                       return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '36px' }}>
