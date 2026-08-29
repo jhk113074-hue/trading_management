@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.478',
+    version: 'v2.8.478',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '고객 제시 물품대($) 및 운송비(₩) 원클릭 반올림 / 올림 버튼 추가',
+    content: '• 마진 계산에 따른 소수점/단수 발생 시 [정수 반올림], [10단위 올림], [100단위 올림], [1,000단위 올림] 등 원클릭 자동맞춤 버튼 제공\\n• 고객 제시 운송비(₩)에도 [1천원 올림], [1만원 올림], [10만원 올림] 빠른 보정 기능 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.477',
     version: 'v2.8.477',
     date: '2026-08-29',
