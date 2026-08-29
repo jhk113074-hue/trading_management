@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.479',
+    version: 'v2.8.479',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '견적 포함 품목 목록에 매입단가·마진율(%)·견적단가·견적금액 일체형 통합 연동',
+    content: '• 품목 목록 테이블 내에 [매입단가 (BUY)], [마진율(%)], [견적단가 (QUOTE)], [견적총액 (AMOUNT)] 열을 통합 제공\\n• 매입단가 또는 마진율 수정 시 견적단가/견적총액 자동 계산 및 견적단가 직접 수정 시 마진율 역산 지원\\n• 견적서 인쇄(QUOTATION) 시 품목별 최종 제시 견적단가 및 금액 정밀 출력 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.478',
     version: 'v2.8.478',
     date: '2026-08-29',
