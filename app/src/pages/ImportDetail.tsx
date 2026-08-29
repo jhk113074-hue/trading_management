@@ -2492,14 +2492,25 @@ customsDuty,
                       onChange={(e) => {
                         const rule = e.target.value;
                         if (!rule) return;
-                        const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
+                        const defaultFx = request.costBreakdown?.appliedExchangeRate || 1450;
                         const nextItems = (request.piItems || []).map(it => {
+                          const bCur = it.buyingCurrency || it.currency || 'USD';
+                          const qCur = it.quoteCurrency || it.currency || (bCur === 'KRW' ? 'KRW' : 'USD');
+                          const fxRate = Number(it.exchangeRate !== undefined && it.exchangeRate !== '' ? it.exchangeRate : defaultFx);
                           const bPrice = Number(it.buyingUnitPrice || it.unitPrice) || 0;
                           const mRate = Number(it.marginRate !== undefined ? it.marginRate : (request.quoteProductMarginRate ?? 10));
-                          const rawQPrice = bPrice * (1 + mRate / 100);
-                          const qPrice = roundByDigit(rawQPrice, rule, it.currency === 'KRW');
+
+                          let baseInQCur = bPrice;
+                          if (bCur !== qCur) {
+                            if (bCur === 'USD' && qCur === 'KRW') baseInQCur = bPrice * fxRate;
+                            else if (bCur === 'KRW' && qCur === 'USD') baseInQCur = fxRate > 0 ? bPrice / fxRate : bPrice;
+                            else baseInQCur = bPrice * fxRate;
+                          }
+
+                          const rawQPrice = baseInQCur * (1 + mRate / 100);
+                          const qPrice = roundByDigit(rawQPrice, rule, qCur === 'KRW');
                           const qAmt = ((Number(it.qty) || 0) * qPrice).toFixed(2);
-                          const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+                          const recalculatedMargin = baseInQCur > 0 ? ((qPrice - baseInQCur) / baseInQCur) * 100 : mRate;
                           return {
                             ...it,
                             roundingMode: rule,
@@ -2509,16 +2520,13 @@ customsDuty,
                           };
                         });
                         const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                        const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
-                        const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
                         const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
-                        const nextCombinedKrw = Math.round(totalQUsd * appliedRate) + freightAmtKrw;
+                        const nextCombinedKrw = Math.round(totalQUsd * defaultFx) + freightAmtKrw;
                         
                         saveToStorage(importRequests.map(r => r.id === id ? { 
                           ...r, 
                           piItems: nextItems, 
                           quoteProductAmountUsd: totalQUsd,
-                          quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
                           customerQuoteAmount: nextCombinedKrw
                         } : r));
                       }}
@@ -2543,7 +2551,23 @@ customsDuty,
                 <button
                   type="button"
                   onClick={() => {
-                    const nextItems = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '', roundingMode: 'NONE' }];
+                    const defaultFx = request.costBreakdown?.appliedExchangeRate || 1450;
+                    const nextItems = [...(request.piItems || []), { 
+                      name: '', 
+                      qty: '', 
+                      unitPrice: '', 
+                      amount: '', 
+                      hsCode: '', 
+                      unit: 'EA', 
+                      palletSize: '', 
+                      cbm: '', 
+                      netWeight: '', 
+                      grossWeight: '', 
+                      roundingMode: 'NONE',
+                      buyingCurrency: 'USD',
+                      quoteCurrency: 'USD',
+                      exchangeRate: defaultFx
+                    }];
                     saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                   }}
                   style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -2556,29 +2580,45 @@ customsDuty,
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '34px' }}>
-                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '30px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>No</th>
-                      <th style={{ padding: '6px 6px', textAlign: 'left', fontSize: '11px', fontWeight: 750, color: '#475569' }}>품명 (COMMODITY)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'left', width: '75px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '55px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>수량</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '50px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>단위</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '75px', fontSize: '11px', fontWeight: 750, color: '#2563eb' }}>통화</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '90px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입단가 (BUY)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '65px', fontSize: '11px', fontWeight: 750, color: '#1d4ed8', background: '#eff6ff' }}>마진율(%)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '130px', fontSize: '11px', fontWeight: 750, color: '#2563eb', background: '#eff6ff' }}>올림/반올림 단위</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '105px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
-                      <th style={{ padding: '6px 6px', textAlign: 'right', width: '115px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>견적총액 (AMOUNT)</th>
-                      <th style={{ padding: '6px 4px', textAlign: 'center', width: '30px' }}></th>
+                      <th style={{ padding: '6px 3px', textAlign: 'center', width: '28px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>No</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'left', fontSize: '11px', fontWeight: 750, color: '#475569' }}>품명 (COMMODITY)</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'left', width: '65px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'right', width: '50px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>수량</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'center', width: '45px', fontSize: '11px', fontWeight: 750, color: '#475569' }}>단위</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'center', width: '70px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입통화</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'right', width: '85px', fontSize: '11px', fontWeight: 750, color: '#475569', background: '#f1f5f9' }}>매입단가 (BUY)</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'right', width: '70px', fontSize: '11px', fontWeight: 750, color: '#b45309', background: '#fef3c7' }}>기준환율</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'right', width: '55px', fontSize: '11px', fontWeight: 750, color: '#1d4ed8', background: '#eff6ff' }}>마진율(%)</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'center', width: '110px', fontSize: '11px', fontWeight: 750, color: '#2563eb', background: '#eff6ff' }}>올림/반올림</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'center', width: '70px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적통화</th>
+                      <th style={{ padding: '6px 3px', textAlign: 'right', width: '95px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a', background: '#dbeafe' }}>견적단가 (QUOTE)</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', width: '105px', fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>견적총액 (AMOUNT)</th>
+                      <th style={{ padding: '6px 2px', textAlign: 'center', width: '25px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {(request.piItems || []).map((item, idx) => {
-                      const itemCurrency = item.currency || 'USD';
-                      const sym = itemCurrency === 'KRW' ? '₩' : itemCurrency === 'EUR' ? '€' : itemCurrency === 'RMB' ? '¥' : '$';
-                      const buyingUPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
+                      const defaultFx = request.costBreakdown?.appliedExchangeRate || 1450;
+                      const bCur = item.buyingCurrency || item.currency || 'USD';
+                      const qCur = item.quoteCurrency || item.currency || (bCur === 'KRW' ? 'KRW' : 'USD');
+                      const bSym = bCur === 'KRW' ? '₩' : bCur === 'EUR' ? '€' : bCur === 'RMB' ? '¥' : '$';
+                      const qSym = qCur === 'KRW' ? '₩' : qCur === 'EUR' ? '€' : qCur === 'RMB' ? '¥' : '$';
+                      const fxRate = Number(item.exchangeRate !== undefined && item.exchangeRate !== '' ? item.exchangeRate : defaultFx);
+                      const buyingUPrice = Number(item.buyingUnitPrice !== undefined ? item.buyingUnitPrice : item.unitPrice) || 0;
                       const marginVal = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
                       const itemRule = item.roundingMode || 'NONE';
-                      const rawQuote = buyingUPrice * (1 + marginVal / 100);
-                      const defaultQuoteUPrice = roundByDigit(rawQuote, itemRule, itemCurrency === 'KRW');
+
+                      let baseInQCur = buyingUPrice;
+                      if (bCur !== qCur) {
+                        if (bCur === 'USD' && qCur === 'KRW') baseInQCur = buyingUPrice * fxRate;
+                        else if (bCur === 'KRW' && qCur === 'USD') baseInQCur = fxRate > 0 ? buyingUPrice / fxRate : buyingUPrice;
+                        else if (bCur === 'EUR' && qCur === 'KRW') baseInQCur = buyingUPrice * fxRate;
+                        else if (bCur === 'RMB' && qCur === 'KRW') baseInQCur = buyingUPrice * fxRate;
+                        else baseInQCur = buyingUPrice * fxRate;
+                      }
+
+                      const rawQuote = baseInQCur * (1 + marginVal / 100);
+                      const defaultQuoteUPrice = roundByDigit(rawQuote, itemRule, qCur === 'KRW');
                       const quoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '') ? Number(item.quoteUnitPrice) : defaultQuoteUPrice;
                       const itemQty = Number(item.qty) || 0;
                       const totalQuoteAmt = itemQty * quoteUPrice;
@@ -2586,7 +2626,7 @@ customsDuty,
                       return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '36px' }}>
                           <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
-                          <td style={{ padding: '2px 4px' }}>
+                          <td style={{ padding: '2px 3px' }}>
                             <input
                               type="text"
                               value={item.name}
@@ -2598,7 +2638,7 @@ customsDuty,
                               style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '2px 4px' }}>
+                          <td style={{ padding: '2px 3px' }}>
                             <input
                               type="text"
                               value={item.hsCode}
@@ -2607,10 +2647,10 @@ customsDuty,
                                 nextItems[idx] = { ...item, hsCode: e.target.value };
                                 saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
-                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '2px 4px' }}>
+                          <td style={{ padding: '2px 3px' }}>
                             <input
                               type="number"
                               value={item.qty}
@@ -2632,7 +2672,7 @@ customsDuty,
                               style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '2px 4px' }}>
+                          <td style={{ padding: '2px 3px' }}>
                             <select
                               value={item.unit || 'EA'}
                               onChange={(e) => {
@@ -2640,7 +2680,7 @@ customsDuty,
                                 nextItems[idx] = { ...item, unit: e.target.value as any };
                                 saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
-                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
                             >
                               <option value="EA">EA</option>
                               <option value="KG">KG</option>
@@ -2649,16 +2689,34 @@ customsDuty,
                               <option value="PALLET">PALLET</option>
                             </select>
                           </td>
-                          {/* 통화 구분 선택 */}
-                          <td style={{ padding: '2px 4px' }}>
+
+                          {/* 1. 매입통화 선택 */}
+                          <td style={{ padding: '2px 3px', background: '#f8fafc' }}>
                             <select
-                              value={item.currency || 'USD'}
+                              value={bCur}
                               onChange={(e) => {
+                                const nextBCur = e.target.value;
+                                let newBaseInQ = buyingUPrice;
+                                if (nextBCur !== qCur) {
+                                  if (nextBCur === 'USD' && qCur === 'KRW') newBaseInQ = buyingUPrice * fxRate;
+                                  else if (nextBCur === 'KRW' && qCur === 'USD') newBaseInQ = fxRate > 0 ? buyingUPrice / fxRate : buyingUPrice;
+                                  else newBaseInQ = buyingUPrice * fxRate;
+                                }
+                                const nextRaw = newBaseInQ * (1 + marginVal / 100);
+                                const nextQPrice = roundByDigit(nextRaw, itemRule, qCur === 'KRW');
+                                const nextAmt = ((Number(item.qty) || 0) * nextQPrice).toFixed(2);
+
                                 const nextItems = [...(request.piItems || [])];
-                                nextItems[idx] = { ...item, currency: e.target.value };
+                                nextItems[idx] = { 
+                                  ...item, 
+                                  buyingCurrency: nextBCur,
+                                  currency: nextBCur,
+                                  quoteUnitPrice: String(nextQPrice),
+                                  amount: nextAmt
+                                };
                                 saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
-                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, color: itemCurrency === 'KRW' ? '#047857' : '#1d4ed8', background: '#fff', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: bCur === 'KRW' ? '#047857' : '#1d4ed8', background: '#fff', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
                             >
                               <option value="USD">USD ($)</option>
                               <option value="KRW">KRW (₩)</option>
@@ -2666,19 +2724,25 @@ customsDuty,
                               <option value="RMB">RMB (¥)</option>
                             </select>
                           </td>
-                          {/* 1. 매입단가 (BUYING U.P) */}
-                          <td style={{ padding: '2px 4px', background: '#f8fafc' }}>
+
+                          {/* 2. 매입단가 (BUY) */}
+                          <td style={{ padding: '2px 3px', background: '#f8fafc' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>{sym}</span>
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>{bSym}</span>
                               <input
                                 type="number"
                                 value={item.buyingUnitPrice !== undefined ? item.buyingUnitPrice : item.unitPrice}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const bPrice = Number(val) || 0;
-                                  const curMargin = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
-                                  const rawQ = bPrice * (1 + curMargin / 100);
-                                  const qPrice = roundByDigit(rawQ, item.roundingMode || 'NONE', itemCurrency === 'KRW');
+                                  let newBaseInQ = bPrice;
+                                  if (bCur !== qCur) {
+                                    if (bCur === 'USD' && qCur === 'KRW') newBaseInQ = bPrice * fxRate;
+                                    else if (bCur === 'KRW' && qCur === 'USD') newBaseInQ = fxRate > 0 ? bPrice / fxRate : bPrice;
+                                    else newBaseInQ = bPrice * fxRate;
+                                  }
+                                  const rawQ = newBaseInQ * (1 + marginVal / 100);
+                                  const qPrice = roundByDigit(rawQ, itemRule, qCur === 'KRW');
                                   const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
 
                                   const nextItems = [...(request.piItems || [])];
@@ -2686,7 +2750,7 @@ customsDuty,
                                     ...item, 
                                     buyingUnitPrice: val, 
                                     unitPrice: val, 
-                                    marginRate: curMargin, 
+                                    marginRate: marginVal, 
                                     quoteUnitPrice: String(qPrice), 
                                     amount: qAmt 
                                   };
@@ -2699,12 +2763,45 @@ customsDuty,
                                   const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, quoteProductAmountUsd: totalQUsd, costBreakdown: nextB } : r);
                                   saveToStorage(recalculateDetailCosts(updated, nextB));
                                 }}
-                                style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               />
                             </div>
                           </td>
-                          {/* 2. 마진율 (%) */}
-                          <td style={{ padding: '2px 4px', background: '#eff6ff' }}>
+
+                          {/* 3. 기준환율 (매입통화와 견적통화가 다를 때 적용) */}
+                          <td style={{ padding: '2px 3px', background: '#fef3c7' }}>
+                            <input
+                              type="number"
+                              value={item.exchangeRate !== undefined ? item.exchangeRate : defaultFx}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const newFx = Number(val) || defaultFx;
+                                let newBaseInQ = buyingUPrice;
+                                if (bCur !== qCur) {
+                                  if (bCur === 'USD' && qCur === 'KRW') newBaseInQ = buyingUPrice * newFx;
+                                  else if (bCur === 'KRW' && qCur === 'USD') newBaseInQ = newFx > 0 ? buyingUPrice / newFx : buyingUPrice;
+                                  else newBaseInQ = buyingUPrice * newFx;
+                                }
+                                const rawQ = newBaseInQ * (1 + marginVal / 100);
+                                const qPrice = roundByDigit(rawQ, itemRule, qCur === 'KRW');
+                                const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
+
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { 
+                                  ...item, 
+                                  exchangeRate: val,
+                                  quoteUnitPrice: String(qPrice), 
+                                  amount: qAmt 
+                                };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '26px', border: bCur !== qCur ? '1.5px solid #d97706' : '1px solid #fde68a', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, color: '#92400e', background: '#fff', padding: '0 3px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              title={bCur !== qCur ? `환율 적용: ${bCur} ➔ ${qCur}` : '동일 통화'}
+                            />
+                          </td>
+
+                          {/* 4. 마진율 (%) */}
+                          <td style={{ padding: '2px 3px', background: '#eff6ff' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                               <input
                                 type="number"
@@ -2712,9 +2809,8 @@ customsDuty,
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const mRate = Number(val) || 0;
-                                  const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
-                                  const rawQ = bPrice * (1 + mRate / 100);
-                                  const qPrice = roundByDigit(rawQ, item.roundingMode || 'NONE', itemCurrency === 'KRW');
+                                  const rawQ = baseInQCur * (1 + mRate / 100);
+                                  const qPrice = roundByDigit(rawQ, itemRule, qCur === 'KRW');
                                   const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
 
                                   const nextItems = [...(request.piItems || [])];
@@ -2724,39 +2820,24 @@ customsDuty,
                                     quoteUnitPrice: String(qPrice), 
                                     amount: qAmt 
                                   };
-                                  
-                                  const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                  const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
-                                  const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
-                                  const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
-                                  const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
-
-                                  const updated = importRequests.map(r => r.id === id ? { 
-                                    ...r, 
-                                    piItems: nextItems, 
-                                    quoteProductAmountUsd: totalQUsd,
-                                    quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
-                                    customerQuoteAmount: nextCombinedKrw
-                                  } : r);
-                                  saveToStorage(updated);
+                                  saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                                 }}
-                                style={{ width: '100%', height: '26px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, color: '#1d4ed8', padding: '0 2px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                style={{ width: '100%', height: '26px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#1d4ed8', padding: '0 2px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               />
-                              <span style={{ fontSize: '10.5px', color: '#1d4ed8', fontWeight: 700 }}>%</span>
+                              <span style={{ fontSize: '10px', color: '#1d4ed8', fontWeight: 700 }}>%</span>
                             </div>
                           </td>
-                          {/* 3. [신규] 아이템별 올림/반올림 자리수 선택 드롭다운 */}
-                          <td style={{ padding: '2px 4px', background: '#eff6ff' }}>
+
+                          {/* 5. 올림/반올림 자리수 선택 드롭다운 */}
+                          <td style={{ padding: '2px 3px', background: '#eff6ff' }}>
                             <select
                               value={item.roundingMode || 'NONE'}
                               onChange={(e) => {
                                 const rule = e.target.value;
-                                const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
-                                const mRate = Number(item.marginRate !== undefined ? item.marginRate : (request.quoteProductMarginRate ?? 10));
-                                const rawQ = bPrice * (1 + mRate / 100);
-                                const qPrice = roundByDigit(rawQ, rule, itemCurrency === 'KRW');
+                                const rawQ = baseInQCur * (1 + marginVal / 100);
+                                const qPrice = roundByDigit(rawQ, rule, qCur === 'KRW');
                                 const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
-                                const recalculatedMargin = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : mRate;
+                                const recalculatedMargin = baseInQCur > 0 ? ((qPrice - baseInQCur) / baseInQCur) * 100 : marginVal;
 
                                 const nextItems = [...(request.piItems || [])];
                                 nextItems[idx] = { 
@@ -2766,20 +2847,7 @@ customsDuty,
                                   marginRate: Math.round(recalculatedMargin * 10) / 10, 
                                   amount: qAmt 
                                 };
-                                
-                                const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
-                                const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
-                                const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
-                                const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
-
-                                saveToStorage(importRequests.map(r => r.id === id ? { 
-                                  ...r, 
-                                  piItems: nextItems, 
-                                  quoteProductAmountUsd: totalQUsd,
-                                  quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
-                                  customerQuoteAmount: nextCombinedKrw
-                                } : r));
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
                               style={{ width: '100%', height: '26px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#1e40af', background: '#fff', padding: '0 2px', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}
                             >
@@ -2796,18 +2864,52 @@ customsDuty,
                               <option value="ROUND_10000">10,000단위 반올림 ≈ (만자리)</option>
                             </select>
                           </td>
-                          {/* 4. 견적단가 (QUOTE U.P) */}
-                          <td style={{ padding: '2px 4px', background: '#dbeafe' }}>
+
+                          {/* 6. 견적(판매)통화 선택 */}
+                          <td style={{ padding: '2px 3px', background: '#dbeafe' }}>
+                            <select
+                              value={qCur}
+                              onChange={(e) => {
+                                const nextQCur = e.target.value;
+                                let newBaseInQ = buyingUPrice;
+                                if (bCur !== nextQCur) {
+                                  if (bCur === 'USD' && nextQCur === 'KRW') newBaseInQ = buyingUPrice * fxRate;
+                                  else if (bCur === 'KRW' && nextQCur === 'USD') newBaseInQ = fxRate > 0 ? buyingUPrice / fxRate : buyingUPrice;
+                                  else newBaseInQ = buyingUPrice * fxRate;
+                                }
+                                const nextRaw = newBaseInQ * (1 + marginVal / 100);
+                                const nextQPrice = roundByDigit(nextRaw, itemRule, nextQCur === 'KRW');
+                                const nextAmt = ((Number(item.qty) || 0) * nextQPrice).toFixed(2);
+
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { 
+                                  ...item, 
+                                  quoteCurrency: nextQCur,
+                                  quoteUnitPrice: String(nextQPrice),
+                                  amount: nextAmt
+                                };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '26px', border: '1.5px solid #3b82f6', borderRadius: '4px', fontSize: '11px', fontWeight: 800, color: qCur === 'KRW' ? '#047857' : '#1e3a8a', background: '#fff', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                            >
+                              <option value="USD">USD ($)</option>
+                              <option value="KRW">KRW (₩)</option>
+                              <option value="EUR">EUR (€)</option>
+                              <option value="RMB">RMB (¥)</option>
+                            </select>
+                          </td>
+
+                          {/* 7. 견적단가 (QUOTE U.P) */}
+                          <td style={{ padding: '2px 3px', background: '#dbeafe' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>{sym}</span>
+                              <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a' }}>{qSym}</span>
                               <input
                                 type="number"
                                 value={item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '' ? item.quoteUnitPrice : defaultQuoteUPrice}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const qPrice = Number(val) || 0;
-                                  const bPrice = Number(item.buyingUnitPrice || item.unitPrice) || 0;
-                                  const mRate = bPrice > 0 ? ((qPrice - bPrice) / bPrice) * 100 : 0;
+                                  const mRate = baseInQCur > 0 ? ((qPrice - baseInQCur) / baseInQCur) * 100 : 0;
                                   const qAmt = ((Number(item.qty) || 0) * qPrice).toFixed(2);
 
                                   const nextItems = [...(request.piItems || [])];
@@ -2817,29 +2919,16 @@ customsDuty,
                                     marginRate: Math.round(mRate * 10) / 10, 
                                     amount: qAmt 
                                   };
-                                  
-                                  const totalQUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.amount || it.unitPrice) || 0)), 0);
-                                  const totalBUsd = nextItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.buyingUnitPrice || it.unitPrice) || 0)), 0);
-                                  const overallMargin = totalBUsd > 0 ? ((totalQUsd - totalBUsd) / totalBUsd) * 100 : (request.quoteProductMarginRate ?? 10);
-                                  const freightAmtKrw = request.quoteFreightAmountKrw ?? 0;
-                                  const nextCombinedKrw = Math.round(totalQUsd * (request.costBreakdown?.appliedExchangeRate || 1450)) + freightAmtKrw;
-
-                                  const updated = importRequests.map(r => r.id === id ? { 
-                                    ...r, 
-                                    piItems: nextItems, 
-                                    quoteProductAmountUsd: totalQUsd,
-                                    quoteProductMarginRate: Math.round(overallMargin * 10) / 10,
-                                    customerQuoteAmount: nextCombinedKrw
-                                  } : r);
-                                  saveToStorage(updated);
+                                  saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                                 }}
                                 style={{ width: '100%', height: '26px', border: '1.5px solid #2563eb', borderRadius: '4px', fontSize: '12px', fontWeight: 800, color: '#1e3a8a', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#fff' }}
                               />
                             </div>
                           </td>
-                          {/* 5. 견적총액 (TOTAL AMOUNT) */}
-                          <td style={{ textAlign: 'right', fontWeight: 800, color: itemCurrency === 'KRW' ? '#047857' : '#1e3a8a', paddingRight: '8px' }}>
-                            {sym} {Number(totalQuoteAmt || 0).toLocaleString(undefined, { minimumFractionDigits: itemCurrency === 'KRW' ? 0 : 2, maximumFractionDigits: itemCurrency === 'KRW' ? 0 : 2 })}
+
+                          {/* 8. 견적총액 (TOTAL AMOUNT) */}
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: qCur === 'KRW' ? '#047857' : '#1e3a8a', paddingRight: '8px' }}>
+                            {qSym} {Number(totalQuoteAmt || 0).toLocaleString(undefined, { minimumFractionDigits: qCur === 'KRW' ? 0 : 2, maximumFractionDigits: qCur === 'KRW' ? 0 : 2 })}
                           </td>
                           <td style={{ textAlign: 'center' }}>
                             <button
@@ -6037,7 +6126,7 @@ customsDuty,
               // 각 품목별 인쇄 통화(KRW / USD / 복합 분리) 환산 단가 및 총액 계산
               const printItemsData = (request.piItems && request.piItems.length > 0)
                 ? request.piItems.map((item) => {
-                    const itemCurrency = item.currency || 'USD';
+                    const itemCurrency = item.quoteCurrency || item.currency || 'USD';
                     const sym = itemCurrency === 'KRW' ? '₩' : itemCurrency === 'EUR' ? '€' : itemCurrency === 'RMB' ? '¥' : '$';
                     const qty = Number(item.qty) || 1;
                     const rawQuoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '')

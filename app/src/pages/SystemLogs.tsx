@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.486',
+    version: 'v2.8.486',
+    date: '2026-08-29',
+    category: '기능개선',
+    title: '품목별 [매입통화], [견적통화], [기준환율] 분리 지원 (이종통화 환율 연동 자동 산출)',
+    content: '• 각 품목마다 [매입통화(USD/KRW/EUR/RMB)]와 [견적통화(USD/KRW/EUR/RMB)]를 서로 다르게 지정 가능하도록 분리 확장\\n• 매입통화와 견적통화가 다를 경우 적용할 [기준환율] 입력열 신설 및 실시간 환산 견적단가/마진율 산출 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.485',
     version: 'v2.8.485',
     date: '2026-08-29',

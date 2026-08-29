@@ -168,7 +168,7 @@ export interface ImportRequest {
   piItemUnitPrice?: string;
   piItemAmount?: string;
   freightInvoiceAmount?: string;
-  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; buyingUnitPrice?: string; buyingAmount?: string; quoteUnitPrice?: string; quoteAmount?: string; marginRate?: string | number; roundingMode?: string; currency?: string; hsCode?: string; unit?: string; palletSize?: string; cbm?: string; weight?: string; netWeight?: string; grossWeight?: string; productId?: string }>;
+  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; buyingUnitPrice?: string; buyingAmount?: string; quoteUnitPrice?: string; quoteAmount?: string; marginRate?: string | number; roundingMode?: string; currency?: string; buyingCurrency?: string; quoteCurrency?: string; exchangeRate?: string | number; hsCode?: string; unit?: string; palletSize?: string; cbm?: string; weight?: string; netWeight?: string; grossWeight?: string; productId?: string }>;
   incoterms?: string;
   paymentTerms?: string;
   pol?: string;
