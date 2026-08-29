@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.484',
+    version: 'v2.8.484',
+    date: '2026-08-29',
+    category: '버그수정',
+    title: '견적서 인쇄(QUOTATION) 상단 총 견적 금액 및 품목별 통화 환산 합계 일치 보정',
+    content: '• 견적서 출력 시 상단 [총 견적 금액]이 과거 저장된 단일 총액이 아닌 품목 테이블의 실제 출력 금액들의 정확한 합산으로 표시되도록 수정\\n• KRW/USD 출력 모드 전환 시 각 품목별 통화(원화/달러)가 정확히 환산되어 총액과 100% 일치하도록 보정',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.483',
     version: 'v2.8.483',
     date: '2026-08-29',

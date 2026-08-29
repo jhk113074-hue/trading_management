@@ -6030,15 +6030,49 @@ customsDuty,
             {/* 인쇄 본문 */}
             {(() => {
               const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
-              const quoteAmountUsd = Math.round(((request.customerQuoteAmount || 0) / appliedRate) * 100) / 100;
-              
               const cb = request.costBreakdown || {};
-              const quoteAmount = request.customerQuoteAmount || 0;
-              const totalBuyingPriceUsd = request.piItems?.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0) || ((cb.buyingPriceUsd || 0) * (cb.buyingQty || 1)) || 1;
+
+              // 각 품목별 인쇄 통화(KRW/USD) 환산 단가 및 총액 정확한 계산
+              const printItemsData = (request.piItems && request.piItems.length > 0)
+                ? request.piItems.map((item) => {
+                    const itemCurrency = item.currency || 'USD';
+                    const qty = Number(item.qty) || 1;
+                    const rawQuoteUPrice = (item.quoteUnitPrice !== undefined && item.quoteUnitPrice !== '')
+                      ? Number(item.quoteUnitPrice)
+                      : (Number(item.buyingUnitPrice || item.unitPrice) || 0) * (1 + (Number(item.marginRate) || 10) / 100);
+
+                    let unitPriceInPrint = 0;
+                    let totalInPrint = 0;
+
+                    if (printCurrency === 'KRW') {
+                      unitPriceInPrint = itemCurrency === 'KRW' ? rawQuoteUPrice : Math.round(rawQuoteUPrice * appliedRate);
+                      totalInPrint = unitPriceInPrint * qty;
+                    } else { // printCurrency === 'USD'
+                      unitPriceInPrint = itemCurrency === 'KRW' ? Math.round((rawQuoteUPrice / appliedRate) * 100) / 100 : rawQuoteUPrice;
+                      totalInPrint = unitPriceInPrint * qty;
+                    }
+
+                    return {
+                      name: item.name || request.itemName,
+                      qty,
+                      unit: item.unit || 'EA',
+                      unitPriceInPrint,
+                      totalInPrint,
+                      displayUnitPrice: printCurrency === 'KRW'
+                        ? `₩ ${Math.round(unitPriceInPrint).toLocaleString()}`
+                        : `$ ${unitPriceInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                      displayTotalAmount: printCurrency === 'KRW'
+                        ? `₩ ${Math.round(totalInPrint).toLocaleString()}`
+                        : `$ ${totalInPrint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    };
+                  })
+                : [];
+
+              const totalPrintSum = printItemsData.reduce((sum, it) => sum + it.totalInPrint, 0);
 
               const displayTotalQuote = printCurrency === 'KRW'
-                ? `₩ ${quoteAmount.toLocaleString()}`
-                : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                ? `₩ ${Math.round(totalPrintSum).toLocaleString()}`
+                : `$ ${totalPrintSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
               return (
                 <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
@@ -6116,41 +6150,17 @@ customsDuty,
                       </tr>
                     </thead>
                     <tbody>
-                      {request.piItems && request.piItems.length > 0 ? (
-                        request.piItems.map((item, idx) => {
-                          const uPrice = Number(item.unitPrice) || 0;
-                          const qty = Number(item.qty) || 1;
-
-                          // 품목별 직접 지정된 견적단가(quoteUnitPrice) 우선 적용, 없으면 비중 배분 산출
-                          const itemQuoteUPrice = item.quoteUnitPrice ? Number(item.quoteUnitPrice) : 0;
-                          const productSellingPriceUsd = itemQuoteUPrice > 0 
-                            ? itemQuoteUPrice 
-                            : (totalBuyingPriceUsd > 0 ? (((uPrice * qty) / totalBuyingPriceUsd) * quoteAmountUsd) / qty : quoteAmountUsd / qty);
-                          const itemTotalSellingUsd = productSellingPriceUsd * qty;
-
-                          const productSellingPriceKrw = item.currency === 'KRW' && itemQuoteUPrice > 0
-                            ? Math.round(itemQuoteUPrice)
-                            : Math.round(productSellingPriceUsd * appliedRate);
-                          const itemTotalSellingKrw = productSellingPriceKrw * qty;
-
-                          const displayUnitPrice = printCurrency === 'KRW'
-                            ? `₩ ${productSellingPriceKrw.toLocaleString()}`
-                            : `$ ${productSellingPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                          const displayTotalAmount = printCurrency === 'KRW'
-                            ? `₩ ${Math.round(itemTotalSellingKrw).toLocaleString()}`
-                            : `$ ${itemTotalSellingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-                          return (
-                            <tr key={idx} style={{ height: '28px' }}>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>{item.name || request.itemName}</td>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{qty.toLocaleString()}</td>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 600 }}>{displayUnitPrice}</td>
-                              <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>{displayTotalAmount}</td>
-                            </tr>
-                          );
-                        })
+                      {printItemsData.length > 0 ? (
+                        printItemsData.map((item, idx) => (
+                          <tr key={idx} style={{ height: '28px' }}>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', fontWeight: 600 }}>{item.name}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{item.qty.toLocaleString()}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 600 }}>{item.displayUnitPrice}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>{item.displayTotalAmount}</td>
+                          </tr>
+                        ))
                       ) : (
                         <tr style={{ height: '28px' }}>
                           <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
@@ -6158,14 +6168,10 @@ customsDuty,
                           <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{(cb.buyingQty || 1).toLocaleString()}</td>
                           <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{request.piItems?.[0]?.unit || 'EA'}</td>
                           <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 600 }}>
-                            {printCurrency === 'KRW'
-                              ? `₩ ${Math.round((quoteAmount || 0) / (cb.buyingQty || 1)).toLocaleString()}`
-                              : `$ ${(quoteAmountUsd / (cb.buyingQty || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            {displayTotalQuote}
                           </td>
                           <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                            {printCurrency === 'KRW'
-                              ? `₩ ${(quoteAmount || 0).toLocaleString()}`
-                              : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            {displayTotalQuote}
                           </td>
                         </tr>
                       )}
