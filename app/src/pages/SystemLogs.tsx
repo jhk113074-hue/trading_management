@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.489',
+    version: 'v2.8.489',
+    date: '2026-09-04',
+    category: '기능개선',
+    title: '발주서(PO) 비고란 자동 단위표기(EA발주, M발주) 제거 및 순수 사용자 입력 비고 적용',
+    content: '• 공급사 발주서 비고란에 기본으로 자동 표기되던 단위 텍스트(EA발주, M발주 등)를 완전히 제거\n• 사용자가 직접 입력한 비고만 깔끔하게 표시 및 인쇄되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.488',
     version: 'v2.8.488',
     date: '2026-09-04',

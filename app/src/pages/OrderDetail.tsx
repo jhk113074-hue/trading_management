@@ -247,6 +247,22 @@ export const OrderDetail: React.FC = () => {
   const activeDocumentTab = (searchParams.get("documentTab") || "CI_PL작성") as 'CI_PL작성' | '업체별발행서류' | '서류업로드';
   const activeSettlementTab = (searchParams.get("settlementTab") || "세금계산서") as '세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황';
 
+  // 발주서 품목 비고 정리 헬퍼 (EA발주, M발주 등 자동단위 접미사 제거 및 순수 비고 반환)
+  const getPoItemRemark = (it: any) => {
+    const r = (it.supplierRemark !== undefined && it.supplierRemark !== null)
+      ? it.supplierRemark
+      : (it.remark !== undefined && it.remark !== null ? it.remark : '');
+    if (typeof r === 'string') {
+      const trimmed = r.trim();
+      if (trimmed === `${it.unit || ''} 발주`.trim() || /^(EA|M|SET|ROLL|BOX|KG|PCS|PK|CAN|BTL|MTR)\s*발주$/i.test(trimmed)) {
+        return '';
+      }
+      return r;
+    }
+    return '';
+  };
+
+
   const initialStepSetRef = useRef(false);
   useEffect(() => {
     const rawStep = searchParams.get("step");
@@ -4898,7 +4914,7 @@ export const OrderDetail: React.FC = () => {
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${it.supplierRemark !== undefined && it.supplierRemark !== '' ? it.supplierRemark : (it.remark !== undefined && it.remark !== '' ? it.remark : `${it.unit || ''} 발주`)}</td>
+                    <td style="font-size: 10px; color: var(--text-secondary);">${getPoItemRemark(it)}</td>
                   </tr>
                 `;
               }).join('')}
@@ -5317,7 +5333,7 @@ export const OrderDetail: React.FC = () => {
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${it.supplierRemark !== undefined && it.supplierRemark !== '' ? it.supplierRemark : (it.remark !== undefined && it.remark !== '' ? it.remark : `${it.unit || ''} 발주`)}</td>
+                    <td style="font-size: 10px; color: var(--text-secondary);">${getPoItemRemark(it)}</td>
                   </tr>
                 `;
               }).join('')}
@@ -8570,7 +8586,7 @@ ${downloadLink}`;
                                              {isEditing ? (
                                                <input
                                                  type="text"
-                                                 value={it.supplierRemark !== undefined ? it.supplierRemark : (it.remark !== undefined ? it.remark : `${it.unit || ''} 발주`)}
+                                                 value={getPoItemRemark(it)}
                                                  onChange={(e) => {
                                                    const val = e.target.value;
                                                    handleSourcingItemChange(itemIndexInMain, 'supplierRemark', val);
@@ -8591,7 +8607,7 @@ ${downloadLink}`;
                                                />
                                              ) : (
                                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
-                                                 {it.supplierRemark !== undefined ? it.supplierRemark : (it.remark !== undefined ? it.remark : `${it.unit || ''} 발주`)}
+                                                 {getPoItemRemark(it) || '-'}
                                                </span>
                                              )}
                                            </td>
