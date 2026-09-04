@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.488',
+    version: 'v2.8.488',
+    date: '2026-09-04',
+    category: '기능개선',
+    title: '공급사 발주서 품목별 [비고]란 직접 입력 및 편집 기능 지원',
+    content: '• 공급사 발주서(원자재/OEM 생산 등) 품목 편집 테이블에 [비고] 입력열 신설 및 자유로운 입력/수정 지원\\n• 발주서 인쇄(PO) 시 입력한 비고 내용이 그대로 출력 테이블의 [비고] 열에 완벽 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.487',
     version: 'v2.8.487',
     date: '2026-09-04',

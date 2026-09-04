@@ -4898,7 +4898,7 @@ export const OrderDetail: React.FC = () => {
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${it.unit} 발주</td>
+                    <td style="font-size: 10px; color: var(--text-secondary);">${it.supplierRemark !== undefined && it.supplierRemark !== '' ? it.supplierRemark : (it.remark !== undefined && it.remark !== '' ? it.remark : `${it.unit || ''} 발주`)}</td>
                   </tr>
                 `;
               }).join('')}
@@ -5317,7 +5317,7 @@ export const OrderDetail: React.FC = () => {
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${it.unit} 발주</td>
+                    <td style="font-size: 10px; color: var(--text-secondary);">${it.supplierRemark !== undefined && it.supplierRemark !== '' ? it.supplierRemark : (it.remark !== undefined && it.remark !== '' ? it.remark : `${it.unit || ''} 발주`)}</td>
                   </tr>
                 `;
               }).join('')}
@@ -8291,13 +8291,14 @@ ${downloadLink}`;
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '110px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#2563eb' }}>비고</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'center', width: '80px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
                                     </tr>
                                   </thead>
                                 <tbody>
                                   {items.length === 0 ? (
                                     <tr>
-                                      <td colSpan={9} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                      <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                                         연결된 품목이 없습니다. (상단 '＋ 품목 추가' 버튼을 눌러 추가)
                                       </td>
                                     </tr>
@@ -8564,7 +8565,37 @@ ${downloadLink}`;
                                               return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
-                                          {/* 9. 관리 (복사 / 삭제) */}
+                                          {/* 9. 비고 (REMARK) */}
+                                           <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                             {isEditing ? (
+                                               <input
+                                                 type="text"
+                                                 value={it.supplierRemark !== undefined ? it.supplierRemark : (it.remark !== undefined ? it.remark : `${it.unit || ''} 발주`)}
+                                                 onChange={(e) => {
+                                                   const val = e.target.value;
+                                                   handleSourcingItemChange(itemIndexInMain, 'supplierRemark', val);
+                                                   handleSourcingItemChange(itemIndexInMain, 'remark', val);
+                                                 }}
+                                                 placeholder="비고 입력"
+                                                 style={{
+                                                   width: '100%',
+                                                   minWidth: '95px',
+                                                   padding: '4px 6px',
+                                                   border: '1px solid #cbd5e1',
+                                                   borderRadius: '4px',
+                                                   fontSize: '12.5px',
+                                                   color: '#1e293b',
+                                                   textAlign: 'center',
+                                                   boxSizing: 'border-box'
+                                                 }}
+                                               />
+                                             ) : (
+                                               <span style={{ fontSize: '12.5px', color: '#475569' }}>
+                                                 {it.supplierRemark !== undefined ? it.supplierRemark : (it.remark !== undefined ? it.remark : `${it.unit || ''} 발주`)}
+                                               </span>
+                                             )}
+                                           </td>
+                                           {/* 10. 관리 (복사 / 삭제) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                               <button
@@ -8638,7 +8669,9 @@ ${downloadLink}`;
                                           return <span style={{ color: '#dc2626' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
                                         })()}
                                       </td>
-                                      {/* 순서/관리 공간 확보용 빈 셀 */}
+                                      {/* 비고 공간 확보용 빈 셀 */}
+                                       <td></td>
+                                       {/* 순서/관리 공간 확보용 빈 셀 */}
                                       <td></td>
                                     </tr>
                                   )}

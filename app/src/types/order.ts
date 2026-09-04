@@ -34,6 +34,8 @@ export interface OrderItem {
   isSourcingOnly?: boolean;
   selectedPackingMethodId?: string;
   hsCode?: string;
+  remark?: string;
+  supplierRemark?: string;
 }
 
 export interface Order {
