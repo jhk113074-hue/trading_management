@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.487',
+    version: 'v2.8.487',
+    date: '2026-09-04',
+    category: '기능개선',
+    title: '발주서(PO) 금액숨김 인쇄 시 기존 표 양식 구조(단가/금액/부가세 열) 100% 유지 보정',
+    content: '• 공급사 발주서 인쇄 시 [금액숨김] 체크 시에도 품목 테이블의 열 구조(단가, 금액, 부가세 열 및 규격 폭)를 표준 양식 그대로 유지\\n• 단가, 금액, 부가세 수치만 빈칸으로 깔끔하게 처리하여 규격화된 발주서 포맷 완벽 보존',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.486',
     version: 'v2.8.486',
     date: '2026-08-29',
