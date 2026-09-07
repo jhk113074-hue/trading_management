@@ -49,6 +49,8 @@ export interface PIRevision {
   origin?: string;
   yourRef?: string;
   attachments?: { name: string; url: string; size: number; path: string }[];
+  piDate?: string;
+  validUntilDate?: string;
 }
 
 export interface ProformaInvoice {

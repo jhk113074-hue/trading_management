@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.491',
+    version: 'v2.8.491',
+    date: '2026-09-07',
+    category: '기능개선',
+    title: '수출 견적서(PI) Revision 시 작성일(PI Date) 당일 날짜 자동 갱신',
+    content: '• 견적서(PI)를 Revision(개정)으로 저장 시 작성일(PI DATE)이 리비전한 당일 날짜로 자동 변경 및 유효기간(VALID UNTIL) 자동 재계산\n• 상단 툴바에 [새 Revision 준비] 버튼 신설하여 작성일 즉시 갱신 및 개정 작성 모드 지원\n• Revision 드롭다운 및 이력에 차수별 발행일자 표기 및 이전 Revision 로드 시 당시 날짜 복원 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.490',
     version: 'v2.8.490',
     date: '2026-09-07',

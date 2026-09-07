@@ -466,11 +466,21 @@ export const ProformaInvoices: React.FC = () => {
       const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
       const originalLineItems = liSnap.docs.map(d => d.data());
 
+      const todayStr = new Date().toISOString().split('T')[0];
+      let newValidUntil = originalPi.validUntilDate;
+      if (originalPi.validityDays !== undefined) {
+        const d = new Date(todayStr);
+        d.setDate(d.getDate() + Number(originalPi.validityDays || 30));
+        newValidUntil = d.toISOString().split('T')[0];
+      }
+
       // 4. Save new main PI document
       const newPiData = {
         ...originalPi,
         id: newPiId,
         piNumber: newPiNumber,
+        piDate: todayStr,
+        validUntilDate: newValidUntil,
         currentVersion: 1,
         createdAt: serverTimestamp(),
         createdBy: currentUser,
@@ -486,6 +496,8 @@ export const ProformaInvoices: React.FC = () => {
       const newRevData = {
         ...latestRevData,
         version: 1,
+        piDate: todayStr,
+        validUntilDate: newValidUntil,
         revisionReason: `Copied from ${originalPi.piNumber}`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()

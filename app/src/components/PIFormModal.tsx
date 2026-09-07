@@ -586,6 +586,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               setFormData(prev => {
                 const updatedFormData = {
                   ...prev,
+                  piDate: latestRevData.piDate !== undefined ? latestRevData.piDate : prev.piDate,
+                  validUntilDate: latestRevData.validUntilDate !== undefined ? latestRevData.validUntilDate : prev.validUntilDate,
                   exchangeRate: latestRevData.exchangeRate !== undefined ? latestRevData.exchangeRate : prev.exchangeRate,
                   remarks: latestRevData.remarks !== undefined ? latestRevData.remarks : prev.remarks,
                   customerAddress: latestRevData.customerAddress !== undefined ? latestRevData.customerAddress : prev.customerAddress,
@@ -1829,15 +1831,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   // Auto tasks registration features deleted.
 
-  const handleSave = async (isRevision: boolean = false) => {
+  const handleSave = async (isRevision: boolean = false, overrideReason?: string) => {
     // ── Guard: prevent double execution ──
     if (savingType !== null) return;
 
     if (!formData.customerId) { alert('고객을 선택해주세요.'); return; }
     if (items.length === 0) { alert('최소 1개 이상의 상품 라인을 추가해주세요.'); return; }
     
+    const actualReason = (overrideReason !== undefined ? overrideReason : revisionReason).trim();
     // Revision 저장 시에만 변경 사유 체크
-    if (initialPI && isRevision && !revisionReason) {
+    if (initialPI && isRevision && !actualReason) {
       alert('Revision 저장 시에는 변경 사유(Revision Reason)를 필수 입력해야 합니다.');
       return;
     }
@@ -1944,10 +1947,28 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
 
       // ═══════════════════════════════════════════════════════
+      // Determine effective PI Date & Validity
+      // ═══════════════════════════════════════════════════════
+      let effectivePiDate = formData.piDate || new Date().toISOString().split('T')[0];
+      let effectiveValidUntil = formData.validUntilDate;
+      if (isRevision) {
+        // Revision 시 작성일(PI Date)을 리비전한 오늘 날짜로 자동 갱신
+        const todayStr = new Date().toISOString().split('T')[0];
+        effectivePiDate = todayStr;
+        if (formData.validityDays !== undefined) {
+          const d = new Date(todayStr);
+          d.setDate(d.getDate() + Number(formData.validityDays || 30));
+          effectiveValidUntil = d.toISOString().split('T')[0];
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════
       // Save main PI document (after version is finalised)
       // ═══════════════════════════════════════════════════════
       const piData: Partial<ProformaInvoice> = {
         ...formData,
+        piDate: effectivePiDate,
+        validUntilDate: effectiveValidUntil,
         piNumber: piNum,
         currentVersion: version,
         itemsSummary,
@@ -1966,7 +1987,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       // ═══════════════════════════════════════════════════════
       const revData: PIRevision = {
         version,
-        revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
+        revisionReason: isRevision ? actualReason : (initialPI ? 'Edited active version' : 'Initial creation'),
+        piDate: effectivePiDate,
+        validUntilDate: effectiveValidUntil,
         items: items.map(item => ({
           ...item,
           lineTotalUsd: (item.salePriceUsd || 0) * (item.quantity || 0)
@@ -2016,7 +2039,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               const prodRef = doc(db, "companies", COMPANY_ID, "products", prod.id);
               
               const newHistoryItem = {
-                validFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                validFrom: effectivePiDate,
                 validTo: '',
                 currency: finalCurrency,
                 price: finalPrice,
@@ -2040,7 +2063,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               await setDoc(prodRef, {
                 purchasePrice: finalPrice,
                 currency: finalCurrency,
-                priceValidFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                priceValidFrom: effectivePiDate,
                 purchasePrices: currentHistory
               }, { merge: true });
             }
@@ -2068,9 +2091,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       
       const updatedForm = {
         ...formData,
+        piDate: effectivePiDate,
+        validUntilDate: effectiveValidUntil,
         currentVersion: version
       };
       setFormData(updatedForm);
+      if (isRevision) {
+        setRevisionReason('');
+      }
 
       // Update baselineStateRef to current snapshot since it is saved
       baselineStateRef.current = {
@@ -2434,6 +2462,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         // Update baselineStateRef to match the newly loaded revision state
         const loadedForm = {
           ...formData,
+          piDate: data.piDate !== undefined ? data.piDate : (data.createdAt?.toDate ? data.createdAt.toDate().toISOString().split('T')[0] : formData.piDate),
+          validUntilDate: data.validUntilDate !== undefined ? data.validUntilDate : formData.validUntilDate,
           exchangeRate: data.exchangeRate !== undefined ? data.exchangeRate : formData.exchangeRate,
           remarks: data.remarks !== undefined ? data.remarks : formData.remarks,
           customerAddress: data.customerAddress !== undefined ? data.customerAddress : formData.customerAddress,
@@ -2546,9 +2576,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
                     const suffix = v > 1 ? `R${v - 1}` : '';
+                    const rDate = rev.piDate || (rev.createdAt instanceof Date ? rev.createdAt.toISOString().split('T')[0] : (rev.createdAt?.toDate ? rev.createdAt.toDate().toISOString().split('T')[0] : ''));
                     return (
                       <option key={rev.id} value={rev.id}>
-                        {initialPI.piNumber}{suffix}
+                        {initialPI.piNumber}{suffix} {rDate ? `(${rDate})` : ''}
                       </option>
                     );
                   })}
@@ -2575,6 +2606,46 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   title="선택한 Revision 불러오기"
                 >
                   📥 불러오기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let nextValidUntil = formData.validUntilDate;
+                    if (formData.validityDays !== undefined) {
+                      const d = new Date(todayStr);
+                      d.setDate(d.getDate() + Number(formData.validityDays || 30));
+                      nextValidUntil = d.toISOString().split('T')[0];
+                    }
+                    const maxVer = revisions.length > 0 ? Math.max(...revisions.map(r => Number(r.version) || 0)) : (formData.currentVersion || 1);
+                    const nextVer = maxVer + 1;
+                    setFormData(prev => ({
+                      ...prev,
+                      piDate: todayStr,
+                      validUntilDate: nextValidUntil,
+                      currentVersion: nextVer
+                    }));
+                    alert(`🔄 새 Revision(R${nextVer - 1}) 작성 모드로 전환되었습니다.\n작성일(PI DATE)이 오늘 날짜(${todayStr})로 변경되었습니다.\n\n내용을 수정한 후 하단의 [⚙ Revision 저장] 버튼을 눌러주세요.`);
+                  }}
+                  disabled={savingType !== null}
+                  style={{
+                    marginLeft: '4px',
+                    background: '#eff6ff',
+                    border: '1px solid #93c5fd',
+                    color: '#1d4ed8',
+                    borderRadius: '4px',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    height: '34px',
+                    cursor: savingType !== null ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => { if (savingType === null) e.currentTarget.style.backgroundColor = '#dbeafe'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#eff6ff'; }}
+                  title="작성일을 오늘 날짜로 변경하고 새 Revision 작성 준비"
+                >
+                  🔄 새 Revision 준비
                 </button>
                 <button
                   type="button"
@@ -3602,9 +3673,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <>
                 {/* 오클릭 방지: 일반저장과 시각적 구분을 위한 여백 겸 구분선 */}
                 <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 2px' }} />
-                <button type="button" onClick={() => {
-                  if (!window.confirm('Revision으로 저장하시겠습니까?\n(변경 사유가 기록에 남고 버전이 올라갑니다.)')) return;
-                  handleSave(true);
+                <button type="button" onClick={async () => {
+                  let reason = revisionReason.trim();
+                  if (!reason) {
+                    const entered = window.prompt('Revision(개정) 사유를 입력해주세요:\n(예: 고객 단가 인하 요청 수용, 규격/수량 변경 등)');
+                    if (!entered || !entered.trim()) {
+                      alert('Revision 변경 사유가 입력되지 않아 취소되었습니다.');
+                      return;
+                    }
+                    reason = entered.trim();
+                    setRevisionReason(reason);
+                  }
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  if (!window.confirm(`Revision(개정)으로 저장하시겠습니까?\n\n• 작성일 (PI DATE): ${todayStr} (리비전 날짜로 자동 갱신)\n• 변경 사유: ${reason}\n• 새로운 Revision 차수로 등록됩니다.`)) return;
+                  handleSave(true, reason);
                 }} disabled={savingType !== null}
                   style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: savingType === 'revision' ? '#94a3b8' : '#1e293b', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1, height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
                   onMouseEnter={e => { if (savingType === null) e.currentTarget.style.backgroundColor = '#0f172a'; }}
