@@ -244,9 +244,11 @@ interface FormulaWeightInputProps {
   onChange: (val: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  decimals?: number;
+  unit?: string;
 }
 
-const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange, placeholder, disabled }) => {
+const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange, placeholder, disabled, decimals, unit = 'kg' }) => {
   const [isFocused, setIsFocused] = useState(false);
   const rawStr = value !== undefined && value !== null ? String(value) : '';
   const isFormula = rawStr.trim().startsWith('=');
@@ -255,20 +257,22 @@ const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange
   const displayVal = isFocused
     ? rawStr
     : isFormula
-      ? (evaluatedNum ? evaluatedNum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) : '0')
+      ? (decimals !== undefined
+          ? evaluatedNum.toFixed(decimals)
+          : (evaluatedNum ? evaluatedNum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) : '0'))
       : rawStr;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: '95%', margin: '0 auto' }}>
       <input
         type="text"
-        placeholder={placeholder || "숫자 또는 =ROUNDUP(...)"}
+        placeholder={placeholder || (decimals === 3 ? "CBM 또는 =1.1*1.1*1.6" : "숫자 또는 =ROUNDUP(...)")}
         disabled={disabled}
         value={displayVal}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onChange={e => onChange(e.target.value)}
-        title={isFormula ? `수식: ${rawStr} (계산결과: ${evaluatedNum.toLocaleString()} kg)` : "숫자 또는 엑셀 수식 (예: =ROUNDUP(1200*1.15, 0), =1437+15) 입력 가능"}
+        title={isFormula ? `수식: ${rawStr} (계산결과: ${decimals !== undefined ? evaluatedNum.toFixed(decimals) : evaluatedNum.toLocaleString()} ${unit})` : `숫자 또는 엑셀 수식 (예: ${decimals === 3 ? '=1.1*1.1*1.6, =ROUNDUP(1.936, 2)' : '=ROUNDUP(1200*1.15, 0), =1437+15'}) 입력 가능`}
         style={{
           padding: '4px 6px',
           border: isFormula ? '1px solid #93c5fd' : '1px solid #cbd5e1',
@@ -1598,9 +1602,12 @@ export const OrderDetail: React.FC = () => {
           if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(updatedIt.pkgNo) || '1', 10);
           if (count <= 0) count = 1;
           const expectedCbm = String((((dims[0] * dims[1] * dims[2]) / 1000000000) * count).toFixed(3));
-          if (!updatedIt.cbm || Math.abs(parseFloat(updatedIt.cbm) - parseFloat(expectedCbm)) > 0.001) {
-            containerChanged = true;
-            updatedIt.cbm = expectedCbm;
+          const currentCbmStr = String(updatedIt.cbm || '').trim();
+          if (!currentCbmStr.startsWith('=')) {
+            if (!updatedIt.cbm || Math.abs(parseFloat(updatedIt.cbm) - parseFloat(expectedCbm)) > 0.001) {
+              containerChanged = true;
+              updatedIt.cbm = expectedCbm;
+            }
           }
         }
 
@@ -3630,9 +3637,9 @@ export const OrderDetail: React.FC = () => {
             descOfGoods: desc,
             qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
             packageType: 'PL',
-            netWeight: Number(it.netWeight) || 0,
-            grossWeight: Number(it.grossWeight) || 0,
-            measurement: it.cbm ? `${it.cbm} CBM` : ''
+            netWeight: evaluateFormulaGlobal(it.netWeight),
+            grossWeight: evaluateFormulaGlobal(it.grossWeight),
+            measurement: it.cbm ? `${evaluateFormulaGlobal(it.cbm).toFixed(3)} CBM` : ''
           });
         });
 
@@ -6151,7 +6158,7 @@ ${downloadLink}`;
           packageType: 'PL',
           netWeight: evaluateFormula(it.netWeight),
           grossWeight: evaluateFormula(it.grossWeight),
-          measurement: it.cbm ? `${it.cbm} CBM` : ''
+          measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
         });
       });
     }
@@ -9853,36 +9860,36 @@ ${downloadLink}`;
                           </div>
                         </div>
 
-                        {/* 💡 중량(NET/GROSS WT) 엑셀 수식 및 함수(ROUNDUP 등) 사용 안내 배너 */}
+                        {/* 💡 중량(NET/GROSS WT) 및 CBM 엑셀 수식 및 함수(ROUNDUP 등) 사용 안내 배너 */}
                         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#0369a1' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '4px' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              💡 <strong>중량(NET WT / GROSS WT) 엑셀식 수식 및 함수(ROUNDUP 등) 사용 안내</strong>
+                              💡 <strong>중량(NET WT / GROSS WT) 및 CBM 엑셀식 수식 및 함수(ROUNDUP 등) 사용 안내</strong>
                             </span>
                             <span style={{ fontSize: '11px', fontWeight: 600, color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
                               대소문자 무관 / 실시간 자동 연산
                             </span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px', marginTop: '6px', fontSize: '11.5px', color: '#334155' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', marginTop: '6px', fontSize: '11.5px', color: '#334155' }}>
                             <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
                               <strong style={{ color: '#0284c7' }}>🔼 ROUNDUP(값, 자릿수) - 올림</strong><br/>
                               • <code>=ROUNDUP(1200 * 1.15, 0)</code> ➔ <strong>1,380</strong><br/>
-                              • <code>=roundup(1437.21, 1)</code> ➔ <strong>1,437.3</strong> (소수 1자리)
+                              • <code>=roundup(1.9364, 2)</code> ➔ <strong>1.940</strong> CBM
                             </div>
                             <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
                               <strong style={{ color: '#0284c7' }}>🔽 ROUNDDOWN(값, 자릿수) - 내림</strong><br/>
                               • <code>=ROUNDDOWN(1437.29, 0)</code> ➔ <strong>1,437</strong> (정수 절사)<br/>
-                              • <code>=rounddown(1437.29, 1)</code> ➔ <strong>1,437.2</strong>
+                              • <code>=rounddown(1.9368, 2)</code> ➔ <strong>1.930</strong> CBM
                             </div>
                             <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
                               <strong style={{ color: '#0284c7' }}>⚖️ ROUND(값, 자릿수) - 반올림</strong><br/>
                               • <code>=ROUND(1437.5, 0)</code> ➔ <strong>1,438</strong><br/>
-                              • <code>=round(1437.24, 1)</code> ➔ <strong>1,437.2</strong>
+                              • <code>=round(1.9365, 2)</code> ➔ <strong>1.940</strong> CBM
                             </div>
                             <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
-                              <strong style={{ color: '#0284c7' }}>➕ 사칙연산 및 기타 함수</strong><br/>
-                              • <code>=1437 + 15</code> / <code>=(500 * 2) + 30</code><br/>
-                              • <code>=CEILING(1437.1)</code> (정수올림) / <code>=INT(1437.9)</code> (정수내림)
+                              <strong style={{ color: '#0284c7' }}>📦 CBM 및 사칙연산 계산</strong><br/>
+                              • <code>=1.1 * 1.1 * 1.6</code> ➔ <strong>1.936</strong> CBM<br/>
+                              • <code>=(1.1 * 1.1 * 1.6) * 2</code> ➔ <strong>3.872</strong> CBM
                             </div>
                           </div>
                         </div>
@@ -10006,7 +10013,9 @@ ${downloadLink}`;
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }} title="총중량 입력 (예: 1520 또는 =ROUNDUP(NET_WT*1.05, 0), =1450+25 등 엑셀 수식 지원)">
                                     GROSS WT (Kg) <span style={{ fontSize: '11px', color: '#2563eb', cursor: 'help' }} title="엑셀 수식 지원: =ROUNDUP(값, 자릿수), =ROUND(값, 자릿수), =ROUNDDOWN(값, 자릿수), 사칙연산 (+,-,*,/)">ℹ️</span>
                                   </th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }} title="CBM 입력 (예: 1.936 또는 =1.1*1.1*1.6, =ROUNDUP(1.936, 2) 등 엑셀 수식 지원)">
+                                    CBM <span style={{ fontSize: '11px', color: '#2563eb', cursor: 'help' }} title="엑셀 수식 지원: =1.1*1.1*1.6, =ROUNDUP(값, 자릿수), =ROUND(값, 자릿수), 사칙연산 (+,-,*,/)">ℹ️</span>
+                                  </th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '130px', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
@@ -10428,15 +10437,13 @@ ${downloadLink}`;
                                         {/* 9. CBM - rowSpan for merged group */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
-                                            <input
-                                              type="number"
-                                              step="0.001"
+                                            <FormulaWeightInput
                                               placeholder="CBM"
                                               disabled={!isEditing}
-                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                               value={it.cbm || ''}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                              decimals={3}
+                                              unit="CBM"
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].cbm = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
@@ -10550,13 +10557,7 @@ ${downloadLink}`;
                                       if (!isSecondary) {
                                         totalNetWeight += evaluateFormulaGlobal(it.netWeight);
                                         totalGrossWeight += evaluateFormulaGlobal(it.grossWeight);
-                                        
-                                        const rawCbm = String(it.cbm || '');
-                                        if (rawCbm.startsWith('=')) {
-                                          totalCbm += evaluateFormulaGlobal(rawCbm);
-                                        } else {
-                                          totalCbm += Number(it.cbm) || 0;
-                                        }
+                                        totalCbm += evaluateFormulaGlobal(it.cbm);
                                       }
                                     });
 
@@ -10869,7 +10870,7 @@ ${downloadLink}`;
                             packageType: 'PL',
                             netWeight: evaluateFormula(it.netWeight),
                             grossWeight: evaluateFormula(it.grossWeight),
-                            measurement: it.cbm ? `${it.cbm} CBM` : ''
+                            measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
                           });
                         });
                       }
@@ -11476,7 +11477,7 @@ ${downloadLink}`;
                                       packageType: 'PL',
                                       netWeight: evaluateFormula(it.netWeight),
                                       grossWeight: evaluateFormula(it.grossWeight),
-                                      measurement: it.cbm ? `${it.cbm} CBM` : ''
+                                      measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
                                     });
                                   });
 
@@ -12258,12 +12259,7 @@ ${downloadLink}`;
                       if (!isSecondary) {
                         plNet += evaluateFormula(it.netWeight);
                         plGross += evaluateFormula(it.grossWeight);
-                        const rawCbm = String(it.cbm || '');
-                        if (rawCbm.startsWith('=')) {
-                          plCbm += evaluateFormula(rawCbm);
-                        } else {
-                          plCbm += Number(it.cbm) || 0;
-                        }
+                        plCbm += evaluateFormula(it.cbm);
                       }
                       pkCount += Number(it.pkg) || 0;
                     });
@@ -13375,17 +13371,16 @@ ${downloadLink}`;
                                         {/* CBM */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
-                                            <input
-                                              type="number"
-                                              step="0.001"
-                                              value={it.cbm || 0}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                            <FormulaWeightInput
+                                              placeholder="CBM"
+                                              value={it.cbm || ''}
+                                              decimals={3}
+                                              unit="CBM"
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].cbm = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
-                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
                                             />
                                           </td>
                                         )}
@@ -15925,9 +15920,9 @@ ${downloadLink}`;
                   unitPrice: matchedPO?.unitPrice || 0,
                   amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
                   hsCode: it.hsCode || matchedPO?.hsCode || '',
-                  netWeight: Number(it.netWeight) || 0,
-                  grossWeight: Number(it.grossWeight) || 0,
-                  cbm: Number(it.cbm) || 0,
+                  netWeight: evaluateFormulaGlobal(it.netWeight),
+                  grossWeight: evaluateFormulaGlobal(it.grossWeight),
+                  cbm: evaluateFormulaGlobal(it.cbm),
                   packageType: it.packageType || 'Pallet',
                   packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
                 });
