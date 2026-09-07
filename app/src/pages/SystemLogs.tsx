@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.492',
+    version: 'v2.8.492',
+    date: '2026-09-07',
+    category: '기능개선',
+    title: '포워딩/운송사 선정 탭 BOOKING 번호 입력 및 도착보고서 연동',
+    content: '• 포워딩/운송사 선정 화면에 BOOKING 번호 입력 필드 신설 (Vessel/DOC CLS/CARGO CLS/ETD/ETA 라인과 직관적 배치)\n• 도착보고서(Arrival Report) 출력 및 모달의 8) Booking No. 항목에 정확하게 연동되도록 개선 (기존 선박명이 표시되던 현상 해결)\n• 퀵에디트(Quick Edit) 모달에서도 BOOKING 번호를 편리하게 수정 및 동기화할 수 있도록 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.491',
     version: 'v2.8.491',
     date: '2026-09-07',

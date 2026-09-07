@@ -105,6 +105,7 @@ export interface Order {
   
   // New progress tracking fields
   ciNumber?: string; // CI번호 확정
+  bookingNo?: string; // BOOKING 번호
   vesselBooking?: string; // Vessel 부킹
   forwarderConfirmed?: string; // 포워더확정
   cargoReadyDate?: string; // 화물준비일

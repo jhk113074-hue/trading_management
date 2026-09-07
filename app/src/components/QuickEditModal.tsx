@@ -33,6 +33,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   const [docsDeadlineDate, setDocsDeadlineDate] = useState(order.docsDeadlineDate || '');
 
   const [volume, setVolume] = useState(order.containerVolumeQuantities || '');
+  const [bookingNo, setBookingNo] = useState(order.bookingNo || '');
   const [vessel, setVessel] = useState(order.vesselBooking || '');
   
   // Invoice amount fields
@@ -148,12 +149,14 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           break;
         case 'volumeVessel':
           payload.containerVolumeQuantities = volume;
+          payload.bookingNo = bookingNo;
           payload.vesselBooking = vessel;
           break;
         case 'volume':
           payload.containerVolumeQuantities = volume;
           break;
         case 'vessel':
+          payload.bookingNo = bookingNo;
           payload.vesselBooking = vessel;
           break;
         case 'invoiceAmount':
@@ -376,6 +379,16 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>BOOKING 번호 (Booking No.)</label>
+              <input
+                type="text"
+                placeholder="예: SINI24090123"
+                value={bookingNo}
+                onChange={(e) => setBookingNo(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>선명 / 항차 (Vessel / Voyage)</label>
               <input
                 type="text"
@@ -405,15 +418,27 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
       case 'vessel':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>선명 / 항차 (Vessel / Voyage)</label>
-            <input
-              type="text"
-              placeholder="예: EVER GIVEN V.0123W"
-              value={vessel}
-              onChange={(e) => setVessel(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>BOOKING 번호 (Booking No.)</label>
+              <input
+                type="text"
+                placeholder="예: SINI24090123"
+                value={bookingNo}
+                onChange={(e) => setBookingNo(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>선명 / 항차 (Vessel / Voyage)</label>
+              <input
+                type="text"
+                placeholder="예: EVER GIVEN V.0123W"
+                value={vessel}
+                onChange={(e) => setVessel(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
+              />
+            </div>
           </div>
         );
 

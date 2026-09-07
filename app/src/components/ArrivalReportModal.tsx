@@ -26,6 +26,7 @@ interface Props {
     finalDestination?: string;
     carrier?: string;
     sailingOnOrAbout?: string;
+    bookingNo?: string;
     cfsAddress?: string;
     cfsEntryDate?: string;
     cfsEntryTime?: string;
@@ -70,8 +71,12 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
     ? `ORIGIN : MADE IN KOREA\n입고일: ${entryDate} ${entryTime}` 
     : `ORIGIN : MADE IN KOREA`;
 
+  const initialBookingNo = (initialData?.bookingNo && initialData.bookingNo !== orderInfo.carrier)
+    ? initialData.bookingNo
+    : (orderInfo.bookingNo || initialData?.bookingNo || '');
+
   const [formData, setFormData] = useState({
-    bookingNo: initialData?.bookingNo || '',
+    bookingNo: initialBookingNo,
     remarks: (initialData?.remarks && !initialData.remarks.includes('연도-월-일')) ? initialData.remarks : defaultRemarks,
     notifyParty: initialData?.notifyParty || 'SAME AS ABOVE',
     portOfLoading: orderInfo.portOfLoading || initialData?.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
@@ -81,6 +86,12 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
     cfsAddress: orderInfo.cfsAddress || initialData?.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
     cfsEta: orderInfo.cfsEntryDate || initialData?.cfsEta || '',
   });
+
+  useEffect(() => {
+    if (orderInfo.bookingNo && (!formData.bookingNo || formData.bookingNo === orderInfo.carrier)) {
+      setFormData(prev => ({ ...prev, bookingNo: orderInfo.bookingNo || prev.bookingNo }));
+    }
+  }, [orderInfo.bookingNo, orderInfo.carrier]);
 
   const formatSupplierShipper = (s: Supplier) => {
     const primaryContact = s.contacts?.find(c => c.isPrimary) || s.contacts?.[0];

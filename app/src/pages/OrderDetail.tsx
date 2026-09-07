@@ -1524,6 +1524,7 @@ export const OrderDetail: React.FC = () => {
     
     // New progress tracking fields
     ciNumber: '',
+    bookingNo: '',
     vesselBooking: '',
     forwarderConfirmed: '',
     cargoReadyDate: '',
@@ -2305,6 +2306,7 @@ export const OrderDetail: React.FC = () => {
           issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS',
           
           ciNumber: data.ciNumber || '',
+          bookingNo: data.bookingNo || '',
           vesselBooking: data.vesselBooking || '',
           forwarderConfirmed: data.forwarderConfirmed || '',
           cargoReadyDate: data.cargoReadyDate || '',
@@ -2855,6 +2857,7 @@ export const OrderDetail: React.FC = () => {
       if (curOrder.deliveryPlace !== curBasicForm.deliveryPlace) changes.push(`납품처 변경: "${curOrder.deliveryPlace || ''}" → "${curBasicForm.deliveryPlace}"`);
       if (curOrder.remark !== curBasicForm.remark) changes.push(`비고(Remarks) 변경: "${curOrder.remark || ''}" → "${curBasicForm.remark}"`);
       if (curOrder.ciNumber !== curBasicForm.ciNumber) changes.push(`CI 번호 변경: "${curOrder.ciNumber || ''}" → "${curBasicForm.ciNumber}"`);
+      if (curOrder.bookingNo !== curBasicForm.bookingNo) changes.push(`BOOKING 번호 변경: "${curOrder.bookingNo || ''}" → "${curBasicForm.bookingNo}"`);
       if (curOrder.isLc !== curBasicForm.isLc) changes.push(`L/C거래여부 변경: "${curOrder.isLc || ''}" → "${curBasicForm.isLc}"`);
       
       const sourcingTabToSave = tabIdOverride || activeSourcingTab;
@@ -2907,6 +2910,7 @@ export const OrderDetail: React.FC = () => {
         type: basicForm.type || 'trade',
         
         ciNumber: basicForm.ciNumber,
+        bookingNo: basicForm.bookingNo || '',
         vesselBooking: basicForm.vesselBooking,
         forwarderConfirmed: basicForm.forwarderConfirmed,
         cargoReadyDate: basicForm.cargoReadyDate,
@@ -6075,7 +6079,7 @@ ${downloadLink}`;
                   </td>
                   <td style="width: 50%;">
                     <strong>8) Booking No.</strong><br/>
-                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${repData.bookingNo || '-'}</span>
+                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${basicForm.bookingNo || (repData.bookingNo && repData.bookingNo !== basicForm.vesselBooking ? repData.bookingNo : '') || '-'}</span>
                   </td>
                 </tr>
                 <tr>
@@ -9268,8 +9272,37 @@ ${downloadLink}`;
 
                     </div>
 
-                    {/* Vessel확정(선박명/항차)/DOC CLS/CARGO CLS/ETD/ETA을 한줄로 표시 */}
-                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                    {/* BOOKING 번호/Vessel확정(선박명/항차)/DOC CLS/CARGO CLS/ETD/ETA을 한줄로 표시 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>BOOKING 번호</span>
+                        <input 
+                          type="text" 
+                          value={basicForm.bookingNo || ''} 
+                          onChange={e => {
+                            const newBookingNo = e.target.value;
+                            setBasicForm(p => ({ ...p, bookingNo: newBookingNo }));
+                            setOrder(prev => {
+                              if (!prev) return prev;
+                              const currentReports = { ...(prev.supplierArrivalReports || {}) };
+                              Object.keys(currentReports).forEach(sup => {
+                                currentReports[sup] = {
+                                  ...currentReports[sup],
+                                  bookingNo: newBookingNo
+                                };
+                              });
+                              return {
+                                ...prev,
+                                bookingNo: newBookingNo,
+                                supplierArrivalReports: currentReports
+                              };
+                            });
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                          placeholder="예: SINI24090123" 
+                        />
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
                         <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
@@ -10790,10 +10823,10 @@ ${downloadLink}`;
                         }
 
                         const rep = {
-                          bookingNo: basicForm.vesselBooking || '',
                           remarks: remarksText,
                           notifyParty: 'SAME AS ABOVE',
                           ...repData,
+                          bookingNo: basicForm.bookingNo || (repData.bookingNo && repData.bookingNo !== basicForm.vesselBooking ? repData.bookingNo : '') || '',
                           shipper: shipperText,
                           portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
                           finalDestination: basicForm.portOfDischarge || repData.finalDestination || '',
@@ -15334,6 +15367,7 @@ ${downloadLink}`;
             finalDestination: basicForm.portOfDischarge || '',
             carrier: basicForm.vesselBooking || '',
             sailingOnOrAbout: basicForm.etd || '',
+            bookingNo: basicForm.bookingNo || (order as any).bookingNo || '',
             cfsAddress: basicForm.cfsContactInfo || basicForm.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
             cfsEntryDate: basicForm.cfsEntryDate || '',
             cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
@@ -15350,7 +15384,12 @@ ${downloadLink}`;
                 [activeArrivalReport.supplierName]: reportData
               };
               const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-              await setDoc(orderRef, { supplierArrivalReports: updatedReports, updatedAt: serverTimestamp() }, { merge: true });
+              const extraUpdates: any = {};
+              if (reportData.bookingNo && !basicForm.bookingNo) {
+                extraUpdates.bookingNo = reportData.bookingNo;
+                setBasicForm(p => ({ ...p, bookingNo: reportData.bookingNo }));
+              }
+              await setDoc(orderRef, { supplierArrivalReports: updatedReports, ...extraUpdates, updatedAt: serverTimestamp() }, { merge: true });
               setActiveArrivalReport(null);
               // Print immediately using the saved updated reports in local memory or data
               const rep = reportData;
@@ -15411,7 +15450,7 @@ ${downloadLink}`;
                         </td>
                         <td style="width: 50%;">
                           <strong>8) Booking No.</strong><br/>
-                          ${rep.bookingNo || ''}
+                          ${rep.bookingNo || basicForm.bookingNo || ''}
                         </td>
                       </tr>
                       <tr>
