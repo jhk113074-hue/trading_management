@@ -5890,6 +5890,39 @@ ${downloadLink}`;
     }
   };
 
+  const parseCbm = (m: any): number => {
+    if (!m) return 0;
+    const s = String(m).trim();
+    const dimMatch = s.match(/^=?\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)/);
+    if (dimMatch) {
+      const d1 = parseFloat(dimMatch[1]);
+      const d2 = parseFloat(dimMatch[2]);
+      const d3 = parseFloat(dimMatch[3]);
+      if (d1 > 0 && d2 > 0 && d3 > 0) {
+        if (d1 > 10 || d2 > 10 || d3 > 10) {
+          return (d1 * d2 * d3) / 1000000000;
+        }
+        return d1 * d2 * d3;
+      }
+    }
+    const match = s.match(/([0-9]+(?:\.[0-9]+)?)/);
+    return match ? parseFloat(match[1]) || 0 : 0;
+  };
+
+  const getArrivalReportTotals = (list: any[]) => {
+    const visibleList = (list || []).filter((it: any, idx: number) => {
+      return !(it._sharedWithPrev || it._isMergedMember || (idx > 0 && it.pkgNo && it.pkgNo === list[idx - 1]?.pkgNo));
+    });
+    const targetList = visibleList.length > 0 ? visibleList : (list || []);
+
+    const totalQty = targetList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+    const totalNetWeight = targetList.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
+    const totalGrossWeight = targetList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
+    const totalCbm = targetList.reduce((sum, it) => sum + parseCbm(it.measurement), 0);
+
+    return { totalQty, totalNetWeight, totalGrossWeight, totalCbm };
+  };
+
   const autoEnsureArrivalAndShippingDocs = async (supplierName: string): Promise<{ arrivalPdfUrl: string; shippingPdfUrl: string; poNum: string }> => {
     if (!order) return { arrivalPdfUrl: '', shippingPdfUrl: '', poNum: '' };
 
@@ -6040,9 +6073,7 @@ ${downloadLink}`;
     // 1. Generate & upload Arrival Report PDF if needed
     if (!arrivalPdfUrl) {
       try {
-        const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
-        const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
-        const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+        const { totalQty, totalNetWeight, totalGrossWeight, totalCbm } = getArrivalReportTotals(packingItemsList);
 
         const printHtml = `
           <html>
@@ -6195,9 +6226,9 @@ ${downloadLink}`;
                     <td></td>
                     <td class="center">${totalQty.toLocaleString()}</td>
                     <td class="center"></td>
-                    <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
-                    <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
-                    <td></td>
+                    <td class="right">${totalNetWeight ? Math.round(totalNetWeight).toLocaleString() : '-'}</td>
+                    <td class="right">${totalGrossWeight ? Math.round(totalGrossWeight).toLocaleString() : '-'}</td>
+                    <td class="center">${totalCbm > 0 ? `${totalCbm.toFixed(2)} CBM` : '-'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -10838,9 +10869,7 @@ ${downloadLink}`;
                           packingItems: packingItemsList
                         };
 
-                        const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
-                        const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
-                        const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+                        const { totalQty, totalNetWeight, totalGrossWeight, totalCbm } = getArrivalReportTotals(packingItemsList);
 
 
 
@@ -11015,9 +11044,9 @@ ${downloadLink}`;
                                     <td></td>
                                     <td class="center">${totalQty.toLocaleString()}</td>
                                     <td class="center"></td>
-                                    <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
-                                    <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
-                                    <td></td>
+                                    <td class="right">${totalNetWeight ? Math.round(totalNetWeight).toLocaleString() : '-'}</td>
+                                    <td class="right">${totalGrossWeight ? Math.round(totalGrossWeight).toLocaleString() : '-'}</td>
+                                    <td class="center">${totalCbm > 0 ? `${totalCbm.toFixed(2)} CBM` : '-'}</td>
                                   </tr>
                                 </tbody>
                               </table>
@@ -11504,6 +11533,23 @@ ${downloadLink}`;
                                   });
                                 })()}
                               </tbody>
+                              <tfoot>
+                                {(() => {
+                                  const { totalQty, totalNetWeight, totalGrossWeight, totalCbm } = getArrivalReportTotals(packingItemsList);
+                                  return (
+                                    <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
+                                      <td style={{ padding: '8px', textAlign: 'center', color: '#1e293b' }}>합계 (TOTAL)</td>
+                                      <td></td>
+                                      <td style={{ padding: '8px', textAlign: 'center', color: '#1e293b' }}>{totalQty.toLocaleString()}</td>
+                                      <td></td>
+                                      <td style={{ padding: '8px', textAlign: 'right', color: '#1e293b' }}>{totalNetWeight ? Math.round(totalNetWeight).toLocaleString() : '-'}</td>
+                                      <td style={{ padding: '8px', textAlign: 'right', color: '#1e293b' }}>{totalGrossWeight ? Math.round(totalGrossWeight).toLocaleString() : '-'}</td>
+                                      <td style={{ padding: '8px', textAlign: 'center', color: '#1e293b' }}>{totalCbm > 0 ? `${totalCbm.toFixed(2)} CBM` : '-'}</td>
+                                      <td></td>
+                                    </tr>
+                                  );
+                                })()}
+                              </tfoot>
                             </table>
                           </div>
 
@@ -15404,9 +15450,7 @@ ${downloadLink}`;
                   );
 
               const packingItemsList = rep.packingItems || [];
-              const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
-              const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
-              const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+              const { totalQty, totalNetWeight, totalGrossWeight, totalCbm } = getArrivalReportTotals(packingItemsList);
 
               const printHtml = `
                 <html>
@@ -15532,21 +15576,39 @@ ${downloadLink}`;
                         </tr>
                       </thead>
                       <tbody>
-                        ${packingItemsList.map((it: any) => `
-                          <tr>
-                            <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                              ${renderShippingMarkCellHtml(it.marks)}
-                            </td>
-                            <td style="font-size: 11px; line-height: 1.5;">
-                              ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
-                            </td>
-                            <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
-                            <td class="center">${it.packageType || 'PL'}</td>
-                            <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                            <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
-                            <td class="center">${it.measurement || '-'}</td>
-                          </tr>
-                        `).join('')}
+                        ${packingItemsList.map((it: any, itemIdx: number) => {
+                          const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                          let spanCount = 1;
+                          if (!isSecondary) {
+                            for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
+                              const nextIt = packingItemsList[k];
+                              if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                                spanCount++;
+                              } else {
+                                break;
+                              }
+                            }
+                          }
+                          return `
+                            <tr>
+                              ${!isSecondary ? `
+                                <td rowspan="${spanCount}" class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold; vertical-align: middle;">
+                                  ${renderShippingMarkCellHtml(it.marks)}
+                                </td>
+                              ` : ''}
+                              <td style="font-size: 11px; line-height: 1.5;">
+                                ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                              </td>
+                              ${!isSecondary ? `
+                                <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
+                                <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
+                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? Math.round(it.netWeight).toLocaleString() : '-'}</td>
+                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? Math.round(it.grossWeight).toLocaleString() : '-'}</td>
+                                <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
+                              ` : ''}
+                            </tr>
+                          `;
+                        }).join('')}
                         {/* Padding rows to maintain spacing */}
                         <tr>
                           <td style="border-top: none; border-bottom: none; height: 50px;"></td>
@@ -15562,9 +15624,9 @@ ${downloadLink}`;
                           <td></td>
                           <td class="center">${totalQty.toLocaleString()}</td>
                           <td class="center"></td>
-                          <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
-                          <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
-                          <td></td>
+                          <td class="right">${totalNetWeight ? Math.round(totalNetWeight).toLocaleString() : '-'}</td>
+                          <td class="right">${totalGrossWeight ? Math.round(totalGrossWeight).toLocaleString() : '-'}</td>
+                          <td class="center">${totalCbm > 0 ? `${totalCbm.toFixed(2)} CBM` : '-'}</td>
                         </tr>
                       </tbody>
                     </table>

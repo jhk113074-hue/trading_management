@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.493',
+    version: 'v2.8.493',
+    date: '2026-09-07',
+    category: '버그수정',
+    title: '도착보고서(Arrival Report) WEIGHT 및 CBM 합계(TOTAL) 정확 계산 및 표기 개선',
+    content: '• 혼적/다품목 팔레트에서 중복 집계되던 NET/GROSS 중량 합산 로직을 정밀 교정하여 실제 파렛트 행 기준 합계와 정확히 일치하도록 수정\n• 누락되어 있던 CBM 합계를 도착보고서 하단 TOTAL 행에 규격 형식(예: 13.58 CBM)으로 정확하게 표기\n• 화면의 도착보고 테이블 하단에도 실시간 집계(TOTAL) 행을 신설하여 출력 전 사전 확인 가능하도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.492',
     version: 'v2.8.492',
     date: '2026-09-07',
