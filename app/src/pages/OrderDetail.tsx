@@ -170,6 +170,95 @@ const fromCommaString = (val: string): number => {
   return Number(val.replace(/[^0-9]/g, '')) || 0;
 };
 
+const evaluateFormulaGlobal = (val: any): number => {
+  if (val === undefined || val === null || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).trim();
+  if (str.startsWith('=')) {
+    try {
+      const expr = str.slice(1).replace(/[^0-9+\-*/().]/g, '');
+      if (!expr) return 0;
+      const res = Function('"use strict"; return (' + expr + ')')();
+      if (typeof res === 'number' && isFinite(res)) {
+        return res;
+      }
+    } catch (err) {
+      console.warn('Formula eval error:', str, err);
+    }
+  }
+  const parsed = parseFloat(str.replace(/,/g, ''));
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+interface FormulaWeightInputProps {
+  value: string | number | undefined;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange, placeholder, disabled }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const rawStr = value !== undefined && value !== null ? String(value) : '';
+  const isFormula = rawStr.trim().startsWith('=');
+  const evaluatedNum = evaluateFormulaGlobal(rawStr);
+
+  const displayVal = isFocused
+    ? rawStr
+    : isFormula
+      ? (evaluatedNum ? evaluatedNum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) : '0')
+      : rawStr;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: '95%', margin: '0 auto' }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        disabled={disabled}
+        value={displayVal}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        onChange={e => onChange(e.target.value)}
+        title={isFormula ? `수식: ${rawStr} (계산결과: ${evaluatedNum.toLocaleString()} kg)` : undefined}
+        style={{
+          padding: '4px 6px',
+          border: isFormula ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+          borderRadius: '4px',
+          fontSize: '13px',
+          fontWeight: 600,
+          width: '100%',
+          textAlign: 'right',
+          height: '32px',
+          boxSizing: 'border-box',
+          background: disabled ? '#f1f5f9' : (isFormula ? '#f0f9ff' : '#fff'),
+          color: disabled ? '#64748b' : (isFormula ? '#0369a1' : '#1e293b'),
+          outline: 'none',
+          transition: 'all 0.15s ease'
+        }}
+      />
+      {isFormula && (
+        <div
+          title={`입력된 계산 수식: ${rawStr}`}
+          style={{
+            fontSize: '10px',
+            color: '#2563eb',
+            fontWeight: 700,
+            marginTop: '2px',
+            textAlign: 'right',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1
+          }}
+        >
+          fx: {rawStr}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const steps = ["수주정보", "소싱/발주", "물류/선적", "서류관리", "정산/결제", "변경이력"] as const;
 
 const STEP_DEFAULT_SUBTAB: Record<string, Record<string, string>> = {
@@ -5890,9 +5979,33 @@ ${downloadLink}`;
     }
   };
 
+  const evaluateFormula = (val: any): number => {
+    if (val === undefined || val === null || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    const str = String(val).trim();
+    if (str.startsWith('=')) {
+      try {
+        const expr = str.slice(1).replace(/[^0-9+\-*/().]/g, '');
+        if (!expr) return 0;
+        const res = Function('"use strict"; return (' + expr + ')')();
+        if (typeof res === 'number' && isFinite(res)) {
+          return res;
+        }
+      } catch (err) {
+        console.warn('Formula eval error:', str, err);
+      }
+    }
+    const parsed = parseFloat(str.replace(/,/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const parseCbm = (m: any): number => {
     if (!m) return 0;
     const s = String(m).trim();
+    if (s.startsWith('=')) {
+      const evalRes = evaluateFormula(s);
+      if (evalRes > 0) return evalRes;
+    }
     const dimMatch = s.match(/^=?\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)/);
     if (dimMatch) {
       const d1 = parseFloat(dimMatch[1]);
@@ -5916,8 +6029,8 @@ ${downloadLink}`;
     const targetList = visibleList.length > 0 ? visibleList : (list || []);
 
     const totalQty = targetList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
-    const totalNetWeight = targetList.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
-    const totalGrossWeight = targetList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
+    const totalNetWeight = targetList.reduce((sum, it) => sum + evaluateFormula(it.netWeight), 0);
+    const totalGrossWeight = targetList.reduce((sum, it) => sum + evaluateFormula(it.grossWeight), 0);
     const totalCbm = targetList.reduce((sum, it) => sum + parseCbm(it.measurement), 0);
 
     return { totalQty, totalNetWeight, totalGrossWeight, totalCbm };
@@ -5993,12 +6106,18 @@ ${downloadLink}`;
         if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
         const pNo = it.pkgNo || String(idx + 1);
         packingItemsList.push({
+          pkgNo: pNo,
+          pkg: it.pkg,
+          _sharedWithPrev: it._sharedWithPrev,
+          _sharedGroupHead: it._sharedGroupHead,
+          _isMergedGroup: it._isMergedGroup,
+          _isMergedMember: it._isMergedMember,
           marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
           descOfGoods: desc,
-          qty: Number(it.pkg) || 0,
+          qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
           packageType: 'PL',
-          netWeight: Number(it.netWeight) || 0,
-          grossWeight: Number(it.grossWeight) || 0,
+          netWeight: evaluateFormula(it.netWeight),
+          grossWeight: evaluateFormula(it.grossWeight),
           measurement: it.cbm ? `${it.cbm} CBM` : ''
         });
       });
@@ -6214,8 +6333,8 @@ ${downloadLink}`;
                         ${!isSecondary ? `
                           <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
-                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.netWeight) ? Math.round(evaluateFormula(it.netWeight)).toLocaleString() : '-'}</td>
+                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.grossWeight) ? Math.round(evaluateFormula(it.grossWeight)).toLocaleString() : '-'}</td>
                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
                         ` : ''}
                       </tr>
@@ -10206,14 +10325,11 @@ ${downloadLink}`;
                                         {/* 7. NET WT (Kg) - rowSpan for merged group */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
-                                            <input
-                                              type="number"
+                                            <FormulaWeightInput
                                               placeholder="NET WT"
                                               disabled={!isEditing}
-                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                               value={it.netWeight || ''}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].netWeight = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
@@ -10225,14 +10341,11 @@ ${downloadLink}`;
                                         {/* 8. GROSS WT (Kg) - rowSpan for merged group */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
-                                            <input
-                                              type="number"
+                                            <FormulaWeightInput
                                               placeholder="GROSS WT"
                                               disabled={!isEditing}
-                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                               value={it.grossWeight || ''}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].grossWeight = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
@@ -10354,24 +10467,27 @@ ${downloadLink}`;
                                     const items = c.items || [];
                                     const totalQty = items.reduce((acc: number, it: any) => acc + (Number(it.qty) || 0), 0);
                                     const totalPkg = items.reduce((acc: number, it: any) => acc + (Number(it.pkg) || 0), 0);
-                                    const totalNetWeight = items.reduce((acc: number, it: any) => acc + (Number(it.netWeight) || 0), 0);
-                                    const totalGrossWeight = items.reduce((acc: number, it: any) => acc + (Number(it.grossWeight) || 0), 0);
-                                    const totalCbm = items.reduce((acc: number, it: any) => {
-                                      const rawVal = String(it.cbm || '');
-                                      let numericVal = 0;
-                                      if (rawVal.startsWith('=')) {
-                                        try {
-                                          const expr = rawVal.slice(1).replace(/[^0-9+\-*/().]/g, '');
-                                          const evaluated = Function('"use strict"; return (' + expr + ')')();
-                                          if (typeof evaluated === 'number' && isFinite(evaluated)) {
-                                            numericVal = evaluated;
-                                          }
-                                        } catch {}
-                                      } else {
-                                        numericVal = Number(it.cbm) || 0;
+                                    
+                                    // For weights and CBM, only sum primary rows if items are merged on the same pallet
+                                    let totalNetWeight = 0;
+                                    let totalGrossWeight = 0;
+                                    let totalCbm = 0;
+
+                                    items.forEach((it: any, itIdx: number) => {
+                                      const hasGroup = !!it._mergeGroupId;
+                                      const isSecondary = hasGroup && !!it._sharedWithPrev && itIdx > 0 && items[itIdx - 1]?._mergeGroupId === it._mergeGroupId;
+                                      if (!isSecondary) {
+                                        totalNetWeight += evaluateFormulaGlobal(it.netWeight);
+                                        totalGrossWeight += evaluateFormulaGlobal(it.grossWeight);
+                                        
+                                        const rawCbm = String(it.cbm || '');
+                                        if (rawCbm.startsWith('=')) {
+                                          totalCbm += evaluateFormulaGlobal(rawCbm);
+                                        } else {
+                                          totalCbm += Number(it.cbm) || 0;
+                                        }
                                       }
-                                      return acc + numericVal;
-                                    }, 0);
+                                    });
 
                                     return (
                                       <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid var(--border-default)', borderBottom: '2px solid var(--border-default)' }}>
@@ -10680,8 +10796,8 @@ ${downloadLink}`;
                             descOfGoods: desc,
                             qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
                             packageType: 'PL',
-                            netWeight: Number(it.netWeight) || 0,
-                            grossWeight: Number(it.grossWeight) || 0,
+                            netWeight: evaluateFormula(it.netWeight),
+                            grossWeight: evaluateFormula(it.grossWeight),
                             measurement: it.cbm ? `${it.cbm} CBM` : ''
                           });
                         });
@@ -11023,8 +11139,8 @@ ${downloadLink}`;
                                         ${!isSecondary ? `
                                           <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
                                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
-                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
-                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.netWeight) ? Math.round(evaluateFormula(it.netWeight)).toLocaleString() : '-'}</td>
+                                          <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.grossWeight) ? Math.round(evaluateFormula(it.grossWeight)).toLocaleString() : '-'}</td>
                                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
                                         ` : ''}
                                       </tr>
@@ -11287,8 +11403,8 @@ ${downloadLink}`;
                                       descOfGoods: desc,
                                       qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
                                       packageType: 'PL',
-                                      netWeight: Number(it.netWeight) || 0,
-                                      grossWeight: Number(it.grossWeight) || 0,
+                                      netWeight: evaluateFormula(it.netWeight),
+                                      grossWeight: evaluateFormula(it.grossWeight),
                                       measurement: it.cbm ? `${it.cbm} CBM` : ''
                                     });
                                   });
@@ -11479,12 +11595,11 @@ ${downloadLink}`;
                                         {/* Net Wt - rowSpan */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'right', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
-                                            <input
-                                              type="number"
+                                            <FormulaWeightInput
+                                              placeholder="Net Wt"
                                               disabled={!isEditing}
-                                              value={it.netWeight || 0}
-                                              onChange={e => updateArrivalReportItem(itemIdx, 'netWeight', parseFloat(e.target.value) || 0)}
-                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
+                                              value={it.netWeight || ''}
+                                              onChange={val => updateArrivalReportItem(itemIdx, 'netWeight', val)}
                                             />
                                           </td>
                                         )}
@@ -11492,12 +11607,11 @@ ${downloadLink}`;
                                         {/* Gross Wt - rowSpan */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '5px', textAlign: 'right', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined }}>
-                                            <input
-                                              type="number"
+                                            <FormulaWeightInput
+                                              placeholder="Gross Wt"
                                               disabled={!isEditing}
-                                              value={it.grossWeight || 0}
-                                              onChange={e => updateArrivalReportItem(itemIdx, 'grossWeight', parseFloat(e.target.value) || 0)}
-                                              style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
+                                              value={it.grossWeight || ''}
+                                              onChange={val => updateArrivalReportItem(itemIdx, 'grossWeight', val)}
                                             />
                                           </td>
                                         )}
@@ -12067,10 +12181,19 @@ ${downloadLink}`;
 
                 if (basicForm.packingList?.containers) {
                   basicForm.packingList.containers.forEach((c: any) => {
-                    (c.items || []).forEach((it: any) => {
-                      plNet += Number(it.netWeight) || 0;
-                      plGross += Number(it.grossWeight) || 0;
-                      plCbm += Number(it.cbm) || 0;
+                    (c.items || []).forEach((it: any, itIdx: number) => {
+                      const hasGroup = !!it._mergeGroupId;
+                      const isSecondary = hasGroup && !!it._sharedWithPrev && itIdx > 0 && c.items[itIdx - 1]?._mergeGroupId === it._mergeGroupId;
+                      if (!isSecondary) {
+                        plNet += evaluateFormula(it.netWeight);
+                        plGross += evaluateFormula(it.grossWeight);
+                        const rawCbm = String(it.cbm || '');
+                        if (rawCbm.startsWith('=')) {
+                          plCbm += evaluateFormula(rawCbm);
+                        } else {
+                          plCbm += Number(it.cbm) || 0;
+                        }
+                      }
                       pkCount += Number(it.pkg) || 0;
                     });
                   });
@@ -12157,9 +12280,9 @@ ${downloadLink}`;
                           unitPrice: matchedPO?.unitPrice || 0,
                           amount: (Number(it.qty) || 0) * (matchedPO?.unitPrice || 0),
                           hsCode: it.hsCode || matchedPO?.hsCode || '',
-                          netWeight: Number(it.netWeight) || 0,
-                          grossWeight: Number(it.grossWeight) || 0,
-                          cbm: Number(it.cbm) || 0,
+                          netWeight: evaluateFormula(it.netWeight),
+                          grossWeight: evaluateFormula(it.grossWeight),
+                          cbm: evaluateFormula(it.cbm),
                           packageType: it.packageType || 'Pallet',
                           packagesCount: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1)
                         });
@@ -13151,16 +13274,14 @@ ${downloadLink}`;
                                         {/* NET WT */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
-                                            <input
-                                              type="number"
-                                              value={it.netWeight || 0}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                            <FormulaWeightInput
+                                              placeholder="NET WT"
+                                              value={it.netWeight || ''}
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].netWeight = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
-                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
                                             />
                                           </td>
                                         )}
@@ -13168,16 +13289,14 @@ ${downloadLink}`;
                                         {/* GROSS WT */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: '1px solid #cbd5e1' }}>
-                                            <input
-                                              type="number"
-                                              value={it.grossWeight || 0}
-                                              onChange={e => {
-                                                const val = e.target.value;
+                                            <FormulaWeightInput
+                                              placeholder="GROSS WT"
+                                              value={it.grossWeight || ''}
+                                              onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 nextContainers[cIdx].items[itIdx].grossWeight = val;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
-                                              style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }}
                                             />
                                           </td>
                                         )}
@@ -15602,8 +15721,8 @@ ${downloadLink}`;
                               ${!isSecondary ? `
                                 <td rowspan="${spanCount}" class="center" style="font-weight: bold; vertical-align: middle;">${(it.qty || 0).toLocaleString()}</td>
                                 <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
-                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.netWeight ? Math.round(it.netWeight).toLocaleString() : '-'}</td>
-                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${it.grossWeight ? Math.round(it.grossWeight).toLocaleString() : '-'}</td>
+                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.netWeight) ? Math.round(evaluateFormula(it.netWeight)).toLocaleString() : '-'}</td>
+                                <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.grossWeight) ? Math.round(evaluateFormula(it.grossWeight)).toLocaleString() : '-'}</td>
                                 <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
                               ` : ''}
                             </tr>
