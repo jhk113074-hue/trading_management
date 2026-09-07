@@ -262,13 +262,13 @@ const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: '95%', margin: '0 auto' }}>
       <input
         type="text"
-        placeholder={placeholder}
+        placeholder={placeholder || "숫자 또는 =ROUNDUP(...)"}
         disabled={disabled}
         value={displayVal}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onChange={e => onChange(e.target.value)}
-        title={isFormula ? `수식: ${rawStr} (계산결과: ${evaluatedNum.toLocaleString()} kg)` : undefined}
+        title={isFormula ? `수식: ${rawStr} (계산결과: ${evaluatedNum.toLocaleString()} kg)` : "숫자 또는 엑셀 수식 (예: =ROUNDUP(1200*1.15, 0), =1437+15) 입력 가능"}
         style={{
           padding: '4px 6px',
           border: isFormula ? '1px solid #93c5fd' : '1px solid #cbd5e1',
@@ -9853,6 +9853,40 @@ ${downloadLink}`;
                           </div>
                         </div>
 
+                        {/* 💡 중량(NET/GROSS WT) 엑셀 수식 및 함수(ROUNDUP 등) 사용 안내 배너 */}
+                        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#0369a1' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '4px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              💡 <strong>중량(NET WT / GROSS WT) 엑셀식 수식 및 함수(ROUNDUP 등) 사용 안내</strong>
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#0284c7', background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px' }}>
+                              대소문자 무관 / 실시간 자동 연산
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px', marginTop: '6px', fontSize: '11.5px', color: '#334155' }}>
+                            <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
+                              <strong style={{ color: '#0284c7' }}>🔼 ROUNDUP(값, 자릿수) - 올림</strong><br/>
+                              • <code>=ROUNDUP(1200 * 1.15, 0)</code> ➔ <strong>1,380</strong><br/>
+                              • <code>=roundup(1437.21, 1)</code> ➔ <strong>1,437.3</strong> (소수 1자리)
+                            </div>
+                            <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
+                              <strong style={{ color: '#0284c7' }}>🔽 ROUNDDOWN(값, 자릿수) - 내림</strong><br/>
+                              • <code>=ROUNDDOWN(1437.29, 0)</code> ➔ <strong>1,437</strong> (정수 절사)<br/>
+                              • <code>=rounddown(1437.29, 1)</code> ➔ <strong>1,437.2</strong>
+                            </div>
+                            <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
+                              <strong style={{ color: '#0284c7' }}>⚖️ ROUND(값, 자릿수) - 반올림</strong><br/>
+                              • <code>=ROUND(1437.5, 0)</code> ➔ <strong>1,438</strong><br/>
+                              • <code>=round(1437.24, 1)</code> ➔ <strong>1,437.2</strong>
+                            </div>
+                            <div style={{ background: '#fff', border: '1px solid #e0f2fe', borderRadius: '4px', padding: '6px 8px' }}>
+                              <strong style={{ color: '#0284c7' }}>➕ 사칙연산 및 기타 함수</strong><br/>
+                              • <code>=1437 + 15</code> / <code>=(500 * 2) + 30</code><br/>
+                              • <code>=CEILING(1437.1)</code> (정수올림) / <code>=INT(1437.9)</code> (정수내림)
+                            </div>
+                          </div>
+                        </div>
+
                         {(basicForm.packingList.containers || []).map((c: any, cIdx: number) => (
                           <div key={cIdx} style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '16px', marginBottom: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
@@ -9966,8 +10000,12 @@ ${downloadLink}`;
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '13%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
                                   <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="2단 이상 다단적재 허용 여부 (클릭하여 수정)">다단적재</th>
                                   <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="수평 90도 회전 허용 여부 (클릭하여 수정)">회전허용</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
-                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }} title="순중량 입력 (예: 1450 또는 =ROUNDUP(1200*1.15, 0), =1437+15 등 엑셀 수식 지원)">
+                                    NET WT (Kg) <span style={{ fontSize: '11px', color: '#2563eb', cursor: 'help' }} title="엑셀 수식 지원: =ROUNDUP(값, 자릿수), =ROUND(값, 자릿수), =ROUNDDOWN(값, 자릿수), 사칙연산 (+,-,*,/)">ℹ️</span>
+                                  </th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }} title="총중량 입력 (예: 1520 또는 =ROUNDUP(NET_WT*1.05, 0), =1450+25 등 엑셀 수식 지원)">
+                                    GROSS WT (Kg) <span style={{ fontSize: '11px', color: '#2563eb', cursor: 'help' }} title="엑셀 수식 지원: =ROUNDUP(값, 자릿수), =ROUND(값, 자릿수), =ROUNDDOWN(값, 자릿수), 사칙연산 (+,-,*,/)">ℹ️</span>
+                                  </th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '130px', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
