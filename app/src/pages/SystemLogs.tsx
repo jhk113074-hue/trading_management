@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.490',
+    version: 'v2.8.490',
+    date: '2026-09-07',
+    category: '신규기능',
+    title: '견적 환율 차액 분리 및 [견적환경설정] 모달 구축',
+    content: '• 신규 견적(PI) 작성 시 적용되던 실시간 환율 대비 차액(-50원)을 시스템에서 분리하여 사용자가 직접 설정 가능하도록 개선\n• [수출 견적관리] 상단 및 PI 작성 모달 내에 [견적환경설정] 기능 신설 (실시간 환율 시뮬레이션 및 프리셋 제공)\n• 설정된 환율 차액 및 마진 정책은 Firestore DB 및 전사 공통으로 동기화 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.489',
     version: 'v2.8.489',
     date: '2026-09-04',

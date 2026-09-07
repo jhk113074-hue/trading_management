@@ -13,6 +13,8 @@ import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 import { FreightCalculatorSection } from './FreightCalculatorSection';
+import { QuoteSettingsModal } from './QuoteSettingsModal';
+import type { QuoteSettings } from '../types/quoteSettings';
 import * as XLSX from 'xlsx';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -151,12 +153,22 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     fetchTradeTerms();
   }, []);
 
+  const [isQuoteSettingsOpen, setIsQuoteSettingsOpen] = useState(false);
+
   const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
     let defaultRate = 1400.00;
     try {
+      let diff = -50;
+      const cachedSettings = localStorage.getItem('ysacc_quote_settings');
+      if (cachedSettings) {
+        try {
+          const parsed = JSON.parse(cachedSettings);
+          if (parsed.exchangeRateDiff !== undefined) diff = Number(parsed.exchangeRateDiff);
+        } catch (_) {}
+      }
       const savedRate = localStorage.getItem('site_live_usd_rate');
       if (savedRate && Number(savedRate) > 0) {
-        defaultRate = Math.round((Number(savedRate) - 50) * 10) / 10;
+        defaultRate = Math.round((Number(savedRate) + diff) * 10) / 10;
       }
     } catch (_) {}
 
@@ -235,6 +247,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [isUploading, setIsUploading] = useState(false);
   const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null);
   const [activePreviewName, setActivePreviewName] = useState<string>('');
+
+  const handleQuoteSettingsSave = (newSettings: QuoteSettings) => {
+    try {
+      const savedRate = localStorage.getItem('site_live_usd_rate');
+      const liveRate = savedRate && Number(savedRate) > 0 ? Number(savedRate) : 1450;
+      const diff = newSettings.exchangeRateDiff !== undefined ? Number(newSettings.exchangeRateDiff) : -50;
+      const calcRate = Math.round((liveRate + diff) * 10) / 10;
+
+      // PI 전체 기본 환율 업데이트
+      setFormData(prev => ({
+        ...prev,
+        exchangeRate: calcRate
+      }));
+
+      // 라인 아이템 기준환율도 함께 갱신
+      setItems(prev => prev.map(item => ({
+        ...item,
+        exchangeRate: calcRate
+      })));
+    } catch (e) {
+      console.error('Failed to apply updated quote settings:', e);
+    }
+  };
 
   const handleFileUpload = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
@@ -583,16 +618,36 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       fetchRevisionsAndItems();
     } else {
       if (!isLoadedRef.current) {
-        // Fetch live exchange rate for new PI (Site USD rate - 50 KRW)
+        // Fetch live exchange rate for new PI with quote settings diff
         const fetchLiveRateForNewPI = async () => {
           try {
+            // 1. 견적환경설정 로드 (Firestore 우선, fallback 캐시, 기본값 -50)
+            let diff = -50;
+            try {
+              const docRef = doc(db, "companies", COMPANY_ID, "settings", "quote_settings");
+              const snap = await getDoc(docRef);
+              if (snap.exists()) {
+                const sData = snap.data();
+                if (sData.exchangeRateDiff !== undefined) diff = Number(sData.exchangeRateDiff);
+                try {
+                  localStorage.setItem('ysacc_quote_settings', JSON.stringify(sData));
+                } catch (_) {}
+              } else {
+                const cached = localStorage.getItem('ysacc_quote_settings');
+                if (cached) {
+                  const p = JSON.parse(cached);
+                  if (p.exchangeRateDiff !== undefined) diff = Number(p.exchangeRateDiff);
+                }
+              }
+            } catch (_) {}
+
             const res = await fetch('https://open.er-api.com/v6/latest/USD');
             if (res.ok) {
               const data = await res.json();
               const krw = data.rates?.KRW;
               if (krw && krw > 0) {
                 const liveRate = Math.round(krw * 10) / 10;
-                const calcRate = Math.round((liveRate - 50) * 10) / 10;
+                const calcRate = Math.round((liveRate + diff) * 10) / 10;
                 try {
                   localStorage.setItem('site_live_usd_rate', String(liveRate));
                 } catch (_) {}
@@ -2544,7 +2599,31 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setIsQuoteSettingsOpen(true)}
+              style={{
+                background: '#f1f5f9',
+                border: '1px solid #cbd5e1',
+                color: '#475569',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '0 10px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+              title="견적환경설정 (환율 가감차액 및 기본 정책 설정)"
+            >
+              <span>⚙️</span> 견적환경설정
+            </button>
             <button
               type="button"
               onClick={() => setIsMaximized(!isMaximized)}
@@ -3098,6 +3177,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
                                   style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                                 />
+                                <button
+                                  type="button"
+                                  onClick={() => setIsQuoteSettingsOpen(true)}
+                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '0 2px', color: '#64748b' }}
+                                  title="견적환경설정 열기"
+                                >
+                                  ⚙️
+                                </button>
                               </div>
                             );
                           }
@@ -3662,6 +3749,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </a>
           </div>
         </div>
+      )}
+
+      {isQuoteSettingsOpen && (
+        <QuoteSettingsModal
+          isOpen={isQuoteSettingsOpen}
+          onClose={() => setIsQuoteSettingsOpen(false)}
+          onSave={handleQuoteSettingsSave}
+        />
       )}
     </div>
   );

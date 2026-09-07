@@ -5,6 +5,7 @@ import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 import { PIFormModal } from '../components/PIFormModal';
+import { QuoteSettingsModal } from '../components/QuoteSettingsModal';
 import { getAuth } from 'firebase/auth';
 
 export const ProformaInvoices: React.FC = () => {
@@ -14,6 +15,7 @@ export const ProformaInvoices: React.FC = () => {
   const [customers, setCustomers] = useState<Record<string, Customer>>({});
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isQuoteSettingsOpen, setIsQuoteSettingsOpen] = useState(false);
 
   // Filters
   const [dateFilterType, setDateFilterType] = useState<string>('Recent3Months');
@@ -531,33 +533,63 @@ export const ProformaInvoices: React.FC = () => {
             <option value="YS">영성ACC</option>
           </select>
         </div>
-        <button 
-          onClick={() => handleOpenForm(null)}
-          style={{ 
-            background: '#3b82f6', 
-            color: 'white', 
-            padding: '0 16px', 
-            borderRadius: '4px', 
-            border: 'none', 
-            cursor: 'pointer', 
-            fontWeight: 700,
-            fontSize: '12.5px',
-            transition: 'background 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            height: '34px',
-            boxSizing: 'border-box'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#2563eb';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#3b82f6';
-          }}
-        >
-          <span>➕</span> New PI
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={() => setIsQuoteSettingsOpen(true)}
+            style={{ 
+              background: '#f1f5f9', 
+              border: '1px solid #cbd5e1',
+              color: '#475569', 
+              padding: '0 14px', 
+              borderRadius: '4px', 
+              cursor: 'pointer', 
+              fontWeight: 700,
+              fontSize: '12.5px',
+              transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '34px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#e2e8f0';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#f1f5f9';
+            }}
+            title="견적 환율 가감차액 및 기본 환경설정"
+          >
+            <span>⚙️</span> 견적환경설정
+          </button>
+          <button 
+            onClick={() => handleOpenForm(null)}
+            style={{ 
+              background: '#3b82f6', 
+              color: 'white', 
+              padding: '0 16px', 
+              borderRadius: '4px', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontWeight: 700,
+              fontSize: '12.5px',
+              transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '34px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#2563eb';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#3b82f6';
+            }}
+          >
+            <span>➕</span> New PI
+          </button>
+        </div>
       </header>
 
       {/* 간단 대시보드 스탯 카드 */}
@@ -963,6 +995,11 @@ export const ProformaInvoices: React.FC = () => {
           currentUser={currentUser}
         />
       )}
+
+      <QuoteSettingsModal
+        isOpen={isQuoteSettingsOpen}
+        onClose={() => setIsQuoteSettingsOpen(false)}
+      />
     </div>
   );
 };
