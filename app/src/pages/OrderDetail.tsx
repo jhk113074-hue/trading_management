@@ -176,9 +176,58 @@ const evaluateFormulaGlobal = (val: any): number => {
   const str = String(val).trim();
   if (str.startsWith('=')) {
     try {
-      const expr = str.slice(1).replace(/[^0-9+\-*/().]/g, '');
+      let expr = str.slice(1).trim();
       if (!expr) return 0;
-      const res = Function('"use strict"; return (' + expr + ')')();
+
+      // Remove thousand separators like 1,450 inside digits while keeping argument commas intact
+      expr = expr.replace(/(\d),(\d{3})/g, '$1$2');
+
+      // Standardize Excel function names (case-insensitive)
+      expr = expr
+        .replace(/\broundup\b/gi, 'ROUNDUP')
+        .replace(/\brounddown\b/gi, 'ROUNDDOWN')
+        .replace(/\bround\b/gi, 'ROUND')
+        .replace(/\bceil(?:ing)?\b/gi, 'CEILING')
+        .replace(/\bfloor\b/gi, 'FLOOR')
+        .replace(/\bint\b/gi, 'INT')
+        .replace(/\babs\b/gi, 'ABS');
+
+      // Excel helper functions
+      const ROUNDUP = (v: any, digits: any = 0): number => {
+        const num = Number(v);
+        if (isNaN(num)) return 0;
+        const d = Number(digits) || 0;
+        const factor = Math.pow(10, d);
+        return (num >= 0 ? Math.ceil(num * factor) : Math.floor(num * factor)) / factor;
+      };
+
+      const ROUNDDOWN = (v: any, digits: any = 0): number => {
+        const num = Number(v);
+        if (isNaN(num)) return 0;
+        const d = Number(digits) || 0;
+        const factor = Math.pow(10, d);
+        return (num >= 0 ? Math.floor(num * factor) : Math.ceil(num * factor)) / factor;
+      };
+
+      const ROUND = (v: any, digits: any = 0): number => {
+        const num = Number(v);
+        if (isNaN(num)) return 0;
+        const d = Number(digits) || 0;
+        const factor = Math.pow(10, d);
+        return Math.round(num * factor) / factor;
+      };
+
+      const CEILING = ROUNDUP;
+      const FLOOR = ROUNDDOWN;
+      const INT = (v: any): number => Math.floor(Number(v) || 0);
+      const ABS = (v: any): number => Math.abs(Number(v) || 0);
+
+      // Execute safely with defined Excel functions in scope
+      const evalFn = new Function('ROUNDUP', 'ROUNDDOWN', 'ROUND', 'CEILING', 'FLOOR', 'INT', 'ABS',
+        '"use strict"; return (' + expr + ');'
+      );
+      const res = evalFn(ROUNDUP, ROUNDDOWN, ROUND, CEILING, FLOOR, INT, ABS);
+
       if (typeof res === 'number' && isFinite(res)) {
         return res;
       }
@@ -5980,23 +6029,7 @@ ${downloadLink}`;
   };
 
   const evaluateFormula = (val: any): number => {
-    if (val === undefined || val === null || val === '') return 0;
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    const str = String(val).trim();
-    if (str.startsWith('=')) {
-      try {
-        const expr = str.slice(1).replace(/[^0-9+\-*/().]/g, '');
-        if (!expr) return 0;
-        const res = Function('"use strict"; return (' + expr + ')')();
-        if (typeof res === 'number' && isFinite(res)) {
-          return res;
-        }
-      } catch (err) {
-        console.warn('Formula eval error:', str, err);
-      }
-    }
-    const parsed = parseFloat(str.replace(/,/g, ''));
-    return isNaN(parsed) ? 0 : parsed;
+    return evaluateFormulaGlobal(val);
   };
 
   const parseCbm = (m: any): number => {
