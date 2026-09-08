@@ -127,7 +127,7 @@ export const Orders: React.FC = () => {
   const processedPiRef = useRef<string | null>(null);
 
   // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, 운송사, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 130, 75, 75, 270, 85, 45]);
+  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 85, 75, 75, 270, 85, 45]);
 
   // 오름차순/내림차순 정렬 상태
   const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
@@ -1153,7 +1153,7 @@ export const Orders: React.FC = () => {
                         key={h} 
                         onClick={() => h !== '복사' && handleSort(h)}
                         style={thStyle(hIdx, { 
-                          padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
+                          padding: h === '단계' ? '8px 16px 10px 16px' : (['No.', '운송사', '복사'].includes(h) ? '12px 6px' : '12px 14px'), 
                           fontWeight: 750, 
                           color: sortKey === h ? '#2563eb' : '#475569', 
                           fontSize: '11px', 
@@ -1264,7 +1264,7 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                       {/* 8: 운송사 (ETD 앞) */}
-                      <td style={getTdStyle(8, { color: '#334155', fontWeight: 600, fontSize: '12.5px', whiteSpace: 'nowrap' })} title={getForwarderName(order)}>
+                      <td style={getTdStyle(8, { color: '#334155', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap', textAlign: 'center' })} title={getForwarderName(order)}>
                         {(() => {
                           const fwd = getForwarderName(order);
                           if (fwd === '-') return <span style={{ color: '#94a3b8' }}>-</span>;
