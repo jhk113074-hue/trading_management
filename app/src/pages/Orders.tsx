@@ -89,6 +89,22 @@ export const getOrderAmountUsd = (order: Order, quotation?: ProformaInvoice): nu
   return order.totalAmount || quotation?.totalUsd || 0;
 };
 
+export const getForwarderName = (order: Order): string => {
+  if (order.forwarders && Array.isArray(order.forwarders) && order.forwarders.length > 0) {
+    const names = order.forwarders
+      .map(f => (typeof f === 'string' ? f : f?.name))
+      .filter(n => n && typeof n === 'string' && n.trim() !== '' && !['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL'].includes(n.trim()));
+    if (names.length > 0) {
+      return names.join(', ');
+    }
+  }
+  const fallback = (order as any).forwarderConfirmed || (order as any).carrier || (order as any).forwarderName || '';
+  if (fallback && !['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL'].includes(fallback.trim())) {
+    return fallback.trim();
+  }
+  return '-';
+};
+
 // 단계 → stageKey 매핑
 const stepToStageKey: Record<string, StageKey> = {
   '수주정보': '수주정보',
@@ -108,11 +124,11 @@ export const Orders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const processedPiRef = useRef<string | null>(null);
 
-  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 75, 75, 270, 210, 50]);
+  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, 운송사, ETD, ETA, 단계, 다음단계, 복사]
+  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 130, 75, 75, 270, 85, 45]);
 
   // 오름차순/내림차순 정렬 상태
-  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
+  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
@@ -562,6 +578,9 @@ export const Orders: React.FC = () => {
           const rateB = b.customsExchangeRate || b.exchangeRate || piB?.exchangeRate || 1350;
           valA = getOrderAmountUsd(a, piA) * rateA;
           valB = getOrderAmountUsd(b, piB) * rateB;
+        } else if (sortKey === '운송사') {
+          valA = getForwarderName(a);
+          valB = getForwarderName(b);
         } else if (sortKey === 'ETD') {
           valA = a.etd || '';
           valB = b.etd || '';
@@ -1127,7 +1146,7 @@ export const Orders: React.FC = () => {
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
                 <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
-                    {['No.','날짜','주문번호','수주사','발주사','품목','발주액','매출액','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
+                    {['No.','날짜','주문번호','수주사','발주사','품목','발주액','매출액','운송사','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
                         key={h} 
                         onClick={() => h !== '복사' && handleSort(h)}
@@ -1240,10 +1259,24 @@ export const Orders: React.FC = () => {
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
-                      <td style={getTdStyle(8, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.etd)}</td>
-                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.eta)}</td>
-                      {/* 단계 */}
-                      <td style={getTdStyle(10)}>
+                      {/* 8: 운송사 (ETD 앞) */}
+                      <td style={getTdStyle(8, { color: '#334155', fontWeight: 600, fontSize: '12.5px', whiteSpace: 'nowrap' })} title={getForwarderName(order)}>
+                        {(() => {
+                          const fwd = getForwarderName(order);
+                          if (fwd === '-') return <span style={{ color: '#94a3b8' }}>-</span>;
+                          return (
+                            <span style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1e293b', fontWeight: 650 }}>
+                              {fwd}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      {/* 9: ETD */}
+                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.etd)}</td>
+                      {/* 10: ETA */}
+                      <td style={getTdStyle(10, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.eta)}</td>
+                      {/* 11: 단계 */}
+                      <td style={getTdStyle(11)}>
                         {(() => {
                           const { done: overallDone, total: overallTotal, pct: overallPct } = getOverallProgress(order);
                           return (
@@ -1328,8 +1361,8 @@ export const Orders: React.FC = () => {
                           );
                         })()}
                       </td>
-                       {/* 다음단계 */}
-                      <td style={getTdStyle(11)}>
+                       {/* 12: 다음단계 (최소화) */}
+                      <td style={getTdStyle(12, { textAlign: 'center' })}>
                         {(() => {
                            const todoText = getNextTodoItem(order);
                            const isAllDone = todoText === "모든 업무 완료";
@@ -1337,16 +1370,22 @@ export const Orders: React.FC = () => {
                            const borderCol = isAllDone ? '#a7f3d0' : lvlBdr;
                            const textCol = isAllDone ? '#10b981' : lvlColor;
                            const icon = isAllDone ? '✅' : (order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '⌛');
+                           const match = todoText.match(/\[(.*?)\]/);
+                           const stageShort = match ? match[1].replace(/\/.*/, '') : '';
+                           const badgeText = isAllDone ? '완료' : (stageShort || '진행');
                            return (
-                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                             <div 
+                               title={todoText}
+                               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px', padding: '3px 6px', borderRadius: '12px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'help', maxWidth: '100%', boxSizing: 'border-box' }}
+                             >
                                <span>{icon}</span>
-                               <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={todoText}>{todoText}</span>
+                               <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{badgeText}</span>
                              </div>
                            );
                         })()}
                       </td>
-                      {/* 복사 */}
-                      <td style={getTdStyle(12, { textAlign: 'center' })}>
+                      {/* 13: 복사 */}
+                      <td style={getTdStyle(13, { textAlign: 'center' })}>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1455,6 +1494,7 @@ export const Orders: React.FC = () => {
                       <td style={{ width: colWidths[10], minWidth: colWidths[10], maxWidth: colWidths[10], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[11], minWidth: colWidths[11], maxWidth: colWidths[11], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[12], minWidth: colWidths[12], maxWidth: colWidths[12], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[13], minWidth: colWidths[13], maxWidth: colWidths[13], boxSizing: 'border-box' }} />
                     </tr>
                   );
                 })()}
