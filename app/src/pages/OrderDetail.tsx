@@ -2676,6 +2676,7 @@ export const OrderDetail: React.FC = () => {
         if (!isInitialOrderLoadRef.current) {
           setOrderItems(restoredOrderItems);
           setSourcingItems(alignedSourcing);
+          setForwardersList(data.forwarders || []);
           isInitialOrderLoadRef.current = true;
         } else {
           // If remote update has items, preserve local supplier inputs that are currently being edited
@@ -2702,8 +2703,16 @@ export const OrderDetail: React.FC = () => {
               };
             });
           });
+
+          // Preserve local forwarder edits if currently present
+          setForwardersList(prev => {
+            const currentLocal = latestOrderStateRef.current.forwardersList || prev;
+            if (currentLocal && currentLocal.length > 0) {
+              return currentLocal;
+            }
+            return data.forwarders || [];
+          });
         }
-        setForwardersList(data.forwarders || []);
 
         // stageCompletion 로드 — 없으면 기본값 유지
         if ((data as any).stageCompletion) {
@@ -4194,7 +4203,6 @@ export const OrderDetail: React.FC = () => {
   };
 
   const handleForwarderChange = (index: number, field: keyof ForwarderEntry, value: any) => {
-    console.log("[DEBUG] handleForwarderChange called:", index, field, value);
     setForwardersList(prev => {
       const next = prev.map((f, i) => {
         if (i === index) {
@@ -4206,17 +4214,25 @@ export const OrderDetail: React.FC = () => {
         }
         return f;
       });
-      console.log("[DEBUG] Updated forwardersList state to:", next);
+      latestOrderStateRef.current.forwardersList = next;
       return next;
     });
   };
 
   const addForwarderRow = () => {
-    setForwardersList(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }]);
+    setForwardersList(prev => {
+      const next = [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }];
+      latestOrderStateRef.current.forwardersList = next;
+      return next;
+    });
   };
 
   const removeForwarderRow = (index: number) => {
-    setForwardersList(prev => prev.filter((_, i) => i !== index));
+    setForwardersList(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      latestOrderStateRef.current.forwardersList = next;
+      return next;
+    });
   };
 
   const handleAddSupplier = async () => {
@@ -9278,48 +9294,83 @@ ${downloadLink}`;
                           </button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
+                          <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>포워딩사/운송사명 (직접 입력 또는 🔍 검색)</span>
                           <span></span>
                           <span></span>
                         </div>
                         {forwardersList.length === 0 ? (
-                          <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15.5px' }}>포워더/운송사를 추가하세요 (최대 4개)</div>
+                          <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>포워더/운송사를 추가하세요 (최대 4개)</div>
                         ) : (
                           forwardersList.map((fw, idx) => {
                             return (
                             <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                              {/* 포워더명 SubWindow 선택 */}
                               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                                 <input
                                   type="text"
-                                  readOnly
                                   disabled={!isEditing}
-                                  placeholder="포워딩사 클릭 선택..."
+                                  placeholder="포워딩/운송사명 입력 또는 🔍 검색..."
                                   value={fw.name || ''}
-                                  onClick={() => {
-                                    if (!isEditing) return;
-                                    setForwarderSearchIndex(idx);
-                                    setIsForwarderSearchOpen(true);
+                                  onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
+                                  onBlur={() => handleSaveBasic(false)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    boxSizing: 'border-box',
+                                    background: isEditing ? '#fff' : '#f1f5f9',
+                                    color: '#1e293b',
+                                    height: '34px',
+                                    outline: 'none'
                                   }}
-                                  style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '14.5px', boxSizing: 'border-box', background: '#f8fafc', cursor: isEditing ? 'pointer' : 'default', outline: 'none' }}
                                 />
                               </div>
                               <button
                                 type="button"
                                 disabled={!isEditing}
+                                title="등록된 포워딩/운송사 검색 및 선택"
                                 onClick={() => {
                                   setForwarderSearchIndex(idx);
                                   setIsForwarderSearchOpen(true);
                                 }}
-                                style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '14.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed', height: '30px', display: 'flex', alignItems: 'center' }}
+                                style={{
+                                  padding: '0 10px',
+                                  background: '#3b82f6',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  fontSize: '14px',
+                                  fontWeight: 700,
+                                  cursor: isEditing ? 'pointer' : 'not-allowed',
+                                  height: '34px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
                               >
                                 🔍
                               </button>
                               <button
                                 type="button"
                                 disabled={!isEditing}
+                                title="운송사 삭제"
                                 onClick={() => removeForwarderRow(idx)}
-                                style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '14.5px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center' }}
+                                style={{
+                                  padding: '0 10px',
+                                  background: '#fee2e2',
+                                  color: '#dc2626',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: '4px',
+                                  cursor: isEditing ? 'pointer' : 'not-allowed',
+                                  fontSize: '14px',
+                                  fontWeight: 700,
+                                  height: '34px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
                               >✕</button>
                             </div>
                             );
@@ -15412,9 +15463,15 @@ ${downloadLink}`;
             setForwarderSearchIndex(null);
           }}
           onSelect={(supplier) => {
-            handleForwarderChange(forwarderSearchIndex, 'name', supplier.name);
+            const nextList = (latestOrderStateRef.current.forwardersList || forwardersList).map((f, i) => i === forwarderSearchIndex ? { ...f, name: supplier.name } : f);
+            latestOrderStateRef.current.forwardersList = nextList;
+            setForwardersList(nextList);
             setIsForwarderSearchOpen(false);
             setForwarderSearchIndex(null);
+            if (order?.id) {
+              const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+              updateDoc(docRef, { forwarders: nextList }).catch(err => console.error("Failed to save forwarder:", err));
+            }
           }}
         />
       )}

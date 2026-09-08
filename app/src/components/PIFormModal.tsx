@@ -2229,11 +2229,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         issuingCompany: formData.issuingCompany || 'YSACC',
-        forwarders: (formData.freightCharges || []).map((fc: any) => ({
-          name: fc.type || fc.name || 'FOB CHARGES',
-          amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
-          budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
-        })),
+        forwarders: (formData.freightCharges || []).map((fc: any) => {
+          const isContainerType = ['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL', '20OT', '40OT', '20FR', '40FR'].includes(fc.type);
+          return {
+            name: fc.forwarderName || fc.supplierName || (!isContainerType ? (fc.type || fc.name || '') : (fc.name && !isContainerType ? fc.name : '')),
+            amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
+            budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
+          };
+        }),
         piNumber: piNum || '',
         customerAddress: formData.customerAddress || '',
         contactPerson: formData.contactPerson || '',

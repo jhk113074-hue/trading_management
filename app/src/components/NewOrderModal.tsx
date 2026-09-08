@@ -133,11 +133,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         }));
         fetchQuoteItems(initialQuotationId);
         if (selectedQuote.freightCharges && selectedQuote.freightCharges.length > 0) {
-          setForwarders(selectedQuote.freightCharges.map(fc => ({
-            name: fc.type || fc.name || 'FOB CHARGES',
-            amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
-            budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
-          })));
+          setForwarders(selectedQuote.freightCharges.map(fc => {
+            const isContainerType = ['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL', '20OT', '40OT', '20FR', '40FR'].includes(fc.type);
+            return {
+              name: (fc as any).forwarderName || (fc as any).supplierName || (!isContainerType ? (fc.type || fc.name || '') : (fc.name && !isContainerType ? fc.name : '')),
+              amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
+              budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
+            };
+          }));
         } else if (selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
           setForwarders([{ name: '포워딩업체-운송비', amountUsd: selectedQuote.freightTotal, budgetAmountUsd: selectedQuote.freightTotal }]);
         }

@@ -375,11 +375,14 @@ export const Orders: React.FC = () => {
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
               issuingCompany: targetPi.issuingCompany || 'YSACC',
-              forwarders: (targetPi.freightCharges || []).map((fc: any) => ({
-                name: fc.type || fc.name || 'FOB CHARGES',
-                amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
-                budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
-              })),
+              forwarders: (targetPi.freightCharges || []).map((fc: any) => {
+                const isContainerType = ['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL', '20OT', '40OT', '20FR', '40FR'].includes(fc.type);
+                return {
+                  name: fc.forwarderName || fc.supplierName || (!isContainerType ? (fc.type || fc.name || '') : (fc.name && !isContainerType ? fc.name : '')),
+                  amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
+                  budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
+                };
+              }),
               piNumber: targetPi.piNumber || '',
               customerAddress: targetPi.customerAddress || '',
               contactPerson: targetPi.contactPerson || '',
