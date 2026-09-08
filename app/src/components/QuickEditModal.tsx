@@ -5,6 +5,7 @@ import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 import type { Supplier } from '../types/supplier';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 interface Props {
   order: Order;
@@ -268,7 +269,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             >
               <option value="">고객사 직접 입력 또는 선택...</option>
               {customers.map(c => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+                <option key={c.id} value={c.name}>{cleanCompanyName(c.name)}</option>
               ))}
             </select>
             <input

@@ -6,6 +6,7 @@ import type { Customer } from '../types/customer';
 import { CustomerModal } from '../components/CustomerModal';
 import * as XLSX from 'xlsx';
 import { useColumnResize } from '../hooks/useColumnResize';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 const excelMapping = [
   { header: "고객코드(ID)", key: "customerCode" },
@@ -348,12 +349,12 @@ export const Customers: React.FC = () => {
 
                     {/* 고객명 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.name || ''}>
-                      <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#0f172a' }}>{c.name || '-'}</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#0f172a' }}>{cleanCompanyName(c.name) || '-'}</span>
                     </td>
 
                     {/* 고객약자 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.nameKo || ''}>
-                      <span style={{ fontSize: '13.5px', color: '#475569', fontWeight: 600 }}>{c.nameKo || '-'}</span>
+                      <span style={{ fontSize: '13.5px', color: '#475569', fontWeight: 600 }}>{cleanCompanyName(c.nameKo) || '-'}</span>
                     </td>
 
                     {/* 국가 */}

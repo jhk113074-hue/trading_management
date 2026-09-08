@@ -23,6 +23,7 @@ import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
 import { PoEmailSendModal } from '../components/PoEmailSendModal';
 import { PackingSplitModal } from '../components/PackingSplitModal';
+import { cleanCompanyName } from '../utils/companyUtils';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { subscribeCustomContainerTypes, handleContainerTypeSelection, DEFAULT_CONTAINER_TYPES } from '../utils/containerType';
 import { getOverallProgress, getStageProgress, getEffectiveStageCompletion, type StageKey } from '../utils/orderProgress';
@@ -7337,7 +7338,7 @@ ${downloadLink}`;
             </div>
             {piData && (
               <div style={{ fontSize: '14.5px', color: 'var(--text-secondary)' }}>
-                <strong style={{ color: '#0f172a' }}>PI: {piData.piNumber}</strong> | <span style={{ fontSize: '15.5px' }}>고객사: {piData.customerName}</span> | <strong style={{ color: '#2563eb' }}>${(piData.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</strong>
+                <strong style={{ color: '#0f172a' }}>PI: {piData.piNumber}</strong> | <span style={{ fontSize: '15.5px' }}>고객사: {cleanCompanyName(piData.customerName)}</span> | <strong style={{ color: '#2563eb' }}>${(piData.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</strong>
               </div>
             )}
           </div>
@@ -7434,10 +7435,10 @@ ${downloadLink}`;
                     type="text"
                     value={
                       basicForm.customerCode
-                        ? `[${basicForm.customerCode}] ${basicForm.customer}`
+                        ? `[${basicForm.customerCode}] ${cleanCompanyName(basicForm.customer)}`
                         : ((order as any)?.customerCode || (order as any)?.customerId)
-                          ? `[${(order as any)?.customerCode || (order as any)?.customerId}] ${basicForm.customer}`
-                          : basicForm.customer
+                          ? `[${(order as any)?.customerCode || (order as any)?.customerId}] ${cleanCompanyName(basicForm.customer)}`
+                          : cleanCompanyName(basicForm.customer)
                     }
                     readOnly
                     onClick={() => isEditing && setIsCustomerSearchOpen(true)}
@@ -8209,7 +8210,7 @@ ${downloadLink}`;
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
                         {order.additionalSuppliers.map(s => (
                           <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '14.5px', fontWeight: 600 }}>
-                            {s}
+                            {cleanCompanyName(s)}
                             <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13.5px', padding: 0, fontWeight: 700 }}>✕</button>
                           </span>
                         ))}
@@ -8239,7 +8240,7 @@ ${downloadLink}`;
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {supplierName} PO</span>
+                                    <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {cleanCompanyName(supplierName)} PO</span>
                                     <button
                                       type="button"
                                       onClick={() => handleOpenSupplierModal(supplierName)}
@@ -15463,7 +15464,7 @@ ${downloadLink}`;
             setForwarderSearchIndex(null);
           }}
           onSelect={(supplier) => {
-            const nextList = (latestOrderStateRef.current.forwardersList || forwardersList).map((f, i) => i === forwarderSearchIndex ? { ...f, name: supplier.name } : f);
+            const nextList = (latestOrderStateRef.current.forwardersList || forwardersList).map((f, i) => i === forwarderSearchIndex ? { ...f, name: cleanCompanyName(supplier.name) } : f);
             latestOrderStateRef.current.forwardersList = nextList;
             setForwardersList(nextList);
             setIsForwarderSearchOpen(false);

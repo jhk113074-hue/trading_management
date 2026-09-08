@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { SupplierModal } from './SupplierModal';
 import type { Supplier } from '../types/supplier';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 interface Props {
   onClose: () => void;
@@ -164,19 +165,19 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                 {filteredForwarders.map(s => (
                   <tr 
                     key={s.id} 
-                    onDoubleClick={() => onSelect(s)}
+                    onDoubleClick={() => onSelect({ ...s, name: cleanCompanyName(s.name) })}
                     style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background-color 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '10px', fontWeight: 700, color: '#0f172a' }}>{s.name}</td>
+                    <td style={{ padding: '10px', fontWeight: 700, color: '#0f172a' }}>{cleanCompanyName(s.name)}</td>
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.bizNumber || '-'}</td>
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.representative || '-'}</td>
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.phone || '-'}</td>
                     <td style={{ padding: '10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                         <button
-                          onClick={() => onSelect(s)}
+                          onClick={() => onSelect({ ...s, name: cleanCompanyName(s.name) })}
                           title="선택"
                           style={{
                             width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,

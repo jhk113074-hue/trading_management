@@ -7,6 +7,7 @@ import type { ProformaInvoice } from '../types/pi';
 import { PIFormModal } from '../components/PIFormModal';
 import { QuoteSettingsModal } from '../components/QuoteSettingsModal';
 import { getAuth } from 'firebase/auth';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 export const ProformaInvoices: React.FC = () => {
   const navigate = useNavigate();
@@ -703,7 +704,7 @@ export const ProformaInvoices: React.FC = () => {
         <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '130px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
           <option value="">👥 전체 고객</option>
           {Object.entries(customers).map(([id, c]) => (
-            <option key={id} value={id}>{c.name}</option>
+            <option key={id} value={id}>{cleanCompanyName(c.name)}</option>
           ))}
         </select>
 
@@ -829,7 +830,7 @@ export const ProformaInvoices: React.FC = () => {
                       )}
                     </td>
                     <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>
-                      {customers[p.customerId]?.name || (p as any).customerName || '-'}
+                      {cleanCompanyName(customers[p.customerId]?.name || (p as any).customerName) || '-'}
                     </td>
                     <td style={{ padding: '9px 10px', width: colWidths.countryName || 120, minWidth: colWidths.countryName || 120, maxWidth: colWidths.countryName || 120, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', fontSize: '12.5px' }}>
                       {(() => {

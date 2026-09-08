@@ -17,6 +17,7 @@ interface NextAction {
 }
 
 import { getOverallProgress as utilGetOverallProgress, getStageProgress as utilGetStageProgress, getEffectiveStageCompletion, STAGE_KEYS, type StageKey } from '../utils/orderProgress';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 const getOverallProgress = (order: Order) => utilGetOverallProgress(order);
 const getStageProgress = (order: Order, stageKey: StageKey) => utilGetStageProgress(order, undefined, stageKey);
@@ -93,14 +94,15 @@ export const getForwarderName = (order: Order): string => {
   if (order.forwarders && Array.isArray(order.forwarders) && order.forwarders.length > 0) {
     const names = order.forwarders
       .map(f => (typeof f === 'string' ? f : f?.name))
-      .filter(n => n && typeof n === 'string' && n.trim() !== '' && !['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL'].includes(n.trim()));
+      .filter(n => n && typeof n === 'string' && n.trim() !== '' && !['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL'].includes(n.trim()))
+      .map(n => cleanCompanyName(n));
     if (names.length > 0) {
       return names.join(', ');
     }
   }
   const fallback = (order as any).forwarderConfirmed || (order as any).carrier || (order as any).forwarderName || '';
   if (fallback && !['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', 'LCL'].includes(fallback.trim())) {
-    return fallback.trim();
+    return cleanCompanyName(fallback.trim());
   }
   return '-';
 };
@@ -561,8 +563,8 @@ export const Orders: React.FC = () => {
           valA = a.issuingCompany || '';
           valB = b.issuingCompany || '';
         } else if (sortKey === '발주사') {
-          valA = a.customer || '';
-          valB = b.customer || '';
+          valA = cleanCompanyName(a.customer) || '';
+          valB = cleanCompanyName(b.customer) || '';
         } else if (sortKey === '품목') {
           valA = (a.items && a.items.length > 0) ? (a.items.map(i => i.name).filter(Boolean).join(', ')) : '';
           valB = (b.items && b.items.length > 0) ? (b.items.map(i => i.name).filter(Boolean).join(', ')) : '';
@@ -714,7 +716,7 @@ export const Orders: React.FC = () => {
 
           {/* 기본 노출 필터: 발주사, 보기, 완료건, ETD */}
           {[
-            { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
+            { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, cleanCompanyName(c)])] },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
             { label: '완료건', value: completedFilter, set: setCompletedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
             { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
@@ -904,8 +906,8 @@ export const Orders: React.FC = () => {
                 📋 복사
               </button>
             </div>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {order.customer}
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={order.customer}>
+              {cleanCompanyName(order.customer)}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
@@ -1067,8 +1069,8 @@ export const Orders: React.FC = () => {
                     {o.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
                   </span>
                 </div>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {o.customer}
+                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={o.customer}>
+                  {cleanCompanyName(o.customer)}
                 </span>
               </div>
 
@@ -1248,7 +1250,9 @@ export const Orders: React.FC = () => {
                       <td style={getTdStyle(1, { color: '#64748b', fontSize: '12px', fontWeight: 600, textAlign: 'center' })}>{formatDateShort(order.etd || order.poDate)}</td>
                       <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
-                      <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
+                      <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>
+                        {cleanCompanyName(order.customer)}
+                      </td>
                       <td style={getTdStyle(5, { color: '#334155', fontWeight: 600, fontSize: '12.5px' })} title={itemNames}>{itemNames}</td>
                       <td style={getTdStyle(6, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1526,9 +1530,10 @@ export const Orders: React.FC = () => {
         '주문일자': order.poDate || '-',
         '주문번호': order.id || '-',
         '수주사': order.issuingCompany === 'YSACC' ? 'YSACC' : '영성ACC',
-        '발주사(바이어)': order.customer || '-',
+        '발주사(바이어)': cleanCompanyName(order.customer) || '-',
         '수주금액(USD)': amountUsd,
         '매출액(KRW)': salesKrw,
+        '운송사': getForwarderName(order),
         'ETD': order.etd || '-',
         'ETA': order.eta || '-',
         '현재단계': order.status || '-',

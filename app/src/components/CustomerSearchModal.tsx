@@ -3,6 +3,7 @@ import type { Customer } from '../types/customer';
 import { doc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import { CustomerModal } from './CustomerModal';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 interface Props {
   onClose: () => void;
@@ -293,10 +294,10 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                       </span>
                     </td>
                     <td style={{ padding: '8px', fontWeight: 700, color: '#0f172a' }}>
-                      {cust.name || '-'}
+                      {cleanCompanyName(cust.name) || '-'}
                     </td>
                     <td style={{ padding: '8px', color: '#475569', fontWeight: 600 }}>
-                      {cust.nameKo ? cust.nameKo : (cust.name || '-')}
+                      {cleanCompanyName(cust.nameKo ? cust.nameKo : cust.name) || '-'}
                     </td>
                     <td style={{ padding: '8px' }}>
                       📍 {cust.countryName || '-'}

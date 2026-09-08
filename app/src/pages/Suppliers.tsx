@@ -6,6 +6,7 @@ import type { Supplier } from '../types/supplier';
 import { SupplierModal } from '../components/SupplierModal';
 import * as XLSX from 'xlsx';
 import { useColumnResize } from '../hooks/useColumnResize';
+import { cleanCompanyName } from '../utils/companyUtils';
 
 const excelMapping = [
   { header: "공급업체코드(ID)", key: "supplierCode" },
@@ -375,7 +376,7 @@ export const Suppliers: React.FC = () => {
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     <div style={{ fontWeight: 600, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span>{s.name || '-'}</span>
+                      <span>{cleanCompanyName(s.name) || '-'}</span>
                       {s.shortCode && (
                         <span style={{ fontSize: '10.5px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 5px', borderRadius: '3px', fontWeight: 800 }}>
                           PO: {s.shortCode}
