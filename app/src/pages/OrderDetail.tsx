@@ -7739,18 +7739,18 @@ ${downloadLink}`;
 
       {/* Top Panel: PI Info & CI, Items Summary (Consolidated) */}
       {showPoDetails && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(240px, 1fr)', gap: '16px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '14px', alignItems: 'start' }}>
 
         {/* Left: Consolidated Order Information */}
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '15.5px' }}>📦</span>
               <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#1e3a8a' }}>주문 기본 정보</span>
             </div>
             {piData && (
-              <div style={{ fontSize: '14.5px', color: 'var(--text-secondary)' }}>
-                <strong style={{ color: '#0f172a' }}>PI: {piData.piNumber}</strong> | <span style={{ fontSize: '15.5px' }}>고객사: {cleanCompanyName(piData.customerName)}</span> | <strong style={{ color: '#2563eb' }}>${(piData.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</strong>
+              <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                <strong style={{ color: '#0f172a' }}>PI: {piData.piNumber}</strong> | <span>고객사: {cleanCompanyName(piData.customerName)}</span> | <strong style={{ color: '#2563eb' }}>${(piData.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</strong>
               </div>
             )}
           </div>
@@ -7758,39 +7758,39 @@ ${downloadLink}`;
           {/* Form Fields Grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             
-            {/* 줄 1: 오더 구분 / 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr 1.1fr 1fr 1fr 1.2fr', gap: '10px', width: '100%' }}>
+            {/* 줄 1: 계약 식별 및 기본 정보 (오더 구분 / 발행사 / 담당 영업사원 / 확정 CI 번호 / 연결된 견적서(PI)) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr 1.4fr', gap: '10px', width: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>오더 구분</span>
                 {isEditing ? (
                   <select 
                     value={basicForm.type || 'trade'} 
                     onChange={e => setBasicForm(prev => ({ ...prev, type: e.target.value as 'trade' | 'consulting' }))} 
-                    style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: basicForm.type === 'consulting' ? '#2563eb' : '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: basicForm.type === 'consulting' ? '#2563eb' : '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
                   >
                     <option value="trade">📦 일반 무역 (물류有)</option>
                     <option value="consulting">💼 컨설팅·용역 (물류無)</option>
                   </select>
                 ) : (
-                  <input type="text" value={basicForm.type === 'consulting' ? '💼 컨설팅·용역' : '📦 일반 무역'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                  <input type="text" value={basicForm.type === 'consulting' ? '💼 컨설팅·용역' : '📦 일반 무역 (물류有)'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#1e293b', fontWeight: 600, boxSizing: 'border-box' }} />
                 )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>발행사 (발주서 기준)</span>
                 {isEditing ? (
-                  <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                  <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ width: '100%', minWidth: '0', padding: '6px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                     <option value="YSACC">YSACC</option>
                     <option value="YS">영성ACC</option>
                   </select>
                 ) : (
-                  <input type="text" value={order.issuingCompany === 'YS' ? '영성ACC' : 'YSACC'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                  <input type="text" value={order.issuingCompany === 'YS' ? '영성ACC' : 'YSACC'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#1e293b', fontWeight: 600, boxSizing: 'border-box' }} />
                 )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>담당 영업사원</span>
-                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
@@ -7800,18 +7800,8 @@ ${downloadLink}`;
                   placeholder="CI 번호 입력"
                   value={basicForm.ciNumber}
                   onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))}
-                  style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
                 />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PO 접수일 (CI 작성일)</span>
-                <DateInput value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>고객사 PO 번호</span>
-                <input type="text" value={basicForm.custPo || ''} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
@@ -7820,7 +7810,7 @@ ${downloadLink}`;
                   <select
                     value={basicForm.quotationId}
                     onChange={e => setBasicForm(prev => ({ ...prev, quotationId: e.target.value }))}
-                    style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
                   >
                     <option value="">연결 안 함</option>
                     {piList.map(p => (
@@ -7832,16 +7822,16 @@ ${downloadLink}`;
                     type="text"
                     value={basicForm.quotationId ? (piList.find(p => p.id === basicForm.quotationId)?.piNumber || basicForm.quotationId) : '연결 안 함'}
                     disabled
-                    style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#1e293b', fontWeight: 600, boxSizing: 'border-box' }}
                   />
                 )}
               </div>
             </div>
 
-            {/* 줄 2: 고객정보 / 출발항 / 도착항 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객정보</span>
+            {/* 줄 2: 고객사 및 수주/발주 정보 (고객정보 / 고객사 PO 번호 / PO 접수일 / 요청 납기일) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1fr 1fr', gap: '10px', width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>고객정보</span>
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <input
                     type="text"
@@ -7862,10 +7852,10 @@ ${downloadLink}`;
                       border: '1px solid #cbd5e1',
                       borderRadius: '4px',
                       fontSize: '13px',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       height: '34px',
                       background: isEditing ? '#fff' : '#f1f5f9',
-                      color: isEditing ? '#1e293b' : '#64748b',
+                      color: isEditing ? '#1e293b' : '#1e293b',
                       cursor: isEditing ? 'pointer' : 'default',
                       outline: 'none',
                       boxSizing: 'border-box'
@@ -7898,28 +7888,29 @@ ${downloadLink}`;
                 </div>
               </div>
 
-              {order?.type !== 'consulting' && (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>출발항</span>
-                    <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="출발항" />
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>고객사 PO 번호</span>
+                <input type="text" placeholder="고객사 PO 번호" value={basicForm.custPo || ''} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>도착항</span>
-                    <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="도착항" />
-                  </div>
-                </>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PO 접수일 (CI 작성일)</span>
+                <DateInput value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
+                <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
             </div>
 
-            {/* 줄 3: 인코텀즈 / 결제 조건 / L/C 거래 여부 / 요청 납기일 / ETD 일자 / 제품준비일(최종 완료일) */}
-            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr 1fr' : '0.8fr 1.2fr 1fr 1fr 1fr 1.1fr', gap: '10px', width: '100%' }}>
+            {/* 줄 3: 운송 및 결제 조건 (인코텀즈 / 출발항 / 도착항 / 결제 조건 / L/C 거래 여부) */}
+            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1.5fr 1fr' : '0.9fr 1.2fr 1.3fr 1.5fr 1fr', gap: '10px', width: '100%' }}>
               {order?.type !== 'consulting' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                   <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>인코텀즈</span>
                   {isEditing ? (
-                    <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', fontWeight: 700, outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                       <option value="FOB">FOB</option>
                       <option value="CIF">CIF</option>
                       <option value="EXW">EXW</option>
@@ -7928,14 +7919,28 @@ ${downloadLink}`;
                       <option value="DDP">DDP</option>
                     </select>
                   ) : (
-                    <input type="text" value={order.incoterms} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                    <input type="text" value={order.incoterms} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#1e293b', fontWeight: 700, boxSizing: 'border-box' }} />
                   )}
+                </div>
+              )}
+
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>출발항</span>
+                  <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="출발항" />
+                </div>
+              )}
+
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>도착항</span>
+                  <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="도착항" />
                 </div>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>결제 조건</span>
-                <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(prev => ({ ...prev, paymentTerms: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(prev => ({ ...prev, paymentTerms: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               {order?.type !== 'consulting' && (
@@ -7948,20 +7953,18 @@ ${downloadLink}`;
                       <option value="N">T/T 거래 (N)</option>
                     </select>
                   ) : (
-                    <input type="text" value={basicForm.isLc === 'Y' ? 'L/C 거래 (Y)' : basicForm.isLc === 'N' ? 'T/T 거래 (N)' : '일반 거래'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                    <input type="text" value={basicForm.isLc === 'Y' ? 'L/C 거래 (Y)' : basicForm.isLc === 'N' ? 'T/T 거래 (N)' : '기본 T/T'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
                   )}
                 </div>
               )}
+            </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
-                <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-
+            {/* 줄 4: 일정 및 비고 (ETD / 제품준비일 / 비고) */}
+            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr' : '1.1fr 1.1fr 3.5fr', gap: '10px', width: '100%', alignItems: 'end' }}>
               {order?.type !== 'consulting' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                   <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>ETD (출항예정일)</span>
-                  <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(prev => ({ ...prev, etd: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                  <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(prev => ({ ...prev, etd: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               )}
 
@@ -7976,53 +7979,52 @@ ${downloadLink}`;
                   />
                 </div>
               )}
-            </div>
 
-            {/* 줄 5: 비고 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고 (Remarks)</span>
-              <textarea rows={1} value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', minHeight: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>비고 (Remarks)</span>
+                <input type="text" placeholder="비고 입력..." value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
             </div>
 
           </div>
         </div>
 
         {/* Right: L/C details & PO/LC/Sales Contract 파일 첨부 관리 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* L/C Details Section */}
           {basicForm.isLc === 'Y' && (
             <div style={{ padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e40af', borderBottom: '1px solid #bfdbfe', paddingBottom: '4px', marginBottom: '4px' }}>💳 L/C 거래 상세 정보</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <div style={{ fontWeight: 800, fontSize: '13px', color: '#1e40af', borderBottom: '1px solid #bfdbfe', paddingBottom: '4px', marginBottom: '4px' }}>💳 L/C 거래 상세 정보</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>L/C ISSUING BANK</span>
-                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>LC 번호</span>
-                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>L/C ISSUING BANK</span>
+                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>LC ISSUING DATE</span>
-                  <DateInput value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>LC 번호</span>
+                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>DESCRIPTION</span>
-                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>LC ISSUING DATE</span>
+                  <DateInput value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#b45309' }}>⚠️ L/C 중요사항 기록 (Remark)</span>
-                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #fcd34d', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fffbeb' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>DESCRIPTION</span>
+                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#b45309' }}>⚠️ L/C 중요사항 기록 (Remark)</span>
+                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #fcd34d', borderRadius: '4px', fontSize: '13px', background: isEditing ? '#fffbeb' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
                 </div>
               </div>
             </div>
           )}
 
           {/* Right Attachment Box */}
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-            <div style={{ fontSize: '15.5px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>📂 거래 서류 첨부 (PO / L/C / Sales Contract)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-              {renderFileField("거래 서류 통합 첨부 (PO, L/C, Sales Contract 등 모든 서류)", "attachments", "po-common-attachments-uploader")}
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px', boxSizing: 'border-box' }}>
+            <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>📂 거래 서류 첨부</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              {renderFileField("거래 서류 통합 첨부 (PO, L/C, Sales Contract 등)", "attachments", "po-common-attachments-uploader")}
             </div>
           </div>
         </div>

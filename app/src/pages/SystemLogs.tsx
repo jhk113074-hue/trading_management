@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.496',
+    version: 'v2.8.496',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '수주관리 주문 기본 정보 화면 공간 확장 및 거래 서류 첨부 영역 최적화',
+    content: '• 주문 기본 정보 카드 너비를 대폭 확장하고, 거래 서류 첨부 영역 너비를 300px로 컴팩트하게 슬림화하여 전체 공간 밸런스 개선\n• 7개 항목이 밀집되어 텍스트가 잘리던 첫 줄을 4개 라인(계약식별, 고객/발주, 운송/결제, 일정/비고)으로 논리적 재배치\n• 오더 구분, 담당 영업사원, 연결된 견적서(PI), 고객사명 등 주요 정보가 잘림 없이 한눈에 시원하게 표시되도록 가독성 완벽 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.495',
     version: 'v2.8.495',
     date: '2026-09-09',
