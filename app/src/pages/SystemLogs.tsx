@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.494',
+    version: 'v2.8.494',
+    date: '2026-09-09',
+    category: '버그수정',
+    title: '수주관리 발주 품목 합계(TOTAL) 이익 계산 교정 및 공급업체 등록 개선',
+    content: '• 수주관리 상세화면 발주 품목 목록 하단 TOTAL의 이익 합계 계산 오류 교정 (원화 매입품목 환율 환산 누락 수정)\n• 발주 품목 목록 테이블 헤더에 "🏢 + 신규 공급업체 등록" 버튼 배치 및 간편 등록 모달 연동\n• 발주 품목 테이블의 매입가/마진/단가/이익/총액 견적 구조 직관적 표기 및 TOTAL 합계 실시간 정밀 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.493',
     version: 'v2.8.493',
     date: '2026-09-07',

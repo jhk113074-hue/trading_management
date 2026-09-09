@@ -50,5 +50,10 @@ To maintain YSACC brand identity and consistency across all trading management m
   - Border radius: `4px`
   - Shadow: `0 20px 40px rgba(15,23,42,0.2)`
   - Header background: `#fafafa`
-  - Header border bottom: `1px solid #cbd5e1`
   - Title Font: `fontSize: '16px'`, `fontWeight: 800`, `color: '#1e293b'`
+
+## 4. Version Management Rules
+- **Mandatory Version Tracking**: Every user-requested feature update, bug fix, or deployment MUST bump the version in `app/src/version.ts` (e.g. `v2.8.494` -> `v2.8.495`) and update `BUILD_DATE` and `BUILD_TIME`. You can run `npm run bump` in `app/`.
+- **System Logs Synchronisation**: Every version increment must be recorded in `app/src/pages/SystemLogs.tsx` in `INITIAL_LOGS` with the version number, date, category, title, and detailed bullet points so users can review the changelog in the portal.
+- **Header Badge**: Ensure the version displayed in the layout header always matches the latest deployed build.
+

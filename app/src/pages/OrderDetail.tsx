@@ -8304,16 +8304,12 @@ ${downloadLink}`;
                       const totalProfit = validItems.reduce((sum, it) => {
                         const salePrice = it.salePriceUsd ?? it.unitPrice ?? 0;
                         const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
-                        const buyUsd = (it.purchasePriceUsd && itemBuyUsd(it, exRate));
+                        const buyUsd = (it.purchasePriceUsd && it.purchasePriceUsd > 0)
+                          ? it.purchasePriceUsd
+                          : ((it.purchasePriceKrw || 0) / (it.exchangeRate || exRate || 1400));
                         const profit = it.qty ? (salePrice - buyUsd) * it.qty : 0;
                         return sum + profit;
                       }, 0);
-
-                      function itemBuyUsd(it: any, rate: number) {
-                        return (it.purchasePriceUsd && it.purchasePriceUsd > 0)
-                          ? it.purchasePriceUsd
-                          : ((it.purchasePriceKrw || 0) / (rate || 1400));
-                      }
 
                       return (
                         <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800, color: '#1e293b' }}>
