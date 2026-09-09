@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.499',
+    version: 'v2.8.499',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 상품코드/스펙 표시폭 확대 및 비고란 50% 슬림 밸런스 조정',
+    content: '• 비고(Remarks) 열을 기존 대비 약 50% 슬림화(185px)하여 2줄 메모는 온전히 유지하면서 여백 낭비 제거\n• 줄어든 비고 공간을 상품코드 / 스펙(Spec) 열로 환원하여 긴 상품명과 공급사 뱃지가 잘림 없이 여유롭게 노출되도록 확장\n• 패킹방식/수량 열 너비를 90px로 확대하여 "1 Pallet" 텍스트 말줄임 현상 완전 해소',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.498',
     version: 'v2.8.498',
     date: '2026-09-09',
