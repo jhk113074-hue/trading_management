@@ -2885,8 +2885,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '96px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
                   <th style={{ padding: '8px 2px', width: '54px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
                   <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '98px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '98px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
                   <th style={{ padding: '8px 4px', width: '185px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
                   <th style={{ padding: '8px 2px', width: '48px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
@@ -3315,12 +3315,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '6px 4px', verticalAlign: 'top', textAlign: 'right' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                         <div style={{ height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }} title="매입가, 환율, 마진율에 의해 자동 계산된 판매단가입니다">
-                          <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                             ${(it.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                         <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                          <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                          <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                             ≈ ₩{Math.round((it.salePriceUsd || 0) * (it.exchangeRate || formData.exchangeRate || 1400)).toLocaleString()}
                           </span>
                         </div>
@@ -3335,12 +3335,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                             <div style={{ height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                              <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                                 ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
                             <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                                 ≈ ₩{totalKrw.toLocaleString()}
                               </span>
                             </div>
@@ -3358,12 +3358,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                             <div style={{ height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              <span style={{ fontWeight: 800, fontSize: '13px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                              <span style={{ fontWeight: 800, fontSize: '13px', color: '#16a34a', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                                 ${profitUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
                             <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              <span style={{ fontSize: '11px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                              <span style={{ fontSize: '11px', color: '#16a34a', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                                 ≈ ₩{profitKrw.toLocaleString()}
                               </span>
                             </div>

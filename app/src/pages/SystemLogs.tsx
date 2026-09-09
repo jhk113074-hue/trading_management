@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.506',
+    version: 'v2.8.506',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '품목 테이블 총액($) 및 이익($) 컬럼 폭 확대 및 원화 환산 1줄 고정 표시',
+    content: '• 상품코드/스펙 열 여백을 최적화하고 [총액($)] 및 [이익($)] 컬럼 너비를 기존 80px에서 98px로 확대\n• 달러 아래 2번째 줄에 표시되는 원화 환산액(≈ ₩xxx,xxx)에 줄바꿈 방지(white-space: nowrap)를 적용하여 어색하게 줄바꿈되던 현상을 해결하고 깔끔한 1줄 정렬 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.505',
     version: 'v2.8.505',
     date: '2026-09-09',
