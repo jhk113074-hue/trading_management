@@ -15,6 +15,7 @@ import { previewFile } from '../components/FilePreviewModal';
 import { generateSupplierPoNumber } from '../utils/poNumberUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { RemarkPresetModal, type RemarkPreset, DEFAULT_REMARK_PRESETS } from '../components/RemarkPresetModal';
@@ -932,7 +933,7 @@ export const OrderDetail: React.FC = () => {
 
   const getSupplierPurchaseInfo = (it: any) => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-    const itemCode = match ? match[1] : '-';
+    const itemCode = match ? match[1] : (it.productCode || it.itemId || '-');
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
 
     let defaultPrice = matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0);
@@ -958,17 +959,59 @@ export const OrderDetail: React.FC = () => {
       }
     }
 
-    const originalPurchasePrice = it.originalPurchasePrice != null 
-      ? it.originalPurchasePrice 
-      : (it.purchaseUnitPrice != null 
-         ? it.purchaseUnitPrice 
-         : defaultPrice);
+    // 견적서(Quote / PI) 및 발주 품목(orderItems)에서 실제 견적 매입단가 탐색
+    const matchingOi = (orderItems || []).find((oi: any) =>
+      (oi.itemId && it.itemId && String(oi.itemId) === String(it.itemId)) ||
+      (oi.name && it.name && oi.name.trim().toLowerCase() === it.name.trim().toLowerCase()) ||
+      (itemCode !== '-' && getRawProductCode(oi.productCode || oi.name) === itemCode)
+    ) || (order?.items || []).find((oi: any) =>
+      (oi.itemId && it.itemId && String(oi.itemId) === String(it.itemId)) ||
+      (oi.name && it.name && oi.name.trim().toLowerCase() === it.name.trim().toLowerCase()) ||
+      (itemCode !== '-' && getRawProductCode(oi.productCode || oi.name) === itemCode)
+    );
+
+    let quotedPrice: number | null = null;
+    let quotedCurrency: string | null | undefined = null;
+
+    if (it.originalPurchasePrice != null && it.originalPurchasePrice > 0) {
+      quotedPrice = it.originalPurchasePrice;
+      quotedCurrency = it.originalPurchaseCurrency;
+    } else if (it.purchasePriceKrw != null && it.purchasePriceKrw > 0) {
+      quotedPrice = it.purchasePriceKrw;
+      quotedCurrency = 'KRW';
+    } else if (it.purchasePriceUsd != null && it.purchasePriceUsd > 0) {
+      quotedPrice = it.purchasePriceUsd;
+      quotedCurrency = 'USD';
+    }
+
+    if (quotedPrice == null && matchingOi) {
+      if (matchingOi.originalPurchasePrice != null && matchingOi.originalPurchasePrice > 0) {
+        quotedPrice = matchingOi.originalPurchasePrice;
+        quotedCurrency = matchingOi.originalPurchaseCurrency;
+      } else if (matchingOi.purchasePriceKrw != null && matchingOi.purchasePriceKrw > 0) {
+        quotedPrice = matchingOi.purchasePriceKrw;
+        quotedCurrency = 'KRW';
+      } else if (matchingOi.purchasePriceUsd != null && matchingOi.purchasePriceUsd > 0) {
+        quotedPrice = matchingOi.purchasePriceUsd;
+        quotedCurrency = 'USD';
+      } else if (matchingOi.purchaseUnitPrice != null && matchingOi.purchaseUnitPrice > 0) {
+        quotedPrice = matchingOi.purchaseUnitPrice;
+        quotedCurrency = matchingOi.purchaseUnitCurrency || matchingOi.purchasePriceCurrency;
+      }
+    }
+
+    const originalPurchasePrice = quotedPrice != null ? quotedPrice : defaultPrice;
+    const originalPurchaseCurrency = quotedCurrency || it.originalPurchaseCurrency || (originalPurchasePrice > 1000 ? 'KRW' : (defaultCurrency || 'USD'));
+
+    // purchaseUnitPrice가 견적단가 혹은 기본단가와 어떻게 설정되어 있는지 확인
     const purchasePrice = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : originalPurchasePrice;
     
     let purchaseCurrency = it.purchaseUnitCurrency;
     if (!purchaseCurrency) {
-      if (it.originalPurchaseCurrency) {
-        purchaseCurrency = it.originalPurchaseCurrency;
+      if (it.purchasePriceCurrency) {
+        purchaseCurrency = it.purchasePriceCurrency;
+      } else if (originalPurchaseCurrency) {
+        purchaseCurrency = originalPurchaseCurrency;
       } else if (purchasePrice > 1000) {
         purchaseCurrency = 'KRW';
       } else if (matchedProd) {
@@ -977,7 +1020,7 @@ export const OrderDetail: React.FC = () => {
         purchaseCurrency = 'USD';
       }
     }
-    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice };
+    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice, originalPurchaseCurrency };
   };
 
   const findMatchingProduct = (it: any, prodList: Product[]) => {
@@ -2888,10 +2931,39 @@ export const OrderDetail: React.FC = () => {
           const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId)) || restoredOrderItems[idx];
           const activeSupplier = (sIt.supplier != null && sIt.supplier.trim() !== '') ? sIt.supplier.trim() : (rIt?.supplier?.trim() || '');
           const activeContact = (sIt.supplierContact != null && sIt.supplierContact.trim() !== '') ? sIt.supplierContact.trim() : (rIt?.supplierContact?.trim() || '');
+
+          const rQuotePrice = (rIt?.originalPurchasePrice != null && rIt.originalPurchasePrice > 0)
+            ? rIt.originalPurchasePrice
+            : (rIt?.purchasePriceKrw != null && rIt.purchasePriceKrw > 0
+              ? rIt.purchasePriceKrw
+              : (rIt?.purchasePriceUsd != null && rIt.purchasePriceUsd > 0
+                ? rIt.purchasePriceUsd
+                : (rIt?.purchaseUnitPrice != null && rIt.purchaseUnitPrice > 0 ? rIt.purchaseUnitPrice : null)));
+
+          const sQuotePrice = (sIt.originalPurchasePrice != null && sIt.originalPurchasePrice > 0)
+            ? sIt.originalPurchasePrice
+            : (sIt.purchasePriceKrw != null && sIt.purchasePriceKrw > 0
+              ? sIt.purchasePriceKrw
+              : (sIt.purchasePriceUsd != null && sIt.purchasePriceUsd > 0 ? sIt.purchasePriceUsd : null));
+
+          const finalQuotePrice = sQuotePrice != null ? sQuotePrice : rQuotePrice;
+          const quoteCurr = sIt.originalPurchaseCurrency 
+            || sIt.purchasePriceCurrency 
+            || rIt?.originalPurchaseCurrency 
+            || rIt?.purchasePriceCurrency 
+            || (finalQuotePrice && finalQuotePrice > 1000 ? 'KRW' : 'USD');
+
           return {
             ...sIt,
             supplier: activeSupplier,
-            supplierContact: activeContact
+            supplierContact: activeContact,
+            purchasePriceKrw: sIt.purchasePriceKrw || rIt?.purchasePriceKrw,
+            purchasePriceUsd: sIt.purchasePriceUsd || rIt?.purchasePriceUsd,
+            purchasePriceCurrency: sIt.purchasePriceCurrency || rIt?.purchasePriceCurrency || quoteCurr,
+            originalPurchasePrice: finalQuotePrice != null ? finalQuotePrice : sIt.originalPurchasePrice,
+            originalPurchaseCurrency: quoteCurr,
+            purchaseUnitPrice: sIt.purchaseUnitPrice != null ? sIt.purchaseUnitPrice : finalQuotePrice,
+            purchaseUnitCurrency: sIt.purchaseUnitCurrency || quoteCurr
           };
         });
 
@@ -2922,7 +2994,9 @@ export const OrderDetail: React.FC = () => {
               return {
                 ...aIt,
                 supplier: localIt?.supplier != null && localIt.supplier.trim() !== '' ? localIt.supplier : aIt.supplier,
-                grade: localIt?.grade != null && localIt.grade.trim() !== '' ? localIt.grade : aIt.grade
+                grade: localIt?.grade != null && localIt.grade.trim() !== '' ? localIt.grade : aIt.grade,
+                purchaseUnitPrice: localIt?.purchaseUnitPrice != null ? localIt.purchaseUnitPrice : aIt.purchaseUnitPrice,
+                purchaseUnitCurrency: localIt?.purchaseUnitCurrency || aIt.purchaseUnitCurrency
               };
             });
           });
@@ -3032,6 +3106,15 @@ export const OrderDetail: React.FC = () => {
                     newOi.purchasePriceCurrency = qi.purchasePriceCurrency || (qi.purchasePriceKrw > 0 ? 'KRW' : 'USD');
                     changed = true;
                   }
+                  const qPrice = (qi.purchasePriceKrw != null && qi.purchasePriceKrw > 0)
+                    ? qi.purchasePriceKrw 
+                    : (qi.purchasePriceUsd != null && qi.purchasePriceUsd > 0 ? qi.purchasePriceUsd : (qi.purchaseUnitPrice || null));
+                  const qCurr = qi.purchasePriceCurrency || (qi.purchasePriceKrw > 0 ? 'KRW' : (qi.purchasePriceUsd > 0 ? 'USD' : null));
+                  if (qPrice && !newOi.originalPurchasePrice) {
+                    newOi.originalPurchasePrice = qPrice;
+                    newOi.originalPurchaseCurrency = qCurr || (qPrice > 1000 ? 'KRW' : 'USD');
+                    changed = true;
+                  }
                   if (!newOi.exchangeRate && (qi.exchangeRate || pData.exchangeRate)) {
                     newOi.exchangeRate = qi.exchangeRate || pData.exchangeRate || 1350;
                     changed = true;
@@ -3078,11 +3161,49 @@ export const OrderDetail: React.FC = () => {
                   if (!qi) return si;
 
                   const specVal = qi.spec || qi.grade || '';
+                  const quotePrice = (qi.purchasePriceKrw != null && qi.purchasePriceKrw > 0)
+                    ? qi.purchasePriceKrw
+                    : (qi.purchasePriceUsd != null && qi.purchasePriceUsd > 0 ? qi.purchasePriceUsd : (qi.purchaseUnitPrice || null));
+                  const quoteCurr = qi.purchasePriceCurrency || (qi.purchasePriceKrw > 0 ? 'KRW' : (qi.purchasePriceUsd > 0 ? 'USD' : null));
+
+                  let changedItem = { ...si };
                   if (!si.grade && specVal) {
+                    changedItem.grade = specVal;
+                    changedItem.spec = specVal;
                     hasChanges = true;
-                    return { ...si, grade: specVal, spec: specVal };
                   }
-                  return si;
+                  if (!si.supplier && qi.supplierName) {
+                    changedItem.supplier = qi.supplierName;
+                    hasChanges = true;
+                  }
+                  if (quotePrice != null) {
+                    if (changedItem.originalPurchasePrice !== quotePrice) {
+                      changedItem.originalPurchasePrice = quotePrice;
+                      hasChanges = true;
+                    }
+                    if (quoteCurr && changedItem.originalPurchaseCurrency !== quoteCurr) {
+                      changedItem.originalPurchaseCurrency = quoteCurr;
+                      hasChanges = true;
+                    }
+                    if (changedItem.purchaseUnitPrice == null) {
+                      changedItem.purchaseUnitPrice = quotePrice;
+                      changedItem.purchaseUnitCurrency = quoteCurr || (quotePrice > 1000 ? 'KRW' : 'USD');
+                      hasChanges = true;
+                    }
+                    if (qi.purchasePriceKrw && !changedItem.purchasePriceKrw) {
+                      changedItem.purchasePriceKrw = qi.purchasePriceKrw;
+                      hasChanges = true;
+                    }
+                    if (qi.purchasePriceUsd && !changedItem.purchasePriceUsd) {
+                      changedItem.purchasePriceUsd = qi.purchasePriceUsd;
+                      hasChanges = true;
+                    }
+                    if (!changedItem.purchasePriceCurrency && quoteCurr) {
+                      changedItem.purchasePriceCurrency = quoteCurr;
+                      hasChanges = true;
+                    }
+                  }
+                  return changedItem;
                 });
                 return hasChanges ? updated : prev;
               });
@@ -3484,6 +3605,27 @@ export const OrderDetail: React.FC = () => {
         sourcingItems: curSourcingItems.map((it, idx) => {
           const matchingOrderItem = (it.itemId && curOrderItems.find(r => r.itemId && r.itemId === it.itemId)) || curOrderItems[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingOrderItem?.supplier?.trim() || '');
+          const quoteBuyPrice = (it.originalPurchasePrice != null && it.originalPurchasePrice > 0)
+            ? it.originalPurchasePrice
+            : (it.purchasePriceKrw != null && it.purchasePriceKrw > 0
+              ? it.purchasePriceKrw
+              : (it.purchasePriceUsd != null && it.purchasePriceUsd > 0
+                ? it.purchasePriceUsd
+                : (matchingOrderItem?.originalPurchasePrice != null && matchingOrderItem.originalPurchasePrice > 0
+                  ? matchingOrderItem.originalPurchasePrice
+                  : (matchingOrderItem?.purchasePriceKrw != null && matchingOrderItem.purchasePriceKrw > 0
+                    ? matchingOrderItem.purchasePriceKrw
+                    : (matchingOrderItem?.purchasePriceUsd != null && matchingOrderItem.purchasePriceUsd > 0
+                      ? matchingOrderItem.purchasePriceUsd
+                      : (matchingOrderItem?.purchaseUnitPrice != null && matchingOrderItem.purchaseUnitPrice > 0 ? matchingOrderItem.purchaseUnitPrice : null))))));
+          const quoteBuyCurr = it.originalPurchaseCurrency 
+            || it.purchasePriceCurrency 
+            || (it.purchasePriceKrw ? 'KRW' : null)
+            || matchingOrderItem?.originalPurchaseCurrency 
+            || matchingOrderItem?.purchasePriceCurrency 
+            || (matchingOrderItem?.purchasePriceKrw ? 'KRW' : null)
+            || (quoteBuyPrice && quoteBuyPrice > 1000 ? 'KRW' : 'USD');
+
           return {
             itemId: it.itemId || (idx + 1).toString(),
             name: it.name || '',
@@ -3493,10 +3635,13 @@ export const OrderDetail: React.FC = () => {
             qty: parseFloat(it.qty as any) || 0,
             unit: (it.unit || 'kg') as any,
             unitPrice: parseFloat(it.unitPrice as any) || 0,
-            purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-            purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-            originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+            purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : quoteBuyPrice,
+            purchaseUnitCurrency: it.purchaseUnitCurrency || quoteBuyCurr,
+            originalPurchasePrice: quoteBuyPrice,
+            originalPurchaseCurrency: quoteBuyCurr,
+            purchasePriceKrw: it.purchasePriceKrw || matchingOrderItem?.purchasePriceKrw || null,
+            purchasePriceUsd: it.purchasePriceUsd || matchingOrderItem?.purchasePriceUsd || null,
+            purchasePriceCurrency: it.purchasePriceCurrency || quoteBuyCurr,
             amount: it.amount || 0,
             currency: (it.currency || 'USD') as any
           };
@@ -3746,6 +3891,12 @@ export const OrderDetail: React.FC = () => {
       const sourcingUpdated = [...sourcingPrev];
       if (sourcingUpdated[index]) {
         if (finalUpdatedItem) {
+          const buyPrice = (finalUpdatedItem.purchasePriceKrw != null && finalUpdatedItem.purchasePriceKrw > 0)
+            ? finalUpdatedItem.purchasePriceKrw 
+            : (finalUpdatedItem.purchasePriceUsd != null && finalUpdatedItem.purchasePriceUsd > 0 ? finalUpdatedItem.purchasePriceUsd : (finalUpdatedItem.purchaseUnitPrice || 0));
+          const buyCurr = finalUpdatedItem.purchasePriceCurrency 
+            || (finalUpdatedItem.purchasePriceKrw && finalUpdatedItem.purchasePriceKrw > 0 ? 'KRW' : (finalUpdatedItem.purchasePriceUsd && finalUpdatedItem.purchasePriceUsd > 0 ? 'USD' : 'KRW'));
+
           sourcingUpdated[index] = {
             ...sourcingUpdated[index],
             name: finalUpdatedItem.name,
@@ -3756,8 +3907,13 @@ export const OrderDetail: React.FC = () => {
             supplierContact: finalUpdatedItem.supplierContact,
             grade: finalUpdatedItem.grade,
             spec: finalUpdatedItem.spec,
-            purchaseUnitPrice: finalUpdatedItem.purchasePriceKrw > 0 ? finalUpdatedItem.purchasePriceKrw : finalUpdatedItem.purchasePriceUsd,
-            purchaseUnitCurrency: finalUpdatedItem.purchasePriceCurrency,
+            purchasePriceKrw: finalUpdatedItem.purchasePriceKrw,
+            purchasePriceUsd: finalUpdatedItem.purchasePriceUsd,
+            purchasePriceCurrency: buyCurr,
+            originalPurchasePrice: buyPrice,
+            originalPurchaseCurrency: buyCurr,
+            purchaseUnitPrice: sourcingUpdated[index].purchaseUnitPrice != null ? sourcingUpdated[index].purchaseUnitPrice : buyPrice,
+            purchaseUnitCurrency: sourcingUpdated[index].purchaseUnitCurrency || buyCurr,
             amount: finalUpdatedItem.amount,
             currency: finalUpdatedItem.currency
           };
@@ -4477,6 +4633,360 @@ export const OrderDetail: React.FC = () => {
     savePackingListToFirestore(nextContainers, nextReports);
   };
 
+  // ===================== 패킹리스트 엑셀 다운로드 & 업로드 핸들러 =====================
+  const handleExportPackingListExcel = (containerIdx?: number) => {
+    const containers = basicForm.packingList?.containers || [];
+    if (containers.length === 0) {
+      alert('내보낼 컨테이너 패킹리스트 정보가 없습니다.');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const exportContainers: Array<{ container: any; cNum: number }> = containerIdx !== undefined 
+      ? [{ container: containers[containerIdx], cNum: containerIdx + 1 }]
+      : containers.map((c: any, i: number) => ({ container: c, cNum: i + 1 }));
+
+    exportContainers.forEach(({ container, cNum }: { container: any; cNum: number }) => {
+      if (!container) return;
+      const cNo = container.containerNo || `CONTAINER-${cNum}`;
+      const sNo = container.sealNo || '';
+      const items = container.items || [];
+
+      // Create sheet rows
+      const sheetData: any[] = [];
+
+      // Row headers
+      sheetData.push([
+        '컨테이너번호',
+        'Seal No',
+        'Pallet No',
+        'Description of Goods (품명 및 규격)',
+        'Supplier (유통사)',
+        '수량',
+        'PKG수',
+        '규격 (WxLxH)',
+        '다단적재 (Y/N)',
+        '회전허용 (Y/N)',
+        'NET WT (Kg)',
+        'GROSS WT (Kg)',
+        'CBM'
+      ]);
+
+      items.forEach((it: any) => {
+        sheetData.push([
+          cNo,
+          sNo,
+          it.pkgNo || '',
+          it.description || '',
+          it.supplier || '',
+          Number(it.qty) || (it.qty !== undefined && it.qty !== '' ? it.qty : 0),
+          Number(it.pkg) || (it.pkg !== undefined && it.pkg !== '' ? it.pkg : 1),
+          it.dimensions || '',
+          it.stackable !== 'N' && it.stackable !== false ? 'Y' : 'N',
+          it.rotation !== 'N' && it.rotation !== false ? 'Y' : 'N',
+          it.netWeight || '',
+          it.grossWeight || '',
+          it.cbm || ''
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      // Column widths
+      ws['!cols'] = [
+        { wch: 18 }, // 컨테이너번호
+        { wch: 15 }, // Seal No
+        { wch: 12 }, // Pallet No
+        { wch: 35 }, // Description
+        { wch: 20 }, // Supplier
+        { wch: 10 }, // 수량
+        { wch: 10 }, // PKG수
+        { wch: 16 }, // 규격
+        { wch: 14 }, // 다단적재
+        { wch: 14 }, // 회전허용
+        { wch: 14 }, // NET WT
+        { wch: 14 }, // GROSS WT
+        { wch: 12 }  // CBM
+      ];
+
+      const sheetTitle = (cNo || `Container_${cNum}`).replace(/[/\\?*[\]:]/g, '_').slice(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
+    });
+
+    const cleanOrderNo = ((order as any)?.orderNo || order?.id || 'Order').replace(/[/\\?*[\]:]/g, '_');
+    const fileName = containerIdx !== undefined
+      ? `${cleanOrderNo}_PackingList_Container${containerIdx + 1}.xlsx`
+      : `${cleanOrderNo}_PackingList_All.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const handleImportPackingListExcel = (e: React.ChangeEvent<HTMLInputElement>, containerIdx?: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          alert('엑셀 파일에 시트가 존재하지 않습니다.');
+          return;
+        }
+
+        const nextContainers = [...(basicForm.packingList?.containers || [])];
+
+        if (containerIdx !== undefined) {
+          // 단일 특정 컨테이너에 업로드 (첫 번째 시트 사용)
+          const sheetName = workbook.SheetNames[0];
+          const ws = workbook.Sheets[sheetName];
+          const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+          if (rawRows.length === 0) {
+            alert('엑셀 시트에 데이터가 없습니다.');
+            return;
+          }
+
+          if (!nextContainers[containerIdx]) {
+            nextContainers[containerIdx] = {
+              containerNo: `CONTAINER-0${containerIdx + 1}`,
+              sealNo: '',
+              items: []
+            };
+          }
+
+          // Header key matcher helper
+          const findVal = (row: any, keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of keys) {
+              const matchedKey = rowKeys.find(rk => {
+                const normRk = rk.replace(/\s+/g, '').toLowerCase();
+                const normK = k.replace(/\s+/g, '').toLowerCase();
+                return normRk.includes(normK) || normK.includes(normRk);
+              });
+              if (matchedKey && row[matchedKey] !== undefined && row[matchedKey] !== '') {
+                return String(row[matchedKey]).trim();
+              }
+            }
+            return '';
+          };
+
+          const newItems: any[] = [];
+          let sealFromRow = '';
+          let cNoFromRow = '';
+
+          rawRows.forEach((row, rowIdx) => {
+            const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
+            const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+            const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
+            const qty = findVal(row, ['수량', 'qty', 'quantity']);
+            const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
+            const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+            const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
+            const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
+            const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
+            const grossW = findVal(row, ['grosswt', 'grossweight', '총중량', 'gross']);
+            const cbmVal = findVal(row, ['cbm', '부피']);
+
+            const rowCNo = findVal(row, ['컨테이너번호', 'containerno', 'container']);
+            const rowSNo = findVal(row, ['sealno', 'seal', '씰번호', '봉인번호']);
+            if (rowCNo && !cNoFromRow) cNoFromRow = rowCNo;
+            if (rowSNo && !sealFromRow) sealFromRow = rowSNo;
+
+            // 품명이 있거나 수량이 있는 유효 행만 추가
+            if (desc || qty || palletNo) {
+              newItems.push({
+                pkgNo: palletNo || String(rowIdx + 1),
+                description: desc,
+                supplier: supplier,
+                qty: qty || '0',
+                pkg: pkg || '1',
+                dimensions: dims || '',
+                stackable: (stack.toUpperCase() === 'N' || stack === '불가') ? 'N' : 'Y',
+                rotation: (rot.toUpperCase() === 'N' || rot === '불가') ? 'N' : 'Y',
+                netWeight: netW || '0',
+                grossWeight: grossW || '0',
+                cbm: cbmVal || '0',
+                packageType: '단품'
+              });
+            }
+          });
+
+          if (newItems.length === 0) {
+            alert('인식 가능한 품목 데이터가 없습니다. 엑셀 양식을 확인해주세요.');
+            return;
+          }
+
+          if (cNoFromRow && !nextContainers[containerIdx].containerNo) {
+            nextContainers[containerIdx].containerNo = cNoFromRow;
+          }
+          if (sealFromRow) {
+            nextContainers[containerIdx].sealNo = sealFromRow;
+          }
+
+          nextContainers[containerIdx].items = newItems;
+          recalculateContainerPkgNos(nextContainers[containerIdx].items);
+        } else {
+          // 전체 컨테이너 업로드 (모든 시트 처리 또는 단일 시트 내 컨테이너별 분류)
+          const findVal = (row: any, keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of keys) {
+              const matchedKey = rowKeys.find(rk => {
+                const normRk = rk.replace(/\s+/g, '').toLowerCase();
+                const normK = k.replace(/\s+/g, '').toLowerCase();
+                return normRk.includes(normK) || normK.includes(normRk);
+              });
+              if (matchedKey && row[matchedKey] !== undefined && row[matchedKey] !== '') {
+                return String(row[matchedKey]).trim();
+              }
+            }
+            return '';
+          };
+
+          // 시트별 또는 단일 시트 내 컨테이너 분기
+          const parsedContainers: any[] = [];
+
+          workbook.SheetNames.forEach((sheetName, sIdx) => {
+            const ws = workbook.Sheets[sheetName];
+            const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            if (rawRows.length === 0) return;
+
+            // 시트 내에 '컨테이너번호' 열 기준으로 여러 컨테이너가 섞여있는지 확인
+            const hasMultipleCInSheet = new Set(rawRows.map(r => findVal(r, ['컨테이너번호', 'containerno', 'container'])).filter(Boolean)).size > 1;
+
+            if (hasMultipleCInSheet) {
+              // 컨테이너 번호별 그룹핑
+              const mapByC = new Map<string, any[]>();
+              rawRows.forEach(row => {
+                const cKey = findVal(row, ['컨테이너번호', 'containerno', 'container']) || `CONTAINER-${parsedContainers.length + 1}`;
+                if (!mapByC.has(cKey)) mapByC.set(cKey, []);
+                mapByC.get(cKey)!.push(row);
+              });
+
+              mapByC.forEach((cRows, cNo) => {
+                const items: any[] = [];
+                let sNo = '';
+                cRows.forEach((row, rIdx) => {
+                  const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
+                  const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+                  const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
+                  const qty = findVal(row, ['수량', 'qty', 'quantity']);
+                  const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
+                  const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+                  const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
+                  const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
+                  const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
+                  const grossW = findVal(row, ['grosswt', 'grossweight', '총중량', 'gross']);
+                  const cbmVal = findVal(row, ['cbm', '부피']);
+                  const rowSNo = findVal(row, ['sealno', 'seal', '씰번호', '봉인번호']);
+                  if (rowSNo && !sNo) sNo = rowSNo;
+
+                  if (desc || qty || palletNo) {
+                    items.push({
+                      pkgNo: palletNo || String(rIdx + 1),
+                      description: desc,
+                      supplier: supplier,
+                      qty: qty || '0',
+                      pkg: pkg || '1',
+                      dimensions: dims || '',
+                      stackable: (stack.toUpperCase() === 'N' || stack === '불가') ? 'N' : 'Y',
+                      rotation: (rot.toUpperCase() === 'N' || rot === '불가') ? 'N' : 'Y',
+                      netWeight: netW || '0',
+                      grossWeight: grossW || '0',
+                      cbm: cbmVal || '0',
+                      packageType: '단품'
+                    });
+                  }
+                });
+
+                if (items.length > 0) {
+                  recalculateContainerPkgNos(items);
+                  parsedContainers.push({
+                    containerNo: cNo,
+                    sealNo: sNo,
+                    items
+                  });
+                }
+              });
+            } else {
+              // 1개 시트가 1개 컨테이너
+              const items: any[] = [];
+              let sNo = '';
+              let cNo = findVal(rawRows[0], ['컨테이너번호', 'containerno', 'container']) || sheetName || `CONTAINER-0${sIdx + 1}`;
+
+              rawRows.forEach((row, rIdx) => {
+                const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
+                const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+                const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
+                const qty = findVal(row, ['수량', 'qty', 'quantity']);
+                const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
+                const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+                const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
+                const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
+                const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
+                const grossW = findVal(row, ['grosswt', 'grossweight', '총중량', 'gross']);
+                const cbmVal = findVal(row, ['cbm', '부피']);
+                const rowSNo = findVal(row, ['sealno', 'seal', '씰번호', '봉인번호']);
+                if (rowSNo && !sNo) sNo = rowSNo;
+
+                if (desc || qty || palletNo) {
+                  items.push({
+                    pkgNo: palletNo || String(rIdx + 1),
+                    description: desc,
+                    supplier: supplier,
+                    qty: qty || '0',
+                    pkg: pkg || '1',
+                    dimensions: dims || '',
+                    stackable: (stack.toUpperCase() === 'N' || stack === '불가') ? 'N' : 'Y',
+                    rotation: (rot.toUpperCase() === 'N' || rot === '불가') ? 'N' : 'Y',
+                    netWeight: netW || '0',
+                    grossWeight: grossW || '0',
+                    cbm: cbmVal || '0',
+                    packageType: '단품'
+                  });
+                }
+              });
+
+              if (items.length > 0) {
+                recalculateContainerPkgNos(items);
+                parsedContainers.push({
+                  containerNo: cNo,
+                  sealNo: sNo,
+                  items
+                });
+              }
+            }
+          });
+
+          if (parsedContainers.length === 0) {
+            alert('인식 가능한 컨테이너 및 품목 데이터가 없습니다. 엑셀 양식을 확인해주세요.');
+            return;
+          }
+
+          nextContainers.length = 0;
+          parsedContainers.forEach(pc => nextContainers.push(pc));
+        }
+
+        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+        const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+        setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+        savePackingListToFirestore(nextContainers, nextReports);
+
+        alert('패킹리스트 엑셀 업로드가 완료되었습니다.');
+      } catch (error) {
+        console.error('Failed to parse packing list excel:', error);
+        alert('엑셀 파일을 읽는 중 오류가 발생했습니다. 올바른 엑셀 형식인지 확인해주세요.');
+      } finally {
+        e.target.value = '';
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
     setSourcingItems(prev => {
       const updated = [...prev];
@@ -4936,32 +5446,59 @@ export const OrderDetail: React.FC = () => {
         }
       };
 
-      const cleanSourcingItems = sourcingItems.map(it => ({
-        itemId: it.itemId || '',
-        name: it.name || '',
-        supplier: it.supplier || '',
-        supplierContact: it.supplierContact || '',
-        grade: it.grade || '',
-        qty: parseFloat(it.qty as any) || 0,
-        unit: (it.unit || 'kg') as any,
-        unitPrice: parseFloat(it.unitPrice as any) || 0,
-        purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-        purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-        originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-        originalPurchaseCurrency: it.originalPurchaseCurrency || null,
-        amount: it.amount || 0,
-        currency: (it.currency || 'USD') as any
-      }));
+      const cleanSourcingItems = sourcingItems.map((it, idx) => {
+        const matchingOrderItem = (it.itemId && (order.items || []).find((r: any) => r.itemId && r.itemId === it.itemId)) || (order.items || [])[idx];
+        const quoteBuyPrice = (it.originalPurchasePrice != null && it.originalPurchasePrice > 0)
+          ? it.originalPurchasePrice
+          : (it.purchasePriceKrw != null && it.purchasePriceKrw > 0
+            ? it.purchasePriceKrw
+            : (it.purchasePriceUsd != null && it.purchasePriceUsd > 0
+              ? it.purchasePriceUsd
+              : (matchingOrderItem?.originalPurchasePrice != null && matchingOrderItem.originalPurchasePrice > 0
+                ? matchingOrderItem.originalPurchasePrice
+                : (matchingOrderItem?.purchasePriceKrw != null && matchingOrderItem.purchasePriceKrw > 0
+                  ? matchingOrderItem.purchasePriceKrw
+                  : (matchingOrderItem?.purchasePriceUsd != null && matchingOrderItem.purchasePriceUsd > 0
+                    ? matchingOrderItem.purchasePriceUsd
+                    : (matchingOrderItem?.purchaseUnitPrice != null && matchingOrderItem.purchaseUnitPrice > 0 ? matchingOrderItem.purchaseUnitPrice : null))))));
+        const quoteBuyCurr = it.originalPurchaseCurrency 
+          || it.purchasePriceCurrency 
+          || (it.purchasePriceKrw ? 'KRW' : null)
+          || matchingOrderItem?.originalPurchaseCurrency 
+          || matchingOrderItem?.purchasePriceCurrency 
+          || (matchingOrderItem?.purchasePriceKrw ? 'KRW' : null)
+          || (quoteBuyPrice && quoteBuyPrice > 1000 ? 'KRW' : 'USD');
+
+        return {
+          itemId: it.itemId || '',
+          name: it.name || '',
+          supplier: it.supplier || '',
+          supplierContact: it.supplierContact || '',
+          grade: it.grade || '',
+          qty: parseFloat(it.qty as any) || 0,
+          unit: (it.unit || 'kg') as any,
+          unitPrice: parseFloat(it.unitPrice as any) || 0,
+          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : quoteBuyPrice,
+          purchaseUnitCurrency: it.purchaseUnitCurrency || quoteBuyCurr,
+          originalPurchasePrice: quoteBuyPrice,
+          originalPurchaseCurrency: quoteBuyCurr,
+          purchasePriceKrw: it.purchasePriceKrw || matchingOrderItem?.purchasePriceKrw || null,
+          purchasePriceUsd: it.purchasePriceUsd || matchingOrderItem?.purchasePriceUsd || null,
+          purchasePriceCurrency: it.purchasePriceCurrency || quoteBuyCurr,
+          amount: it.amount || 0,
+          currency: (it.currency || 'USD') as any
+        };
+      });
 
       const cleanItems = (order.items || []).map((it, idx) => {
         const matched = (it.itemId && sourcingItems.find(x => x.itemId && x.itemId === it.itemId)) || sourcingItems[idx];
         if (matched) {
           return {
             ...it,
-            purchaseUnitPrice: matched.purchaseUnitPrice != null ? (parseFloat(matched.purchaseUnitPrice as any) || 0) : null,
-            purchaseUnitCurrency: matched.purchaseUnitCurrency || null,
-            originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : null,
-            originalPurchaseCurrency: matched.originalPurchaseCurrency || null,
+            purchaseUnitPrice: matched.purchaseUnitPrice != null ? (parseFloat(matched.purchaseUnitPrice as any) || 0) : (it.purchaseUnitPrice != null ? it.purchaseUnitPrice : null),
+            purchaseUnitCurrency: matched.purchaseUnitCurrency || it.purchaseUnitCurrency || null,
+            originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : (it.originalPurchasePrice != null ? it.originalPurchasePrice : null),
+            originalPurchaseCurrency: matched.originalPurchaseCurrency || it.originalPurchaseCurrency || null,
           };
         }
         return it;
@@ -5663,32 +6200,59 @@ export const OrderDetail: React.FC = () => {
           generalNotes: supplierDetail.generalNotes ?? ''
         }
       };
-      const cleanSourcingItems = sourcingItems.map(it => ({
-        itemId: it.itemId || '',
-        name: it.name || '',
-        supplier: it.supplier || '',
-        supplierContact: it.supplierContact || '',
-        grade: it.grade || '',
-        qty: parseFloat(it.qty as any) || 0,
-        unit: (it.unit || 'kg') as any,
-        unitPrice: parseFloat(it.unitPrice as any) || 0,
-        purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-        purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-        originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-        originalPurchaseCurrency: it.originalPurchaseCurrency || null,
-        amount: it.amount || 0,
-        currency: (it.currency || 'USD') as any
-      }));
+      const cleanSourcingItems = sourcingItems.map((it, idx) => {
+        const matchingOrderItem = (it.itemId && (order.items || []).find((r: any) => r.itemId && r.itemId === it.itemId)) || (order.items || [])[idx];
+        const quoteBuyPrice = (it.originalPurchasePrice != null && it.originalPurchasePrice > 0)
+          ? it.originalPurchasePrice
+          : (it.purchasePriceKrw != null && it.purchasePriceKrw > 0
+            ? it.purchasePriceKrw
+            : (it.purchasePriceUsd != null && it.purchasePriceUsd > 0
+              ? it.purchasePriceUsd
+              : (matchingOrderItem?.originalPurchasePrice != null && matchingOrderItem.originalPurchasePrice > 0
+                ? matchingOrderItem.originalPurchasePrice
+                : (matchingOrderItem?.purchasePriceKrw != null && matchingOrderItem.purchasePriceKrw > 0
+                  ? matchingOrderItem.purchasePriceKrw
+                  : (matchingOrderItem?.purchasePriceUsd != null && matchingOrderItem.purchasePriceUsd > 0
+                    ? matchingOrderItem.purchasePriceUsd
+                    : (matchingOrderItem?.purchaseUnitPrice != null && matchingOrderItem.purchaseUnitPrice > 0 ? matchingOrderItem.purchaseUnitPrice : null))))));
+        const quoteBuyCurr = it.originalPurchaseCurrency 
+          || it.purchasePriceCurrency 
+          || (it.purchasePriceKrw ? 'KRW' : null)
+          || matchingOrderItem?.originalPurchaseCurrency 
+          || matchingOrderItem?.purchasePriceCurrency 
+          || (matchingOrderItem?.purchasePriceKrw ? 'KRW' : null)
+          || (quoteBuyPrice && quoteBuyPrice > 1000 ? 'KRW' : 'USD');
+
+        return {
+          itemId: it.itemId || '',
+          name: it.name || '',
+          supplier: it.supplier || '',
+          supplierContact: it.supplierContact || '',
+          grade: it.grade || '',
+          qty: parseFloat(it.qty as any) || 0,
+          unit: (it.unit || 'kg') as any,
+          unitPrice: parseFloat(it.unitPrice as any) || 0,
+          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : quoteBuyPrice,
+          purchaseUnitCurrency: it.purchaseUnitCurrency || quoteBuyCurr,
+          originalPurchasePrice: quoteBuyPrice,
+          originalPurchaseCurrency: quoteBuyCurr,
+          purchasePriceKrw: it.purchasePriceKrw || matchingOrderItem?.purchasePriceKrw || null,
+          purchasePriceUsd: it.purchasePriceUsd || matchingOrderItem?.purchasePriceUsd || null,
+          purchasePriceCurrency: it.purchasePriceCurrency || quoteBuyCurr,
+          amount: it.amount || 0,
+          currency: (it.currency || 'USD') as any
+        };
+      });
 
       const cleanItems = (order.items || []).map((it, idx) => {
         const matched = (it.itemId && sourcingItems.find(x => x.itemId && x.itemId === it.itemId)) || sourcingItems[idx];
         if (matched) {
           return {
             ...it,
-            purchaseUnitPrice: matched.purchaseUnitPrice != null ? (parseFloat(matched.purchaseUnitPrice as any) || 0) : null,
-            purchaseUnitCurrency: matched.purchaseUnitCurrency || null,
-            originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : null,
-            originalPurchaseCurrency: matched.originalPurchaseCurrency || null,
+            purchaseUnitPrice: matched.purchaseUnitPrice != null ? (parseFloat(matched.purchaseUnitPrice as any) || 0) : (it.purchaseUnitPrice != null ? it.purchaseUnitPrice : null),
+            purchaseUnitCurrency: matched.purchaseUnitCurrency || it.purchaseUnitCurrency || null,
+            originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : (it.originalPurchasePrice != null ? it.originalPurchasePrice : null),
+            originalPurchaseCurrency: matched.originalPurchaseCurrency || it.originalPurchaseCurrency || null,
           };
         }
         return it;
@@ -9057,8 +9621,8 @@ ${downloadLink}`;
                                     </tr>
                                   ) : (
                                     items.map((it, idx) => {
-                                      const { purchasePrice, purchaseCurrency, itemName, originalPurchasePrice } = getSupplierPurchaseInfo(it);
-                                      const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
+                                      const { purchasePrice, purchaseCurrency, itemName, originalPurchasePrice, originalPurchaseCurrency } = getSupplierPurchaseInfo(it);
+                                      const origCurrency = it.originalPurchaseCurrency || originalPurchaseCurrency || (originalPurchasePrice > 1000 ? 'KRW' : purchaseCurrency);
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       const itemIndexInMain = sourcingItems.findIndex(x => x === it);
@@ -9430,7 +9994,7 @@ ${downloadLink}`;
 
                                           items.forEach(it => {
                                             const info = getSupplierPurchaseInfo(it);
-                                            const itOrigCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : info.purchaseCurrency);
+                                            const itOrigCurrency = it.originalPurchaseCurrency || info.originalPurchaseCurrency || (info.originalPurchasePrice > 1000 ? 'KRW' : 'USD');
                                             const qty = it.qty || 0;
                                             const orig = info.originalPurchasePrice || 0;
                                             const actual = info.purchasePrice || 0;
@@ -10513,6 +11077,27 @@ ${downloadLink}`;
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <button
                               type="button"
+                              onClick={() => handleExportPackingListExcel()}
+                              title="전체 컨테이너 패킹리스트 엑셀(.xlsx) 파일 다운로드"
+                              style={{ padding: '6px 12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              📥 전체 엑셀 다운로드
+                            </button>
+                            <label
+                              title={isEditing ? '전체 컨테이너 패킹리스트 엑셀 파일 업로드' : '수정 모드에서만 업로드 가능합니다'}
+                              style={{ padding: '6px 12px', background: isEditing ? '#059669' : '#cbd5e1', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              📤 전체 엑셀 업로드
+                              <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                disabled={!isEditing}
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleImportPackingListExcel(e)}
+                              />
+                            </label>
+                            <button
+                              type="button"
                               disabled={!isEditing}
                               onClick={() => {
                                 const newContainers = [...(basicForm.packingList.containers || [])];
@@ -10618,6 +11203,27 @@ ${downloadLink}`;
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => handleExportPackingListExcel(cIdx)}
+                                  title={`현재 컨테이너(${c.containerNo || cIdx + 1}) 패킹리스트 엑셀 다운로드`}
+                                  style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  📥 엑셀 다운
+                                </button>
+                                <label
+                                  title={isEditing ? `현재 컨테이너(${c.containerNo || cIdx + 1})에 엑셀 데이터 업로드` : '수정 모드에서만 업로드 가능합니다'}
+                                  style={{ padding: '4px 10px', background: isEditing ? '#059669' : '#cbd5e1', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  📤 엑셀 업로드
+                                  <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    disabled={!isEditing}
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleImportPackingListExcel(e, cIdx)}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
                                   disabled={!isEditing}
                                   onClick={() => {
                                     const nextContainers = [...basicForm.packingList.containers];
@@ -10637,7 +11243,7 @@ ${downloadLink}`;
                                     });
                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                   }}
-                                  style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                  style={{ padding: '4px 10px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                                 >
                                   + 직접 품목 추가
                                 </button>
@@ -10675,8 +11281,8 @@ ${downloadLink}`;
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }} title="위험물/개별 포장 등 실제 패키지 수량 직접 입력">PKG수</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'center', width: '13%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="2단 이상 다단적재 허용 여부 (클릭하여 수정)">다단적재</th>
-                                  <th style={{ padding: '6px 4px', textAlign: 'center', width: '56px', whiteSpace: 'nowrap' }} title="수평 90도 회전 허용 여부 (클릭하여 수정)">회전허용</th>
+                                  <th style={{ padding: '6px 2px', textAlign: 'center', width: '46px', whiteSpace: 'nowrap' }} title="2단 이상 다단적재 허용 여부 (클릭하여 수정)">다단적재</th>
+                                  <th style={{ padding: '6px 2px', textAlign: 'center', width: '46px', whiteSpace: 'nowrap' }} title="수평 90도 회전 허용 여부 (클릭하여 수정)">회전허용</th>
                                   <th style={{ padding: '6px 8px', textAlign: 'right', width: '7%', whiteSpace: 'nowrap' }} title="순중량 입력 (예: 1450 또는 =ROUNDUP(1200*1.15, 0), =1437+15 등 엑셀 수식 지원)">
                                     NET WT (Kg) <span style={{ fontSize: '11px', color: '#2563eb', cursor: 'help' }} title="엑셀 수식 지원: =ROUNDUP(값, 자릿수), =ROUND(값, 자릿수), =ROUNDDOWN(값, 자릿수), 사칙연산 (+,-,*,/)">ℹ️</span>
                                   </th>
@@ -11003,10 +11609,10 @@ ${downloadLink}`;
                                                     }
                                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                                   }}
-                                                  title={isEditing ? (isStack ? '클릭 시 [다단 불가(1단만)]로 변경' : '클릭 시 [다단 적재 가능]으로 변경') : (isStack ? '다단 적재 가능' : '다단 불가')}
+                                                  title={isEditing ? (isStack ? '다단적재: 가능 (클릭 시 [다단 불가]로 변경)' : '다단적재: 불가 (클릭 시 [다단 적재 가능]으로 변경)') : (isStack ? '다단적재 가능' : '다단 불가')}
                                                   style={{
-                                                    padding: '2px 4px',
-                                                    fontSize: '11px',
+                                                    padding: '0',
+                                                    fontSize: '14px',
                                                     fontWeight: 750,
                                                     borderRadius: '4px',
                                                     cursor: isEditing ? 'pointer' : 'default',
@@ -11014,15 +11620,14 @@ ${downloadLink}`;
                                                     background: isStack ? '#dcfce7' : '#fee2e2',
                                                     color: isStack ? '#15803d' : '#b91c1c',
                                                     height: '28px',
-                                                    width: '100%',
-                                                    maxWidth: '52px',
+                                                    width: '32px',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     transition: 'all 0.15s ease'
                                                   }}
                                                 >
-                                                  {isStack ? '🔼 가능' : '⛔ 불가'}
+                                                  {isStack ? '🔼' : '⛔'}
                                                 </button>
                                               );
                                             })()}
@@ -11046,10 +11651,10 @@ ${downloadLink}`;
                                                     }
                                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                                   }}
-                                                  title={isEditing ? (isRot ? '클릭 시 [회전 불가(방향 고정)]로 변경' : '클릭 시 [회전 가능]으로 변경') : (isRot ? '회전 가능' : '회전 불가')}
+                                                  title={isEditing ? (isRot ? '회전허용: 가능 (클릭 시 [회전 불가(방향 고정)]로 변경)' : '회전허용: 불가 (클릭 시 [회전 가능]으로 변경)') : (isRot ? '회전 가능' : '회전 불가')}
                                                   style={{
-                                                    padding: '2px 4px',
-                                                    fontSize: '11px',
+                                                    padding: '0',
+                                                    fontSize: '14px',
                                                     fontWeight: 750,
                                                     borderRadius: '4px',
                                                     cursor: isEditing ? 'pointer' : 'default',
@@ -11057,15 +11662,14 @@ ${downloadLink}`;
                                                     background: isRot ? '#eff6ff' : '#f1f5f9',
                                                     color: isRot ? '#1d4ed8' : '#64748b',
                                                     height: '28px',
-                                                    width: '100%',
-                                                    maxWidth: '52px',
+                                                    width: '32px',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     transition: 'all 0.15s ease'
                                                   }}
                                                 >
-                                                  {isRot ? '🔄 가능' : '🔒 불가'}
+                                                  {isRot ? '🔄' : '🔒'}
                                                 </button>
                                               );
                                             })()}
