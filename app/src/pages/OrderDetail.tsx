@@ -18,6 +18,7 @@ import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { RemarkPresetModal, type RemarkPreset, DEFAULT_REMARK_PRESETS } from '../components/RemarkPresetModal';
+import { QuoteSettingsModal } from '../components/QuoteSettingsModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { KatalkMessageModal } from '../components/KatalkMessageModal';
@@ -334,6 +335,207 @@ const normalizeStep = (raw: string | null): typeof steps[number] => {
   return "수주정보";
 };
 
+const gridInputStyle: React.CSSProperties = {
+  width: '100%',
+  height: '32px',
+  padding: '4px 6px',
+  border: '1px solid #cbd5e1',
+  borderRadius: '4px',
+  fontSize: '12px',
+  color: '#1e293b',
+  outline: 'none',
+  boxSizing: 'border-box',
+  fontVariantNumeric: 'tabular-nums',
+  background: '#ffffff'
+};
+
+const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
+  if (value === undefined || value === null || value === '') return '';
+  const str = value.toString().replace(/,/g, '');
+  if (isNaN(Number(str))) return str;
+  let parts = str.split('.');
+  if (maxDecimals !== undefined && parts.length > 1) {
+    if (parts[1].length > maxDecimals) {
+      parts[1] = parts[1].substring(0, maxDecimals);
+    }
+  }
+  if (minDecimals !== undefined) {
+    if (parts.length === 1) {
+      parts.push('0'.repeat(minDecimals));
+    } else if (parts[1].length < minDecimals) {
+      parts[1] = parts[1] + '0'.repeat(minDecimals - parts[1].length);
+    }
+  }
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.length > 1 && maxDecimals !== 0 ? parts.join('.') : parts[0];
+};
+
+const parseCommas = (value: string): number => {
+  return parseFloat(value.replace(/,/g, '')) || 0;
+};
+
+const ceilValue = (value: number, digits: number): number => {
+  if (value === 0) return 0;
+  const epsilon = 1e-9;
+  const sign = value > 0 ? 1 : -1;
+  const absValue = Math.abs(value);
+  if (digits < 0) {
+    const scale = Math.pow(10, Math.abs(digits));
+    return sign * Math.ceil((absValue / scale) - epsilon) * scale;
+  }
+  const factor = Math.pow(10, digits);
+  return sign * Math.ceil((absValue * factor) - epsilon) / factor;
+};
+
+const getProductPackingMethods = (product: any): any[] => {
+  if (!product) return [{
+    id: 'default_injected',
+    name: 'Default',
+    packageType: '단품',
+    unit: 'EA',
+    isDefault: true,
+    unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+    qtyPerPallet: 1,
+    palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+    stackable: 'Y', rotation: 'Y'
+  }];
+  const list = (product.packingMethods ? JSON.parse(JSON.stringify(product.packingMethods)) : []).map((m: any, idx: number) => ({
+    ...m,
+    id: m.id || `method_${idx}`
+  }));
+  const hasDefault = list.some((m: any) => m.name === 'Default' || m.packageType === '단품' || m.id === 'default_injected');
+  if (!hasDefault) {
+    list.unshift({
+      id: 'default_injected',
+      name: 'Default',
+      packageType: '단품',
+      unit: product.unit || 'KG',
+      isDefault: list.length === 0 || !list.some((m: any) => m.isDefault),
+      unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+      qtyPerPallet: 1,
+      palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+      stackable: 'Y', rotation: 'Y'
+    });
+  }
+  return list;
+};
+
+const formatPackingName = (name: string | undefined, qtyPerPallet?: number): string => {
+  if (!name || name === 'Default') return '단품';
+  if (/[가-힣]/.test(name)) return name;
+  const lower = name.toLowerCase();
+  if (lower.includes('plt') || lower.includes('pallet')) {
+    return qtyPerPallet && qtyPerPallet > 1 ? `팔레트 (${qtyPerPallet.toLocaleString()}개)` : '팔레트';
+  }
+  if (lower.includes('paper bag') || lower.includes('종이포대')) return '종이포대';
+  if (lower.includes('drum')) return '드럼';
+  if (lower.includes('pail')) return '페일';
+  if (lower.includes('bag')) return '백';
+  if (lower.includes('box')) return '박스';
+  return name;
+};
+
+const autoCalcPalletQty = (quantity: number, selectedMethodId: string | undefined, methods: any[]): number => {
+  const method = methods.find((m: any) => m.id === selectedMethodId);
+  if (!method || !method.qtyPerPallet || method.qtyPerPallet <= 1) return quantity;
+  return parseFloat((quantity / method.qtyPerPallet).toFixed(2));
+};
+
+const PurchasePriceInput: React.FC<{
+  curCurrency: string;
+  purchasePriceUsd?: number;
+  purchasePriceKrw?: number;
+  onChange: (updates: { purchasePriceUsd?: number; purchasePriceKrw?: number; purchasePriceCurrency?: string }) => void;
+}> = ({ curCurrency, purchasePriceUsd = 0, purchasePriceKrw = 0, onChange }) => {
+  const [localVal, setLocalVal] = useState('');
+
+  useEffect(() => {
+    if (curCurrency === 'USD') {
+      const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+      if (parsedLocal !== purchasePriceUsd || (purchasePriceUsd === 0 && localVal !== '')) {
+        setLocalVal(purchasePriceUsd === 0 ? '' : purchasePriceUsd.toString());
+      }
+    } else {
+      const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+      if (parsedLocal !== purchasePriceKrw || (purchasePriceKrw === 0 && localVal !== '')) {
+        setLocalVal(formatNumberWithCommas(purchasePriceKrw));
+      }
+    }
+  }, [curCurrency, purchasePriceUsd, purchasePriceKrw]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (curCurrency === 'USD') {
+      if (/^\d*\.?\d{0,2}$/.test(raw)) {
+        setLocalVal(raw);
+        const parsed = parseFloat(raw) || 0;
+        onChange({
+          purchasePriceUsd: parsed,
+          purchasePriceKrw: 0,
+          purchasePriceCurrency: 'USD'
+        });
+      }
+    } else {
+      const clean = raw.replace(/[^\d]/g, '');
+      setLocalVal(formatNumberWithCommas(clean));
+      const parsed = parseInt(clean, 10) || 0;
+      onChange({
+        purchasePriceKrw: parsed,
+        purchasePriceUsd: 0,
+        purchasePriceCurrency: curCurrency || 'KRW'
+      });
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      placeholder="금액"
+      value={localVal}
+      onChange={handleChange}
+      style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '75px', padding: '2px 6px', fontWeight: 600 }}
+    />
+  );
+};
+
+const SalePriceInput: React.FC<{
+  value?: number;
+  onChange: (val: number) => void;
+}> = ({ value = 0, onChange }) => {
+  const [localVal, setLocalVal] = useState('');
+
+  useEffect(() => {
+    const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+    if (parsedLocal !== value || (value === 0 && localVal !== '')) {
+      setLocalVal(value === 0 ? '' : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const cleanRaw = raw.replace(/,/g, '');
+    if (/^\d*\.?\d{0,2}$/.test(cleanRaw)) {
+      setLocalVal(raw);
+      const parsed = parseFloat(cleanRaw) || 0;
+      onChange(parsed);
+    }
+  };
+
+  const handleBlur = () => {
+    setLocalVal(value === 0 ? '' : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  };
+
+  return (
+    <input
+      type="text"
+      value={localVal}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      style={{ ...gridInputStyle, textAlign: 'right', width: '85px', fontWeight: 600 }}
+    />
+  );
+};
+
 export const OrderDetail: React.FC = () => {
   const { userProfile } = useAuth();
 
@@ -644,6 +846,16 @@ export const OrderDetail: React.FC = () => {
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [uploadingCoaSupplier, setUploadingCoaSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
+  const [isQuoteSettingsOpen, setIsQuoteSettingsOpen] = useState(false);
+  const [expandedPackingRows, setExpandedPackingRows] = useState<Set<number>>(new Set());
+  const togglePackingRow = (idx: number) => {
+    setExpandedPackingRows(prev => {
+      const n = new Set(prev);
+      if (n.has(idx)) n.delete(idx);
+      else n.add(idx);
+      return n;
+    });
+  };
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
   
@@ -1741,7 +1953,8 @@ export const OrderDetail: React.FC = () => {
     type: 'trade' as 'trade' | 'consulting',
     blNumbers: [] as string[],
     blNumber: '',
-    deliveryPlace: ''
+    deliveryPlace: '',
+    exchangeRate: 1400
   });
 
   useEffect(() => {
@@ -2632,7 +2845,8 @@ export const OrderDetail: React.FC = () => {
           fclSpecs: data.fclSpecs || [],
           type: data.type || 'trade',
           blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
-          blNumber: data.blNumber || ''
+          blNumber: data.blNumber || '',
+          exchangeRate: data.exchangeRate || 1400
         });
         const itemsWithHs = (data.items || []).map((it, idx) => {
           const codeMatch = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
@@ -2737,19 +2951,20 @@ export const OrderDetail: React.FC = () => {
     return () => unsubscribe();
   }, [id, navigate]);
 
-  // Load connected PI document
+  // Load connected PI document & sync quotation details
   useEffect(() => {
-    if (!order?.quotationId) {
+    const targetQuoteId = order?.quotationId || order?.piNumber;
+    if (!targetQuoteId) {
       setPiData(null);
       return;
     }
-    const piRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', order.quotationId);
+    const piRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', targetQuoteId);
     const unsubscribe = onSnapshot(piRef, async (docSnap) => {
       if (docSnap.exists()) {
         const pData = docSnap.data();
         setPiData(pData);
 
-        // Auto sync specs from connected PI line items if order item grades are empty
+        // Auto sync all quote fields from connected PI line items
         try {
           const revSnap = await getDocs(collection(piRef, 'revisions'));
           const latestRevDoc = revSnap.docs.sort((a, b) => (b.data().version || 0) - (a.data().version || 0))[0];
@@ -2760,15 +2975,86 @@ export const OrderDetail: React.FC = () => {
               setOrderItems(prev => {
                 let hasChanges = false;
                 const updated = prev.map((oi, idx) => {
-                  if (!oi.grade || oi.grade.trim() === '') {
-                    const qi = quoteItems[idx];
-                    const specVal = qi?.spec || qi?.grade || '';
-                    if (specVal) {
-                      hasChanges = true;
-                      return { ...oi, grade: specVal };
-                    }
+                  const oiRawCode = getRawProductCode(oi.productCode || oi.name);
+                  const qi = quoteItems.find((q: any) => {
+                    const qRawCode = getRawProductCode(q.productCode);
+                    return qRawCode && oiRawCode && qRawCode.toUpperCase() === oiRawCode.toUpperCase();
+                  }) || quoteItems[idx];
+
+                  if (!qi) return oi;
+
+                  let changed = false;
+                  const newOi = { ...oi };
+
+                  if (!newOi.productCode && (qi.productCode || oiRawCode)) {
+                    newOi.productCode = qi.productCode || oiRawCode;
+                    changed = true;
                   }
-                  return oi;
+                  const specVal = qi.spec || qi.grade || '';
+                  if ((!newOi.grade || newOi.grade.trim() === '') && specVal) {
+                    newOi.grade = specVal;
+                    newOi.spec = specVal;
+                    changed = true;
+                  }
+                  if (!newOi.spec && (newOi.grade || specVal)) {
+                    newOi.spec = newOi.grade || specVal;
+                    changed = true;
+                  }
+                  if ((newOi.palletQty === undefined || newOi.palletQty === null || newOi.palletQty === 0) && qi.palletQty) {
+                    newOi.palletQty = qi.palletQty;
+                    changed = true;
+                  }
+                  if (!newOi.selectedPackingMethodId && qi.selectedPackingMethodId) {
+                    newOi.selectedPackingMethodId = qi.selectedPackingMethodId;
+                    changed = true;
+                  }
+                  if (!newOi.packingSpecOverride && qi.packingSpecOverride) {
+                    newOi.packingSpecOverride = qi.packingSpecOverride;
+                    changed = true;
+                  }
+                  if ((newOi.purchasePriceKrw === undefined || newOi.purchasePriceKrw === null || newOi.purchasePriceKrw === 0) && qi.purchasePriceKrw) {
+                    newOi.purchasePriceKrw = qi.purchasePriceKrw;
+                    changed = true;
+                  }
+                  if ((newOi.purchasePriceUsd === undefined || newOi.purchasePriceUsd === null || newOi.purchasePriceUsd === 0) && qi.purchasePriceUsd) {
+                    newOi.purchasePriceUsd = qi.purchasePriceUsd;
+                    changed = true;
+                  }
+                  if (!newOi.purchasePriceCurrency && (qi.purchasePriceCurrency || qi.purchasePriceKrw > 0)) {
+                    newOi.purchasePriceCurrency = qi.purchasePriceCurrency || (qi.purchasePriceKrw > 0 ? 'KRW' : 'USD');
+                    changed = true;
+                  }
+                  if (!newOi.exchangeRate && (qi.exchangeRate || pData.exchangeRate)) {
+                    newOi.exchangeRate = qi.exchangeRate || pData.exchangeRate || 1350;
+                    changed = true;
+                  }
+                  if (newOi.marginRate === undefined || newOi.marginRate === null) {
+                    newOi.marginRate = qi.marginRate != null ? qi.marginRate : 10;
+                    changed = true;
+                  }
+                  if (newOi.roundDigits === undefined && qi.roundDigits !== undefined) {
+                    newOi.roundDigits = qi.roundDigits;
+                    changed = true;
+                  }
+                  if (!newOi.remarks && qi.remarks) {
+                    newOi.remarks = qi.remarks;
+                    changed = true;
+                  }
+                  if ((!newOi.salePriceUsd || newOi.salePriceUsd === 0) && qi.salePriceUsd) {
+                    newOi.salePriceUsd = qi.salePriceUsd;
+                    changed = true;
+                  }
+                  if ((!newOi.unitPrice || newOi.unitPrice === 0) && qi.salePriceUsd) {
+                    newOi.unitPrice = qi.salePriceUsd;
+                    changed = true;
+                  }
+                  if (!newOi.supplier && qi.supplierName) {
+                    newOi.supplier = qi.supplierName;
+                    changed = true;
+                  }
+
+                  if (changed) hasChanges = true;
+                  return newOi;
                 });
                 return hasChanges ? updated : prev;
               });
@@ -2776,13 +3062,17 @@ export const OrderDetail: React.FC = () => {
               setSourcingItems(prev => {
                 let hasChanges = false;
                 const updated = prev.map((si, idx) => {
-                  if (!si.grade || si.grade.trim() === '') {
-                    const qi = quoteItems[idx];
-                    const specVal = qi?.spec || qi?.grade || '';
-                    if (specVal) {
-                      hasChanges = true;
-                      return { ...si, grade: specVal };
-                    }
+                  const oiRawCode = getRawProductCode(si.productCode || si.name);
+                  const qi = quoteItems.find((q: any) => {
+                    const qRawCode = getRawProductCode(q.productCode);
+                    return qRawCode && oiRawCode && qRawCode.toUpperCase() === oiRawCode.toUpperCase();
+                  }) || quoteItems[idx];
+                  if (!qi) return si;
+
+                  const specVal = qi.spec || qi.grade || '';
+                  if (!si.grade && specVal) {
+                    hasChanges = true;
+                    return { ...si, grade: specVal, spec: specVal };
                   }
                   return si;
                 });
@@ -2800,7 +3090,7 @@ export const OrderDetail: React.FC = () => {
       console.warn("Failed to sync connected PI details:", err);
     });
     return () => unsubscribe();
-  }, [order?.quotationId]);
+  }, [order?.quotationId, order?.piNumber]);
 
   const [piList, setPiList] = useState<any[]>([]);
   useEffect(() => {
@@ -3148,19 +3438,36 @@ export const OrderDetail: React.FC = () => {
         items: curOrderItems.map((it, idx) => {
           const matchingSourcing = (it.itemId && curSourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || curSourcingItems[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingSourcing?.supplier?.trim() || '');
+          const rawCode = getRawProductCode(it.productCode || it.name);
+          const buyPrice = it.purchasePriceKrw && it.purchasePriceKrw > 0 ? it.purchasePriceKrw : (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? it.purchasePriceUsd : (it.purchaseUnitPrice || 0));
+          const buyCurr = it.purchasePriceCurrency || (it.purchasePriceKrw && it.purchasePriceKrw > 0 ? 'KRW' : (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? 'USD' : (it.purchaseUnitCurrency || 'USD')));
           return {
             itemId: it.itemId || (idx + 1).toString(),
+            lineNumber: it.lineNumber || (idx + 1).toString(),
+            productCode: rawCode || it.productCode || '',
             name: it.name || '',
             supplier: activeSupplier,
             supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
-            grade: it.grade || '',
+            grade: it.grade || it.spec || '',
+            spec: it.spec || it.grade || '',
             qty: parseFloat(it.qty as any) || 0,
             unit: (it.unit || 'kg') as any,
             unitPrice: parseFloat(it.unitPrice as any) || 0,
-            purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
-            purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
-            originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+            salePriceUsd: it.salePriceUsd != null ? (parseFloat(it.salePriceUsd as any) || 0) : (parseFloat(it.unitPrice as any) || 0),
+            purchaseUnitPrice: buyPrice,
+            purchaseUnitCurrency: buyCurr as any,
+            purchasePriceCurrency: buyCurr,
+            purchasePriceKrw: parseFloat(it.purchasePriceKrw as any) || 0,
+            purchasePriceUsd: parseFloat(it.purchasePriceUsd as any) || 0,
+            exchangeRate: parseFloat(it.exchangeRate as any) || (basicForm.exchangeRate || order?.exchangeRate || 1350),
+            marginRate: it.marginRate != null ? (parseFloat(it.marginRate as any) || 0) : 10,
+            roundDigits: it.roundDigits !== undefined ? it.roundDigits : 1,
+            palletQty: parseFloat(it.palletQty as any) || 0,
+            selectedPackingMethodId: it.selectedPackingMethodId || '',
+            packingSpecOverride: it.packingSpecOverride || null,
+            remarks: it.remarks || it.remark || '',
+            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : buyPrice,
+            originalPurchaseCurrency: (it.originalPurchaseCurrency || buyCurr) as any,
             amount: it.amount || 0,
             currency: (it.currency || 'USD') as any,
             hsCode: (it as any).hsCode || ''
@@ -3275,15 +3582,22 @@ export const OrderDetail: React.FC = () => {
     return val;
   };
 
-  const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
+  const handleItemChange = (index: number, fieldOrUpdates: keyof OrderItem | any, value?: any) => {
     let finalUpdatedItem: any = null;
 
     setOrderItems(prev => {
       const updated = [...prev];
-      let it = { ...updated[index], [field]: value };
-      
-      if (field === 'name') {
-        const parsedCode = getRawProductCode(value);
+      let it = { ...updated[index] };
+
+      const updates: any = typeof fieldOrUpdates === 'string' ? { [fieldOrUpdates]: value } : fieldOrUpdates;
+      it = { ...it, ...updates };
+
+      const hasField = (f: string) => f in updates;
+      const getFieldValue = (f: string) => updates[f];
+
+      if (hasField('name') || hasField('productCode')) {
+        const rawCodeInput = getFieldValue('productCode') || getFieldValue('name');
+        const parsedCode = getRawProductCode(rawCodeInput);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
         if (prod) {
           const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
@@ -3292,65 +3606,127 @@ export const OrderDetail: React.FC = () => {
           let supName = prod.supplierName || '';
           if (prod.suppliers && prod.suppliers.length > 0) {
             const defLink = prod.suppliers.find(s => s.isDefault);
-            if (defLink) {
-              supName = defLink.supplierName;
-            }
+            if (defLink) supName = defLink.supplierName;
           }
-
-          // Fallback to existing supplier if master DB has no supplier assigned
           const finalSupplier = supName || it.supplier || '';
-          
           const priceObj = getPriceForSupplier(prod, finalSupplier);
-          let buyPrice = priceObj.price > 0 ? priceObj.price : (it.unitPrice || 0);
-          let itemCurrency = priceObj.currency || it.currency || 'USD';
 
-          const qty = it.qty || 0;
-          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+          const methods = getProductPackingMethods(prod);
+          const defMethod = methods.find((m: any) => m.isDefault) || methods[0];
 
-          it = {
-            ...it,
-            name: `[${prod.productCode}] ${displayName}`,
-            supplier: finalSupplier,
-            supplierContact: contactInfo || it.supplierContact || '',
-            grade: prod.spec || it.grade || '',
-            unit: (prod.unit || it.unit || 'kg') as any,
-            unitPrice: buyPrice,
-            currency: itemCurrency as any,
-            amount: amt,
-            purchaseUnitPrice: buyPrice,
-            purchaseUnitCurrency: itemCurrency
-          };
+          it.productCode = prod.productCode || parsedCode;
+          it.name = `[${prod.productCode}] ${displayName}`;
+          it.supplier = finalSupplier;
+          it.supplierContact = contactInfo || it.supplierContact || '';
+          it.grade = prod.spec || it.grade || '';
+          it.spec = prod.spec || it.spec || it.grade || '';
+          it.unit = (prod.unit || it.unit || 'PCS') as any;
+
+          if (priceObj.currency === 'KRW') {
+            it.purchasePriceCurrency = 'KRW';
+            it.purchasePriceKrw = priceObj.price || 0;
+            it.purchasePriceUsd = 0;
+          } else {
+            it.purchasePriceCurrency = 'USD';
+            it.purchasePriceUsd = priceObj.price || 0;
+            it.purchasePriceKrw = 0;
+          }
+          it.purchaseUnitPrice = priceObj.price || 0;
+          it.purchaseUnitCurrency = priceObj.currency;
+
+          if (!it.marginRate) it.marginRate = 10;
+          if (it.roundDigits === undefined) it.roundDigits = 1;
+          if (!it.exchangeRate) it.exchangeRate = basicForm.exchangeRate || order?.exchangeRate || 1350;
+
+          if (defMethod) {
+            it.selectedPackingMethodId = defMethod.id;
+            const autoQty = autoCalcPalletQty(it.qty || 0, defMethod.id, methods);
+            it.palletQty = autoQty > 0 ? autoQty : (it.qty || 0);
+          }
         }
       }
 
-      if (field === 'supplier') {
-        const parsedCode = getRawProductCode(it.name);
+      if (hasField('supplier')) {
+        const parsedCode = getRawProductCode(it.productCode || it.name);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
         if (prod) {
-          const priceObj = getPriceForSupplier(prod, value);
+          const priceObj = getPriceForSupplier(prod, updates.supplier);
           if (priceObj.price > 0) {
-            it.unitPrice = priceObj.price;
-            it.currency = priceObj.currency as any;
+            if (priceObj.currency === 'KRW') {
+              it.purchasePriceCurrency = 'KRW';
+              it.purchasePriceKrw = priceObj.price;
+              it.purchasePriceUsd = 0;
+            } else {
+              it.purchasePriceCurrency = 'USD';
+              it.purchasePriceUsd = priceObj.price;
+              it.purchasePriceKrw = 0;
+            }
             it.purchaseUnitPrice = priceObj.price;
             it.purchaseUnitCurrency = priceObj.currency;
-            if (it.qty) {
-              it.amount = priceObj.currency === 'KRW' ? Math.round(it.qty * priceObj.price) : parseFloat((it.qty * priceObj.price).toFixed(2));
-            }
           }
         }
       }
 
-      if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
-        const qty = field === 'qty' ? parseFloat(value) || 0 : parseFloat(it.qty as any) || 0;
-        const price = field === 'unitPrice' ? parseFloat(value) || 0 : parseFloat(it.unitPrice as any) || 0;
-        const curr = field === 'currency' ? value : it.currency;
-        if (curr === 'KRW') {
-          it.amount = Math.round(qty * price);
-        } else {
-          it.amount = parseFloat((qty * price).toFixed(2));
+      if (hasField('selectedPackingMethodId')) {
+        const parsedCode = getRawProductCode(it.productCode || it.name);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        const methods = getProductPackingMethods(prod);
+        const selectedMethod = methods.find((m: any) => m.id === updates.selectedPackingMethodId);
+        if (selectedMethod && selectedMethod.qtyPerPallet && selectedMethod.qtyPerPallet > 0) {
+          const palQty = it.palletQty && it.palletQty > 0 ? it.palletQty : 1;
+          it.palletQty = palQty;
+          it.qty = palQty * selectedMethod.qtyPerPallet;
         }
       }
-      
+
+      // Calculate sale price when purchase price, exchange rate, margin rate, or round digits change
+      if (hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('purchasePriceCurrency') || hasField('exchangeRate') || hasField('marginRate') || hasField('roundDigits') || hasField('productCode') || hasField('name')) {
+        let rawSalePrice = 0;
+        const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1350;
+        const pKrw = it.purchasePriceKrw || 0;
+        const pUsd = it.purchasePriceUsd || 0;
+        const mRate = it.marginRate != null ? it.marginRate : 10;
+        if (pKrw > 0) {
+          rawSalePrice = pKrw / (exRate || 1) / (1 - mRate / 100);
+        } else if (pUsd > 0) {
+          rawSalePrice = pUsd / (1 - mRate / 100);
+        }
+
+        if (typeof it.roundDigits === 'number') {
+          it.unitPrice = ceilValue(rawSalePrice, it.roundDigits);
+          it.salePriceUsd = it.unitPrice;
+        } else if (rawSalePrice > 0) {
+          it.unitPrice = parseFloat(rawSalePrice.toFixed(2));
+          it.salePriceUsd = it.unitPrice;
+        }
+      }
+
+      if (hasField('salePriceUsd')) {
+        it.unitPrice = updates.salePriceUsd;
+      }
+
+      // Qty or unitPrice change -> amount and palletQty
+      if (hasField('qty') || hasField('quantity') || hasField('unitPrice') || hasField('salePriceUsd') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('marginRate') || hasField('roundDigits') || hasField('palletQty')) {
+        const qty = parseFloat(it.qty as any) || 0;
+        const price = parseFloat(it.unitPrice as any) || 0;
+        it.amount = parseFloat((qty * price).toFixed(2));
+
+        if (hasField('qty') || hasField('quantity')) {
+          const parsedCode = getRawProductCode(it.productCode || it.name);
+          const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+          const methods = getProductPackingMethods(prod);
+          const selectedMethod = methods.find((m: any) => m.id === (it.selectedPackingMethodId || 'default_injected')) || methods[0];
+          const autoQty = autoCalcPalletQty(qty, selectedMethod?.id, methods);
+          if (autoQty > 0) {
+            it.palletQty = autoQty;
+          }
+        }
+      }
+
+      if (hasField('spec')) {
+        it.grade = it.spec;
+      }
+
       updated[index] = it;
       finalUpdatedItem = it;
       latestOrderStateRef.current.orderItems = updated;
@@ -3361,23 +3737,26 @@ export const OrderDetail: React.FC = () => {
     setSourcingItems(sourcingPrev => {
       const sourcingUpdated = [...sourcingPrev];
       if (sourcingUpdated[index]) {
-        sourcingUpdated[index] = {
-          ...sourcingUpdated[index],
-          [field]: value
-        };
         if (finalUpdatedItem) {
           sourcingUpdated[index] = {
             ...sourcingUpdated[index],
             name: finalUpdatedItem.name,
+            productCode: finalUpdatedItem.productCode,
             qty: finalUpdatedItem.qty,
             unit: finalUpdatedItem.unit,
             supplier: finalUpdatedItem.supplier,
             supplierContact: finalUpdatedItem.supplierContact,
             grade: finalUpdatedItem.grade,
-            purchaseUnitPrice: finalUpdatedItem.purchaseUnitPrice,
-            purchaseUnitCurrency: finalUpdatedItem.purchaseUnitCurrency,
+            spec: finalUpdatedItem.spec,
+            purchaseUnitPrice: finalUpdatedItem.purchasePriceKrw > 0 ? finalUpdatedItem.purchasePriceKrw : finalUpdatedItem.purchasePriceUsd,
+            purchaseUnitCurrency: finalUpdatedItem.purchasePriceCurrency,
             amount: finalUpdatedItem.amount,
             currency: finalUpdatedItem.currency
+          };
+        } else if (typeof fieldOrUpdates === 'string') {
+          sourcingUpdated[index] = {
+            ...sourcingUpdated[index],
+            [fieldOrUpdates]: value
           };
         }
       }
@@ -4192,7 +4571,32 @@ export const OrderDetail: React.FC = () => {
   };
 
   const addItemRow = () => {
-    const newItem = { itemId: (orderItems.length + 1).toString(), name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' as const };
+    const newIdx = orderItems.length + 1;
+    const newItem: Partial<OrderItem> = {
+      itemId: newIdx.toString(),
+      lineNumber: newIdx.toString(),
+      productCode: '',
+      name: '',
+      supplier: '',
+      supplierContact: '',
+      grade: '',
+      spec: '',
+      qty: 0,
+      unit: 'EA',
+      unitPrice: 0,
+      salePriceUsd: 0,
+      purchasePriceCurrency: 'KRW',
+      purchasePriceKrw: 0,
+      purchasePriceUsd: 0,
+      exchangeRate: basicForm.exchangeRate || order?.exchangeRate || 1350,
+      marginRate: 10,
+      roundDigits: 1,
+      palletQty: 0,
+      selectedPackingMethodId: '',
+      remarks: '',
+      amount: 0,
+      currency: 'USD'
+    };
     setOrderItems(prev => [...prev, newItem]);
     setSourcingItems(prev => [...prev, newItem]);
   };
@@ -7632,319 +8036,504 @@ ${downloadLink}`;
                   <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '15.5px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
                 </div>
                 
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '15.5px' }}>
-                  <thead>
-                    <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '55px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No.</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'left', minWidth: '380px' }}>상품코드 / 전체 상품명</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '180px' }}>공급사</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '62px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>관리</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orderItems.map((item, idx) => {
-                      if (item.isSourcingOnly) return null;
-                      const isDragOver = step1DragOverIndex === idx;
-                      return (
-                        <tr 
-                          key={`order-item-${item.lineNumber || (idx + 1)}-${item.name || idx}`}
-                          onDragOver={(e) => handleStep1DragOver(e, idx)}
-                          onDragLeave={handleStep1DragLeave}
-                          onDrop={(e) => handleStep1Drop(e, idx)}
-                          style={{ 
-                            borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #f1f5f9',
-                            backgroundColor: isDragOver ? '#dbeafe' : 'transparent'
-                          }}
-                        >
-                          <td style={{ padding: '4px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                              <span 
-                                draggable={true}
-                                onDragStart={(e) => handleStep1DragStart(e, idx)}
-                                onDragEnd={() => { step1DraggedIndexRef.current = null; setStep1DragOverIndex(null); }}
-                                style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
-                                title="드래그하여 순서 변경"
-                              >
-                                ⋮⋮
-                              </span>
-                              <input
-                                type="text"
-                                value={item.lineNumber || (idx + 1).toString()}
-                                onChange={e => handleStep1NoChange(idx, e.target.value)}
-                                style={{
-                                  width: '32px',
-                                  textAlign: 'center',
-                                  padding: '2px',
-                                  fontWeight: 400,
-                                  color: '#1e293b',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '4px',
-                                  fontSize: '12px'
-                                }}
-                                title="순번 수동 입력"
-                              />
-                            </div>
-                          </td>
-                        
-                        {/* 상품코드 및 규격/스펙 */}
-                        <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                <textarea
-                                  rows={1}
-                                  value={item.name || ''}
-                                  onChange={e => handleItemChange(idx, 'name', e.target.value)}
-                                  placeholder="상품코드 검색/입력"
-                                  title={item.name || ''}
-                                  style={{
-                                    width: '100%',
-                                    padding: '6px 44px 6px 8px',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '4px',
-                                    fontSize: '13px',
-                                    fontWeight: 400,
-                                    letterSpacing: 'normal',
-                                    boxSizing: 'border-box',
-                                    minHeight: '34px',
-                                    resize: 'vertical',
-                                    outline: 'none',
-                                    color: '#1e293b',
-                                    lineHeight: 1.4
-                                  }}
-                                />
-                                {item.name && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleItemChange(idx, 'name', '')}
-                                    style={{
-                                      position: 'absolute',
-                                      right: '22px',
-                                      top: '7px',
-                                      background: 'transparent',
-                                      border: 'none',
-                                      color: '#64748b',
-                                      cursor: 'pointer',
-                                      fontSize: '13px',
-                                      padding: '2px',
-                                      zIndex: 5,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center'
-                                    }}
-                                    title="비우기"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSearchItemIndex(idx);
-                                    setIsSourcingSearch(false);
-                                    setIsProductSearchOpen(true);
-                                  }}
-                                  style={{
-                                    position: 'absolute',
-                                    right: '4px',
-                                    top: '7px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#3b82f6',
-                                    cursor: 'pointer',
-                                    fontSize: '13.5px',
-                                    padding: '2px',
-                                    zIndex: 5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title="상품 검색 (Subwindow)"
+                <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+                  <table style={{ width: '100%', minWidth: '1140px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                        <th style={{ padding: '10px 4px', width: '55px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
+                        <th style={{ padding: '10px 4px', width: '320px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                        <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                        <th style={{ padding: '10px 4px', width: '165px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                        <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
+                        <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
+                        <th style={{ padding: '10px 4px', width: '62px', borderBottom: '1px solid #cbd5e1' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orderItems.map((item, idx) => {
+                        if (item.isSourcingOnly) return null;
+                        const isColoredRow = idx % 2 === 1;
+                        const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
+                        const isDragOver = step1DragOverIndex === idx;
+                        const rawCode = getRawProductCode(item.productCode || item.name || '');
+                        const prod = products.find(p => p.productCode === rawCode || p.id === rawCode);
+                        const curCurrency = item.purchasePriceCurrency || (item.purchasePriceUsd && item.purchasePriceUsd > 0 ? 'USD' : (item.currency === 'KRW' ? 'KRW' : 'USD'));
+                        const exRate = item.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
+
+                        return (
+                          <tr 
+                            key={`order-item-${item.lineNumber || (idx + 1)}-${item.name || idx}`}
+                            onDragOver={(e) => handleStep1DragOver(e, idx)}
+                            onDragLeave={handleStep1DragLeave}
+                            onDrop={(e) => handleStep1Drop(e, idx)}
+                            style={{ 
+                              borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                              backgroundColor: isDragOver ? '#dbeafe' : rowBgColor,
+                              transition: 'background-color 0.15s'
+                            }}
+                            onMouseEnter={e => { if (step1DragOverIndex !== idx) e.currentTarget.style.backgroundColor = '#e0f2fe'; }}
+                            onMouseLeave={e => { if (step1DragOverIndex !== idx) e.currentTarget.style.backgroundColor = rowBgColor; }}
+                          >
+                            {/* No. & Drag Handle */}
+                            <td style={{ padding: '4px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                                <span 
+                                  draggable={true}
+                                  onDragStart={(e) => handleStep1DragStart(e, idx)}
+                                  onDragEnd={() => { step1DraggedIndexRef.current = null; setStep1DragOverIndex(null); }}
+                                  style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
+                                  title="드래그하여 순서 변경"
                                 >
-                                  🔍
-                                </button>
-                                <datalist id={`detail_products_datalist_${idx}`}>
-                                  {products.map(p => {
-                                    const displayName = p.nameEn || p.nameKo || '';
-                                    return (
-                                      <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
-                                        [{p.productCode}] {displayName}
-                                      </option>
-                                    );
-                                  })}
-                                </datalist>
+                                  ⋮⋮
+                                </span>
+                                <input
+                                  type="text"
+                                  value={item.lineNumber !== undefined && item.lineNumber !== '' ? item.lineNumber : (idx + 1)}
+                                  onChange={e => handleStep1NoChange(idx, e.target.value)}
+                                  style={{
+                                    ...gridInputStyle,
+                                    width: '38px',
+                                    textAlign: 'center',
+                                    padding: '2px 4px',
+                                    fontWeight: 700,
+                                    color: '#1e293b'
+                                  }}
+                                  title="순번 수동 입력"
+                                />
                               </div>
-                              {(() => {
-                                const rawCode = getRawProductCode(item.name);
-                                const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                                return (
+                            </td>
+
+                            {/* 상품코드 / 스펙(Spec) */}
+                            <td style={{ padding: '4px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                  <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <input
+                                      type="text"
+                                      list={`step1_products_datalist_${idx}`}
+                                      value={item.name || item.productCode || ''}
+                                      placeholder="상품코드 검색/입력"
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        handleItemChange(idx, { name: val, productCode: getRawProductCode(val) });
+                                      }}
+                                      style={{ ...gridInputStyle, paddingRight: '42px' }}
+                                    />
+                                    {(item.name || item.productCode) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleItemChange(idx, { name: '', productCode: '' })}
+                                        style={{
+                                          position: 'absolute',
+                                          right: '24px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          color: 'var(--text-muted)',
+                                          cursor: 'pointer',
+                                          fontSize: '11px',
+                                          padding: '2px',
+                                          zIndex: 5,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                        title="비우기"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSearchItemIndex(idx);
+                                        setIsSourcingSearch(false);
+                                        setIsProductSearchOpen(true);
+                                      }}
+                                      style={{
+                                        position: 'absolute',
+                                        right: '6px',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#3b82f6',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        padding: '2px',
+                                        zIndex: 5,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                      title="상품 검색 (Subwindow)"
+                                    >
+                                      🔍
+                                    </button>
+                                    <datalist id={`step1_products_datalist_${idx}`}>
+                                      {products.map(p => {
+                                        const displayName = p.nameEn || p.nameKo || '';
+                                        return (
+                                          <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
+                                            [{p.productCode}] {displayName}
+                                          </option>
+                                        );
+                                      })}
+                                    </datalist>
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (p) {
-                                        setEditingProd(p);
+                                      if (prod) {
+                                        setEditingProd(prod);
                                         setIsProdModalOpen(true);
                                       } else {
                                         alert('먼저 등록된 상품을 검색/선택해주세요.');
                                       }
                                     }}
-                                    disabled={!p}
+                                    disabled={!prod}
                                     title="선택된 상품 수정"
                                     style={{
-                                      background: p ? '#fef08a' : '#f1f5f9',
-                                      border: p ? '1px solid #eab308' : '1px solid #cbd5e1',
-                                      color: p ? '#a16207' : '#94a3b8',
+                                      background: prod ? '#fef08a' : '#f1f5f9',
+                                      border: prod ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
+                                      color: prod ? '#a16207' : 'var(--text-muted)',
                                       borderRadius: '4px',
-                                      padding: '2px 4px',
-                                      cursor: p ? 'pointer' : 'not-allowed',
-                                      fontSize: '13.5px',
-                                      fontWeight: 400,
+                                      padding: '4px 6px',
+                                      cursor: prod ? 'pointer' : 'not-allowed',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      whiteSpace: 'nowrap',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      height: '32px',
-                                      width: '26px',
-                                      boxSizing: 'border-box'
+                                      height: '29px'
                                     }}
                                   >
                                     ✏️
                                   </button>
+                                  <div style={{ minHeight: '18px', display: 'flex', alignItems: 'center' }}>
+                                    {(item.supplier || prod?.supplierName) ? (
+                                      <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '140px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={item.supplier || prod?.supplierName}>
+                                        {(item.supplier || prod?.supplierName || '').replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                <textarea
+                                  value={item.spec || item.grade || ''}
+                                  placeholder="스펙 (Spec)"
+                                  onChange={e => handleItemChange(idx, { spec: e.target.value, grade: e.target.value })}
+                                  rows={1}
+                                  style={{ ...gridInputStyle, resize: 'both', minHeight: '29px', minWidth: '80px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px', overflow: 'auto' }}
+                                />
+                              </div>
+                            </td>
+
+                            {/* 패킹방식/수량 */}
+                            <td style={{ padding: '4px' }}>
+                              {(() => {
+                                const methods = getProductPackingMethods(prod);
+                                const selectedMethod = methods.find((m: any) => m.id === (item.selectedPackingMethodId || 'default_injected')) || methods[0];
+                                const isExpanded = expandedPackingRows.has(idx);
+                                const autoQty = autoCalcPalletQty(item.qty || 0, selectedMethod?.id, methods);
+                                const packLabel = formatPackingName(selectedMethod?.name, selectedMethod?.qtyPerPallet);
+                                const packUnit = selectedMethod?.packageType || '단품';
+
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="패킹수량"
+                                        value={item.palletQty || ''}
+                                        onChange={e => handleItemChange(idx, 'palletQty', parseFloat(e.target.value) || 0)}
+                                        style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '55px' }}
+                                      />
+                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                        {packUnit}
+                                      </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => togglePackingRow(idx)}
+                                        title={`패킹 설정: ${packLabel}`}
+                                        style={{
+                                          width: '100%',
+                                          padding: '2px 6px',
+                                          fontSize: '11.5px',
+                                          border: '1px solid #cbd5e1',
+                                          borderRadius: '4px',
+                                          background: isExpanded ? '#eff6ff' : '#f8fafc',
+                                          color: isExpanded ? '#2563eb' : '#475569',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          gap: '4px',
+                                          fontWeight: 600,
+                                          boxSizing: 'border-box'
+                                        }}
+                                      >
+                                        <span>📦</span>
+                                        <span style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{packLabel}</span>
+                                      </button>
+                                    </div>
+
+                                    <div style={{ minHeight: '16px', display: 'flex', alignItems: 'center' }}>
+                                      {!item.palletQty && autoQty > 0 && (
+                                        <div
+                                          style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', paddingLeft: '2px' }}
+                                          onClick={() => handleItemChange(idx, 'palletQty', autoQty)}
+                                          title="클릭하여 적용"
+                                        >
+                                          ≈ {autoQty} {packUnit} (자동)
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {isExpanded && (
+                                      <div style={{
+                                        marginTop: '4px',
+                                        padding: '8px',
+                                        background: '#f0f9ff',
+                                        border: '1px solid #bae6fd',
+                                        borderRadius: '6px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '6px'
+                                      }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1' }}>📦 패킹 방식 선택</div>
+                                        {methods.map((m: any) => {
+                                          const isSelected = (item.selectedPackingMethodId || 'default_injected') === m.id;
+                                          const handleSelect = (e: React.MouseEvent | React.ChangeEvent) => {
+                                            e.stopPropagation();
+                                            const newAutoQty = autoCalcPalletQty(item.qty || 0, m.id, methods);
+                                            const updates: any = { selectedPackingMethodId: m.id };
+                                            if (newAutoQty > 0) {
+                                              updates.palletQty = newAutoQty;
+                                            }
+                                            handleItemChange(idx, updates);
+                                            togglePackingRow(idx);
+                                          };
+
+                                          return (
+                                            <label
+                                              key={m.id}
+                                              onClick={handleSelect}
+                                              style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                padding: '4px 6px',
+                                                borderRadius: '4px',
+                                                background: isSelected ? '#dbeafe' : 'transparent',
+                                                border: isSelected ? '1px solid #93c5fd' : '1px solid transparent',
+                                                transition: 'all 0.15s ease'
+                                              }}
+                                            >
+                                              <input
+                                                type="radio"
+                                                name={`packing-order-${idx}`}
+                                                value={m.id}
+                                                checked={isSelected}
+                                                onChange={handleSelect}
+                                              />
+                                              <span style={{ fontWeight: 600, color: isSelected ? '#1e40af' : '#1e293b' }}>
+                                                {formatPackingName(m.name, m.qtyPerPallet)}
+                                              </span>
+                                              {m.qtyPerPallet > 1 && (
+                                                <span style={{ color: isSelected ? '#3b82f6' : '#64748b', fontSize: '11px' }}>
+                                                  ({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})
+                                                </span>
+                                              )}
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })()}
-                            </div>
-                            {/* 규격 / 스펙(Spec) 필드 */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '1px 5px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
-                                스펙(Spec)
-                              </span>
-                              <input
-                                type="text"
-                                value={item.grade || ''}
-                                onChange={e => handleItemChange(idx, 'grade', e.target.value)}
-                                placeholder="규격 / 스펙(Spec) 입력 (예: WBR-7575Z, 50*70*3T)"
-                                title={`규격/스펙: ${item.grade || ''}`}
-                                style={{
-                                  flex: 1,
-                                  height: '24px',
-                                  padding: '0 8px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  border: item.grade ? '1px solid #93c5fd' : '1px solid #cbd5e1',
-                                  background: item.grade ? '#f8fafc' : '#fff',
-                                  color: item.grade ? '#1e40af' : '#64748b',
-                                  borderRadius: '3px',
-                                  outline: 'none',
-                                  boxSizing: 'border-box'
-                                }}
+                            </td>
+
+                            {/* 수량 / 단위 */}
+                            <td style={{ padding: '4px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <input
+                                  type="text"
+                                  placeholder="수량"
+                                  value={formatNumberWithCommas(item.qty)}
+                                  onChange={e => handleItemChange(idx, 'qty', parseCommas(e.target.value))}
+                                  style={{ ...gridInputStyle, textAlign: 'right', width: '80%', marginLeft: 'auto' }}
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="단위"
+                                  value={item.unit || ''}
+                                  onChange={e => handleItemChange(idx, 'unit', e.target.value.toUpperCase())}
+                                  style={{ ...gridInputStyle, textAlign: 'center', width: '50%', marginLeft: 'auto' }}
+                                />
+                              </div>
+                            </td>
+
+                            {/* 매입가 */}
+                            <td style={{ padding: '4px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                  <select
+                                    value={curCurrency}
+                                    onChange={e => {
+                                      handleCurrencySelection(e.target.value, curCurrency, customCurrencies, val => {
+                                        const curVal = curCurrency === 'USD' ? (item.purchasePriceUsd || 0) : (item.purchasePriceKrw || 0);
+                                        handleItemChange(idx, {
+                                          purchasePriceCurrency: val,
+                                          purchasePriceUsd: val === 'USD' ? curVal : 0,
+                                          purchasePriceKrw: val === 'KRW' ? curVal : 0
+                                        });
+                                      });
+                                    }}
+                                    style={{ ...gridInputStyle, width: '65px', padding: '2px' }}
+                                  >
+                                    {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                    <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
+                                  </select>
+                                  <PurchasePriceInput
+                                    curCurrency={curCurrency}
+                                    purchasePriceUsd={item.purchasePriceUsd}
+                                    purchasePriceKrw={item.purchasePriceKrw}
+                                    onChange={updates => handleItemChange(idx, updates)}
+                                  />
+                                </div>
+                                {curCurrency === 'KRW' && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>기준환율:</span>
+                                    <input
+                                      type="text"
+                                      value={formatNumberWithCommas(item.exchangeRate || exRate)}
+                                      onChange={e => handleItemChange(idx, 'exchangeRate', parseCommas(e.target.value))}
+                                      style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsQuoteSettingsOpen(true)}
+                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '0 2px', color: '#64748b' }}
+                                      title="견적환경설정 열기"
+                                    >
+                                      ⚙️
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 마진/올림 */}
+                            <td style={{ padding: '4px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="마진"
+                                    value={formatNumberWithCommas(item.marginRate)}
+                                    onChange={e => handleItemChange(idx, 'marginRate', parseCommas(e.target.value))}
+                                    style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }}
+                                  />
+                                  <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
+                                </div>
+                                {(item.productCode || item.name) && (
+                                  <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap' }} title="과거 거래 데이터 분석 기반 AI 추천 마진">
+                                    🤖 AI추천: 15%
+                                  </div>
+                                )}
+                                <select
+                                  value={item.roundDigits ?? 'none'}
+                                  onChange={e => handleItemChange(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))}
+                                  style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%' }}
+                                >
+                                  <option value="none">없음</option>
+                                  <option value="-2">-2</option>
+                                  <option value="-1">-1</option>
+                                  <option value="0">0</option>
+                                  <option value="1">1</option>
+                                  <option value="2">2</option>
+                                </select>
+                              </div>
+                            </td>
+
+                            {/* 단가(USD) */}
+                            <td style={{ padding: '4px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                <SalePriceInput
+                                  value={item.salePriceUsd ?? item.unitPrice}
+                                  onChange={val => handleItemChange(idx, { salePriceUsd: val, unitPrice: val })}
+                                />
+                              </div>
+                            </td>
+
+                            {/* 총액($) */}
+                            <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                              ${((item.unitPrice || item.salePriceUsd || 0) * (item.qty || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+
+                            {/* 이익($) */}
+                            <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                              ${(() => {
+                                const salePrice = item.salePriceUsd ?? item.unitPrice ?? 0;
+                                const buyUsd = (item.purchasePriceUsd && item.purchasePriceUsd > 0)
+                                  ? item.purchasePriceUsd
+                                  : ((item.purchasePriceKrw || 0) / (item.exchangeRate || exRate || 1400));
+                                const profit = item.qty ? (salePrice - buyUsd) * item.qty : 0;
+                                return profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              })()}
+                            </td>
+
+                            {/* 비고 */}
+                            <td style={{ padding: '4px' }}>
+                              <textarea
+                                value={item.remarks || ''}
+                                placeholder="비고"
+                                onChange={e => handleItemChange(idx, 'remarks', e.target.value)}
+                                rows={2}
+                                style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }}
                               />
-                            </div>
-                          </div>
-                        </td>
+                            </td>
 
-                        {/* 공급사 */}
-                        <td style={{ padding: '4px 4px', verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <input
-                              type="text"
-                              value={item.supplier || ''}
-                              onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
-                              placeholder="공급사명"
-                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
-                            />
-                          </div>
-                        </td>
-
-                        {/* 수량 / 단위 */}
-                        <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
-                            <input
-                              type="number"
-                              value={item.qty || ''}
-                              onChange={e => handleItemChange(idx, 'qty', e.target.value)}
-                              placeholder="수량"
-                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
-                            />
-                            <input
-                              type="text"
-                              value={item.unit || ''}
-                              onChange={e => handleItemChange(idx, 'unit', e.target.value)}
-                              placeholder="단위"
-                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', textAlign: 'center', color: '#1e293b' }}
-                            />
-                          </div>
-                        </td>
-
-                        {/* 통화 / 단가 */}
-                        <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
-                            <select
-                              value={item.currency || 'USD'}
-                              onChange={e => handleCurrencySelection(e.target.value, item.currency || 'USD', customCurrencies, val => handleItemChange(idx, 'currency', val))}
-                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b', background: '#fff', cursor: 'pointer' }}
-                            >
-                              {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
-                              <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
-                            </select>
-                            <input
-                              type="number"
-                              step={item.currency === 'KRW' ? '1' : '0.01'}
-                              value={item.unitPrice || ''}
-                              onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
-                              placeholder="단가"
-                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 400, textAlign: 'right', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b' }}
-                            />
-                          </div>
-                        </td>
-
-                        {/* 금액 */}
-                        <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 500, color: '#1e293b', verticalAlign: 'middle', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
-                          {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
-                        </td>
-
-                        {/* 관리 (복사/삭제) */}
-                        <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
-                            <button
-                              type="button"
-                              onClick={() => copyStep1Item(idx)}
-                              title="동일 품목 복사 추가"
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#2563eb',
-                                fontSize: '13px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              📋
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeItemRow(idx)}
-                              disabled={orderItems.length === 1}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: orderItems.length === 1 ? '#cbd5e1' : '#ef4444',
-                                fontSize: '14.5px',
-                                cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer'
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      );
+                            {/* 관리 (복사/삭제) */}
+                            <td style={{ padding: '4px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => copyStep1Item(idx)}
+                                  style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '4px', cursor: 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                  title="동일/비슷한 품목 복사 추가"
+                                >
+                                  📋
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeItemRow(idx)}
+                                  disabled={orderItems.length === 1}
+                                  style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', padding: '4px', cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                  title="품목 삭제"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
                     })}
                   </tbody>
                 </table>
               </div>
+            </div>
 
-              {/* Forwarder/Transport Section */}
+            {/* Forwarder/Transport Section */}
               <div style={{ marginTop: '4px', padding: '14px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '14.5px', fontWeight: 700, color: '#1e3a8a' }}>🚢 포워딩/운송사 & 운송비</label>
@@ -16216,6 +16805,25 @@ ${downloadLink}`;
               }
             }
             setIsCustomerSearchOpen(false);
+          }}
+        />
+      )}
+
+      {isQuoteSettingsOpen && (
+        <QuoteSettingsModal
+          isOpen={isQuoteSettingsOpen}
+          onClose={() => setIsQuoteSettingsOpen(false)}
+          onSave={(savedSettings) => {
+            try {
+              const savedRate = localStorage.getItem('site_live_usd_rate');
+              const liveRate = savedRate && Number(savedRate) > 0 ? Number(savedRate) : 1450;
+              const diff = savedSettings.exchangeRateDiff !== undefined ? Number(savedSettings.exchangeRateDiff) : -50;
+              const calcRate = Math.round((liveRate + diff) * 10) / 10;
+              setBasicForm(prev => ({ ...prev, exchangeRate: calcRate }));
+              setOrderItems(prev => prev.map(item => ({ ...item, exchangeRate: calcRate })));
+            } catch (e) {
+              console.error('Failed to apply updated quote settings:', e);
+            }
           }}
         />
       )}
