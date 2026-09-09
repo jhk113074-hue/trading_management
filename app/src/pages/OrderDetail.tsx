@@ -7429,9 +7429,9 @@ ${downloadLink}`;
           {isAdmin && (
             <button 
             onClick={handleDeleteOrder}
-            style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '14.5px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', padding: '6px 14px', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s' }}
           >
-            ❌ PO 삭제 및 발주 취소
+            PO 삭제 및 발주 취소
           </button>
           )}
         </div>
@@ -7456,20 +7456,20 @@ ${downloadLink}`;
         const { done: allDoneCount, total: allItemsCount, pct: totalPct } = getOverallProgress(effectiveSC, basicForm.isLc);
 
         return (
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: isChecklistCollapsed ? '8px 14px' : '12px 16px', marginBottom: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', transition: 'all 0.2s' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: isChecklistCollapsed ? '8px 14px' : '12px 16px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', transition: 'all 0.2s' }}>
             {/* 상단 통합 헤더 바 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🚩 진행 현황
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  진행 현황
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '2px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
                   전체 {allDoneCount}/{allItemsCount} ({totalPct}%)
                 </span>
 
                 {/* 슬림 전체 진행바 */}
-                <div style={{ width: '100px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${totalPct}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px', transition: 'width 0.3s' }} />
+                <div style={{ width: '100px', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${totalPct}%`, height: '100%', background: '#3b82f6', borderRadius: '3px', transition: 'width 0.3s' }} />
                 </div>
 
                 {/* 5개 단계 슬림 배지 칩들 */}
@@ -7491,19 +7491,19 @@ ${downloadLink}`;
                           padding: '2px 8px',
                           borderRadius: '12px',
                           fontSize: '12px',
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: 'pointer',
-                          border: isActive ? '1.5px solid #2563eb' : isFullyDone ? '1px solid #86efac' : isPartiallyDone ? '1px solid #bfdbfe' : '1px solid #cbd5e1',
-                          background: isActive ? '#eff6ff' : isFullyDone ? '#f0fdf4' : isPartiallyDone ? '#f0f9ff' : '#f8fafc',
-                          color: isFullyDone ? '#15803d' : isPartiallyDone ? '#1d4ed8' : '#64748b',
+                          border: isActive ? '1.5px solid #3b82f6' : isFullyDone ? '1px solid #bbf7d0' : isPartiallyDone ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                          background: isActive ? '#eff6ff' : isFullyDone ? '#f0fdf4' : '#f8fafc',
+                          color: isActive ? '#1d4ed8' : isFullyDone ? '#166534' : isPartiallyDone ? '#1e293b' : '#64748b',
                           transition: 'all 0.15s'
                         }}
                         title={`${label} 단계로 이동 (${done}/${total} 완료)`}
                       >
-                        <span>{icon}</span>
+                        <span style={{ fontSize: '11px' }}>{icon}</span>
                         <span>{label}</span>
-                        <span style={{ fontSize: '11px', opacity: 0.9 }}>{done}/{total}</span>
-                        {isFullyDone && <span style={{ color: '#16a34a', fontWeight: 900 }}>✓</span>}
+                        <span style={{ fontSize: '11px', opacity: 0.85 }}>{done}/{total}</span>
+                        {isFullyDone && <span style={{ color: '#16a34a', fontWeight: 800 }}>✓</span>}
                       </button>
                     );
                   })}
@@ -7515,16 +7515,15 @@ ${downloadLink}`;
                 <button
                   onClick={handleForceCompleteAll}
                   style={{
-                    background: '#10b981',
-                    border: 'none',
-                    color: '#fff',
+                    background: '#fff',
+                    border: '1px solid #cbd5e1',
+                    color: '#334155',
                     padding: '3px 10px',
-                    borderRadius: '20px',
+                    borderRadius: '4px',
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
+                    transition: 'all 0.15s'
                   }}
                   title="모든 미완료 항목을 수동 완료 처리합니다."
                 >
@@ -7535,13 +7534,13 @@ ${downloadLink}`;
                   type="button"
                   onClick={() => setIsChecklistCollapsed(!isChecklistCollapsed)}
                   style={{
-                    background: '#f1f5f9',
+                    background: '#f8fafc',
                     border: '1px solid #cbd5e1',
                     color: '#475569',
                     padding: '3px 10px',
-                    borderRadius: '20px',
+                    borderRadius: '4px',
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -8441,9 +8440,9 @@ ${downloadLink}`;
               {/* 소싱발주 */}
               <>
                   {/* 공통 입고 요청일 및 납품처 설정 카드 */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px 16px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e40af', whiteSpace: 'nowrap' }}>공통 입고 요청일 (납기일):</span>
+                      <span style={{ fontWeight: 750, fontSize: '13.5px', color: '#334155', whiteSpace: 'nowrap' }}>공통 입고 요청일 (납기일):</span>
                       <div style={{ width: '160px' }}>
                         <DateInput
                           value={basicForm.requestedDelivery || ''}
@@ -8460,7 +8459,7 @@ ${downloadLink}`;
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '300px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e40af', whiteSpace: 'nowrap' }}>공통 납품처:</span>
+                      <span style={{ fontWeight: 750, fontSize: '13.5px', color: '#334155', whiteSpace: 'nowrap' }}>공통 납품처:</span>
                       <input
                         type="text"
                         placeholder="예: YSACC 인천창고"
@@ -8476,24 +8475,24 @@ ${downloadLink}`;
                         style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }}
                       />
                     </div>
-                    <div style={{ width: '100%', fontSize: '13px', color: '#1e40af', fontWeight: 600, marginTop: '-5px' }}>
+                    <div style={{ width: '100%', fontSize: '12px', color: '#64748b', fontWeight: 500, marginTop: '-5px' }}>
                       * 여기서 지정한 일자와 납품처가 모든 공급업체별 발주서(PO) 및 도착보고서에 공통으로 자동 반영됩니다.
                     </div>
                   </div>
 
                   {/* 업체별 발주 집계 현황 카드 */}
                   {allOrderSuppliers.length > 0 && (
-                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', marginBottom: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#0f766e', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        📊 업체별 발주액 및 총계 요약
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        업체별 발주액 및 총계 요약
                       </h4>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
                         <thead>
-                          <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', fontWeight: 750, color: '#475569', fontSize: '12.5px' }}>
                             <th style={{ padding: '8px 12px', textAlign: 'left' }}>공급업체명</th>
                             <th style={{ padding: '8px 12px', textAlign: 'right' }}>발주 금액 합계</th>
                             <th style={{ padding: '8px 12px', textAlign: 'right' }}>부가세 합계</th>
-                            <th style={{ padding: '8px 12px', textAlign: 'right', color: '#b91c1c' }}>합계 총합</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right' }}>합계 총합</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -8543,18 +8542,18 @@ ${downloadLink}`;
                                   if (s.krwGrand > 0) grandParts.push(`₩${s.krwGrand.toLocaleString()}`);
 
                                   return (
-                                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                      <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e3a8a' }}>{s.supplierName}</td>
-                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500 }}>{amtParts.length > 0 ? amtParts.join(' / ') : '₩0'}</td>
-                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--text-secondary)' }}>{vatParts.length > 0 ? vatParts.join(' / ') : '₩0'}</td>
-                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>{grandParts.length > 0 ? grandParts.join(' / ') : '₩0'}</td>
+                                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                      <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e293b' }}>{s.supplierName}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#1e293b', fontVariantNumeric: 'tabular-nums' }}>{amtParts.length > 0 ? amtParts.join(' / ') : '₩0'}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{vatParts.length > 0 ? vatParts.join(' / ') : '₩0'}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 750, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{grandParts.length > 0 ? grandParts.join(' / ') : '₩0'}</td>
                                     </tr>
                                   );
                                 })}
                                 {/* 총계 행 */}
-                                <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border-default)', fontWeight: 800, color: '#0f172a' }}>
-                                  <td style={{ padding: '10px 12px', color: '#0f766e' }}>합계 총계 (Grand Total)</td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800, color: '#0f172a' }}>
+                                  <td style={{ padding: '10px 12px', color: '#1e293b' }}>합계 총계 (Grand Total)</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                     {(() => {
                                       const parts = [];
                                       if (totalUsdAmount > 0) parts.push(`${totalUsdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
@@ -8562,7 +8561,7 @@ ${downloadLink}`;
                                       return parts.length > 0 ? parts.join(' / ') : '₩0';
                                     })()}
                                   </td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                                     {(() => {
                                       const parts = [];
                                       if (totalUsdVat > 0) parts.push(`${totalUsdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
@@ -8570,7 +8569,7 @@ ${downloadLink}`;
                                       return parts.length > 0 ? parts.join(' / ') : '₩0';
                                     })()}
                                   </td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#b91c1c', fontSize: '14.5px' }}>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#1e40af', fontSize: '14.5px', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>
                                     {(() => {
                                       const parts = [];
                                       if (totalUsdGrand > 0) parts.push(`${totalUsdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
@@ -8588,20 +8587,20 @@ ${downloadLink}`;
                   )}
 
                   {/* 추가 발주사(원자재/OEM) 관리 UI */}
-                  <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>추가 발주사 (원자재/OEM 생산 등) 관리</h4>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <select 
                         value={selectedAddSupplier} 
                         onChange={e => setSelectedAddSupplier(e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '15.5px', minWidth: '220px' }}
+                        style={{ padding: '0 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', minWidth: '220px', height: '34px', background: '#fff', color: '#1e293b' }}
                       >
                         <option value="">-- 추가할 공급사 선택 --</option>
                         {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                       </select>
                       <button 
                         onClick={handleAddSupplier}
-                        style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '15.5px', cursor: 'pointer' }}
+                        style={{ padding: '0 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', fontWeight: 700, fontSize: '13px', height: '34px', cursor: 'pointer', transition: 'background 0.15s' }}
                       >
                         + 발주사 추가
                       </button>
@@ -8615,18 +8614,18 @@ ${downloadLink}`;
                             setIsSupplierModalOpen(true);
                           }
                         }}
-                        style={{ padding: '6px 14px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '6px', fontWeight: 700, fontSize: '14.5px', cursor: 'pointer' }}
+                        style={{ padding: '0 14px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontWeight: 600, fontSize: '13px', height: '34px', cursor: 'pointer' }}
                         title="공급업체 DB 신규 등록 또는 선택된 공급사 정보 수정"
                       >
                         🏢 공급업체 관리 DB
                       </button>
                     </div>
                     {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                         {order.additionalSuppliers.map(s => (
-                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '14.5px', fontWeight: 600 }}>
+                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#334155', padding: '3px 10px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600 }}>
                             {cleanCompanyName(s)}
-                            <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13.5px', padding: 0, fontWeight: 700 }}>✕</button>
+                            <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12.5px', padding: 0, fontWeight: 700 }}>✕</button>
                           </span>
                         ))}
                       </div>
@@ -8650,12 +8649,12 @@ ${downloadLink}`;
                         const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || defaultPoNum;
 
                         return (
-                          <div key={supplierName} style={{ border: '2px solid var(--text-secondary)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '8px' }}>
-                            <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '2px solid var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', marginBottom: '12px', background: '#fff' }}>
+                            <div style={{ background: '#f8fafc', padding: '8px 14px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>📄 {cleanCompanyName(supplierName)} PO</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '14px' }}>📄 {cleanCompanyName(supplierName)} PO</span>
                                     <button
                                       type="button"
                                       onClick={() => handleOpenSupplierModal(supplierName)}
@@ -8664,20 +8663,20 @@ ${downloadLink}`;
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         width: '26px',
-                                        height: '24px',
+                                        height: '26px',
                                         padding: '0',
-                                        background: '#eff6ff',
-                                        border: '1px solid #bfdbfe',
+                                        background: '#fff',
+                                        border: '1px solid #cbd5e1',
                                         borderRadius: '4px',
-                                        fontSize: '13px',
+                                        fontSize: '12px',
                                         cursor: 'pointer'
                                       }}
-                                      title={`공급업체 [${supplierName}] 기본 정보(대표자, 사업자번호, 주소, 담당자, 계좌 등) 조회 및 DB 수정`}
+                                      title={`공급업체 [${supplierName}] 기본 정보 조회 및 DB 수정`}
                                     >
                                       🏢
                                     </button>
                                   </div>
-                                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>NO:</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 750, color: '#475569' }}>NO:</span>
                                   <input 
                                     type="text"
                                     value={basicForm.supplierPoDetails?.[supplierName]?.poNumber !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.poNumber : defaultPoNum}
@@ -8700,11 +8699,12 @@ ${downloadLink}`;
                                       padding: '2px 8px',
                                       border: '1px solid #cbd5e1',
                                       borderRadius: '4px',
-                                      fontSize: '13.5px',
+                                      fontSize: '13px',
                                       fontWeight: 700,
-                                      color: '#1e3a8a',
+                                      color: '#1e293b',
                                       background: isEditing ? '#ffffff' : '#f8fafc',
-                                      width: '185px'
+                                      width: '185px',
+                                      height: '28px'
                                     }}
                                   />
                                 </div>
@@ -8712,19 +8712,19 @@ ${downloadLink}`;
                                   const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
                                   if (activeDoc) {
                                     return (
-                                      <span style={{ padding: '2px 8px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #86efac' }}>
+                                      <span style={{ padding: '2px 8px', background: '#f0fdf4', color: '#166534', borderRadius: '4px', fontSize: '12px', fontWeight: 700, border: '1px solid #bbf7d0' }}>
                                         ✅ 발행완료 (v{activeDoc.version})
                                       </span>
                                     );
                                   }
                                   return (
-                                    <span style={{ padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold', border: '1px solid #fde68a' }}>
+                                    <span style={{ padding: '2px 8px', background: '#fefce8', color: '#854d0e', borderRadius: '4px', fontSize: '12px', fontWeight: 700, border: '1px solid #fef08a' }}>
                                       📝 작성 / 수정 중
                                     </span>
                                   );
                                 })()}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
-                                  <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                                  <span style={{ fontWeight: 750, color: '#475569' }}>세율:</span>
                                   <select
                                     value={basicForm.supplierTaxTypes[supplierName] || '과세'}
                                     onChange={(e) => {
@@ -8737,13 +8737,13 @@ ${downloadLink}`;
                                         }
                                       }));
                                     }}
-                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-default)', fontSize: '13px', fontWeight: 600, outline: 'none' }}
+                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, outline: 'none', height: '28px', background: '#fff' }}
                                   >
                                     <option value="과세">과세 (10%)</option>
                                     <option value="영세">영세 (0%)</option>
                                   </select>
                                 </div>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', fontWeight: 700, color: '#0369a1', cursor: 'pointer', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }} title="체크 시 발주서 인쇄 및 PDF 발행/발송 시 단가, 금액, 부가세, 합계금액을 제외하고 품목 및 수량만 출력합니다.">
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#475569', cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap', height: '28px' }} title="체크 시 발주서 인쇄 및 PDF 발행/발송 시 단가, 금액, 부가세, 합계금액을 제외하고 품목 및 수량만 출력합니다.">
                                   <input
                                     type="checkbox"
                                     checked={!!basicForm.supplierHidePrices?.[supplierName]}
@@ -8766,7 +8766,7 @@ ${downloadLink}`;
                                 <button
                                   type="button"
                                   onClick={() => handleSaveSupplierPoDetails(supplierName)}
-                                  style={{ padding: '5px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                   title="수정한 수량, 단가, 스펙, 일반사항을 PDF 발행 없이 DB에 먼저 저장합니다."
                                 >
                                   💾 발주 내역 저장
@@ -8791,13 +8791,13 @@ ${downloadLink}`;
                                       }
                                     ]);
                                   }}
-                                  style={{ padding: '5px 10px', background: '#f3e8ff', border: '1px solid #d8b4fe', color: '#6b21a8', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#1e293b', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
                                   ＋ 품목 추가
                                 </button>
                                 <button 
                                   onClick={() => handlePrintSupplierPo(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                                 >
                                   미리보기 / 인쇄
                                 </button>
@@ -8818,14 +8818,19 @@ ${downloadLink}`;
                                         issueAndSavePO(supplierName, items);
                                       }}
                                       style={{ 
-                                        padding: '5px 12px', 
-                                        background: isIssued ? '#fef3c7' : '#eff6ff', 
-                                        border: isIssued ? '1px solid #f59e0b' : '1px solid #bfdbfe', 
-                                        color: isIssued ? '#b45309' : '#1e40af', 
+                                        padding: '0 12px', 
+                                        height: '30px',
+                                        background: isIssued ? '#fff' : '#3b82f6', 
+                                        border: isIssued ? '1px solid #3b82f6' : 'none', 
+                                        color: isIssued ? '#2563eb' : '#fff', 
                                         borderRadius: '4px', 
                                         cursor: 'pointer', 
-                                        fontWeight: 800, 
-                                        fontSize: '14.5px'
+                                        fontWeight: 700, 
+                                        fontSize: '12.5px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        transition: 'background 0.15s'
                                       }}
                                       title={isIssued ? `수정된 내용을 바탕으로 v${nextVersion} 차수 발주서 수정 및 재발행` : '발주서 PDF를 발행하고 클라우드에 저장합니다.'}
                                     >
@@ -8833,17 +8838,18 @@ ${downloadLink}`;
                                     </button>
                                   );
                                 })()}
-                                 <button 
+                                <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
                                   style={{ 
-                                    padding: '5px 10px', 
-                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#dcfce7' : '#f0fdf4', 
-                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #86efac' : '1px solid #bbf7d0', 
-                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#166534' : '#15803d', 
+                                    padding: '0 10px', 
+                                    height: '30px',
+                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#f0fdf4' : '#fff', 
+                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #bbf7d0' : '1px solid #cbd5e1', 
+                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#166534' : '#334155', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
-                                    fontWeight: 750, 
-                                    fontSize: '13.5px',
+                                    fontWeight: 600, 
+                                    fontSize: '12.5px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '4px'
@@ -8857,7 +8863,7 @@ ${downloadLink}`;
                                     </>
                                   ) : (
                                     <>
-                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                       <span>메일 발송</span>
                                     </>
                                   )}
@@ -8865,34 +8871,24 @@ ${downloadLink}`;
                                 <button 
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
                                   style={{ 
-                                    padding: '5px 10px', 
-                                    background: '#FEE500', 
-                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? '1px solid #ca8a04' : '1px solid #eab308', 
-                                    color: '#191919', 
+                                    padding: '0 10px', 
+                                    height: '30px',
+                                    background: '#fff', 
+                                    border: '1px solid #cbd5e1', 
+                                    color: '#334155', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
-                                    fontWeight: 750, 
-                                    fontSize: '13.5px',
+                                    fontWeight: 600, 
+                                    fontSize: '12.5px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '4px'
                                   }}
                                   title="카카오톡 단체방 공유용 텍스트 메시지 복사"
                                 >
-                                  {((order as any)?.po_dispatch_status?.[supplierName]?.katalkCopied || copiedKatalkSuppliers[supplierName]) ? (
-                                    <>
-                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#191919" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                      <span>카톡 발송</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#191919"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
-                                      <span>카톡 발송</span>
-                                    </>
-                                  )}
+                                  <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#ca8a04"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
+                                  <span>카톡 발송</span>
                                 </button>
-                                
-                                
                               </div>
                             </div>
                             {/* 1. 상호, 일자 및 품목 테이블 + 생산완료일 */}
@@ -8933,7 +8929,7 @@ ${downloadLink}`;
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '110px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#2563eb' }}>비고</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>비고</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'center', width: '80px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
                                     </tr>
                                   </thead>
@@ -9268,8 +9264,8 @@ ${downloadLink}`;
                                   )}
                                   {/* SUBTOTAL ROW */}
                                   {items.length > 0 && (
-                                    <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border-default)', fontWeight: 700 }}>
-                                      <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
+                                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
+                                      <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e293b', fontWeight: 800 }}>SUBTOTAL (합계)</td>
                                       {/* 금액합계 */}
                                       <td style={{ padding: '8px 6px', textAlign: 'right' }}>
                                         {(() => {
@@ -9278,7 +9274,7 @@ ${downloadLink}`;
                                           const parts = [];
                                           if (usdAmount > 0) parts.push(`$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                                           if (krwAmount > 0) parts.push(`₩${krwAmount.toLocaleString()}`);
-                                          return <span style={{ color: '#0f766e' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                          return <span style={{ color: '#1e293b', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
                                         })()}
                                       </td>
                                       {/* 부가세 합계 */}
@@ -9292,7 +9288,7 @@ ${downloadLink}`;
                                           const parts = [];
                                           if (usdVat > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                                           if (krwVat > 0) parts.push(`₩${krwVat.toLocaleString()}`);
-                                          return <span style={{ color: '#4b5563' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                          return <span style={{ color: '#64748b', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
                                         })()}
                                       </td>
                                       {/* 합계 총합 */}
@@ -9308,7 +9304,7 @@ ${downloadLink}`;
                                           const parts = [];
                                           if (usdGrand > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                                           if (krwGrand > 0) parts.push(`₩${krwGrand.toLocaleString()}`);
-                                          return <span style={{ color: '#dc2626' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                          return <span style={{ color: '#0f172a', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
                                         })()}
                                       </td>
                                       {/* 비고 공간 확보용 빈 셀 */}
@@ -9380,64 +9376,64 @@ ${downloadLink}`;
                                             };
                                           });
                                         }}
-                                        style={{ padding: '3px 6px', fontSize: '13.5px', border: '1px solid var(--border-default)', borderRadius: '4px', maxWidth: '200px', outline: 'none' }}
-                                      >
-                                        <option value="">📋 등록된 템플릿 선택</option>
-                                        {poPresets.generalNotes.map((preset, pIdx) => (
-                                          <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
-                                          handleAddPoPreset('generalNotes', currentText);
-                                        }}
-                                        style={{ padding: '3px 8px', background: 'var(--text-secondary)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                                      >
-                                        ➕ 신규 등록 (DB)
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={async () => {
-                                          const originalText = selectedPresetText[supplierName];
-                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
-                                          if (!originalText) {
-                                            alert("수정할 템플릿을 목록(📋 등록된 템플릿 선택)에서 먼저 선택해 주세요.");
-                                            return;
-                                          }
-                                          if (!currentText.trim()) {
-                                            alert("수정할 문구를 입력해주세요.");
-                                            return;
-                                          }
-                                          if (originalText === currentText) {
-                                            alert("템플릿 내용이 변경되지 않았습니다.");
-                                            return;
-                                          }
-                                          await handleEditPoPreset('generalNotes', originalText, currentText);
-                                          setSelectedPresetText(prev => ({
-                                            ...prev,
-                                            [supplierName]: currentText
-                                          }));
-                                        }}
-                                        style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                                      >
-                                        ✏️ 수정 (DB)
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLSelectElement;
-                                          if (selectEl && selectEl.value) {
-                                            handleDeletePoPreset('generalNotes', selectEl.value);
-                                          } else {
-                                            alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
-                                          }
-                                        }}
-                                        style={{ padding: '3px 8px', background: 'var(--text-muted)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                                      >
-                                        ❌ 삭제
-                                      </button>
+                                         style={{ padding: '0 6px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '200px', height: '28px', outline: 'none', background: '#fff' }}
+                                       >
+                                         <option value="">📋 등록된 템플릿 선택</option>
+                                         {poPresets.generalNotes.map((preset, pIdx) => (
+                                           <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
+                                         ))}
+                                       </select>
+                                       <button
+                                         type="button"
+                                         onClick={() => {
+                                           const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                           handleAddPoPreset('generalNotes', currentText);
+                                         }}
+                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                       >
+                                         ➕ 신규 등록 (DB)
+                                       </button>
+                                       <button
+                                         type="button"
+                                         onClick={async () => {
+                                           const originalText = selectedPresetText[supplierName];
+                                           const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                           if (!originalText) {
+                                             alert("수정할 템플릿을 목록(📋 등록된 템플릿 선택)에서 먼저 선택해 주세요.");
+                                             return;
+                                           }
+                                           if (!currentText.trim()) {
+                                             alert("수정할 문구를 입력해주세요.");
+                                             return;
+                                           }
+                                           if (originalText === currentText) {
+                                             alert("템플릿 내용이 변경되지 않았습니다.");
+                                             return;
+                                           }
+                                           await handleEditPoPreset('generalNotes', originalText, currentText);
+                                           setSelectedPresetText(prev => ({
+                                             ...prev,
+                                             [supplierName]: currentText
+                                           }));
+                                         }}
+                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                       >
+                                         ✏️ 수정 (DB)
+                                       </button>
+                                       <button
+                                         type="button"
+                                         onClick={(e) => {
+                                           const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                                           if (selectEl && selectEl.value) {
+                                             handleDeletePoPreset('generalNotes', selectEl.value);
+                                           } else {
+                                             alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
+                                           }
+                                         }}
+                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                       >
+                                         삭제
+                                       </button>
                                     </div>
                                   </div>
                                   <textarea 
@@ -9525,9 +9521,9 @@ ${downloadLink}`;
                   </div>
 
                 {allOrderSuppliers.length >= 2 && (
-                  <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📁 전체 공급사 발주서 통합 보관함 ({allOrderSuppliers.length}개사)</h4>
-                    <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📁 전체 공급사 발주서 통합 보관함 ({allOrderSuppliers.length}개사)</h4>
+                    <div style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '12px' }}>
                       해당 오더에 대해 시스템을 통해 발행된 모든 발주서 PDF 원본을 통합 관리합니다.
                     </div>
                     {issuedDocs.length > 0 ? (

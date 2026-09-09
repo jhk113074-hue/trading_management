@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.507',
+    version: 'v2.8.507',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: 'PO 상세화면(소싱/발주) 컬러 톤앤매너 전면 개편 및 절제된 디자인 시스템 정립',
+    content: '• 산만하고 과도하게 나열되던 무지개색 액션 버튼(초록, 보라, 회색, 파랑, 형광 노랑 등)을 단일 주 액션(Primary Blue)과 정돈된 보조 버튼(Secondary Slate) 체계로 전면 통일\n• 발주액 요약 테이블 및 품목 테이블 전체에 남발되던 자극적인 빨간색(#dc2626) 숫자들을 신뢰감 높은 다크 슬레이트(#0f172a / #1e293b) 및 네이비 톤으로 정돈\n• 공통 납기/납품처 박스, 진행 현황 바, 추가 발주사 관리 카드 등의 배경 및 테두리를 YSACC 브랜드 가이드라인에 맞춘 모던 미니멀 톤으로 단정하게 재구성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.506',
     version: 'v2.8.506',
     date: '2026-09-09',
