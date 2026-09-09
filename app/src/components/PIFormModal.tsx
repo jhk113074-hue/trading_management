@@ -611,6 +611,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 return updatedFormData;
               });
             }
+          } else if (initialPI && Array.isArray((initialPI as any).items) && (initialPI as any).items.length > 0) {
+            const rawItems = (initialPI as any).items.map((it: any, idx: number) => ({
+              id: it.id || `item_${idx}`,
+              lineNumber: it.lineNumber || idx + 1,
+              productCode: it.productCode || it.code || '',
+              productName: it.productName || it.name || it.desc || '',
+              description: it.description || it.name || it.productName || '',
+              quantity: it.quantity || it.qty || 0,
+              unit: it.unit || 'EA',
+              purchasePriceKrw: it.purchasePriceKrw || 0,
+              purchasePriceUsd: it.purchasePriceUsd || 0,
+              marginRate: it.marginRate || 15,
+              salePriceUsd: it.salePriceUsd || it.unitPrice || it.price || 0,
+              lineTotalUsd: it.lineTotalUsd || it.amount || ((it.quantity || it.qty || 0) * (it.salePriceUsd || it.unitPrice || it.price || 0)),
+              ...it
+            }));
+            setItems(rawItems);
+            baselineStateRef.current = {
+              formData: getSnapshot(formData, rawItems),
+              items: true
+            };
           }
           isLoadedRef.current = true;
         } catch (err: any) {

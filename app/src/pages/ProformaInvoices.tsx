@@ -139,13 +139,6 @@ export const ProformaInvoices: React.FC = () => {
   }, []);
 
   const handleOpenForm = (piId?: string | null) => {
-    if (piId) {
-      const targetPi = allPis.find(p => p.id === piId);
-      if (targetPi && (targetPi as any).linkedOrderId) {
-        navigate(`/orders/${(targetPi as any).linkedOrderId}?step=수주정보`);
-        return;
-      }
-    }
     setSelectedPiId(piId || null);
     setIsFormOpen(true);
     if (piId) {
@@ -1003,7 +996,7 @@ export const ProformaInvoices: React.FC = () => {
 
       {isFormOpen && (
         <PIFormModal
-          initialPI={selectedPiId ? pis.find(p => p.id === selectedPiId) : undefined}
+          initialPI={selectedPiId ? (allPis.find(p => p.id === selectedPiId) || pis.find(p => p.id === selectedPiId)) : undefined}
           onClose={handleCloseForm}
           currentUser={currentUser}
         />
