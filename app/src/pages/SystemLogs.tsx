@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.497',
+    version: 'v2.8.497',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 품목 테이블 가로 스크롤 제거 및 컬럼 레이아웃 완벽 최적화',
+    content: '• 모달 창 최대 너비를 1560px(96vw)로 대폭 확장하여 넓고 쾌적한 작업 영역 확보\n• 고정 너비(minWidth: 1250px) 제한을 해제하고 상품코드/스펙 열이 잔여 너비를 자동 흡수하도록 테이블 레이아웃을 전면 개편하여 불필요한 가로 스크롤 완전 제거\n• 12개 컬럼(No., 상품코드/스펙, 패킹, 수량/단위, 매입가, 매입가총액, 마진, 단가, 총액, 이익, 비고, 관리)의 너비, 인풋 크기, 폰트를 표준 가이드에 맞춰 정밀 조정하여 가독성 및 정렬 최적화\n• 상품 복사(📋) 및 삭제(✕) 버튼을 스크롤 없이 즉시 조작 가능하도록 인터페이스 사용성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.496',
     version: 'v2.8.496',
     date: '2026-09-09',

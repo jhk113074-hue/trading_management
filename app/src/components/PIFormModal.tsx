@@ -2554,8 +2554,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       position: 'fixed',
       left: isMaximized ? '0px' : `${position.x}px`,
       top: isMaximized ? '0px' : `${position.y}px`,
-      width: isMaximized ? '100vw' : '90%',
-      maxWidth: isMaximized ? 'none' : '1400px',
+      width: isMaximized ? '100vw' : '96vw',
+      maxWidth: isMaximized ? 'none' : '1560px',
       height: isMaximized ? '100vh' : 'auto',
       zIndex: 1000,
       userSelect: isDragging ? 'none' : 'auto'
@@ -2871,24 +2871,24 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', height: '34px', padding: '0 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>＋ 상품 추가</button>
               </div>
             </div>
-            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-              <table style={{ width: '100%', minWidth: '1250px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
+            <div style={{ overflowX: 'hidden', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                  <th style={{ padding: '10px 4px', width: '55px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
-                  <th style={{ padding: '10px 4px', width: '320px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 2px', width: '38px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
                   {formData.type !== 'consulting' && (
-                    <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                    <th style={{ padding: '8px 2px', width: '78px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
                   )}
-                  <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '165px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
-                  <th style={{ padding: '10px 6px', width: '115px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
-                  <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
-                  <th style={{ padding: '10px 4px', width: '62px', borderBottom: '1px solid #cbd5e1' }}></th>
+                  <th style={{ padding: '8px 2px', width: '68px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', width: '136px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                  <th style={{ padding: '8px 4px', width: '96px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
+                  <th style={{ padding: '8px 2px', width: '54px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
+                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '72px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
+                  <th style={{ padding: '8px 2px', width: '48px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -3218,14 +3218,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="수량"
                           value={formatNumberWithCommas(it.quantity)} 
                           onChange={(e) => updateItem(idx, 'quantity', parseCommas(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'right', width: '80%', marginLeft: 'auto' }} 
+                          style={{ ...gridInputStyle, textAlign: 'right', width: '100%', height: '28px', padding: '2px 4px', fontSize: '12.5px', fontWeight: 600 }} 
                         />
                         <input 
                           type="text" 
                           placeholder="단위"
                           value={it.unit} 
                           onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} 
-                          style={{ ...gridInputStyle, textAlign: 'center', width: '50%', marginLeft: 'auto' }} 
+                          style={{ ...gridInputStyle, textAlign: 'center', width: '100%', height: '24px', padding: '1px 2px', fontSize: '11px' }} 
                         />
                       </div>
                     </td>
@@ -3267,18 +3267,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const curCurrency = (it as any).purchasePriceCurrency || (it.purchasePriceUsd > 0 ? 'USD' : 'KRW');
                           if (curCurrency === 'KRW') {
                             return (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>기준환율:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>환율:</span>
                                 <input 
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
                                   onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1, height: '24px', fontSize: '11.5px', padding: '1px 3px' }} 
                                 />
                                 <button
                                   type="button"
                                   onClick={() => setIsQuoteSettingsOpen(true)}
-                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '0 2px', color: '#64748b' }}
+                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px', padding: '0 1px', color: '#64748b' }}
                                   title="견적환경설정 열기"
                                 >
                                   ⚙️
@@ -3361,10 +3361,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                       ${((it.salePriceUsd || 0) * (it.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
@@ -3462,11 +3462,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       {/* 단가 (빈칸) */}
                       <td style={{ padding: '10px 4px' }}></td>
                       {/* 총액 합계 */}
-                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '13.5px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                         ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 이익 합계 */}
-                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '13.5px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                         ${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 비고 (빈칸) */}
@@ -4131,7 +4131,7 @@ const PurchasePriceInput: React.FC<{
       placeholder="금액"
       value={localVal}
       onChange={handleChange}
-      style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '95px', padding: '2px 6px', fontWeight: 600 }}
+      style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '55px', height: '28px', padding: '2px 4px', fontWeight: 600, fontSize: '12.5px' }}
     />
   );
 };
@@ -4169,7 +4169,7 @@ const SalePriceInput: React.FC<{
       value={localVal}
       onChange={handleChange}
       onBlur={handleBlur}
-      style={{ ...gridInputStyle, textAlign: 'right', width: '80px' }}
+      style={{ ...gridInputStyle, textAlign: 'right', width: '100%', height: '28px', padding: '2px 4px', fontSize: '12.5px', fontWeight: 700 }}
     />
   );
 };
