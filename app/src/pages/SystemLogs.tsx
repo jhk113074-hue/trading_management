@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.509',
+    version: 'v2.8.509',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: 'PO 품목명/스펙 2줄 복합 열 통합 및 공급업체별 카드 초소형 컴팩트 레이아웃 개편',
+    content: '• 품목명 입력창이 좁아 내용이 잘리던 현상을 해결하기 위해 [품목명]과 [스펙]을 단일 2줄 복합 열(1줄: 품목명 전체, 2줄: 스펙/규격)로 통합하여 폭넓고 시원하게 전체 문구가 노출되도록 개선\n• 일반사항 텍스트에어리어의 행 수를 입력 줄 수에 맞춰 자동 확장(dynamic rows)되도록 개선하여 윗줄 잘림 및 스크롤 현상 해소\n• 공급사 카드 상단 헤더, 메타 정보 바(상호/발주일/생산완료일), 품목 테이블, 일반사항 패널의 여백과 버튼 크기를 정밀하게 다듬어 좁은 공간에서도 모든 정보가 한눈에 들어오는 초컴팩트 레이아웃 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.508',
     version: 'v2.8.508',
     date: '2026-09-09',

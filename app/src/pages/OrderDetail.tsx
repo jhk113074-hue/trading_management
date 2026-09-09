@@ -8649,81 +8649,80 @@ ${downloadLink}`;
                         const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || defaultPoNum;
 
                         return (
-                          <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', marginBottom: '12px', background: '#fff' }}>
-                            <div style={{ background: '#f8fafc', padding: '8px 14px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '14px' }}>📄 {cleanCompanyName(supplierName)} PO</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenSupplierModal(supplierName)}
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '26px',
-                                        height: '26px',
-                                        padding: '0',
-                                        background: '#fff',
-                                        border: '1px solid #cbd5e1',
-                                        borderRadius: '4px',
-                                        fontSize: '12px',
-                                        cursor: 'pointer'
-                                      }}
-                                      title={`공급업체 [${supplierName}] 기본 정보 조회 및 DB 수정`}
-                                    >
-                                      🏢
-                                    </button>
-                                  </div>
-                                  <span style={{ fontSize: '12px', fontWeight: 750, color: '#475569' }}>NO:</span>
-                                  <input 
-                                    type="text"
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.poNumber !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.poNumber : defaultPoNum}
-                                    disabled={!isEditing}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const current = prev.supplierPoDetails?.[supplierName] || {};
-                                        return {
-                                          ...prev,
-                                          supplierPoDetails: {
-                                            ...prev.supplierPoDetails,
-                                            [supplierName]: { ...current, poNumber: val }
-                                          }
-                                        };
-                                      });
-                                    }}
-                                    placeholder="발주번호 입력"
+                          <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', marginBottom: '10px', background: '#fff' }}>
+                            {/* 공급사 헤더: 공급사명, 발주번호, 배지, 세율, 금액숨김 및 상단 액션 버튼군 */}
+                            <div style={{ background: '#f8fafc', padding: '6px 12px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '13.5px' }}>📄 {cleanCompanyName(supplierName)} PO</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenSupplierModal(supplierName)}
                                     style={{
-                                      padding: '2px 8px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '24px',
+                                      height: '24px',
+                                      padding: '0',
+                                      background: '#fff',
                                       border: '1px solid #cbd5e1',
                                       borderRadius: '4px',
-                                      fontSize: '13px',
-                                      fontWeight: 700,
-                                      color: '#1e293b',
-                                      background: isEditing ? '#ffffff' : '#f8fafc',
-                                      width: '185px',
-                                      height: '28px'
+                                      fontSize: '11.5px',
+                                      cursor: 'pointer'
                                     }}
-                                  />
+                                    title={`공급업체 [${supplierName}] 기본 정보 조회 및 DB 수정`}
+                                  >
+                                    🏢
+                                  </button>
                                 </div>
+                                <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>NO:</span>
+                                <input 
+                                  type="text"
+                                  value={basicForm.supplierPoDetails?.[supplierName]?.poNumber !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.poNumber : defaultPoNum}
+                                  disabled={!isEditing}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => {
+                                      const current = prev.supplierPoDetails?.[supplierName] || {};
+                                      return {
+                                        ...prev,
+                                        supplierPoDetails: {
+                                          ...prev.supplierPoDetails,
+                                          [supplierName]: { ...current, poNumber: val }
+                                        }
+                                      };
+                                    });
+                                  }}
+                                  placeholder="발주번호 입력"
+                                  style={{
+                                    padding: '2px 6px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    background: isEditing ? '#ffffff' : '#f8fafc',
+                                    width: '160px',
+                                    height: '26px'
+                                  }}
+                                />
                                 {(() => {
                                   const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
                                   if (activeDoc) {
                                     return (
-                                      <span style={{ padding: '2px 8px', background: '#f0fdf4', color: '#166534', borderRadius: '4px', fontSize: '12px', fontWeight: 700, border: '1px solid #bbf7d0' }}>
+                                      <span style={{ padding: '2px 6px', background: '#f0fdf4', color: '#166534', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, border: '1px solid #bbf7d0' }}>
                                         ✅ 발행완료 (v{activeDoc.version})
                                       </span>
                                     );
                                   }
                                   return (
-                                    <span style={{ padding: '2px 8px', background: '#fefce8', color: '#854d0e', borderRadius: '4px', fontSize: '12px', fontWeight: 700, border: '1px solid #fef08a' }}>
-                                      📝 작성 / 수정 중
+                                    <span style={{ padding: '2px 6px', background: '#fefce8', color: '#854d0e', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, border: '1px solid #fef08a' }}>
+                                      📝 작성중
                                     </span>
                                   );
                                 })()}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px' }}>
                                   <span style={{ fontWeight: 750, color: '#475569' }}>세율:</span>
                                   <select
                                     value={basicForm.supplierTaxTypes[supplierName] || '과세'}
@@ -8737,13 +8736,13 @@ ${downloadLink}`;
                                         }
                                       }));
                                     }}
-                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, outline: 'none', height: '28px', background: '#fff' }}
+                                    style={{ padding: '1px 4px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '11.5px', fontWeight: 600, outline: 'none', height: '26px', background: '#fff' }}
                                   >
-                                    <option value="과세">과세 (10%)</option>
-                                    <option value="영세">영세 (0%)</option>
+                                    <option value="과세">과세(10%)</option>
+                                    <option value="영세">영세(0%)</option>
                                   </select>
                                 </div>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#475569', cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap', height: '28px' }} title="체크 시 발주서 인쇄 및 PDF 발행/발송 시 단가, 금액, 부가세, 합계금액을 제외하고 품목 및 수량만 출력합니다.">
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px', fontWeight: 600, color: '#475569', cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', padding: '1px 6px', borderRadius: '4px', whiteSpace: 'nowrap', height: '26px' }} title="체크 시 발주서 인쇄 및 PDF 발행/발송 시 단가, 금액, 부가세, 합계금액을 제외하고 품목 및 수량만 출력합니다.">
                                   <input
                                     type="checkbox"
                                     checked={!!basicForm.supplierHidePrices?.[supplierName]}
@@ -8759,22 +8758,21 @@ ${downloadLink}`;
                                     }}
                                     style={{ cursor: 'pointer' }}
                                   />
-                                  <span>금액 숨김 (수량만 발주)</span>
+                                  <span>금액 숨김</span>
                                 </label>
                               </div>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleSaveSupplierPoDetails(supplierName)}
-                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                                  title="수정한 수량, 단가, 스펙, 일반사항을 PDF 발행 없이 DB에 먼저 저장합니다."
+                                  style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                  title="수정한 수량, 단가, 스펙, 일반사항을 DB에 저장합니다."
                                 >
-                                  💾 발주 내역 저장
+                                  💾 저장
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    // Add a new empty row belonging specifically to this supplier
                                     setSourcingItems(prev => [
                                       ...prev,
                                       {
@@ -8791,15 +8789,15 @@ ${downloadLink}`;
                                       }
                                     ]);
                                   }}
-                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#1e293b', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                  style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#1e293b', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                                 >
-                                  ＋ 품목 추가
+                                  ＋ 품목
                                 </button>
                                 <button 
                                   onClick={() => handlePrintSupplierPo(supplierName, items)}
-                                  style={{ padding: '0 10px', height: '30px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                  style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                                 >
-                                  미리보기 / 인쇄
+                                  미리보기
                                 </button>
                                 {(() => {
                                   const activeDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName));
@@ -8818,85 +8816,74 @@ ${downloadLink}`;
                                         issueAndSavePO(supplierName, items);
                                       }}
                                       style={{ 
-                                        padding: '0 12px', 
-                                        height: '30px',
+                                        padding: '0 10px', 
+                                        height: '28px',
                                         background: isIssued ? '#fff' : '#3b82f6', 
                                         border: isIssued ? '1px solid #3b82f6' : 'none', 
                                         color: isIssued ? '#2563eb' : '#fff', 
                                         borderRadius: '4px', 
                                         cursor: 'pointer', 
                                         fontWeight: 700, 
-                                        fontSize: '12.5px',
+                                        fontSize: '12px',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '4px',
-                                        transition: 'background 0.15s'
+                                        gap: '3px'
                                       }}
-                                      title={isIssued ? `수정된 내용을 바탕으로 v${nextVersion} 차수 발주서 수정 및 재발행` : '발주서 PDF를 발행하고 클라우드에 저장합니다.'}
+                                      title={isIssued ? `v${nextVersion} 차수 발주서 수정 및 재발행` : '발주서 PDF를 발행하고 클라우드에 저장합니다.'}
                                     >
-                                      {isIssued ? `✏️ 발주서 수정 & 재발행 (v${nextVersion})` : '📥 발주서 발행 및 저장'}
+                                      {isIssued ? `✏️ 재발행 (v${nextVersion})` : '📥 발주서 발행'}
                                     </button>
                                   );
                                 })()}
                                 <button 
                                   onClick={() => handleSendPoEmail(supplierName, items)}
                                   style={{ 
-                                    padding: '0 10px', 
-                                    height: '30px',
+                                    padding: '0 8px', 
+                                    height: '28px',
                                     background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#f0fdf4' : '#fff', 
                                     border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #bbf7d0' : '1px solid #cbd5e1', 
                                     color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#166534' : '#334155', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
                                     fontWeight: 600, 
-                                    fontSize: '12.5px',
+                                    fontSize: '12px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px'
+                                    gap: '3px'
                                   }}
-                                  title="공급사 이메일로 발주서 발행 알림 직접 발송 (Brevo)"
+                                  title="공급사 이메일로 발주서 발송"
                                 >
-                                  {((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? (
-                                    <>
-                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                      <span>메일 발송</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                      <span>메일 발송</span>
-                                    </>
-                                  )}
+                                  메일
                                 </button>
                                 <button 
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
                                   style={{ 
-                                    padding: '0 10px', 
-                                    height: '30px',
+                                    padding: '0 8px', 
+                                    height: '28px',
                                     background: '#fff', 
                                     border: '1px solid #cbd5e1', 
                                     color: '#334155', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
                                     fontWeight: 600, 
-                                    fontSize: '12.5px',
+                                    fontSize: '12px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px'
+                                    gap: '3px'
                                   }}
-                                  title="카카오톡 단체방 공유용 텍스트 메시지 복사"
+                                  title="카카오톡 단체방 공유용 텍스트 복사"
                                 >
-                                  <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 24 24" fill="#ca8a04"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.483.378.352.156-.103 2.48-1.688 3.483-2.373.535.078 1.085.127 1.649.127 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/></svg>
-                                  <span>카톡 발송</span>
+                                  카톡
                                 </button>
                               </div>
                             </div>
-                            {/* 1. 상호, 일자 및 품목 테이블 + 생산완료일 */}
-                            <div style={{ padding: '12px 16px', background: '#fff', fontSize: '13.5px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ fontWeight: 'bold', color: '#1e293b' }}>일자:</span>
+
+                            {/* 슬림 메타 정보 바 (상호, 발주일, 생산완료일, 품목수 한 줄 통합) */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '4px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                                <span><strong style={{ color: '#475569' }}>상호:</strong> <span style={{ fontWeight: 700, color: '#1e293b' }}>{order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span></span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontWeight: 700, color: '#475569' }}>발주일:</span>
                                   <DateInput 
                                     value={basicForm.supplierPoDetails?.[supplierName]?.poDate || order.poDate || new Date().toISOString().split('T')[0]}
                                     disabled={!isEditing}
@@ -8913,17 +8900,49 @@ ${downloadLink}`;
                                         };
                                       });
                                     }}
-                                    style={{ padding: '2px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '135px', fontWeight: 600 }}
+                                    style={{ padding: '1px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '125px', height: '24px', fontWeight: 600, background: isEditing ? '#fff' : '#f8fafc' }}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontWeight: 700, color: '#1e40af' }}>생산완료일:</span>
+                                  <DateInput 
+                                    value={basicForm.supplierProductionDates[supplierName] || ''}
+                                    disabled={!isEditing}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const newDates = {
+                                          ...prev.supplierProductionDates,
+                                          [supplierName]: val
+                                        };
+                                        const activeDates = Object.values(newDates).filter(d => !!d);
+                                        const maxDate = activeDates.length > 0 
+                                          ? activeDates.reduce((max, cur) => cur > max ? cur : max) 
+                                          : prev.cargoReadyDate;
+                                        return {
+                                          ...prev,
+                                          supplierProductionDates: newDates,
+                                          cargoReadyDate: maxDate
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '1px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '125px', height: '24px', fontWeight: 600, background: isEditing ? '#fff' : '#f8fafc', color: '#1e40af' }}
                                   />
                                 </div>
                               </div>
-                              <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '4px' }}>
-                                <table style={{ width: '100%', minWidth: '1390px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
+                              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                                연결 품목: <strong style={{ color: '#0f172a' }}>{items.length}</strong>개
+                              </div>
+                            </div>
+
+                            {/* 1. 품목 테이블 영역 */}
+                            <div style={{ padding: '6px 10px', background: '#fff', fontSize: '12.5px' }}>
+                              <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '2px' }}>
+                                <table style={{ width: '100%', minWidth: '1320px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
                                   <thead>
                                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '230px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '200px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>스펙</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '360px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명 / 스펙</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>견적가<br/>(통화/단가)</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '160px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>단가 GAP<br/>(견적 대비)</th>
@@ -8937,7 +8956,7 @@ ${downloadLink}`;
                                 <tbody>
                                   {items.length === 0 ? (
                                     <tr>
-                                      <td colSpan={11} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                      <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                                         연결된 품목이 없습니다. (상단 '＋ 품목 추가' 버튼을 눌러 추가)
                                       </td>
                                     </tr>
@@ -8961,27 +8980,29 @@ ${downloadLink}`;
                                             backgroundColor: isDragOver ? '#dbeafe' : 'transparent'
                                           }}
                                         >
-                                          {/* 1. 상품코드 + 품목명 (병합 열) */}
+                                          {/* 1. 품목명 & 스펙 (2줄 복합 열) */}
                                           <td style={{ padding: '6px 8px', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                               <span 
-                                                 draggable={true}
-                                                 onDragStart={(e) => handleSourcingDragStart(e, itemIndexInMain)}
-                                                 onDragEnd={() => { sourcingDraggedIndexRef.current = null; setSourcingDragOverIndex(null); }}
-                                                 style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
-                                                 title="드래그하여 순서 변경"
-                                               >
-                                                ⋮⋮
-                                              </span>
-                                              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
-                                              {isEditing ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                                            {isEditing ? (
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                {/* 1줄: 순서 드래그, 인덱스 번호, 품목명 입력, 검색 버튼 */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                  <span 
+                                                    draggable={true}
+                                                    onDragStart={(e) => handleSourcingDragStart(e, itemIndexInMain)}
+                                                    onDragEnd={() => { sourcingDraggedIndexRef.current = null; setSourcingDragOverIndex(null); }}
+                                                    style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
+                                                    title="드래그하여 순서 변경"
+                                                  >
+                                                    ⋮⋮
+                                                  </span>
+                                                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
                                                   <input
                                                     type="text"
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ width: '100%', minWidth: '150px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}
+                                                    style={{ flex: 1, minWidth: '0', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
+                                                    title={it.name || ''}
                                                   />
                                                   <button
                                                     type="button"
@@ -8990,51 +9011,62 @@ ${downloadLink}`;
                                                       setIsSourcingSearch(true);
                                                       setIsProductSearchOpen(true);
                                                     }}
-                                                    style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                                                     title="품목 검색"
                                                   >
                                                     🔍
                                                   </button>
                                                 </div>
-                                              ) : (
-                                                <strong style={{ fontSize: '13px', color: '#334155' }}>{itemName}</strong>
-                                              )}
-                                            </div>
-                                          </td>
-                                          {/* 2. 스펙 */}
-                                          <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
-                                            {isEditing ? (
-                                              <textarea
-                                                value={it.grade || ''}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setSourcingItems(prev => {
-                                                    return prev.map(item => {
-                                                      if (item === it) {
-                                                        return { ...item, grade: val };
-                                                      }
-                                                      return item;
-                                                    });
-                                                  });
-                                                }}
-                                                rows={2}
-                                                placeholder="스펙/규격 입력"
-                                                style={{
-                                                  width: '100%',
-                                                  padding: '4px 6px',
-                                                  border: '1px solid #cbd5e1',
-                                                  borderRadius: '4px',
-                                                  fontSize: '13px',
-                                                  textAlign: 'left',
-                                                  resize: 'vertical',
-                                                  minHeight: '34px',
-                                                  fontFamily: 'inherit',
-                                                  overflow: 'auto',
-                                                  boxSizing: 'border-box'
-                                                }}
-                                              />
+                                                {/* 2줄: 스펙 (Spec / Grade) 입력창 */}
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', paddingLeft: '22px' }}>
+                                                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap', marginTop: '3px' }}>스펙:</span>
+                                                  <textarea
+                                                    value={it.grade || ''}
+                                                    onChange={(e) => {
+                                                      const val = e.target.value;
+                                                      setSourcingItems(prev => {
+                                                        return prev.map(item => {
+                                                          if (item === it) {
+                                                            return { ...item, grade: val };
+                                                          }
+                                                          return item;
+                                                        });
+                                                      });
+                                                    }}
+                                                    rows={2}
+                                                    placeholder="스펙/규격 입력"
+                                                    style={{
+                                                      flex: 1,
+                                                      minWidth: '0',
+                                                      padding: '3px 6px',
+                                                      border: '1px solid #cbd5e1',
+                                                      borderRadius: '4px',
+                                                      fontSize: '12px',
+                                                      color: '#334155',
+                                                      background: '#fff',
+                                                      resize: 'vertical',
+                                                      minHeight: '28px',
+                                                      fontFamily: 'inherit',
+                                                      lineHeight: 1.3
+                                                    }}
+                                                  />
+                                                </div>
+                                              </div>
                                             ) : (
-                                              <div style={{ fontSize: '13px', color: '#334155', textAlign: 'center' }}>{it.grade || '-'}</div>
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                                                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
+                                                  <strong style={{ fontSize: '13px', color: '#1e293b', wordBreak: 'break-word', lineHeight: 1.35 }}>
+                                                    {itemName}
+                                                  </strong>
+                                                </div>
+                                                {it.grade && (
+                                                  <div style={{ paddingLeft: '23px', fontSize: '12px', color: '#64748b', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                                    <span style={{ fontWeight: 700, color: '#475569' }}>스펙: </span>
+                                                    <span>{it.grade}</span>
+                                                  </div>
+                                                )}
+                                              </div>
                                             )}
                                           </td>
                                           {/* 3. 수량 */}
@@ -9288,7 +9320,7 @@ ${downloadLink}`;
                                   {/* SUBTOTAL ROW */}
                                   {items.length > 0 && (
                                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
-                                      <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e293b', fontWeight: 800 }}>SUBTOTAL (합계)</td>
+                                      <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e293b', fontWeight: 800 }}>SUBTOTAL (합계)</td>
                                       {/* 총 GAP 합계 */}
                                       <td style={{ padding: '8px 6px', textAlign: 'right' }}>
                                         {(() => {
@@ -9405,47 +9437,15 @@ ${downloadLink}`;
                                 </tbody>
                               </table>
                             </div>
+                          </div>
                               
-                              {/* 생산완료일만 표시 (납품처는 상단 공통 필드로 이관) */}
-                              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderTop: '1px solid var(--border-default)', marginTop: '10px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ fontWeight: 600, fontSize: '15.5px', color: '#4b5563', whiteSpace: 'nowrap' }}>생산완료일:</span>
-                                  <DateInput 
-                                    value={basicForm.supplierProductionDates[supplierName] || ''}
-                                    disabled={!isEditing}
-                                    onChange={e => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const newDates = {
-                                          ...prev.supplierProductionDates,
-                                          [supplierName]: val
-                                        };
-                                        const activeDates = Object.values(newDates).filter(d => !!d);
-                                        const maxDate = activeDates.length > 0 
-                                          ? activeDates.reduce((max, cur) => cur > max ? cur : max) 
-                                          : prev.cargoReadyDate;
-                                        return {
-                                          ...prev,
-                                          supplierProductionDates: newDates,
-                                          cargoReadyDate: maxDate
-                                        };
-                                      });
-                                    }}
-                                    style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', width: '150px' }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 2. 일반사항 Panel */}
-                            <div style={{ padding: '0 16px 12px 16px', background: '#fff', fontSize: '13.5px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-default)', marginBottom: '12px' }}>
-
-                                {/* 일반사항 */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                                    <label style={{ fontWeight: 'bold', fontSize: '15.5px', color: 'var(--text-secondary)' }}>※ 일반사항 (줄바꿈 가능)</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {/* 2. 일반사항 Panel (컴팩트) */}
+                            <div style={{ padding: '0 10px 8px 10px', background: '#fff', fontSize: '12.5px' }}>
+                              <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', flexWrap: 'wrap', gap: '4px' }}>
+                                    <label style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>※ 일반사항 (줄바꿈 가능)</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                       <select
                                         onChange={(e) => {
                                           const val = e.target.value;
@@ -9465,85 +9465,107 @@ ${downloadLink}`;
                                             };
                                           });
                                         }}
-                                         style={{ padding: '0 6px', fontSize: '12.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '200px', height: '28px', outline: 'none', background: '#fff' }}
-                                       >
-                                         <option value="">📋 등록된 템플릿 선택</option>
-                                         {poPresets.generalNotes.map((preset, pIdx) => (
-                                           <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
-                                         ))}
-                                       </select>
-                                       <button
-                                         type="button"
-                                         onClick={() => {
-                                           const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
-                                           handleAddPoPreset('generalNotes', currentText);
-                                         }}
-                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                                       >
-                                         ➕ 신규 등록 (DB)
-                                       </button>
-                                       <button
-                                         type="button"
-                                         onClick={async () => {
-                                           const originalText = selectedPresetText[supplierName];
-                                           const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
-                                           if (!originalText) {
-                                             alert("수정할 템플릿을 목록(📋 등록된 템플릿 선택)에서 먼저 선택해 주세요.");
-                                             return;
-                                           }
-                                           if (!currentText.trim()) {
-                                             alert("수정할 문구를 입력해주세요.");
-                                             return;
-                                           }
-                                           if (originalText === currentText) {
-                                             alert("템플릿 내용이 변경되지 않았습니다.");
-                                             return;
-                                           }
-                                           await handleEditPoPreset('generalNotes', originalText, currentText);
-                                           setSelectedPresetText(prev => ({
-                                             ...prev,
-                                             [supplierName]: currentText
-                                           }));
-                                         }}
-                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                                       >
-                                         ✏️ 수정 (DB)
-                                       </button>
-                                       <button
-                                         type="button"
-                                         onClick={(e) => {
-                                           const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLSelectElement;
-                                           if (selectEl && selectEl.value) {
-                                             handleDeletePoPreset('generalNotes', selectEl.value);
-                                           } else {
-                                             alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
-                                           }
-                                         }}
-                                         style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                                       >
-                                         삭제
-                                       </button>
+                                        style={{ padding: '0 4px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '180px', height: '25px', outline: 'none', background: '#fff' }}
+                                      >
+                                        <option value="">📋 템플릿 선택</option>
+                                        {poPresets.generalNotes.map((preset, pIdx) => (
+                                          <option key={pIdx} value={preset}>{preset.substring(0, 25)}...</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                          handleAddPoPreset('generalNotes', currentText);
+                                        }}
+                                        style={{ padding: '0 6px', height: '25px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+                                      >
+                                        ➕ 신규
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          const originalText = selectedPresetText[supplierName];
+                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                          if (!originalText) {
+                                            alert("수정할 템플릿을 목록(📋 템플릿 선택)에서 먼저 선택해 주세요.");
+                                            return;
+                                          }
+                                          if (!currentText.trim()) {
+                                            alert("수정할 문구를 입력해주세요.");
+                                            return;
+                                          }
+                                          if (originalText === currentText) {
+                                            alert("템플릿 내용이 변경되지 않았습니다.");
+                                            return;
+                                          }
+                                          await handleEditPoPreset('generalNotes', originalText, currentText);
+                                          setSelectedPresetText(prev => ({
+                                            ...prev,
+                                            [supplierName]: currentText
+                                          }));
+                                        }}
+                                        style={{ padding: '0 6px', height: '25px', background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+                                      >
+                                        ✏️ 수정
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                                          if (selectEl && selectEl.value) {
+                                            handleDeletePoPreset('generalNotes', selectEl.value);
+                                          } else {
+                                            alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
+                                          }
+                                        }}
+                                        style={{ padding: '0 6px', height: '25px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+                                      >
+                                        삭제
+                                      </button>
                                     </div>
                                   </div>
-                                  <textarea 
-                                    rows={2}
-                                    placeholder="1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준\n2. 결제조건: L/C 90 days from B/L date"
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.generalNotes !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.generalNotes : (poPresets.generalNotes[0] || '')}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const current = prev.supplierPoDetails?.[supplierName] || {};
-                                        return {
-                                          ...prev,
-                                          supplierPoDetails: {
-                                            ...prev.supplierPoDetails,
-                                            [supplierName]: { ...current, generalNotes: val }
-                                          }
-                                        };
-                                      });
-                                    }}
-                                    style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', background: '#fff', outline: 'none', fontFamily: 'sans-serif' }}
-                                  />
+                                  {(() => {
+                                    const notesValue = basicForm.supplierPoDetails?.[supplierName]?.generalNotes !== undefined 
+                                      ? basicForm.supplierPoDetails?.[supplierName]?.generalNotes 
+                                      : (poPresets.generalNotes[0] || '');
+                                    const lineCount = (notesValue || '').split('\n').length;
+                                    const dynamicRows = Math.max(3, lineCount);
+
+                                    return (
+                                      <textarea 
+                                        rows={dynamicRows}
+                                        placeholder="1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준&#10;2. 결제조건: L/C 90 days from B/L date"
+                                        value={notesValue}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setBasicForm(prev => {
+                                            const current = prev.supplierPoDetails?.[supplierName] || {};
+                                            return {
+                                              ...prev,
+                                              supplierPoDetails: {
+                                                ...prev.supplierPoDetails,
+                                                [supplierName]: { ...current, generalNotes: val }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        style={{ 
+                                          padding: '6px 8px', 
+                                          border: '1px solid #cbd5e1', 
+                                          borderRadius: '4px', 
+                                          fontSize: '12.5px', 
+                                          lineHeight: 1.45,
+                                          minHeight: '72px',
+                                          background: '#fff', 
+                                          outline: 'none', 
+                                          fontFamily: 'inherit',
+                                          resize: 'vertical',
+                                          boxSizing: 'border-box'
+                                        }}
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             </div>
