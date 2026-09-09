@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.513',
+    version: 'v2.8.513',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: 'PO 품목 테이블 순서/관리 열의 삭제 버튼 아이콘화(🗑️)',
+    content: '• 순서/관리 열의 품목 삭제 버튼에서 한글 "삭제" 텍스트를 제거하고 깔끔한 휴지통 아이콘(🗑️)만 단독 표시되도록 변경\n• 동일 행 복사 버튼(📋)과 균형 잡힌 정사각 컴팩트 아이콘 버튼으로 일원화하여 불필요한 줄바꿈 및 열 너비 낭비 해소',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.512',
+    version: 'v2.8.512',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: 'PO 품목 스펙(Spec) 입력창 기본 1줄 높이 최적화 및 세로 크기 조절 기능 유지',
+    content: '• 품목 테이블 2번째 줄의 [스펙] 입력창 기본 높이를 1줄 컴팩트 사이즈(height: 24px, rows: 1)로 최적화하여 테이블의 불필요한 세로 여백 제거\n• 우측 하단 드래그 핸들을 통한 세로 크기 조절(resize: vertical)은 그대로 유지하여 긴 스펙이나 상세 내용 입력 시 자유롭게 늘릴 수 있도록 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.511',
     version: 'v2.8.511',
     date: '2026-09-09',

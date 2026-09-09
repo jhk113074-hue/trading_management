@@ -9044,21 +9044,23 @@ ${downloadLink}`;
                                                         });
                                                       });
                                                     }}
-                                                    rows={2}
+                                                    rows={1}
                                                     placeholder="스펙/규격 입력"
                                                     style={{
                                                       flex: 1,
                                                       minWidth: '0',
-                                                      padding: '3px 6px',
+                                                      height: '24px',
+                                                      minHeight: '24px',
+                                                      padding: '2px 6px',
                                                       border: '1px solid #cbd5e1',
                                                       borderRadius: '4px',
                                                       fontSize: '12px',
                                                       color: '#334155',
                                                       background: '#fff',
                                                       resize: 'vertical',
-                                                      minHeight: '28px',
                                                       fontFamily: 'inherit',
-                                                      lineHeight: 1.3
+                                                      lineHeight: '18px',
+                                                      boxSizing: 'border-box'
                                                     }}
                                                   />
                                                 </div>
@@ -9316,10 +9318,10 @@ ${downloadLink}`;
                                                     setSourcingItems(prev => prev.filter(x => x !== it));
                                                   }
                                                 }}
-                                                style={{ padding: '4px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                                                style={{ padding: '4px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                                 title="품목 삭제"
                                               >
-                                                삭제
+                                                🗑️
                                               </button>
                                             </div>
                                           </td>
