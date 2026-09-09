@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.498',
+    version: 'v2.8.498',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 품목 테이블 비고란 공간 대폭 확장 및 상품코드/스펙 너비 슬림화',
+    content: '• 상품코드 / 스펙(Spec) 열 너비를 300px로 컴팩트하게 슬림화하여 우측 여백 낭비 제거\n• 비고(Remarks) 열을 남는 전체 너비를 유연하게 흡수하는 자동 확장형 컬럼으로 개편하여 줄바꿈 없이 길고 상세한 특이사항 입력 가능\n• 패킹방식/수량 열 너비를 84px로 보정하여 "팔레트" 텍스트 말줄임 현상 해소\n• 비고 입력란의 폰트, 줄간격, 플레이스홀더를 표준화하여 사용자 경험 대폭 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.497',
     version: 'v2.8.497',
     date: '2026-09-09',

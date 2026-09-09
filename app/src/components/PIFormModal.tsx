@@ -2876,9 +2876,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                   <th style={{ padding: '8px 2px', width: '38px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', width: '300px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
                   {formData.type !== 'consulting' && (
-                    <th style={{ padding: '8px 2px', width: '78px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                    <th style={{ padding: '8px 2px', width: '84px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
                   )}
                   <th style={{ padding: '8px 2px', width: '68px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
                   <th style={{ padding: '8px 4px', width: '136px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
@@ -2887,7 +2887,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
-                  <th style={{ padding: '8px 4px', width: '72px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
                   <th style={{ padding: '8px 2px', width: '48px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
               </thead>
@@ -3052,7 +3052,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             return (
                               <div style={{ minHeight: '18px', display: 'flex', alignItems: 'center' }}>
                                 {p && p.supplierName ? (
-                                  <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={p.supplierName}>
+                                  <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '85px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={p.supplierName}>
                                     {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
                                   </span>
                                 ) : null}
@@ -3370,10 +3370,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}>
                       <textarea
                         value={it.remarks || ''}
-                        placeholder="비고"
+                        placeholder="비고 (특이사항/패킹/선적조건 등)"
                         onChange={(e) => updateItem(idx, 'remarks', e.target.value)}
                         rows={2}
-                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }}
+                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', padding: '4px 6px', fontSize: '12px', lineHeight: '1.4', fontFamily: 'inherit' }}
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
