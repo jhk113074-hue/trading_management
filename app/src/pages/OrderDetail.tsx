@@ -8032,25 +8032,28 @@ ${downloadLink}`;
               {/* Items Section */}
               <div style={{ marginTop: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 발주 품목 목록</span>
-                  <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '15.5px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 발주 품목 목록 (견적 확정 내역)</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      🔒 견적 기준 조회 전용 (수정 불가)
+                    </span>
+                  </div>
                 </div>
                 
-                <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-                  <table style={{ width: '100%', minWidth: '1140px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
+                <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }}>
+                  <table style={{ width: '100%', minWidth: '1080px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                        <th style={{ padding: '10px 4px', width: '55px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
-                        <th style={{ padding: '10px 4px', width: '320px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
-                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
-                        <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
-                        <th style={{ padding: '10px 4px', width: '165px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
-                        <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
-                        <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
-                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
-                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
-                        <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
-                        <th style={{ padding: '10px 4px', width: '62px', borderBottom: '1px solid #cbd5e1' }}></th>
+                        <th style={{ padding: '10px 4px', width: '45px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
+                        <th style={{ padding: '10px 8px', width: '300px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                        <th style={{ padding: '10px 4px', width: '95px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                        <th style={{ padding: '10px 6px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                        <th style={{ padding: '10px 8px', width: '145px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                        <th style={{ padding: '10px 4px', width: '70px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
+                        <th style={{ padding: '10px 8px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                        <th style={{ padding: '10px 8px', width: '95px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                        <th style={{ padding: '10px 8px', width: '95px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                        <th style={{ padding: '10px 8px', width: '110px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8058,7 +8061,6 @@ ${downloadLink}`;
                         if (item.isSourcingOnly) return null;
                         const isColoredRow = idx % 2 === 1;
                         const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
-                        const isDragOver = step1DragOverIndex === idx;
                         const rawCode = getRawProductCode(item.productCode || item.name || '');
                         const prod = products.find(p => p.productCode === rawCode || p.id === rawCode);
                         const curCurrency = item.purchasePriceCurrency || (item.purchasePriceUsd && item.purchasePriceUsd > 0 ? 'USD' : (item.currency === 'KRW' ? 'KRW' : 'USD'));
@@ -8067,421 +8069,118 @@ ${downloadLink}`;
                         return (
                           <tr 
                             key={`order-item-${item.lineNumber || (idx + 1)}-${item.name || idx}`}
-                            onDragOver={(e) => handleStep1DragOver(e, idx)}
-                            onDragLeave={handleStep1DragLeave}
-                            onDrop={(e) => handleStep1Drop(e, idx)}
                             style={{ 
-                              borderBottom: isDragOver ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                              backgroundColor: isDragOver ? '#dbeafe' : rowBgColor,
+                              borderBottom: '1px solid #cbd5e1',
+                              backgroundColor: rowBgColor,
                               transition: 'background-color 0.15s'
                             }}
-                            onMouseEnter={e => { if (step1DragOverIndex !== idx) e.currentTarget.style.backgroundColor = '#e0f2fe'; }}
-                            onMouseLeave={e => { if (step1DragOverIndex !== idx) e.currentTarget.style.backgroundColor = rowBgColor; }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f8fafc'; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = rowBgColor; }}
                           >
-                            {/* No. & Drag Handle */}
-                            <td style={{ padding: '4px', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                                <span 
-                                  draggable={true}
-                                  onDragStart={(e) => handleStep1DragStart(e, idx)}
-                                  onDragEnd={() => { step1DraggedIndexRef.current = null; setStep1DragOverIndex(null); }}
-                                  style={{ cursor: 'grab', fontSize: '13px', color: '#94a3b8', userSelect: 'none', padding: '0 2px' }} 
-                                  title="드래그하여 순서 변경"
-                                >
-                                  ⋮⋮
-                                </span>
-                                <input
-                                  type="text"
-                                  value={item.lineNumber !== undefined && item.lineNumber !== '' ? item.lineNumber : (idx + 1)}
-                                  onChange={e => handleStep1NoChange(idx, e.target.value)}
-                                  style={{
-                                    ...gridInputStyle,
-                                    width: '38px',
-                                    textAlign: 'center',
-                                    padding: '2px 4px',
-                                    fontWeight: 700,
-                                    color: '#1e293b'
-                                  }}
-                                  title="순번 수동 입력"
-                                />
-                              </div>
+                            {/* No. */}
+                            <td style={{ padding: '8px 4px', textAlign: 'center', fontWeight: 700, color: '#475569', fontSize: '13px' }}>
+                              {item.lineNumber !== undefined && item.lineNumber !== '' ? item.lineNumber : (idx + 1)}
                             </td>
 
                             {/* 상품코드 / 스펙(Spec) */}
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                  <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                    <input
-                                      type="text"
-                                      list={`step1_products_datalist_${idx}`}
-                                      value={item.name || item.productCode || ''}
-                                      placeholder="상품코드 검색/입력"
-                                      onChange={e => {
-                                        const val = e.target.value;
-                                        handleItemChange(idx, { name: val, productCode: getRawProductCode(val) });
-                                      }}
-                                      style={{ ...gridInputStyle, paddingRight: '42px' }}
-                                    />
-                                    {(item.name || item.productCode) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleItemChange(idx, { name: '', productCode: '' })}
-                                        style={{
-                                          position: 'absolute',
-                                          right: '24px',
-                                          background: 'transparent',
-                                          border: 'none',
-                                          color: 'var(--text-muted)',
-                                          cursor: 'pointer',
-                                          fontSize: '11px',
-                                          padding: '2px',
-                                          zIndex: 5,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center'
-                                        }}
-                                        title="비우기"
-                                      >
-                                        ✕
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSearchItemIndex(idx);
-                                        setIsSourcingSearch(false);
-                                        setIsProductSearchOpen(true);
-                                      }}
-                                      style={{
-                                        position: 'absolute',
-                                        right: '6px',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: '#3b82f6',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        padding: '2px',
-                                        zIndex: 5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                      title="상품 검색 (Subwindow)"
-                                    >
-                                      🔍
-                                    </button>
-                                    <datalist id={`step1_products_datalist_${idx}`}>
-                                      {products.map(p => {
-                                        const displayName = p.nameEn || p.nameKo || '';
-                                        return (
-                                          <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
-                                            [{p.productCode}] {displayName}
-                                          </option>
-                                        );
-                                      })}
-                                    </datalist>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (prod) {
-                                        setEditingProd(prod);
-                                        setIsProdModalOpen(true);
-                                      } else {
-                                        alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                      }
-                                    }}
-                                    disabled={!prod}
-                                    title="선택된 상품 수정"
-                                    style={{
-                                      background: prod ? '#fef08a' : '#f1f5f9',
-                                      border: prod ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
-                                      color: prod ? '#a16207' : 'var(--text-muted)',
-                                      borderRadius: '4px',
-                                      padding: '4px 6px',
-                                      cursor: prod ? 'pointer' : 'not-allowed',
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      whiteSpace: 'nowrap',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '29px'
-                                    }}
-                                  >
-                                    ✏️
-                                  </button>
-                                  <div style={{ minHeight: '18px', display: 'flex', alignItems: 'center' }}>
-                                    {(item.supplier || prod?.supplierName) ? (
-                                      <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '140px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={item.supplier || prod?.supplierName}>
-                                        {(item.supplier || prod?.supplierName || '').replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
-                                      </span>
-                                    ) : null}
-                                  </div>
+                            <td style={{ padding: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>
+                                    {item.name || (item.productCode ? `[${item.productCode}]` : '-')}
+                                  </span>
+                                  {(item.supplier || prod?.supplierName) && (
+                                    <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600, background: '#eff6ff', border: '1px solid #dbeafe', padding: '1px 5px', borderRadius: '4px' }} title={item.supplier || prod?.supplierName}>
+                                      {(item.supplier || prod?.supplierName || '').replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                    </span>
+                                  )}
                                 </div>
-                                <textarea
-                                  value={item.spec || item.grade || ''}
-                                  placeholder="스펙 (Spec)"
-                                  onChange={e => handleItemChange(idx, { spec: e.target.value, grade: e.target.value })}
-                                  rows={1}
-                                  style={{ ...gridInputStyle, resize: 'both', minHeight: '29px', minWidth: '80px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px', overflow: 'auto' }}
-                                />
+                                {(item.spec || item.grade) && (
+                                  <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 6px', borderRadius: '3px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                                    {item.spec || item.grade}
+                                  </div>
+                                )}
                               </div>
                             </td>
 
                             {/* 패킹방식/수량 */}
-                            <td style={{ padding: '4px' }}>
+                            <td style={{ padding: '8px 4px', textAlign: 'center' }}>
                               {(() => {
                                 const methods = getProductPackingMethods(prod);
                                 const selectedMethod = methods.find((m: any) => m.id === (item.selectedPackingMethodId || 'default_injected')) || methods[0];
-                                const isExpanded = expandedPackingRows.has(idx);
-                                const autoQty = autoCalcPalletQty(item.qty || 0, selectedMethod?.id, methods);
                                 const packLabel = formatPackingName(selectedMethod?.name, selectedMethod?.qtyPerPallet);
                                 const packUnit = selectedMethod?.packageType || '단품';
-
                                 return (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <input
-                                        type="number"
-                                        step="0.1"
-                                        placeholder="패킹수량"
-                                        value={item.palletQty || ''}
-                                        onChange={e => handleItemChange(idx, 'palletQty', parseFloat(e.target.value) || 0)}
-                                        style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '55px' }}
-                                      />
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                        {packUnit}
-                                      </span>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      <button
-                                        type="button"
-                                        onClick={() => togglePackingRow(idx)}
-                                        title={`패킹 설정: ${packLabel}`}
-                                        style={{
-                                          width: '100%',
-                                          padding: '2px 6px',
-                                          fontSize: '11.5px',
-                                          border: '1px solid #cbd5e1',
-                                          borderRadius: '4px',
-                                          background: isExpanded ? '#eff6ff' : '#f8fafc',
-                                          color: isExpanded ? '#2563eb' : '#475569',
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          gap: '4px',
-                                          fontWeight: 600,
-                                          boxSizing: 'border-box'
-                                        }}
-                                      >
-                                        <span>📦</span>
-                                        <span style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{packLabel}</span>
-                                      </button>
-                                    </div>
-
-                                    <div style={{ minHeight: '16px', display: 'flex', alignItems: 'center' }}>
-                                      {!item.palletQty && autoQty > 0 && (
-                                        <div
-                                          style={{ fontSize: '11px', color: '#94a3b8', cursor: 'pointer', paddingLeft: '2px' }}
-                                          onClick={() => handleItemChange(idx, 'palletQty', autoQty)}
-                                          title="클릭하여 적용"
-                                        >
-                                          ≈ {autoQty} {packUnit} (자동)
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {isExpanded && (
-                                      <div style={{
-                                        marginTop: '4px',
-                                        padding: '8px',
-                                        background: '#f0f9ff',
-                                        border: '1px solid #bae6fd',
-                                        borderRadius: '6px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '6px'
-                                      }}>
-                                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1' }}>📦 패킹 방식 선택</div>
-                                        {methods.map((m: any) => {
-                                          const isSelected = (item.selectedPackingMethodId || 'default_injected') === m.id;
-                                          const handleSelect = (e: React.MouseEvent | React.ChangeEvent) => {
-                                            e.stopPropagation();
-                                            const newAutoQty = autoCalcPalletQty(item.qty || 0, m.id, methods);
-                                            const updates: any = { selectedPackingMethodId: m.id };
-                                            if (newAutoQty > 0) {
-                                              updates.palletQty = newAutoQty;
-                                            }
-                                            handleItemChange(idx, updates);
-                                            togglePackingRow(idx);
-                                          };
-
-                                          return (
-                                            <label
-                                              key={m.id}
-                                              onClick={handleSelect}
-                                              style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                                padding: '4px 6px',
-                                                borderRadius: '4px',
-                                                background: isSelected ? '#dbeafe' : 'transparent',
-                                                border: isSelected ? '1px solid #93c5fd' : '1px solid transparent',
-                                                transition: 'all 0.15s ease'
-                                              }}
-                                            >
-                                              <input
-                                                type="radio"
-                                                name={`packing-order-${idx}`}
-                                                value={m.id}
-                                                checked={isSelected}
-                                                onChange={handleSelect}
-                                              />
-                                              <span style={{ fontWeight: 600, color: isSelected ? '#1e40af' : '#1e293b' }}>
-                                                {formatPackingName(m.name, m.qtyPerPallet)}
-                                              </span>
-                                              {m.qtyPerPallet > 1 && (
-                                                <span style={{ color: isSelected ? '#3b82f6' : '#64748b', fontSize: '11px' }}>
-                                                  ({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})
-                                                </span>
-                                              )}
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                    <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '13px' }}>
+                                      {(item.palletQty || 0).toLocaleString()} <span style={{ fontSize: '11px', color: '#64748b' }}>{packUnit}</span>
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: '1px 5px', borderRadius: '3px', border: '1px solid #e2e8f0', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={packLabel}>
+                                      {packLabel}
+                                    </span>
                                   </div>
                                 );
                               })()}
                             </td>
 
                             {/* 수량 / 단위 */}
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <input
-                                  type="text"
-                                  placeholder="수량"
-                                  value={formatNumberWithCommas(item.qty)}
-                                  onChange={e => handleItemChange(idx, 'qty', parseCommas(e.target.value))}
-                                  style={{ ...gridInputStyle, textAlign: 'right', width: '80%', marginLeft: 'auto' }}
-                                />
-                                <input
-                                  type="text"
-                                  placeholder="단위"
-                                  value={item.unit || ''}
-                                  onChange={e => handleItemChange(idx, 'unit', e.target.value.toUpperCase())}
-                                  style={{ ...gridInputStyle, textAlign: 'center', width: '50%', marginLeft: 'auto' }}
-                                />
+                            <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                                <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px', fontVariantNumeric: 'tabular-nums' }}>
+                                  {(item.qty || 0).toLocaleString()}
+                                </span>
+                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                                  {item.unit || '-'}
+                                </span>
                               </div>
                             </td>
 
                             {/* 매입가 */}
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                                  <select
-                                    value={curCurrency}
-                                    onChange={e => {
-                                      handleCurrencySelection(e.target.value, curCurrency, customCurrencies, val => {
-                                        const curVal = curCurrency === 'USD' ? (item.purchasePriceUsd || 0) : (item.purchasePriceKrw || 0);
-                                        handleItemChange(idx, {
-                                          purchasePriceCurrency: val,
-                                          purchasePriceUsd: val === 'USD' ? curVal : 0,
-                                          purchasePriceKrw: val === 'KRW' ? curVal : 0
-                                        });
-                                      });
-                                    }}
-                                    style={{ ...gridInputStyle, width: '65px', padding: '2px' }}
-                                  >
-                                    {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
-                                    <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
-                                  </select>
-                                  <PurchasePriceInput
-                                    curCurrency={curCurrency}
-                                    purchasePriceUsd={item.purchasePriceUsd}
-                                    purchasePriceKrw={item.purchasePriceKrw}
-                                    onChange={updates => handleItemChange(idx, updates)}
-                                  />
-                                </div>
-                                {curCurrency === 'KRW' && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>기준환율:</span>
-                                    <input
-                                      type="text"
-                                      value={formatNumberWithCommas(item.exchangeRate || exRate)}
-                                      onChange={e => handleItemChange(idx, 'exchangeRate', parseCommas(e.target.value))}
-                                      style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => setIsQuoteSettingsOpen(true)}
-                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '0 2px', color: '#64748b' }}
-                                      title="견적환경설정 열기"
-                                    >
-                                      ⚙️
-                                    </button>
-                                  </div>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                {curCurrency === 'KRW' ? (
+                                  <>
+                                    <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
+                                      ₩{(item.purchasePriceKrw || 0).toLocaleString()}
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                                      환율: {formatNumberWithCommas(item.exchangeRate || exRate)}원
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
+                                    ${(item.purchasePriceUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                                  </span>
                                 )}
                               </div>
                             </td>
 
                             {/* 마진/올림 */}
-                            <td style={{ padding: '4px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
-                                  <input
-                                    type="text"
-                                    placeholder="마진"
-                                    value={formatNumberWithCommas(item.marginRate)}
-                                    onChange={e => handleItemChange(idx, 'marginRate', parseCommas(e.target.value))}
-                                    style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }}
-                                  />
-                                  <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
-                                </div>
-                                {(item.productCode || item.name) && (
-                                  <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap' }} title="과거 거래 데이터 분석 기반 AI 추천 마진">
-                                    🤖 AI추천: 15%
-                                  </div>
+                            <td style={{ padding: '8px 4px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>
+                                  {item.marginRate != null ? `${item.marginRate}%` : '-'}
+                                </span>
+                                {item.roundDigits !== undefined && (
+                                  <span style={{ fontSize: '10.5px', color: '#64748b', background: '#f1f5f9', padding: '1px 4px', borderRadius: '3px' }}>
+                                    올림: {item.roundDigits}
+                                  </span>
                                 )}
-                                <select
-                                  value={item.roundDigits ?? 'none'}
-                                  onChange={e => handleItemChange(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))}
-                                  style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%' }}
-                                >
-                                  <option value="none">없음</option>
-                                  <option value="-2">-2</option>
-                                  <option value="-1">-1</option>
-                                  <option value="0">0</option>
-                                  <option value="1">1</option>
-                                  <option value="2">2</option>
-                                </select>
                               </div>
                             </td>
 
                             {/* 단가(USD) */}
-                            <td style={{ padding: '4px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                <SalePriceInput
-                                  value={item.salePriceUsd ?? item.unitPrice}
-                                  onChange={val => handleItemChange(idx, { salePriceUsd: val, unitPrice: val })}
-                                />
-                              </div>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '13.5px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                              ${(item.salePriceUsd ?? item.unitPrice ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </td>
 
                             {/* 총액($) */}
-                            <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '14px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                               ${((item.unitPrice || item.salePriceUsd || 0) * (item.qty || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
 
                             {/* 이익($) */}
-                            <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800, fontSize: '14px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                               ${(() => {
                                 const salePrice = item.salePriceUsd ?? item.unitPrice ?? 0;
                                 const buyUsd = (item.purchasePriceUsd && item.purchasePriceUsd > 0)
@@ -8493,37 +8192,8 @@ ${downloadLink}`;
                             </td>
 
                             {/* 비고 */}
-                            <td style={{ padding: '4px' }}>
-                              <textarea
-                                value={item.remarks || ''}
-                                placeholder="비고"
-                                onChange={e => handleItemChange(idx, 'remarks', e.target.value)}
-                                rows={2}
-                                style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }}
-                              />
-                            </td>
-
-                            {/* 관리 (복사/삭제) */}
-                            <td style={{ padding: '4px', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => copyStep1Item(idx)}
-                                  style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '4px', cursor: 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                  title="동일/비슷한 품목 복사 추가"
-                                >
-                                  📋
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => removeItemRow(idx)}
-                                  disabled={orderItems.length === 1}
-                                  style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', padding: '4px', cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer', fontSize: '12px', width: '26px', height: '26px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                                  title="품목 삭제"
-                                >
-                                  ✕
-                                </button>
-                              </div>
+                            <td style={{ padding: '8px', color: '#475569', fontSize: '12px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                              {item.remarks || '-'}
                             </td>
                           </tr>
                         );
