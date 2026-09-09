@@ -2880,11 +2880,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   {formData.type !== 'consulting' && (
                     <th style={{ padding: '8px 2px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
                   )}
-                  <th style={{ padding: '8px 2px', width: '68px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', width: '136px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                  <th style={{ padding: '8px 2px', width: '82px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', width: '160px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
                   <th style={{ padding: '8px 4px', width: '96px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
                   <th style={{ padding: '8px 2px', width: '54px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
-                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
                   <th style={{ padding: '8px 4px', width: '185px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
@@ -3087,10 +3087,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const methods = getProductPackingMethods(prod);
                           const selectedMethod = methods.find((m: any) => m.id === (it.selectedPackingMethodId || 'default_injected'))
                             || methods[0];
-                          const isExpanded = expandedPackingRows.has(idx);
 
                           const autoQty = autoCalcPalletQty(it.quantity || 0, selectedMethod?.id, methods);
-                          const packLabel = formatPackingName(selectedMethod?.name, selectedMethod?.qtyPerPallet);
                           const packUnit = selectedMethod?.packageType || '단품';
 
                           return (
@@ -3105,105 +3103,48 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)}
                                   style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '40px', height: '28px', padding: '2px 4px', fontSize: '12px' }}
                                 />
-                                <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', paddingRight: '2px' }} title={packUnit}>
+                                <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', paddingRight: '2px' }} title={packUnit}>
                                   {packUnit}
                                 </span>
                               </div>
 
-                              {/* 2번째 줄: 📦 패킹 설정 아이콘 버튼 */}
+                              {/* 2번째 줄: 패킹 방식 깔끔한 선택 드롭다운 (난잡한 인라인 펼침 완전 제거) */}
                               <div style={{ height: '24px', display: 'flex', alignItems: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => togglePackingRow(idx)}
-                                  title={`패킹 설정: ${packLabel}${!it.palletQty && autoQty > 0 ? ` (자동계산: ≈ ${autoQty} ${packUnit})` : ''}`}
+                                <select
+                                  value={selectedMethod?.id || 'default_injected'}
+                                  onChange={(e) => {
+                                    const mId = e.target.value;
+                                    const newAutoQty = autoCalcPalletQty(it.quantity || 0, mId, methods);
+                                    const updates: Partial<PIItem> = {
+                                      selectedPackingMethodId: mId
+                                    };
+                                    if (newAutoQty > 0) {
+                                      updates.palletQty = newAutoQty;
+                                    }
+                                    updateItem(idx, updates);
+                                  }}
                                   style={{
+                                    ...gridInputStyle,
                                     width: '100%',
                                     height: '24px',
-                                    padding: '0 4px',
+                                    padding: '0 2px',
                                     fontSize: '11px',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '4px',
-                                    background: isExpanded ? '#eff6ff' : '#f8fafc',
-                                    color: isExpanded ? '#2563eb' : '#475569',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '2px',
                                     fontWeight: 600,
-                                    boxSizing: 'border-box'
+                                    color: '#1e40af',
+                                    backgroundColor: '#eff6ff',
+                                    borderColor: '#bfdbfe',
+                                    cursor: 'pointer',
+                                    outline: 'none'
                                   }}
+                                  title={`패킹 방식 선택: ${formatPackingName(selectedMethod?.name, selectedMethod?.qtyPerPallet)}`}
                                 >
-                                  <span>📦</span>
-                                  <span style={{ fontSize: '10.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{packLabel}</span>
-                                </button>
+                                  {methods.map((m: any) => (
+                                    <option key={m.id} value={m.id}>
+                                      {formatPackingName(m.name, m.qtyPerPallet)}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
-
-                              {/* 📦 클릭 시 인라인 펼침 — 패킹방식 선택 */}
-                              {isExpanded && (
-                                <div style={{
-                                  marginTop: '4px',
-                                  padding: '8px',
-                                  background: '#f0f9ff',
-                                  border: '1px solid #bae6fd',
-                                  borderRadius: '6px',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '6px',
-                                }}>
-                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1' }}>📦 패킹 방식 선택</div>
-                                  {methods.map((m: any) => {
-                                    const isSelected = (it.selectedPackingMethodId || 'default_injected') === m.id;
-                                    const handleSelect = (e: React.MouseEvent | React.ChangeEvent) => {
-                                      e.stopPropagation();
-                                      const newAutoQty = autoCalcPalletQty(it.quantity || 0, m.id, methods);
-                                      const updates: Partial<PIItem> = {
-                                        selectedPackingMethodId: m.id
-                                      };
-                                      if (newAutoQty > 0) {
-                                        updates.palletQty = newAutoQty;
-                                      }
-                                      updateItem(idx, updates);
-                                      togglePackingRow(idx);
-                                    };
-
-                                    return (
-                                      <label
-                                        key={m.id}
-                                        onClick={handleSelect}
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '6px',
-                                          fontSize: '12px',
-                                          cursor: 'pointer',
-                                          padding: '4px 6px',
-                                          borderRadius: '4px',
-                                          background: isSelected ? '#dbeafe' : 'transparent',
-                                          border: isSelected ? '1px solid #93c5fd' : '1px solid transparent',
-                                          transition: 'all 0.15s ease'
-                                        }}
-                                      >
-                                        <input
-                                          type="radio"
-                                          name={`packing-${idx}`}
-                                          value={m.id}
-                                          checked={isSelected}
-                                          onChange={handleSelect}
-                                        />
-                                        <span style={{ fontWeight: 600, color: isSelected ? '#1e40af' : '#1e293b' }}>
-                                          {formatPackingName(m.name, m.qtyPerPallet)}
-                                        </span>
-                                        {m.qtyPerPallet > 1 && (
-                                          <span style={{ color: isSelected ? '#3b82f6' : '#64748b', fontSize: '11px' }}>
-                                            ({m.qtyPerPallet.toLocaleString()}개/{m.packageType || '단위'})
-                                          </span>
-                                        )}
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              )}
                             </div>
                           );
                         })()}
@@ -3375,11 +3316,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     {/* 단가(USD) */}
                     <td style={{ padding: '6px 4px', verticalAlign: 'top', textAlign: 'right' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
-                        <div style={{ height: '28px', width: '100%', display: 'flex', alignItems: 'center' }}>
-                          <SalePriceInput
-                            value={it.salePriceUsd}
-                            onChange={(val) => updateItem(idx, 'salePriceUsd', val)}
-                          />
+                        <div style={{ height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }} title="매입가, 환율, 마진율에 의해 자동 계산된 판매단가입니다">
+                          <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                            ${(it.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
                         </div>
                         <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                           <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>

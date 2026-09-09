@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.502',
+    version: 'v2.8.502',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 패킹 방식 인라인 펼침 난잡함 해소 및 원클릭 드롭다운 전환',
+    content: '• 테이블 행을 아래로 과도하게 밀어내고 90px 좁은 셀 내에서 글자가 깨지던 패킹 방식 인라인 펼침 박스 완전 제거\n• 2번째 줄(24px)에 단정하게 안착되는 원클릭 셀렉트 드롭다운(단품, 팔레트 등)으로 전면 교체하여 2줄 높이 완벽 보존\n• 패킹 방식 변경 시 팔레트 수량 자동 계산은 그대로 유지하면서 테이블 전체 레이아웃의 깔끔함 극대화',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.501',
+    version: 'v2.8.501',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 수량·매입가 표시폭 확대, 상품코드 너비 최적화 및 단가 자동계산 표시 전환',
+    content: '• 수량/단위 열을 82px, 매입가 열을 160px로 확대하여 대량 수량 및 억원대 원화 매입가도 여유롭게 입력 가능\n• 수량/매입가 확장에 따라 상품코드 / 스펙(Spec) 열의 불필요한 우측 공백을 약 43px 컴팩트하게 슬림화\n• 단가(USD) 필드를 수동 타이핑 인풋에서 매입가·환율·마진율 입력에 따라 실시간 자동 계산되는 신뢰성 높은 결과 텍스트로 전면 전환',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.500',
     version: 'v2.8.500',
     date: '2026-09-09',
