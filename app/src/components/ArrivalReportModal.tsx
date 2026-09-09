@@ -52,6 +52,40 @@ interface Props {
   onSave: (data: any) => void;
 }
 
+const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): string => {
+  let cleanDims = '';
+  if (dimStr && dimStr !== '0x0x0' && dimStr !== '0*0*0') {
+    cleanDims = String(dimStr).replace(/[x×X]/g, '*').replace(/\s+/g, '');
+  }
+  
+  let formattedCbm = '';
+  if (cbmVal != null && cbmVal !== '') {
+    const rawCbmStr = String(cbmVal).trim();
+    if (rawCbmStr.toUpperCase().includes('CBM')) {
+      const match = rawCbmStr.match(/([0-9]+(?:\.[0-9]+)?)\s*CBM/i);
+      if (match) {
+        formattedCbm = `${parseFloat(match[1]).toFixed(3)} CBM`;
+      } else {
+        formattedCbm = rawCbmStr;
+      }
+    } else {
+      const numCbm = parseFloat(String(cbmVal)) || 0;
+      if (numCbm > 0) {
+        formattedCbm = `${numCbm.toFixed(3)} CBM`;
+      }
+    }
+  }
+
+  if (cleanDims && formattedCbm) {
+    return `${cleanDims} (${formattedCbm})`;
+  } else if (cleanDims) {
+    return cleanDims;
+  } else if (formattedCbm) {
+    return formattedCbm;
+  }
+  return '';
+};
+
 export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, packingList, initialData, defaultShippingMark = '', onClose, onSave }) => {
   const [cfsList, setCfsList] = useState<string[]>([]);
   const [isAddingCfs, setIsAddingCfs] = useState(false);
@@ -240,7 +274,26 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
           } else if (/\bEA\b/i.test(desc)) {
             desc = desc.replace(/\bEA\b/gi, matchedUnit);
           }
-          return { ...it, descOfGoods: desc };
+          let curMeas = it.measurement || '';
+          if (!curMeas || (!curMeas.includes('*') && !curMeas.includes('x'))) {
+            let matchedDims = '';
+            if (packingList && packingList.containers) {
+              for (const container of packingList.containers) {
+                const found = (container.items || []).find((cIt: any) => 
+                  (cIt.itemCode && desc.includes(cIt.itemCode)) ||
+                  (cIt.description && desc.includes(cIt.description))
+                );
+                if (found && found.dimensions && found.dimensions !== '0x0x0' && found.dimensions !== '0*0*0') {
+                  matchedDims = found.dimensions;
+                  break;
+                }
+              }
+            }
+            if (matchedDims) {
+              curMeas = formatMeasurementWithDims(matchedDims, curMeas);
+            }
+          }
+          return { ...it, descOfGoods: desc, measurement: curMeas };
         }
         if (/\bEA\b/i.test(desc)) {
           return { ...it, descOfGoods: desc.replace(/\bEA\b/gi, 'kg') };
@@ -273,7 +326,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
             packageType: 'PL',
             netWeight: Number(it.netWeight) || 0,
             grossWeight: Number(it.grossWeight) || 0,
-            measurement: it.cbm ? `${it.cbm} CBM` : ''
+            measurement: formatMeasurementWithDims(it.dimensions, it.cbm)
           });
         });
       });
@@ -544,7 +597,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>16) Measurement (용적/규격)</label>
-                  <input type="text" value={item.measurement || ''} onChange={e => updatePackingItem(idx, 'measurement', e.target.value)} placeholder="예: 1150×1250×1800" style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
+                  <input type="text" value={item.measurement || ''} onChange={e => updatePackingItem(idx, 'measurement', e.target.value)} placeholder="예: 1100*1100*750 (0.910 CBM)" style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
                 </div>
               </div>
             ))}

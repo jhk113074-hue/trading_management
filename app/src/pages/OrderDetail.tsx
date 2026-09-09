@@ -242,6 +242,40 @@ const evaluateFormulaGlobal = (val: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
+const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): string => {
+  let cleanDims = '';
+  if (dimStr && dimStr !== '0x0x0' && dimStr !== '0*0*0') {
+    cleanDims = String(dimStr).replace(/[x×X]/g, '*').replace(/\s+/g, '');
+  }
+  
+  let formattedCbm = '';
+  if (cbmVal != null && cbmVal !== '') {
+    const rawCbmStr = String(cbmVal).trim();
+    if (rawCbmStr.toUpperCase().includes('CBM')) {
+      const match = rawCbmStr.match(/([0-9]+(?:\.[0-9]+)?)\s*CBM/i);
+      if (match) {
+        formattedCbm = `${parseFloat(match[1]).toFixed(3)} CBM`;
+      } else {
+        formattedCbm = rawCbmStr;
+      }
+    } else {
+      const numCbm = typeof cbmVal === 'number' ? cbmVal : evaluateFormulaGlobal(cbmVal);
+      if (numCbm > 0) {
+        formattedCbm = `${numCbm.toFixed(3)} CBM`;
+      }
+    }
+  }
+
+  if (cleanDims && formattedCbm) {
+    return `${cleanDims} (${formattedCbm})`;
+  } else if (cleanDims) {
+    return cleanDims;
+  } else if (formattedCbm) {
+    return formattedCbm;
+  }
+  return '';
+};
+
 interface FormulaWeightInputProps {
   value: string | number | undefined;
   onChange: (val: string) => void;
@@ -4192,7 +4226,21 @@ export const OrderDetail: React.FC = () => {
             packageType: 'PL',
             netWeight: evaluateFormulaGlobal(it.netWeight),
             grossWeight: evaluateFormulaGlobal(it.grossWeight),
-            measurement: it.cbm ? `${evaluateFormulaGlobal(it.cbm).toFixed(3)} CBM` : ''
+            measurement: (() => {
+              let dimStr = it.dimensions || '';
+              if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
+                const match = (it.description || '').match(/^\[(.*?)\]/);
+                const itemCode = match ? match[1] : (it.itemCode || '');
+                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                const pW = prod?.palletWidth || prod?.specWidth || 0;
+                const pL = prod?.palletLength || prod?.specLength || 0;
+                const pH = prod?.palletHeight || prod?.specHeight || 0;
+                if (pW > 0 && pL > 0 && pH > 0) {
+                  dimStr = `${pW}*${pL}*${pH}`;
+                }
+              }
+              return formatMeasurementWithDims(dimStr, it.cbm);
+            })()
           });
         });
 
@@ -7123,6 +7171,11 @@ ${downloadLink}`;
       const evalRes = evaluateFormula(s);
       if (evalRes > 0) return evalRes;
     }
+    const cbmMatch = s.match(/([0-9]+(?:\.[0-9]+)?)\s*CBM/i);
+    if (cbmMatch) {
+      const cbmVal = parseFloat(cbmMatch[1]);
+      if (cbmVal > 0) return cbmVal;
+    }
     const dimMatch = s.match(/^=?\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)\s*[*x×X]\s*([0-9]+(?:\.[0-9]+)?)/);
     if (dimMatch) {
       const d1 = parseFloat(dimMatch[1]);
@@ -7235,7 +7288,21 @@ ${downloadLink}`;
           packageType: 'PL',
           netWeight: evaluateFormula(it.netWeight),
           grossWeight: evaluateFormula(it.grossWeight),
-          measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
+          measurement: (() => {
+            let dimStr = it.dimensions || '';
+            if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
+              const match = (it.description || '').match(/^\[(.*?)\]/);
+              const itemCode = match ? match[1] : (it.itemCode || '');
+              const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+              const pW = prod?.palletWidth || prod?.specWidth || 0;
+              const pL = prod?.palletLength || prod?.specLength || 0;
+              const pH = prod?.palletHeight || prod?.specHeight || 0;
+              if (pW > 0 && pL > 0 && pH > 0) {
+                dimStr = `${pW}*${pL}*${pH}`;
+              }
+            }
+            return formatMeasurementWithDims(dimStr, it.cbm);
+          })()
         });
       });
     }
@@ -12091,13 +12158,49 @@ ${downloadLink}`;
                             if (actualQty && !desc.includes(String(actualQty))) {
                               desc = `${desc} ${actualQty} ${itemUnit}`.replace(/\s+/g, ' ');
                             }
+
+                            // 파렛트 가로*세로*높이 (WxLxH) 동기화 보정
+                            if (!it.measurement || (!it.measurement.includes('*') && !it.measurement.includes('x'))) {
+                              let matchedDims = '';
+                              if (basicForm.packingList?.containers) {
+                                for (const container of basicForm.packingList.containers) {
+                                  const found = (container.items || []).find((cIt: any) => 
+                                    (cIt.pkgNo && it.pkgNo && cIt.pkgNo === it.pkgNo) ||
+                                    (cIt.itemCode && desc.includes(cIt.itemCode)) ||
+                                    (cIt.description && desc.includes(cIt.description))
+                                  );
+                                  if (found && found.dimensions && found.dimensions !== '0x0x0' && found.dimensions !== '0*0*0') {
+                                    matchedDims = found.dimensions;
+                                    break;
+                                  }
+                                }
+                              }
+                              if (!matchedDims) {
+                                const match = desc.match(/^\[(.*?)\]/);
+                                const itemCode = match ? match[1] : '';
+                                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                const pW = prod?.palletWidth || prod?.specWidth || 0;
+                                const pL = prod?.palletLength || prod?.specLength || 0;
+                                const pH = prod?.palletHeight || prod?.specHeight || 0;
+                                if (pW > 0 && pL > 0 && pH > 0) {
+                                  matchedDims = `${pW}*${pL}*${pH}`;
+                                }
+                              }
+                              if (matchedDims) {
+                                const newMeas = formatMeasurementWithDims(matchedDims, it.measurement);
+                                if (newMeas && newMeas !== it.measurement) {
+                                  it.measurement = newMeas;
+                                  mutated = true;
+                                }
+                              }
+                            }
                             
                             if (desc !== it.descOfGoods) {
                               mutated = true;
-                              return { ...it, descOfGoods: desc, marks, pkgNo: pNo };
+                              return { ...it, descOfGoods: desc, marks, pkgNo: pNo, measurement: it.measurement };
                             }
                           }
-                          return mutated ? { ...it, descOfGoods: desc, marks, pkgNo: pNo } : it;
+                          return mutated ? { ...it, descOfGoods: desc, marks, pkgNo: pNo, measurement: it.measurement } : it;
                         });
                         if (mutated) {
                           packingItemsList = nextList;
@@ -12144,7 +12247,21 @@ ${downloadLink}`;
                             packageType: 'PL',
                             netWeight: evaluateFormula(it.netWeight),
                             grossWeight: evaluateFormula(it.grossWeight),
-                            measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
+                            measurement: (() => {
+                              let dimStr = it.dimensions || '';
+                              if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
+                                const match = (it.description || '').match(/^\[(.*?)\]/);
+                                const itemCode = match ? match[1] : (it.itemCode || '');
+                                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                const pW = prod?.palletWidth || prod?.specWidth || 0;
+                                const pL = prod?.palletLength || prod?.specLength || 0;
+                                const pH = prod?.palletHeight || prod?.specHeight || 0;
+                                if (pW > 0 && pL > 0 && pH > 0) {
+                                  dimStr = `${pW}*${pL}*${pH}`;
+                                }
+                              }
+                              return formatMeasurementWithDims(dimStr, it.cbm);
+                            })()
                           });
                         });
                       }
@@ -12751,7 +12868,21 @@ ${downloadLink}`;
                                       packageType: 'PL',
                                       netWeight: evaluateFormula(it.netWeight),
                                       grossWeight: evaluateFormula(it.grossWeight),
-                                      measurement: it.cbm ? `${evaluateFormula(it.cbm).toFixed(3)} CBM` : ''
+                                      measurement: (() => {
+                                        let dimStr = it.dimensions || '';
+                                        if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
+                                          const match = (it.description || '').match(/^\[(.*?)\]/);
+                                          const itemCode = match ? match[1] : (it.itemCode || '');
+                                          const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                          const pW = prod?.palletWidth || prod?.specWidth || 0;
+                                          const pL = prod?.palletLength || prod?.specLength || 0;
+                                          const pH = prod?.palletHeight || prod?.specHeight || 0;
+                                          if (pW > 0 && pL > 0 && pH > 0) {
+                                            dimStr = `${pW}*${pL}*${pH}`;
+                                          }
+                                        }
+                                        return formatMeasurementWithDims(dimStr, it.cbm);
+                                      })()
                                     });
                                   });
 
@@ -12855,13 +12986,13 @@ ${downloadLink}`;
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14.5px' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)' }}>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '25%' }}>10) Marks (쉬핑마크)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '28%' }}>11) Description of Goods (품명)</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>12) Qty (수량)</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>13) Package (단위)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>14) Net Wt (kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>15) Gross Wt (kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>16) Measurement (규격)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '22%' }}>10) Marks (쉬핑마크)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '25%' }}>11) Description of Goods (품명)</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '7%' }}>12) Qty (수량)</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '7%' }}>13) Package (단위)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '9%' }}>14) Net Wt (kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '9%' }}>15) Gross Wt (kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '16%' }}>16) Measurement (규격 / W*L*H)</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '5%' }}>동작</th>
                                 </tr>
                               </thead>
@@ -12969,7 +13100,7 @@ ${downloadLink}`;
                                               type="text"
                                               disabled={!isEditing}
                                               value={it.measurement || ''}
-                                              placeholder="예: =1.1*1.2*1.3"
+                                              placeholder="예: 1100*1100*750 (0.910 CBM)"
                                               onChange={e => updateArrivalReportItem(itemIdx, 'measurement', e.target.value)}
                                               style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
                                             />

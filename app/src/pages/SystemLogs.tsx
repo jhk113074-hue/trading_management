@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.517',
+    version: 'v2.8.517',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: '도착보고서 Measurement(규격) 항목에 패킹/로딩플랜 파렛트 가로*세로*높이(WxLxH) 동시 표기',
+    content: '• 도착보고서의 16) Measurement (규격) 열에 CBM 용적 단독 표기뿐만 아니라, 패킹 및 컨테이너 로딩 플랜에 설정된 파렛트의 실제 규격(가로*세로*높이, W*L*H)이 함께 표기되도록 연동 개선 (예: 1100*1100*750 (0.910 CBM))\n• 기존 저장된 도착보고서 및 패킹리스트 동기화 시 컨테이너별 파렛트 규격을 자동 탐색하여 누락 없이 실시간 자동 반영\n• 도착보고서 인쇄 및 PDF 문서, 모달 입력 화면 및 쉬핑마크 연계 규격에 가로*세로*높이가 완벽하게 통합 출력되도록 처리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.516',
     version: 'v2.8.516',
     date: '2026-09-09',
