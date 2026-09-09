@@ -101,7 +101,7 @@ export interface ProformaInvoice {
     purchaseCertFee?: { amount: number; currency: 'KRW' | 'USD' }; // 구매확인서 발급비
     inlandFreight?: { amount: number; currency: 'KRW' | 'USD' }; // 내륙운송비
     otherFee?: { amount: number; currency: 'KRW' | 'USD' }; // 기타 부대비용
-    roundUpType?: 'none' | 'ceil_1' | 'ceil_5' | 'ceil_10'; // 최종 운송비 올림 방식
+    roundUpType?: 'none' | 'ceil_1' | 'ceil_5' | 'ceil_10' | '0' | '1' | '2' | '-1' | '-2' | '-3'; // 최종 운송비 올림 방식 (Excel ROUNDUP 자리수 지원)
   };
   freightTotal: number;
   insurance: number;

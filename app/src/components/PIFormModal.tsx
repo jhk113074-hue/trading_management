@@ -3297,15 +3297,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%', height: '24px', padding: '1px 2px', fontSize: '10.5px' }}
-                          title="올림 단위 선택: 소수점 이하 또는 정수 단위 올림"
+                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%', height: '24px', padding: '1px 2px', fontSize: '11px', fontWeight: 600 }}
+                          title="Excel ROUNDUP 자리수 (2, 1, 0, -1, -2, -3)"
                         >
                           <option value="none">자리수</option>
-                          <option value="2">.01 (센트)</option>
-                          <option value="1">.1 (10센트)</option>
-                          <option value="0">1$ (정수)</option>
-                          <option value="-1">10$ 단위</option>
-                          <option value="-2">100$ 단위</option>
+                          <option value="2">2</option>
+                          <option value="1">1</option>
+                          <option value="0">0</option>
+                          <option value="-1">-1</option>
+                          <option value="-2">-2</option>
+                          <option value="-3">-3</option>
                         </select>
                       </div>
                     </td>

@@ -124,12 +124,35 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const inlandUsd = toUsd(calc.inlandFreight);
   const otherUsd = toUsd(calc.otherFee);
   
+  const excelRoundup = (value: number, digits: number): number => {
+    if (value === 0) return 0;
+    const epsilon = 1e-9;
+    const sign = value > 0 ? 1 : -1;
+    const absValue = Math.abs(value);
+    if (digits < 0) {
+      const scale = Math.pow(10, Math.abs(digits));
+      return sign * Math.ceil((absValue / scale) - epsilon) * scale;
+    }
+    const factor = Math.pow(10, digits);
+    return sign * Math.ceil((absValue * factor) - epsilon) / factor;
+  };
+
   const rawTotalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd;
   
   let finalCalculated = parseFloat(rawTotalCalculated.toFixed(2));
   const activeRoundType = calc.roundUpType || 'none';
-  if (activeRoundType === 'ceil_1') {
-    finalCalculated = Math.ceil(finalCalculated);
+  if (activeRoundType === 'ceil_1' || activeRoundType === '0') {
+    finalCalculated = excelRoundup(rawTotalCalculated, 0);
+  } else if (activeRoundType === '1') {
+    finalCalculated = excelRoundup(rawTotalCalculated, 1);
+  } else if (activeRoundType === '2') {
+    finalCalculated = excelRoundup(rawTotalCalculated, 2);
+  } else if (activeRoundType === '-1') {
+    finalCalculated = excelRoundup(rawTotalCalculated, -1);
+  } else if (activeRoundType === '-2') {
+    finalCalculated = excelRoundup(rawTotalCalculated, -2);
+  } else if (activeRoundType === '-3') {
+    finalCalculated = excelRoundup(rawTotalCalculated, -3);
   } else if (activeRoundType === 'ceil_5') {
     finalCalculated = Math.ceil(finalCalculated / 5) * 5;
   } else if (activeRoundType === 'ceil_10') {
@@ -177,8 +200,18 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       let totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd + othUsd).toFixed(2));
       
       const rType = newDetails.roundUpType || 'none';
-      if (rType === 'ceil_1') {
-        totalCalcUsd = Math.ceil(totalCalcUsd);
+      if (rType === 'ceil_1' || rType === '0') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, 0);
+      } else if (rType === '1') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, 1);
+      } else if (rType === '2') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, 2);
+      } else if (rType === '-1') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, -1);
+      } else if (rType === '-2') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, -2);
+      } else if (rType === '-3') {
+        totalCalcUsd = excelRoundup(totalCalcUsd, -3);
       } else if (rType === 'ceil_5') {
         totalCalcUsd = Math.ceil(totalCalcUsd / 5) * 5;
       } else if (rType === 'ceil_10') {
@@ -574,83 +607,140 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         {/* Round Up Selector & Final Amount */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '3px 6px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-            <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', marginRight: '2px' }}>운송비 절사/올림:</span>
+            <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', marginRight: '2px' }}>ROUNDUP 자리수:</span>
             
-            {/* 세그먼트 버튼 그룹 */}
+            {/* 엑셀 ROUNDUP 세그먼트 버튼 그룹 (none, 2, 1, 0, -1, -2, -3) */}
             <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
               <button
                 type="button"
                 onClick={() => updateFreightCalculation({ roundUpType: 'none' })}
                 style={{
                   height: '26px',
-                  padding: '0 9px',
+                  padding: '0 8px',
                   border: 'none',
                   borderRight: '1px solid #cbd5e1',
                   background: activeRoundType === 'none' ? '#3b82f6' : '#f8fafc',
                   color: activeRoundType === 'none' ? '#fff' : '#475569',
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontWeight: activeRoundType === 'none' ? 800 : 600,
                   cursor: 'pointer'
                 }}
-                title={`원금액 소수점 그대로 유지 ($${rawTotalCalculated.toFixed(2)})`}
+                title={`소수점 그대로 유지 ($${rawTotalCalculated.toFixed(2)})`}
               >
-                소수점 유지
+                유지
               </button>
 
               <button
                 type="button"
-                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_1' })}
+                onClick={() => updateFreightCalculation({ roundUpType: '2' })}
                 style={{
                   height: '26px',
-                  padding: '0 9px',
+                  padding: '0 8px',
                   border: 'none',
                   borderRight: '1px solid #cbd5e1',
-                  background: activeRoundType === 'ceil_1' ? '#3b82f6' : '#f8fafc',
-                  color: activeRoundType === 'ceil_1' ? '#fff' : '#475569',
-                  fontSize: '11.5px',
-                  fontWeight: activeRoundType === 'ceil_1' ? 800 : 600,
+                  background: activeRoundType === '2' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === '2' ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: activeRoundType === '2' ? 800 : 600,
                   cursor: 'pointer'
                 }}
-                title={`1달러 단위 정수 올림 ($${Math.ceil(rawTotalCalculated).toFixed(2)})`}
+                title={`ROUNDUP(..., 2) 소수둘째자리 올림 ($${excelRoundup(rawTotalCalculated, 2).toFixed(2)})`}
               >
-                1$ 올림
+                2
               </button>
 
               <button
                 type="button"
-                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_5' })}
+                onClick={() => updateFreightCalculation({ roundUpType: '1' })}
                 style={{
                   height: '26px',
-                  padding: '0 9px',
+                  padding: '0 8px',
                   border: 'none',
                   borderRight: '1px solid #cbd5e1',
-                  background: activeRoundType === 'ceil_5' ? '#3b82f6' : '#f8fafc',
-                  color: activeRoundType === 'ceil_5' ? '#fff' : '#475569',
-                  fontSize: '11.5px',
-                  fontWeight: activeRoundType === 'ceil_5' ? 800 : 600,
+                  background: activeRoundType === '1' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === '1' ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: activeRoundType === '1' ? 800 : 600,
                   cursor: 'pointer'
                 }}
-                title={`5달러 단위 올림 ($${(Math.ceil(rawTotalCalculated / 5) * 5).toFixed(2)})`}
+                title={`ROUNDUP(..., 1) 소수첫째자리 올림 ($${excelRoundup(rawTotalCalculated, 1).toFixed(2)})`}
               >
-                5$ 올림
+                1
               </button>
 
               <button
                 type="button"
-                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_10' })}
+                onClick={() => updateFreightCalculation({ roundUpType: '0' })}
                 style={{
                   height: '26px',
-                  padding: '0 9px',
+                  padding: '0 8px',
                   border: 'none',
-                  background: activeRoundType === 'ceil_10' ? '#3b82f6' : '#f8fafc',
-                  color: activeRoundType === 'ceil_10' ? '#fff' : '#475569',
-                  fontSize: '11.5px',
-                  fontWeight: activeRoundType === 'ceil_10' ? 800 : 600,
+                  borderRight: '1px solid #cbd5e1',
+                  background: (activeRoundType === '0' || activeRoundType === 'ceil_1') ? '#3b82f6' : '#f8fafc',
+                  color: (activeRoundType === '0' || activeRoundType === 'ceil_1') ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: (activeRoundType === '0' || activeRoundType === 'ceil_1') ? 800 : 600,
                   cursor: 'pointer'
                 }}
-                title={`10달러 단위 올림 ($${(Math.ceil(rawTotalCalculated / 10) * 10).toFixed(2)})`}
+                title={`ROUNDUP(..., 0) 1$ 정수 올림 ($${excelRoundup(rawTotalCalculated, 0).toFixed(2)})`}
               >
-                10$ 올림
+                0
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: '-1' })}
+                style={{
+                  height: '26px',
+                  padding: '0 8px',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  background: activeRoundType === '-1' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === '-1' ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: activeRoundType === '-1' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`ROUNDUP(..., -1) 10$ 단위 올림 ($${excelRoundup(rawTotalCalculated, -1).toFixed(2)})`}
+              >
+                -1
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: '-2' })}
+                style={{
+                  height: '26px',
+                  padding: '0 8px',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  background: activeRoundType === '-2' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === '-2' ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: activeRoundType === '-2' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`ROUNDUP(..., -2) 100$ 단위 올림 ($${excelRoundup(rawTotalCalculated, -2).toFixed(2)})`}
+              >
+                -2
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: '-3' })}
+                style={{
+                  height: '26px',
+                  padding: '0 8px',
+                  border: 'none',
+                  background: activeRoundType === '-3' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === '-3' ? '#fff' : '#475569',
+                  fontSize: '11px',
+                  fontWeight: activeRoundType === '-3' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`ROUNDUP(..., -3) 1,000$ 단위 올림 ($${excelRoundup(rawTotalCalculated, -3).toFixed(2)})`}
+              >
+                -3
               </button>
             </div>
           </div>

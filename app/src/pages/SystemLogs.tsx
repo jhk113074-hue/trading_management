@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.505',
+    version: 'v2.8.505',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: '품목 단가 및 운송비 올림 체계를 Excel ROUNDUP(자리수: 0, 1, 2, -1, -2, -3) 표준 규격으로 전면 통일',
+    content: '• 품목 테이블 올림 옵션을 엑셀 ROUNDUP 기준 숫자(2, 1, 0, -1, -2, -3)로 복원 및 천단위 올림(-3) 추가\n• 운송비 올림 처리 역시 엑셀 ROUNDUP 자리수 체계(유지, 2, 1, 0, -1, -2, -3) 세그먼트 버튼으로 통합하여 두 영역의 올림 연산 방식과 UI를 완벽 일치화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.504',
     version: 'v2.8.504',
     date: '2026-09-09',
