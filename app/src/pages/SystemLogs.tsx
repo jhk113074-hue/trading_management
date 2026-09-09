@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.508',
+    version: 'v2.8.508',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: 'PO 품목 테이블 견적가 수정불가 고정 및 견적 대비 매입가 단가 GAP 컬럼 신설',
+    content: '• 기존 편집 가능하던 매입가(4번째 열)를 견적 시점의 기준단가인 [견적가(통화/단가)]로 명칭을 변경하고, 수정 불가(Read-Only) 텍스트로 고정하여 견적 기준선 왜곡 방지\n• 실제 공급사와 네고한 단가를 입력하는 5번째 열을 [매입가(통화/단가)]로 직관화\n• [단가 GAP(견적 대비)] 전용 열을 신설하여 견적단가 대비 매입단가의 절감(▼ 금액, -%) 및 인상(▲ 금액, +%) 상태를 통화 자동 환산 비교와 함께 실시간 직관 표시\n• 하단 SUBTOTAL(합계) 행에 공급사별 총 발주 금액 대비 전체 원가 절감액(GAP 합계)을 일괄 집계하여 표시',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.507',
     version: 'v2.8.507',
     date: '2026-09-09',

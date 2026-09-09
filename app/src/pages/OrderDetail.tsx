@@ -8918,25 +8918,26 @@ ${downloadLink}`;
                                 </div>
                               </div>
                               <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '4px' }}>
-                                <table style={{ width: '100%', minWidth: '1330px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
+                                <table style={{ width: '100%', minWidth: '1390px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
                                   <thead>
                                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '250px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '220px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>스펙</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '150px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '165px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '165px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>실매입가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '230px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '200px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>스펙</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>견적가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '160px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>단가 GAP<br/>(견적 대비)</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '110px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>비고</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>비고</th>
                                       <th style={{ padding: '8px 8px', textAlign: 'center', width: '80px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
                                     </tr>
                                   </thead>
                                 <tbody>
                                   {items.length === 0 ? (
                                     <tr>
-                                      <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                      <td colSpan={11} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                                         연결된 품목이 없습니다. (상단 '＋ 품목 추가' 버튼을 눌러 추가)
                                       </td>
                                     </tr>
@@ -9062,55 +9063,24 @@ ${downloadLink}`;
                                               `${it.qty?.toLocaleString()} ${it.unit}`
                                             )}
                                           </td>
-                                          {/* 4. 매입가 (통화/단가) */}
+                                          {/* 4. 견적가 (통화/단가) - 견적 기준단가 (수정불가) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            {isEditing ? (
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                                                <select
-                                                  value={origCurrency}
-                                                  onChange={(e) => handleCurrencySelection(e.target.value, origCurrency, customCurrencies, val => handleSourcingItemChange(itemIndexInMain, 'originalPurchaseCurrency', val))}
-                                                  style={{ width: '55px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff' }}
-                                                >
-                                                  {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
-                                                  <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
-                                                </select>
-                                                <input
-                                                  type="text"
-                                                  value={
-                                                    editingOriginalPurchasePrice[itemIndexInMain] !== undefined
-                                                      ? editingOriginalPurchasePrice[itemIndexInMain]
-                                                      : (() => {
-                                                          const val = it.originalPurchasePrice || 0;
-                                                          return origCurrency === 'KRW'
-                                                            ? Math.round(val).toLocaleString('ko-KR')
-                                                            : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-                                                        })()
-                                                  }
-                                                  onChange={(e) => {
-                                                    const rawText = e.target.value;
-                                                    setEditingOriginalPurchasePrice(prev => ({
-                                                      ...prev,
-                                                      [itemIndexInMain]: rawText
-                                                    }));
-                                                    const rawNum = rawText.replace(/,/g, '');
-                                                    const val = parseFloat(rawNum) || 0;
-                                                    handleSourcingItemChange(itemIndexInMain, 'originalPurchasePrice', val);
-                                                  }}
-                                                  onBlur={() => {
-                                                    setEditingOriginalPurchasePrice(prev => {
-                                                      const copy = { ...prev };
-                                                      delete copy[itemIndexInMain];
-                                                      return copy;
-                                                    });
-                                                  }}
-                                                  style={{ width: '85px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
-                                                />
-                                              </div>
-                                            ) : (
-                                              `${origCurrency === 'KRW' ? '₩' : '$'}${originalPurchasePrice?.toLocaleString(undefined, origCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`
-                                            )}
+                                            <span 
+                                              style={{ 
+                                                fontSize: '13px', 
+                                                fontWeight: 600, 
+                                                color: '#475569',
+                                                fontVariantNumeric: 'tabular-nums',
+                                                display: 'inline-block'
+                                              }}
+                                              title="견적 시점 기준 단가 (수정 불가)"
+                                            >
+                                              {origCurrency === 'KRW' 
+                                                ? `₩${Math.round(originalPurchasePrice || 0).toLocaleString('ko-KR')}` 
+                                                : `${origCurrency} ${(originalPurchasePrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`}
+                                            </span>
                                           </td>
-                                          {/* 5. 실매입가 (통화/단가) */}
+                                          {/* 5. 매입가 (통화/단가) - 공급사 실발주단가 (수정가능) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                               <select
@@ -9182,11 +9152,64 @@ ${downloadLink}`;
                                               />
                                             </div>
                                           </td>
-                                          {/* 6. 금액 */}
+                                          {/* 6. 단가 GAP (견적 대비) */}
+                                          <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            {(() => {
+                                              const exRate = basicForm.exchangeRate || order.exchangeRate || 1400;
+                                              const actualPrice = purchasePrice || 0;
+                                              const origPrice = originalPurchasePrice || 0;
+                                              
+                                              // 환율 보정하여 비교 (동일 통화 기준)
+                                              let normOrigPrice = origPrice;
+                                              if (origCurrency !== purchaseCurrency) {
+                                                if (origCurrency === 'USD' && purchaseCurrency === 'KRW') {
+                                                  normOrigPrice = origPrice * exRate;
+                                                } else if (origCurrency === 'KRW' && purchaseCurrency === 'USD') {
+                                                  normOrigPrice = exRate > 0 ? origPrice / exRate : origPrice;
+                                                }
+                                              }
+                                              
+                                              const unitGap = actualPrice - normOrigPrice;
+                                              const gapPercent = normOrigPrice > 0 ? (unitGap / normOrigPrice) * 100 : 0;
+                                              const currSymbol = purchaseCurrency === 'KRW' ? '₩' : '$';
+                                              const isKrw = purchaseCurrency === 'KRW';
+                                              
+                                              if (Math.abs(unitGap) < 0.001) {
+                                                return <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>- (0%)</span>;
+                                              }
+                                              
+                                              const isSaving = unitGap < 0; // 견적가보다 낮게 매입 -> 원가 절감
+                                              const formattedDiff = isKrw 
+                                                ? Math.abs(Math.round(unitGap)).toLocaleString('ko-KR') 
+                                                : Math.abs(unitGap).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+                                              const formattedPercent = Math.abs(gapPercent).toFixed(1);
+
+                                              return (
+                                                <span 
+                                                  style={{ 
+                                                    color: isSaving ? '#16a34a' : '#dc2626', 
+                                                    fontWeight: 700, 
+                                                    fontSize: '12.5px',
+                                                    fontVariantNumeric: 'tabular-nums',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'flex-end',
+                                                    gap: '2px'
+                                                  }}
+                                                  title={`견적가: ${origCurrency === 'KRW' ? '₩' : '$'}${Math.round(normOrigPrice).toLocaleString()} | 매입가: ${currSymbol}${Math.round(actualPrice).toLocaleString()} (${isSaving ? '단가 절감' : '단가 상승'})`}
+                                                >
+                                                  <span>{isSaving ? '▼' : '▲'}</span>
+                                                  <span>{currSymbol}{formattedDiff}</span>
+                                                  <span style={{ fontSize: '11px', opacity: 0.85 }}>({isSaving ? '-' : '+'}{formattedPercent}%)</span>
+                                                </span>
+                                              );
+                                            })()}
+                                          </td>
+                                          {/* 7. 금액 */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 600 }}>
                                             {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                                           </td>
-                                          {/* 7. 부가세 */}
+                                          {/* 8. 부가세 */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
                                             {(() => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
@@ -9194,7 +9217,7 @@ ${downloadLink}`;
                                               return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
-                                          {/* 8. 합계 */}
+                                          {/* 9. 합계 */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 750, color: '#0f172a', verticalAlign: 'middle' }}>
                                             {(() => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
@@ -9203,7 +9226,7 @@ ${downloadLink}`;
                                               return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
-                                          {/* 9. 비고 (REMARK) */}
+                                          {/* 10. 비고 (REMARK) */}
                                            <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
                                              {isEditing ? (
                                                <input
@@ -9233,7 +9256,7 @@ ${downloadLink}`;
                                                </span>
                                              )}
                                            </td>
-                                           {/* 10. 관리 (복사 / 삭제) */}
+                                           {/* 11. 관리 (복사 / 삭제) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                               <button
@@ -9266,6 +9289,72 @@ ${downloadLink}`;
                                   {items.length > 0 && (
                                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
                                       <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e293b', fontWeight: 800 }}>SUBTOTAL (합계)</td>
+                                      {/* 총 GAP 합계 */}
+                                      <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                                        {(() => {
+                                          const exRate = basicForm.exchangeRate || order.exchangeRate || 1400;
+                                          let totalOrigKrw = 0;
+                                          let totalActualKrw = 0;
+                                          let totalOrigUsd = 0;
+                                          let totalActualUsd = 0;
+                                          let hasKrw = false;
+                                          let hasUsd = false;
+
+                                          items.forEach(it => {
+                                            const info = getSupplierPurchaseInfo(it);
+                                            const itOrigCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : info.purchaseCurrency);
+                                            const qty = it.qty || 0;
+                                            const orig = info.originalPurchasePrice || 0;
+                                            const actual = info.purchasePrice || 0;
+
+                                            if (info.purchaseCurrency === 'KRW') {
+                                              hasKrw = true;
+                                              totalActualKrw += actual * qty;
+                                              totalOrigKrw += (itOrigCurrency === 'USD' ? orig * exRate : orig) * qty;
+                                            } else {
+                                              hasUsd = true;
+                                              totalActualUsd += actual * qty;
+                                              totalOrigUsd += (itOrigCurrency === 'KRW' ? (exRate > 0 ? orig / exRate : orig) : orig) * qty;
+                                            }
+                                          });
+
+                                          const parts = [];
+                                          if (hasUsd) {
+                                            const gapUsd = totalActualUsd - totalOrigUsd;
+                                            const pctUsd = totalOrigUsd > 0 ? (gapUsd / totalOrigUsd) * 100 : 0;
+                                            if (Math.abs(gapUsd) < 0.01) {
+                                              parts.push(<span key="usd" style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>$0 (0%)</span>);
+                                            } else {
+                                              const isSaving = gapUsd < 0;
+                                              parts.push(
+                                                <span key="usd" style={{ color: isSaving ? '#16a34a' : '#dc2626', fontSize: '12px', fontWeight: 700 }}>
+                                                  {isSaving ? '▼' : '▲'} ${Math.abs(gapUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({isSaving ? '-' : '+'}{Math.abs(pctUsd).toFixed(1)}%)
+                                                </span>
+                                              );
+                                            }
+                                          }
+                                          if (hasKrw) {
+                                            const gapKrw = totalActualKrw - totalOrigKrw;
+                                            const pctKrw = totalOrigKrw > 0 ? (gapKrw / totalOrigKrw) * 100 : 0;
+                                            if (Math.abs(gapKrw) < 1) {
+                                              parts.push(<span key="krw" style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>₩0 (0%)</span>);
+                                            } else {
+                                              const isSaving = gapKrw < 0;
+                                              parts.push(
+                                                <span key="krw" style={{ color: isSaving ? '#16a34a' : '#dc2626', fontSize: '12px', fontWeight: 700 }}>
+                                                  {isSaving ? '▼' : '▲'} ₩{Math.abs(Math.round(gapKrw)).toLocaleString()} ({isSaving ? '-' : '+'}{Math.abs(pctKrw).toFixed(1)}%)
+                                                </span>
+                                              );
+                                            }
+                                          }
+
+                                          return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', fontVariantNumeric: 'tabular-nums' }}>
+                                              {parts.length > 0 ? parts : <span style={{ color: '#94a3b8', fontSize: '12px' }}>- (0%)</span>}
+                                            </div>
+                                          );
+                                        })()}
+                                      </td>
                                       {/* 금액합계 */}
                                       <td style={{ padding: '8px 6px', textAlign: 'right' }}>
                                         {(() => {
