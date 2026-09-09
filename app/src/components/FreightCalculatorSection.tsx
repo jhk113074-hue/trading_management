@@ -10,6 +10,74 @@ interface Props {
   removeFreightCharge: (index: number) => void;
 }
 
+const FormattedNumberInput: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+  placeholder?: string;
+  style?: React.CSSProperties;
+  isInteger?: boolean;
+}> = ({ value, onChange, placeholder, style, isInteger }) => {
+  const [localStr, setLocalStr] = useState('');
+
+  useEffect(() => {
+    const parsed = parseFloat(localStr.replace(/,/g, '')) || 0;
+    if (parsed !== value || (value === 0 && localStr !== '')) {
+      if (value === 0) {
+        setLocalStr('');
+      } else {
+        const parts = value.toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        setLocalStr(parts.join('.'));
+      }
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/,/g, '').trim();
+    if (raw === '') {
+      setLocalStr('');
+      onChange(0);
+      return;
+    }
+
+    if (isInteger) {
+      if (/^\d*$/.test(raw)) {
+        const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        setLocalStr(formatted);
+        onChange(parseInt(raw, 10) || 0);
+      }
+    } else {
+      if (/^\d*\.?\d*$/.test(raw)) {
+        const parts = raw.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        setLocalStr(parts.join('.'));
+        onChange(parseFloat(raw) || 0);
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    if (value === 0) {
+      setLocalStr('');
+    } else {
+      const parts = value.toString().split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      setLocalStr(parts.join('.'));
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      value={localStr}
+      placeholder={placeholder}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      style={style}
+    />
+  );
+};
+
 export const FreightCalculatorSection: React.FC<Props> = ({
   formData,
   setFormData,
@@ -34,6 +102,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     customsFee: { amount: 0, currency: 'KRW' },
     purchaseCertFee: { amount: 0, currency: 'KRW' },
     inlandFreight: { amount: 0, currency: 'KRW' },
+    otherFee: { amount: 0, currency: 'KRW' },
     roundUpType: 'none'
   };
 
@@ -53,8 +122,9 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const customsUsd = toUsd(calc.customsFee);
   const purchaseCertUsd = toUsd(calc.purchaseCertFee);
   const inlandUsd = toUsd(calc.inlandFreight);
+  const otherUsd = toUsd(calc.otherFee);
   
-  const rawTotalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd;
+  const rawTotalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd;
   
   let finalCalculated = parseFloat(rawTotalCalculated.toFixed(2));
   const activeRoundType = calc.roundUpType || 'none';
@@ -77,6 +147,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         customsFee: { amount: 0, currency: 'KRW' },
         purchaseCertFee: { amount: 0, currency: 'KRW' },
         inlandFreight: { amount: 0, currency: 'KRW' },
+        otherFee: { amount: 0, currency: 'KRW' },
         roundUpType: 'none'
       };
 
@@ -101,8 +172,9 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       const custUsd = toUsdHelper(newDetails.customsFee);
       const pCertUsd = toUsdHelper(newDetails.purchaseCertFee);
       const inlUsd = toUsdHelper(newDetails.inlandFreight);
+      const othUsd = toUsdHelper(newDetails.otherFee);
 
-      let totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd).toFixed(2));
+      let totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd + othUsd).toFixed(2));
       
       const rType = newDetails.roundUpType || 'none';
       if (rType === 'ceil_1') {
@@ -143,10 +215,11 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       const varStr = (details.oceanVarianceRate || 0) !== 0 ? ` (변동률 ${(details.oceanVarianceRate || 0) > 0 ? '+' : ''}${details.oceanVarianceRate}%)` : '';
       parts.push(`해상운임: ${currSym}${rPrice.toLocaleString()}${varStr}`);
     }
-    if (details.coFee?.amount) parts.push(`원산지: ${details.coFee.currency === 'USD' ? '$' : '₩'}${Number(details.coFee.amount).toLocaleString()}`);
+    if (details.coFee?.amount) parts.push(`상공회의소: ${details.coFee.currency === 'USD' ? '$' : '₩'}${Number(details.coFee.amount).toLocaleString()}`);
     if (details.customsFee?.amount) parts.push(`수출신고: ${details.customsFee.currency === 'USD' ? '$' : '₩'}${Number(details.customsFee.amount).toLocaleString()}`);
     if (details.purchaseCertFee?.amount) parts.push(`구매확인서: ${details.purchaseCertFee.currency === 'USD' ? '$' : '₩'}${Number(details.purchaseCertFee.amount).toLocaleString()}`);
     if (details.inlandFreight?.amount) parts.push(`내륙운송: ${details.inlandFreight.currency === 'USD' ? '$' : '₩'}${Number(details.inlandFreight.amount).toLocaleString()}`);
+    if (details.otherFee?.amount) parts.push(`기타부대: ${details.otherFee.currency === 'USD' ? '$' : '₩'}${Number(details.otherFee.amount).toLocaleString()}`);
 
     const summary = parts.join(' / ');
     if (summary) {
@@ -171,7 +244,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
             type="button" 
             onClick={generateFreightRemarks} 
             style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 750, color: '#0284c7', display: 'flex', alignItems: 'center', gap: '4px' }}
-            title="해상운임 및 4종 부대비용 입력 내역을 비고란에 자동으로 요약 기재합니다."
+            title="해상운임 및 부대비용 입력 내역을 비고란에 자동으로 요약 기재합니다."
           >
             📝 비고 자동생성
           </button>
@@ -226,10 +299,11 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           {/* Qty */}
           <div>
             <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>수량</label>
-            <input
-              type="number"
+            <FormattedNumberInput
               value={formData.freightCharges?.[0]?.qty ?? 1}
-              onChange={e => updateFreightCharge(0, 'qty', parseFloat(e.target.value) || 1)}
+              isInteger={false}
+              placeholder="1"
+              onChange={val => updateFreightCharge(0, 'qty', val || 1)}
               style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
@@ -252,12 +326,11 @@ export const FreightCalculatorSection: React.FC<Props> = ({
             <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
               해상운임 단가 ({calc.oceanCurrency || 'USD'})
             </label>
-            <input
-              type="number"
-              step={calc.oceanCurrency === 'KRW' ? '1000' : '0.01'}
-              value={calc.oceanPriceRaw || ''}
-              onChange={e => updateFreightCalculation({ oceanPriceRaw: parseFloat(e.target.value) || 0 })}
+            <FormattedNumberInput
+              value={calc.oceanPriceRaw || 0}
+              isInteger={calc.oceanCurrency === 'KRW'}
               placeholder={calc.oceanCurrency === 'KRW' ? '예: 1,400,000' : '예: 1,000.00'}
+              onChange={val => updateFreightCalculation({ oceanPriceRaw: val })}
               style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
@@ -265,11 +338,11 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           {/* Exchange Rate */}
           <div>
             <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>적용 기준환율 (₩/$)</label>
-            <input
-              type="number"
-              step="0.1"
+            <FormattedNumberInput
               value={calc.oceanExchangeRate || formData.exchangeRate || 1400}
-              onChange={e => updateFreightCalculation({ oceanExchangeRate: parseFloat(e.target.value) || 1400 })}
+              isInteger={false}
+              placeholder="1,400"
+              onChange={val => updateFreightCalculation({ oceanExchangeRate: val || 1400 })}
               style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
@@ -289,21 +362,23 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. 4종 부대비용 그리드 */}
+      {/* 2. 5종 부대비용 그리드 */}
       <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
         <div style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>📑 2. 4종 부대비용 세부 분리 입력 (Incidental Logistics Costs)</span>
+          <span>📑 2. 부대비용 세부 분리 입력 (Incidental Logistics Costs)</span>
           <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
-            부대비용 소계: ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            부대비용 소계: ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-          {/* 1. C/O Fee */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+          {/* 1. 상공회의소 (상업송장, 원산지증명) */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📜 원산지증명서</span>
-              <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>${coUsd.toFixed(2)}</span>
+              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="상공회의소(상업송장,원산지증명)">
+                📜 상공회의소(상업송장,원산지증명)
+              </span>
+              <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700, marginLeft: '4px' }}>${coUsd.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
               <select
@@ -314,12 +389,12 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 <option value="KRW">₩ KRW</option>
                 <option value="USD">$ USD</option>
               </select>
-              <input
-                type="number"
-                value={calc.coFee?.amount || ''}
-                onChange={e => updateFreightCalculation({ coFee: { amount: parseFloat(e.target.value) || 0, currency: calc.coFee?.currency || 'KRW' } })}
+              <FormattedNumberInput
+                value={calc.coFee?.amount || 0}
+                isInteger={calc.coFee?.currency !== 'USD'}
                 placeholder="0"
-                style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+                onChange={val => updateFreightCalculation({ coFee: { amount: val, currency: calc.coFee?.currency || 'KRW' } })}
+                style={{ flex: 1, minWidth: '0', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -327,7 +402,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           {/* 2. Customs Fee */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📑 수출신고비</span>
+              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>📑 수출신고비</span>
               <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>${customsUsd.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -339,12 +414,12 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 <option value="KRW">₩ KRW</option>
                 <option value="USD">$ USD</option>
               </select>
-              <input
-                type="number"
-                value={calc.customsFee?.amount || ''}
-                onChange={e => updateFreightCalculation({ customsFee: { amount: parseFloat(e.target.value) || 0, currency: calc.customsFee?.currency || 'KRW' } })}
+              <FormattedNumberInput
+                value={calc.customsFee?.amount || 0}
+                isInteger={calc.customsFee?.currency !== 'USD'}
                 placeholder="0"
-                style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+                onChange={val => updateFreightCalculation({ customsFee: { amount: val, currency: calc.customsFee?.currency || 'KRW' } })}
+                style={{ flex: 1, minWidth: '0', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -352,7 +427,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           {/* 3. Purchase Cert Fee */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📋 구매확인서</span>
+              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>📋 구매확인서</span>
               <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>${purchaseCertUsd.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -364,12 +439,12 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 <option value="KRW">₩ KRW</option>
                 <option value="USD">$ USD</option>
               </select>
-              <input
-                type="number"
-                value={calc.purchaseCertFee?.amount || ''}
-                onChange={e => updateFreightCalculation({ purchaseCertFee: { amount: parseFloat(e.target.value) || 0, currency: calc.purchaseCertFee?.currency || 'KRW' } })}
+              <FormattedNumberInput
+                value={calc.purchaseCertFee?.amount || 0}
+                isInteger={calc.purchaseCertFee?.currency !== 'USD'}
                 placeholder="0"
-                style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+                onChange={val => updateFreightCalculation({ purchaseCertFee: { amount: val, currency: calc.purchaseCertFee?.currency || 'KRW' } })}
+                style={{ flex: 1, minWidth: '0', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -377,7 +452,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           {/* 4. Inland Freight */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>🚚 내륙운송비</span>
+              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>🚚 내륙운송비</span>
               <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>${inlandUsd.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -389,12 +464,37 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 <option value="KRW">₩ KRW</option>
                 <option value="USD">$ USD</option>
               </select>
-              <input
-                type="number"
-                value={calc.inlandFreight?.amount || ''}
-                onChange={e => updateFreightCalculation({ inlandFreight: { amount: parseFloat(e.target.value) || 0, currency: calc.inlandFreight?.currency || 'KRW' } })}
+              <FormattedNumberInput
+                value={calc.inlandFreight?.amount || 0}
+                isInteger={calc.inlandFreight?.currency !== 'USD'}
                 placeholder="0"
-                style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+                onChange={val => updateFreightCalculation({ inlandFreight: { amount: val, currency: calc.inlandFreight?.currency || 'KRW' } })}
+                style={{ flex: 1, minWidth: '0', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+
+          {/* 5. Other Fee (기타) */}
+          <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>📦 기타 부대비용</span>
+              <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>${otherUsd.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <select
+                value={calc.otherFee?.currency || 'KRW'}
+                onChange={e => updateFreightCalculation({ otherFee: { amount: calc.otherFee?.amount || 0, currency: e.target.value as any } })}
+                style={{ width: '65px', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11.5px', fontWeight: 700 }}
+              >
+                <option value="KRW">₩ KRW</option>
+                <option value="USD">$ USD</option>
+              </select>
+              <FormattedNumberInput
+                value={calc.otherFee?.amount || 0}
+                isInteger={calc.otherFee?.currency !== 'USD'}
+                placeholder="0"
+                onChange={val => updateFreightCalculation({ otherFee: { amount: val, currency: calc.otherFee?.currency || 'KRW' } })}
+                style={{ flex: 1, minWidth: '0', height: '30px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', fontWeight: 600, textAlign: 'right', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           </div>
@@ -426,19 +526,18 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 onChange={e => updateFreightCharge(actualIdx, 'type', e.target.value)}
                 style={{ width: '130px', height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px' }}
               />
-              <input
-                type="number"
-                placeholder="수량"
+              <FormattedNumberInput
                 value={fc.qty ?? 1}
-                onChange={e => updateFreightCharge(actualIdx, 'qty', parseFloat(e.target.value) || 1)}
+                isInteger={false}
+                placeholder="수량"
+                onChange={val => updateFreightCharge(actualIdx, 'qty', val || 1)}
                 style={{ width: '60px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right' }}
               />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="금액 (USD)"
+              <FormattedNumberInput
                 value={fc.price ?? 0}
-                onChange={e => updateFreightCharge(actualIdx, 'price', parseFloat(e.target.value) || 0)}
+                isInteger={false}
+                placeholder="금액(USD)"
+                onChange={val => updateFreightCharge(actualIdx, 'price', val)}
                 style={{ width: '100px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right' }}
               />
               <textarea
@@ -462,7 +561,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
               🎯 최종 결정 운송비 (Final Total Freight)
             </span>
             <span style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 600 }}>
-              (해상운임 ${appliedOceanUsd.toFixed(2)} + 4종 부대비용 ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd).toFixed(2)})
+              (해상운임 ${appliedOceanUsd.toFixed(2)} + 부대비용 ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd).toFixed(2)})
             </span>
           </div>
           {activeRoundType !== 'none' && (

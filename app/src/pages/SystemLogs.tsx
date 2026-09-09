@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.504',
+    version: 'v2.8.504',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: '운송비 부대비용 명칭 개편, [기타 부대비용] 신설 및 전체 숫자 천단위 콤마(xxx,xxx) 표준화',
+    content: '• 원산지증명서 부대비용 명칭을 [상공회의소(상업송장,원산지증명)]으로 보다 포괄적이고 명확하게 변경\n• 예상치 못한 물류 부대비용을 즉시 반영할 수 있는 [📦 기타 부대비용] 카드 신설 (원화/달러 자동 환산 및 운송비 총액 연동)\n• 운송비 및 부대비용 내 모든 숫자 인풋에 천단위 구분 콤마(xxx,xxx,xxx) 실시간 포맷팅 적용으로 금액 가독성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.503',
     version: 'v2.8.503',
     date: '2026-09-09',
