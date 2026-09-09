@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.500',
+    version: 'v2.8.500',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '견적관리(PI) 품목 테이블 12개 컬럼 상·하 2줄 수평 수직 정렬 완벽 표준화',
+    content: '• 각 열마다 높이가 제각각이라 오르락내리락하던 테이블 셀 배치를 2줄 표준 수직 그리드(1줄 28px + 간격 4px + 2줄 24px)로 전면 통합\n• 단가(USD), 총액($), 이익($) 상단에 메인 금액/인풋을 정렬하고 하단에 원화 환산액(≈ ₩)을 병기하여 전 열의 상단·하단 기준선 100% 일치\n• 마진/올림 열을 상단(마진율)·하단(올림자리수) 2단으로 정돈하고 AI 추천은 툴팁으로 최적화하여 3줄 돌출 현상 제거\n• 비고(Remarks)를 56px 2줄 규격으로 맞추고, 관리 열(복사 📋 / 삭제 ✕)을 상하 2단으로 정렬하여 완벽한 수평 통일감 구축',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.499',
     version: 'v2.8.499',
     date: '2026-09-09',
