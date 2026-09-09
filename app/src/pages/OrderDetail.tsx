@@ -5348,6 +5348,42 @@ export const OrderDetail: React.FC = () => {
 2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
     }
 
+    // 수신처 정보 (도착보고서의 Shipper 정보 연동)
+    const getShipperLines = () => {
+      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper;
+      if (savedArrivalShipper && (savedArrivalShipper.includes('TEL') || savedArrivalShipper.includes('담당자') || savedArrivalShipper.includes('\n'))) {
+        return savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+      }
+
+      const cleanTarget = (supplierName || '').trim().toLowerCase();
+      const matched = (suppliersList || []).find((s: any) => 
+        (s.name || '').trim().toLowerCase() === cleanTarget || 
+        (s.supplierCode || '').trim().toLowerCase() === cleanTarget ||
+        (s.name && cleanTarget.includes(s.name.trim().toLowerCase())) ||
+        (cleanTarget && (s.name || '').toLowerCase().includes(cleanTarget))
+      );
+
+      if (matched) {
+        const primaryContact = matched.contacts?.find((c: any) => c.isPrimary) || matched.contacts?.[0];
+        const contactName = primaryContact?.name || matched.managerName || '';
+        const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+        const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
+        const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
+
+        const lines = [matched.name || supplierName];
+        if (matched.address) lines.push(matched.address);
+        if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+        if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+        if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+        return lines.filter(Boolean);
+      }
+
+      return [supplierName];
+    };
+
+    const recipientShipperLines = getShipperLines();
+
     const printHtml = `
       <html>
         <head>
@@ -5419,7 +5455,13 @@ export const OrderDetail: React.FC = () => {
             <div class="meta-left">
               <div><strong>발주번호 :</strong> ${poNum}</div>
               <div><strong>발주일자 :</strong> ${poDateFormatted}</div>
-              <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
+              <div style="display: flex; align-items: flex-start; margin-top: 1px;">
+                <strong style="width: 70px; flex-shrink: 0;">수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong>
+                <div style="line-height: 1.4;">
+                  <div style="font-weight: bold; font-size: 11.5px; color: #000;">${recipientShipperLines[0] || supplierName}</div>
+                  ${recipientShipperLines.slice(1).map(line => `<div style="font-size: 10px; color: #334155;">${line}</div>`).join('')}
+                </div>
+              </div>
             </div>
             <div>
               <table class="business-table">
@@ -5766,6 +5808,42 @@ export const OrderDetail: React.FC = () => {
 2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
     }
 
+    // 수신처 정보 (도착보고서의 Shipper 정보 연동)
+    const getShipperLines = () => {
+      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper;
+      if (savedArrivalShipper && (savedArrivalShipper.includes('TEL') || savedArrivalShipper.includes('담당자') || savedArrivalShipper.includes('\n'))) {
+        return savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+      }
+
+      const cleanTarget = (supplierName || '').trim().toLowerCase();
+      const matched = (suppliersList || []).find((s: any) => 
+        (s.name || '').trim().toLowerCase() === cleanTarget || 
+        (s.supplierCode || '').trim().toLowerCase() === cleanTarget ||
+        (s.name && cleanTarget.includes(s.name.trim().toLowerCase())) ||
+        (cleanTarget && (s.name || '').toLowerCase().includes(cleanTarget))
+      );
+
+      if (matched) {
+        const primaryContact = matched.contacts?.find((c: any) => c.isPrimary) || matched.contacts?.[0];
+        const contactName = primaryContact?.name || matched.managerName || '';
+        const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+        const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
+        const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
+
+        const lines = [matched.name || supplierName];
+        if (matched.address) lines.push(matched.address);
+        if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+        if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+        if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+        return lines.filter(Boolean);
+      }
+
+      return [supplierName];
+    };
+
+    const recipientShipperLines = getShipperLines();
+
     const printHtml = `
       <html>
         <head>
@@ -5838,7 +5916,13 @@ export const OrderDetail: React.FC = () => {
             <div class="meta-left">
               <div><strong>발주번호 :</strong> ${poNum}</div>
               <div><strong>발주일자 :</strong> ${poDateFormatted}</div>
-              <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
+              <div style="display: flex; align-items: flex-start; margin-top: 1px;">
+                <strong style="width: 70px; flex-shrink: 0;">수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong>
+                <div style="line-height: 1.4;">
+                  <div style="font-weight: bold; font-size: 11.5px; color: #000;">${recipientShipperLines[0] || supplierName}</div>
+                  ${recipientShipperLines.slice(1).map(line => `<div style="font-size: 10px; color: #334155;">${line}</div>`).join('')}
+                </div>
+              </div>
             </div>
             <div>
               <table class="business-table">

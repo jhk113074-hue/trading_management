@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.514',
+    version: 'v2.8.514',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: '발주서(PO) 수신정보에 도착보고서의 Shipper(공급자) 상세 정보 자동 연동',
+    content: '• 발주서 인쇄 및 PDF 문서 상단의 [수신] 정보에 공급사명 단독 표기 대신, 도착보고서의 Shipper 상세 정보(상호, 사업장 주소, 담당자명 및 직위, TEL, E-mail)가 자동으로 완벽 연동되도록 개선\n• 해당 오더의 공급사별 도착보고서에 기입된 Shipper 정보 및 공급업체 DB와 실시간 연계하여 정확하고 상세한 공급자 정보 출력 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.513',
     version: 'v2.8.513',
     date: '2026-09-09',
