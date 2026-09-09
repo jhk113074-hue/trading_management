@@ -8039,25 +8039,47 @@ ${downloadLink}`;
               
               {/* Items Section */}
               <div style={{ marginTop: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 발주 품목 목록 (견적 확정 내역)</span>
                     <span style={{ fontSize: '11px', color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
                       🔒 견적 기준 조회 전용 (수정 불가)
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenSupplierModal('')}
+                    style={{
+                      height: '30px',
+                      padding: '0 10px',
+                      borderRadius: '4px',
+                      border: '1px solid #3b82f6',
+                      background: '#eff6ff',
+                      color: '#2563eb',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="신규 공급업체 마스터 등록"
+                  >
+                    🏢 + 신규 공급업체 등록
+                  </button>
                 </div>
                 
                 <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }}>
-                  <table style={{ width: '100%', minWidth: '1080px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
+                  <table style={{ width: '100%', minWidth: '1120px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                         <th style={{ padding: '10px 4px', width: '40px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
-                        <th style={{ padding: '10px 8px', width: '250px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
-                        <th style={{ padding: '10px 6px', width: '160px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>발주사 (공급사)</th>
+                        <th style={{ padding: '10px 8px', width: '240px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                        <th style={{ padding: '10px 6px', width: '170px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>발주사 (공급사)</th>
                         <th style={{ padding: '10px 6px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
                         <th style={{ padding: '10px 8px', width: '130px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입단가</th>
-                        <th style={{ padding: '10px 8px', width: '135px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
+                        <th style={{ padding: '10px 8px', width: '140px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
                         <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
                         <th style={{ padding: '10px 8px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
                         <th style={{ padding: '10px 8px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
@@ -8105,72 +8127,48 @@ ${downloadLink}`;
                               </div>
                             </td>
 
-                            {/* 발주사 (공급사) - 변경 가능 및 신규업체 등록 버튼 */}
+                            {/* 발주사 (공급사) - 변경 가능 */}
                             <td style={{ padding: '8px 6px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <select
-                                  value={item.supplier || prod?.supplierName || ''}
-                                  onChange={e => {
-                                    const nextSup = e.target.value;
-                                    handleItemChange(idx, { supplier: nextSup });
-                                    // Sourcing items와 Order items 동기화
-                                    setSourcingItems(prev => {
-                                      const updated = [...prev];
-                                      if (updated[idx]) {
-                                        updated[idx] = { ...updated[idx], supplier: nextSup };
-                                      }
-                                      return updated;
-                                    });
-                                  }}
-                                  style={{
-                                    height: '32px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #cbd5e1',
-                                    fontSize: '12.5px',
-                                    fontWeight: 600,
-                                    color: '#1e293b',
-                                    background: '#fff',
-                                    padding: '2px 6px',
-                                    flex: 1,
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  <option value="">-- 공급사 선택 --</option>
-                                  {Array.from(new Set([
-                                    ...(item.supplier ? [item.supplier] : []),
-                                    ...(prod?.supplierName ? [prod.supplierName] : []),
-                                    ...(prod?.suppliers?.map(s => s.supplierName) || []),
-                                    ...suppliersList.map(s => s.name || (s as any).supplierName)
-                                  ].filter(Boolean))).map(supName => (
-                                    <option key={supName} value={supName}>
-                                      {supName}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenSupplierModal(item.supplier || prod?.supplierName || '')}
-                                  style={{
-                                    height: '32px',
-                                    padding: '0 7px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #3b82f6',
-                                    background: '#eff6ff',
-                                    color: '#2563eb',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '2px'
-                                  }}
-                                  title="신규 공급업체 등록 또는 정보 수정"
-                                >
-                                  + 등록
-                                </button>
-                              </div>
+                              <select
+                                value={item.supplier || prod?.supplierName || ''}
+                                onChange={e => {
+                                  const nextSup = e.target.value;
+                                  handleItemChange(idx, { supplier: nextSup });
+                                  // Sourcing items와 Order items 동기화
+                                  setSourcingItems(prev => {
+                                    const updated = [...prev];
+                                    if (updated[idx]) {
+                                      updated[idx] = { ...updated[idx], supplier: nextSup };
+                                    }
+                                    return updated;
+                                  });
+                                }}
+                                style={{
+                                  height: '32px',
+                                  width: '100%',
+                                  borderRadius: '4px',
+                                  border: '1px solid #cbd5e1',
+                                  fontSize: '12.5px',
+                                  fontWeight: 600,
+                                  color: '#1e293b',
+                                  background: '#fff',
+                                  padding: '2px 6px',
+                                  boxSizing: 'border-box',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <option value="">-- 공급사 선택 --</option>
+                                {Array.from(new Set([
+                                  ...(item.supplier ? [item.supplier] : []),
+                                  ...(prod?.supplierName ? [prod.supplierName] : []),
+                                  ...(prod?.suppliers?.map(s => s.supplierName) || []),
+                                  ...suppliersList.map(s => s.name || (s as any).supplierName)
+                                ].filter(Boolean))).map(supName => (
+                                  <option key={supName} value={supName}>
+                                    {supName}
+                                  </option>
+                                ))}
+                              </select>
                             </td>
 
                             {/* 수량 / 단위 */}
