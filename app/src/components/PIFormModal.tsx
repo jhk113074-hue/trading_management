@@ -3287,12 +3287,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '6px 2px', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%', height: '28px' }}>
-                          <input 
-                            type="text" 
-                            placeholder="마진"
-                            value={formatNumberWithCommas(it.marginRate)} 
-                            onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
-                            style={{ ...gridInputStyle, textAlign: 'right', flex: 1, height: '28px', padding: '2px 3px', fontSize: '12px', fontWeight: 600 }} 
+                          <MarginRateInput 
+                            value={it.marginRate}
+                            onChange={(val) => updateItem(idx, 'marginRate', val)}
                             title={it.productCode ? "과거 거래 분석 AI 추천 마진: 15%" : undefined}
                           />
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
@@ -3300,15 +3297,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%', height: '24px', padding: '1px 2px', fontSize: '11px' }}
-                          title="올림 자리수 선택"
+                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%', height: '24px', padding: '1px 2px', fontSize: '10.5px' }}
+                          title="올림 단위 선택: 소수점 이하 또는 정수 단위 올림"
                         >
                           <option value="none">자리수</option>
-                          <option value="-2">-2</option>
-                          <option value="-1">-1</option>
-                          <option value="0">0</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
+                          <option value="2">.01 (센트)</option>
+                          <option value="1">.1 (10센트)</option>
+                          <option value="0">1$ (정수)</option>
+                          <option value="-1">10$ 단위</option>
+                          <option value="-2">100$ 단위</option>
                         </select>
                       </div>
                     </td>
@@ -4179,6 +4176,49 @@ const PurchasePriceInput: React.FC<{
       value={localVal}
       onChange={handleChange}
       style={{ ...gridInputStyle, textAlign: 'right', flex: 1, minWidth: '55px', height: '28px', padding: '2px 4px', fontWeight: 600, fontSize: '12.5px' }}
+    />
+  );
+};
+
+const MarginRateInput: React.FC<{
+  value: number | undefined;
+  onChange: (val: number) => void;
+  title?: string;
+}> = ({ value, onChange, title }) => {
+  const [localVal, setLocalVal] = useState('');
+
+  useEffect(() => {
+    const num = typeof value === 'number' && !isNaN(value) ? value : 0;
+    const currentParsed = parseFloat(localVal) || 0;
+    if (num !== currentParsed || (num === 0 && localVal === '')) {
+      setLocalVal(num === 0 ? '' : num.toString());
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.trim();
+    // Allow empty string or digits with optional single dot and up to 1 decimal place (e.g. 15, 15., 15.5)
+    if (raw === '' || /^\d*\.?\d{0,1}$/.test(raw)) {
+      setLocalVal(raw);
+      const parsed = parseFloat(raw);
+      onChange(isNaN(parsed) ? 0 : parsed);
+    }
+  };
+
+  const handleBlur = () => {
+    const num = typeof value === 'number' && !isNaN(value) ? value : 0;
+    setLocalVal(num === 0 ? '' : num.toString());
+  };
+
+  return (
+    <input 
+      type="text" 
+      placeholder="마진"
+      value={localVal} 
+      onChange={handleChange}
+      onBlur={handleBlur}
+      style={{ ...gridInputStyle, textAlign: 'right', flex: 1, height: '28px', padding: '2px 3px', fontSize: '12px', fontWeight: 600 }} 
+      title={title}
     />
   );
 };

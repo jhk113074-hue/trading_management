@@ -466,40 +466,97 @@ export const FreightCalculatorSection: React.FC<Props> = ({
             </span>
           </div>
           {activeRoundType !== 'none' && (
-            <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700 }}>
-              💡 원금액 ${rawTotalCalculated.toFixed(2)} ➔ 올림 적용: ${finalCalculated.toFixed(2)}
+            <div style={{ fontSize: '11.5px', color: '#166534', fontWeight: 750 }}>
+              원금액 ${rawTotalCalculated.toFixed(2)} ➔ 올림 반영: ${finalCalculated.toFixed(2)}
             </div>
           )}
         </div>
 
         {/* Round Up Selector & Final Amount */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>소수점 처리:</span>
-            <select
-              value={calc.roundUpType || 'none'}
-              onChange={e => updateFreightCalculation({ roundUpType: e.target.value as any })}
-              style={{
-                height: '32px',
-                padding: '0 8px',
-                border: activeRoundType !== 'none' ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 700,
-                background: activeRoundType !== 'none' ? '#dbeafe' : '#fff',
-                color: activeRoundType !== 'none' ? '#1d4ed8' : '#334155',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="none">소수점 유지 (그대로: ${rawTotalCalculated.toFixed(2)})</option>
-              <option value="ceil_1">🔼 1달러 정수 올림 (${Math.ceil(rawTotalCalculated).toFixed(2)})</option>
-              <option value="ceil_5">🔼 5달러 단위 올림 (${(Math.ceil(rawTotalCalculated / 5) * 5).toFixed(2)})</option>
-              <option value="ceil_10">🔼 10달러 단위 올림 (${(Math.ceil(rawTotalCalculated / 10) * 10).toFixed(2)})</option>
-            </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', padding: '3px 6px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+            <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', marginRight: '2px' }}>운송비 절사/올림:</span>
+            
+            {/* 세그먼트 버튼 그룹 */}
+            <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: 'none' })}
+                style={{
+                  height: '26px',
+                  padding: '0 9px',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  background: activeRoundType === 'none' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === 'none' ? '#fff' : '#475569',
+                  fontSize: '11.5px',
+                  fontWeight: activeRoundType === 'none' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`원금액 소수점 그대로 유지 ($${rawTotalCalculated.toFixed(2)})`}
+              >
+                소수점 유지
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_1' })}
+                style={{
+                  height: '26px',
+                  padding: '0 9px',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  background: activeRoundType === 'ceil_1' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === 'ceil_1' ? '#fff' : '#475569',
+                  fontSize: '11.5px',
+                  fontWeight: activeRoundType === 'ceil_1' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`1달러 단위 정수 올림 ($${Math.ceil(rawTotalCalculated).toFixed(2)})`}
+              >
+                1$ 올림
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_5' })}
+                style={{
+                  height: '26px',
+                  padding: '0 9px',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  background: activeRoundType === 'ceil_5' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === 'ceil_5' ? '#fff' : '#475569',
+                  fontSize: '11.5px',
+                  fontWeight: activeRoundType === 'ceil_5' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`5달러 단위 올림 ($${(Math.ceil(rawTotalCalculated / 5) * 5).toFixed(2)})`}
+              >
+                5$ 올림
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateFreightCalculation({ roundUpType: 'ceil_10' })}
+                style={{
+                  height: '26px',
+                  padding: '0 9px',
+                  border: 'none',
+                  background: activeRoundType === 'ceil_10' ? '#3b82f6' : '#f8fafc',
+                  color: activeRoundType === 'ceil_10' ? '#fff' : '#475569',
+                  fontSize: '11.5px',
+                  fontWeight: activeRoundType === 'ceil_10' ? 800 : 600,
+                  cursor: 'pointer'
+                }}
+                title={`10달러 단위 올림 ($${(Math.ceil(rawTotalCalculated / 10) * 10).toFixed(2)})`}
+              >
+                10$ 올림
+              </button>
+            </div>
           </div>
 
-          <div style={{ fontSize: '18px', fontWeight: 900, color: '#1d4ed8', minWidth: '100px', textAlign: 'right' }}>
+          <div style={{ fontSize: '18px', fontWeight: 900, color: '#1d4ed8', minWidth: '90px', textAlign: 'right' }}>
             ${(formData.freightTotal || finalCalculated || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>

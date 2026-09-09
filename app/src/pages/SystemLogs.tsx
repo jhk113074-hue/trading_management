@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.503',
+    version: 'v2.8.503',
+    date: '2026-09-09',
+    category: 'UI/UX',
+    title: '운송비 올림 세그먼트 버튼 전환, 마진율 소수점 1자리(15.5%) 허용 및 올림 단위 직관화',
+    content: '• 마진율(%) 입력창에 소수점 1자리(예: 12.5%, 15.5%)까지 정밀하게 입력 및 단가 계산에 실시간 반영되도록 개선\n• 운송비 영역의 난잡한 소수점 처리 드롭다운을 원클릭 세그먼트 버튼(소수점 유지, 1$ 올림, 5$ 올림, 10$ 올림)으로 전면 교체하여 한눈에 파악 및 즉시 전환 가능하도록 개선\n• 품목 테이블 내 난해했던 올림 자리수 숫자(-2, -1, 0, 1, 2)를 실무에서 상식적으로 쓰는 명칭(.01 센트, .1 10센트, 1$ 정수, 10$ 단위, 100$ 단위)으로 명확화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.502',
     version: 'v2.8.502',
     date: '2026-09-09',
