@@ -8052,16 +8052,17 @@ ${downloadLink}`;
                   <table style={{ width: '100%', minWidth: '1080px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
                     <thead>
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                        <th style={{ padding: '10px 4px', width: '45px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
-                        <th style={{ padding: '10px 8px', width: '280px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
-                        <th style={{ padding: '10px 6px', width: '150px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>발주사 (공급사)</th>
-                        <th style={{ padding: '10px 6px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
-                        <th style={{ padding: '10px 8px', width: '145px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
-                        <th style={{ padding: '10px 4px', width: '70px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
-                        <th style={{ padding: '10px 8px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
-                        <th style={{ padding: '10px 8px', width: '95px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
-                        <th style={{ padding: '10px 8px', width: '95px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
-                        <th style={{ padding: '10px 8px', width: '110px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
+                        <th style={{ padding: '10px 4px', width: '40px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
+                        <th style={{ padding: '10px 8px', width: '250px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                        <th style={{ padding: '10px 6px', width: '160px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>발주사 (공급사)</th>
+                        <th style={{ padding: '10px 6px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                        <th style={{ padding: '10px 8px', width: '130px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입단가</th>
+                        <th style={{ padding: '10px 8px', width: '135px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
+                        <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
+                        <th style={{ padding: '10px 8px', width: '80px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                        <th style={{ padding: '10px 8px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                        <th style={{ padding: '10px 8px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                        <th style={{ padding: '10px 8px', width: '100px', textAlign: 'left', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8104,9 +8105,9 @@ ${downloadLink}`;
                               </div>
                             </td>
 
-                            {/* 발주사 (공급사) - 변경 가능 */}
+                            {/* 발주사 (공급사) - 변경 가능 및 신규업체 등록 버튼 */}
                             <td style={{ padding: '8px 6px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <select
                                   value={item.supplier || prod?.supplierName || ''}
                                   onChange={e => {
@@ -8130,12 +8131,11 @@ ${downloadLink}`;
                                     color: '#1e293b',
                                     background: '#fff',
                                     padding: '2px 6px',
-                                    width: '100%',
+                                    flex: 1,
                                     cursor: 'pointer'
                                   }}
                                 >
                                   <option value="">-- 공급사 선택 --</option>
-                                  {/* 공급사 마스터 리스트 & 상품에 매핑된 공급사 및 기존 값 조합 */}
                                   {Array.from(new Set([
                                     ...(item.supplier ? [item.supplier] : []),
                                     ...(prod?.supplierName ? [prod.supplierName] : []),
@@ -8147,6 +8147,29 @@ ${downloadLink}`;
                                     </option>
                                   ))}
                                 </select>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenSupplierModal(item.supplier || prod?.supplierName || '')}
+                                  style={{
+                                    height: '32px',
+                                    padding: '0 7px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #3b82f6',
+                                    background: '#eff6ff',
+                                    color: '#2563eb',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '2px'
+                                  }}
+                                  title="신규 공급업체 등록 또는 정보 수정"
+                                >
+                                  + 등록
+                                </button>
                               </div>
                             </td>
 
@@ -8162,7 +8185,7 @@ ${downloadLink}`;
                               </div>
                             </td>
 
-                            {/* 매입가 */}
+                            {/* 매입단가 */}
                             <td style={{ padding: '8px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                                 {curCurrency === 'KRW' ? (
@@ -8170,7 +8193,7 @@ ${downloadLink}`;
                                     <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
                                       ₩{(item.purchasePriceKrw || 0).toLocaleString()}
                                     </span>
-                                    <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                                       환율: {formatNumberWithCommas(item.exchangeRate || exRate)}원
                                     </span>
                                   </>
@@ -8180,6 +8203,34 @@ ${downloadLink}`;
                                   </span>
                                 )}
                               </div>
+                            </td>
+
+                            {/* 매입가총액 (수량 * 매입가) */}
+                            <td style={{ padding: '8px', textAlign: 'right' }}>
+                              {(() => {
+                                const qty = item.qty || 0;
+                                if (curCurrency === 'KRW') {
+                                  const totalKrw = Math.round((item.purchasePriceKrw || 0) * qty);
+                                  const totalUsdEq = totalKrw / (item.exchangeRate || exRate || 1400);
+                                  return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                                      <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
+                                        ₩{totalKrw.toLocaleString()}
+                                      </span>
+                                      <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                                        ≈ ${totalUsdEq.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                  );
+                                } else {
+                                  const totalUsd = (item.purchasePriceUsd || 0) * qty;
+                                  return (
+                                    <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px', fontVariantNumeric: 'tabular-nums' }}>
+                                      ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                  );
+                                }
+                              })()}
                             </td>
 
                             {/* 마진/올림 */}
@@ -8231,15 +8282,40 @@ ${downloadLink}`;
                       const validItems = orderItems.filter(it => !it.isSourcingOnly);
                       const totalQty = validItems.reduce((sum, it) => sum + (it.qty || 0), 0);
                       const totalAmount = validItems.reduce((sum, it) => sum + ((it.unitPrice || it.salePriceUsd || 0) * (it.qty || 0)), 0);
+                      
+                      let totalPurchaseKrw = 0;
+                      let totalPurchaseUsd = 0;
+                      let totalPurchaseUsdCombined = 0;
+
+                      validItems.forEach(it => {
+                        const qty = it.qty || 0;
+                        const curCurr = it.purchasePriceCurrency || (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? 'USD' : (it.currency === 'KRW' ? 'KRW' : 'USD'));
+                        const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
+
+                        if (curCurr === 'KRW') {
+                          const pKrw = (it.purchasePriceKrw || 0) * qty;
+                          totalPurchaseKrw += pKrw;
+                          totalPurchaseUsdCombined += (pKrw / (exRate || 1400));
+                        } else {
+                          const pUsd = (it.purchasePriceUsd || 0) * qty;
+                          totalPurchaseUsd += pUsd;
+                          totalPurchaseUsdCombined += pUsd;
+                        }
+                      });
+
                       const totalProfit = validItems.reduce((sum, it) => {
                         const salePrice = it.salePriceUsd ?? it.unitPrice ?? 0;
                         const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
-                        const buyUsd = (it.purchasePriceUsd && it.purchasePriceUsd > 0)
-                          ? it.purchasePriceUsd
-                          : ((it.purchasePriceKrw || 0) / (exRate || 1400));
+                        const buyUsd = (it.purchasePriceUsd && itemBuyUsd(it, exRate));
                         const profit = it.qty ? (salePrice - buyUsd) * it.qty : 0;
                         return sum + profit;
                       }, 0);
+
+                      function itemBuyUsd(it: any, rate: number) {
+                        return (it.purchasePriceUsd && it.purchasePriceUsd > 0)
+                          ? it.purchasePriceUsd
+                          : ((it.purchasePriceKrw || 0) / (rate || 1400));
+                      }
 
                       return (
                         <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800, color: '#1e293b' }}>
@@ -8250,8 +8326,21 @@ ${downloadLink}`;
                           <td style={{ padding: '10px 6px', textAlign: 'right', fontSize: '14px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                             {totalQty.toLocaleString()}
                           </td>
-                          {/* 매입가 (빈칸) */}
+                          {/* 매입단가 (빈칸) */}
                           <td style={{ padding: '10px 8px' }}></td>
+                          {/* 매입가총액 합계 */}
+                          <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                              {totalPurchaseKrw > 0 && (
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                                  ₩{Math.round(totalPurchaseKrw).toLocaleString()}
+                                </span>
+                              )}
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+                                ≈ ${totalPurchaseUsdCombined.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </td>
                           {/* 마진/올림 (빈칸) */}
                           <td style={{ padding: '10px 4px' }}></td>
                           {/* 단가 (빈칸) */}
@@ -16566,6 +16655,28 @@ ${downloadLink}`;
               console.error('Failed to apply updated quote settings:', e);
             }
           }}
+        />
+      )}
+
+      {isSupplierModalOpen && (
+        <SupplierModal
+          initialSupplier={selectedSupplierForModal}
+          onClose={() => {
+            setIsSupplierModalOpen(false);
+            setSelectedSupplierForModal(undefined);
+          }}
+          onSave={(newSup) => {
+            setIsSupplierModalOpen(false);
+            setSelectedSupplierForModal(undefined);
+            if (newSup && newSup.name) {
+              // 새로 등록된 공급사가 목록에 반영되도록 suppliersList 업데이트
+              setSuppliersList(prev => {
+                if (prev.some(s => s.name === newSup.name || s.id === newSup.id)) return prev;
+                return [...prev, newSup];
+              });
+            }
+          }}
+          defaultCategory="공급사"
         />
       )}
     </div>
