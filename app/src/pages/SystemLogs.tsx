@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.495',
+    version: 'v2.8.495',
+    date: '2026-09-09',
+    category: '기능개선',
+    title: '견적관리(PI) 상품 라인 매입가총액 열 신설 및 테이블 실시간 TOTAL 행 추가',
+    content: '• 견적관리(Proforma Invoice 작성/수정 모달) 상품 라인 테이블에 "매입가총액(수량×매입단가)" 열 신설 (원화 매입가 및 USD 환산 병기)\n• 테이블 하단에 실시간 집계 TOTAL 행을 신설하여 총 수량, 매입가총액, 총액($), 이익($)을 실시간으로 확인 가능하도록 개선\n• 화면 레이아웃 및 너비 최적화로 가독성 및 작업 효율 증대',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.494',
     version: 'v2.8.494',
     date: '2026-09-09',

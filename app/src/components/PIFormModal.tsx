@@ -2872,14 +2872,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
             <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-              <table style={{ width: '100%', minWidth: '1140px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
+              <table style={{ width: '100%', minWidth: '1250px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                   <th style={{ padding: '10px 4px', width: '55px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>No.</th>
                   <th style={{ padding: '10px 4px', width: '320px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                  {formData.type !== 'consulting' && (
+                    <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                  )}
                   <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '165px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                  <th style={{ padding: '10px 6px', width: '115px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가총액</th>
                   <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
@@ -2890,7 +2893,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={formData.type === 'consulting' ? 10 : 11} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={formData.type === 'consulting' ? 11 : 12} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => {
                   const isColoredRow = idx % 2 === 1;
                   const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
@@ -3287,6 +3290,38 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         })()}
                       </div>
                     </td>
+
+                    {/* 매입가총액 (수량 * 매입가) */}
+                    <td style={{ padding: '4px 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                      {(() => {
+                        const qty = it.quantity || 0;
+                        const curCurrency = (it as any).purchasePriceCurrency || (it.purchasePriceUsd > 0 ? 'USD' : 'KRW');
+                        const exRate = it.exchangeRate || formData.exchangeRate || 1400;
+
+                        if (curCurrency === 'KRW') {
+                          const totalKrw = Math.round((it.purchasePriceKrw || 0) * qty);
+                          const totalUsdEq = totalKrw / (exRate || 1400);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                              <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
+                                ₩{totalKrw.toLocaleString()}
+                              </span>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                                ≈ ${totalUsdEq.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          );
+                        } else {
+                          const totalUsd = (it.purchasePriceUsd || 0) * qty;
+                          return (
+                            <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px', fontVariantNumeric: 'tabular-nums' }}>
+                              ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          );
+                        }
+                      })()}
+                    </td>
+
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
@@ -3365,6 +3400,83 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 );
               })}
               </tbody>
+              <tfoot>
+                {(() => {
+                  const totalQty = items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+                  const totalAmount = items.reduce((sum, it) => sum + ((it.salePriceUsd || 0) * (it.quantity || 0)), 0);
+                  
+                  let totalPurchaseKrw = 0;
+                  let totalPurchaseUsdCombined = 0;
+                  
+                  items.forEach(it => {
+                    const qty = it.quantity || 0;
+                    const curCurr = (it as any).purchasePriceCurrency || (it.purchasePriceUsd > 0 ? 'USD' : 'KRW');
+                    const exRate = it.exchangeRate || formData.exchangeRate || 1400;
+
+                    if (curCurr === 'KRW') {
+                      const pKrw = (it.purchasePriceKrw || 0) * qty;
+                      totalPurchaseKrw += pKrw;
+                      totalPurchaseUsdCombined += (pKrw / (exRate || 1400));
+                    } else {
+                      const pUsd = (it.purchasePriceUsd || 0) * qty;
+                      totalPurchaseUsdCombined += pUsd;
+                    }
+                  });
+
+                  const totalProfit = items.reduce((sum, it) => {
+                    const costUsd = it.purchasePriceUsd > 0 
+                      ? it.purchasePriceUsd 
+                      : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
+                    const profit = ((it.salePriceUsd || 0) - costUsd) * (it.quantity || 0);
+                    return sum + profit;
+                  }, 0);
+
+                  const leadSpan = formData.type === 'consulting' ? 2 : 3;
+
+                  return (
+                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800, color: '#1e293b' }}>
+                      <td colSpan={leadSpan} style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', color: '#334155', letterSpacing: '0.05em' }}>
+                        TOTAL (합계)
+                      </td>
+                      {/* 수량 합계 */}
+                      <td style={{ padding: '10px 6px', textAlign: 'right', fontSize: '13.5px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                        {totalQty.toLocaleString()}
+                      </td>
+                      {/* 매입가 (빈칸) */}
+                      <td style={{ padding: '10px 4px' }}></td>
+                      {/* 매입가총액 합계 */}
+                      <td style={{ padding: '10px 6px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                          {totalPurchaseKrw > 0 && (
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                              ₩{Math.round(totalPurchaseKrw).toLocaleString()}
+                            </span>
+                          )}
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+                            ≈ ${totalPurchaseUsdCombined.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </td>
+                      {/* 마진/올림 (빈칸) */}
+                      <td style={{ padding: '10px 4px' }}></td>
+                      {/* 단가 (빈칸) */}
+                      <td style={{ padding: '10px 4px' }}></td>
+                      {/* 총액 합계 */}
+                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                        ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      {/* 이익 합계 */}
+                      <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
+                        ${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      {/* 비고 (빈칸) */}
+                      <td style={{ padding: '10px 4px' }}></td>
+                      {/* 액션 (빈칸) */}
+                      <td style={{ padding: '10px 4px' }}></td>
+                    </tr>
+                  );
+                })()}
+              </tfoot>
             </table>
           </div>
         </div>
