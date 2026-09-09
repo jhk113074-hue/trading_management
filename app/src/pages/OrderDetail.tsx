@@ -5466,13 +5466,12 @@ export const OrderDetail: React.FC = () => {
           <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 50px;">No.</th>
-                <th style="width: 250px;">품 명</th>
-                <th style="width: 120px;">스 펙</th>
-                <th style="width: 80px;">수량</th>
-                <th style="width: 80px;">단 가</th>
-                <th style="width: 100px;">금 액</th>
-                <th style="width: 90px;">부가세</th>
+                <th style="width: 35px;">No.</th>
+                <th style="width: 250px;">품 명 / 규격(스펙)</th>
+                <th style="width: 65px;">수량</th>
+                <th style="width: 75px;">단 가</th>
+                <th style="width: 85px;">금 액</th>
+                <th style="width: 75px;">부가세</th>
                 <th>비 고</th>
               </tr>
             </thead>
@@ -5486,13 +5485,15 @@ export const OrderDetail: React.FC = () => {
                 return `
                   <tr>
                     <td class="center">${idx + 1}</td>
-                    <td><strong>${itemName}</strong></td>
-                    <td class="center">${it.grade || '-'}</td>
+                    <td style="padding: 5px 6px;">
+                      <div style="font-weight: bold; font-size: 11px; color: #000; line-height: 1.35;">${itemName}</div>
+                      ${it.grade ? `<div style="font-size: 10px; color: #334155; margin-top: 2px; line-height: 1.3;">${it.grade}</div>` : ''}
+                    </td>
                     <td class="right">${(it.qty || 0).toLocaleString()} ${it.unit || ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${getPoItemRemark(it)}</td>
+                    <td style="font-size: 10px; color: #334155; padding: 4px 6px; text-align: left;">${getPoItemRemark(it) || ''}</td>
                   </tr>
                 `;
               }).join('')}
@@ -5507,12 +5508,11 @@ export const OrderDetail: React.FC = () => {
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td></td>
                 </tr>
               `).join('')}
 
               <tr style="font-weight: bold; background-color: #fafafa;">
-                <td colspan="3" class="center">합   계</td>
+                <td colspan="2" class="center">합   계</td>
                 <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
                 <td></td>
                 <td class="right">
@@ -5885,13 +5885,12 @@ export const OrderDetail: React.FC = () => {
           <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 50px;">No.</th>
-                <th style="width: 250px;">품 명</th>
-                <th style="width: 120px;">스 펙</th>
-                <th style="width: 80px;">수량</th>
-                <th style="width: 80px;">단 가</th>
-                <th style="width: 100px;">금 액</th>
-                <th style="width: 90px;">부가세</th>
+                <th style="width: 35px;">No.</th>
+                <th style="width: 250px;">품 명 / 규격(스펙)</th>
+                <th style="width: 65px;">수량</th>
+                <th style="width: 75px;">단 가</th>
+                <th style="width: 85px;">금 액</th>
+                <th style="width: 75px;">부가세</th>
                 <th>비 고</th>
               </tr>
             </thead>
@@ -5905,13 +5904,15 @@ export const OrderDetail: React.FC = () => {
                 return `
                   <tr>
                     <td class="center">${idx + 1}</td>
-                    <td><strong>${itemName}</strong></td>
-                    <td class="center">${it.grade || '-'}</td>
+                    <td style="padding: 5px 6px;">
+                      <div style="font-weight: bold; font-size: 11px; color: #000; line-height: 1.35;">${itemName}</div>
+                      ${it.grade ? `<div style="font-size: 10px; color: #334155; margin-top: 2px; line-height: 1.3;">${it.grade}</div>` : ''}
+                    </td>
                     <td class="right">${(it.qty || 0).toLocaleString()} ${it.unit || ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
                     <td class="right">${!hidePrices ? `${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}` : ''}</td>
-                    <td style="font-size: 10px; color: var(--text-secondary);">${getPoItemRemark(it)}</td>
+                    <td style="font-size: 10px; color: #334155; padding: 4px 6px; text-align: left;">${getPoItemRemark(it) || ''}</td>
                   </tr>
                 `;
               }).join('')}
@@ -5926,12 +5927,11 @@ export const OrderDetail: React.FC = () => {
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td></td>
                 </tr>
               `).join('')}
 
               <tr style="font-weight: bold; background-color: #fafafa;">
-                <td colspan="3" class="center">합   계</td>
+                <td colspan="2" class="center">합   계</td>
                 <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
                 <td></td>
                 <td class="right">
@@ -8835,45 +8835,56 @@ ${downloadLink}`;
                                     </button>
                                   );
                                 })()}
+                                {(() => {
+                                  const isEmailSent = !!((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]);
+                                  return (
+                                    <button 
+                                      type="button"
+                                      onClick={() => handleSendPoEmail(supplierName, items)}
+                                      style={{ 
+                                        padding: '0 9px', 
+                                        height: '28px',
+                                        background: isEmailSent ? '#15803d' : '#059669', 
+                                        border: isEmailSent ? '1px solid #166534' : '1px solid #047857', 
+                                        color: '#ffffff', 
+                                        borderRadius: '4px', 
+                                        cursor: 'pointer', 
+                                        fontWeight: 700, 
+                                        fontSize: '12px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                      title="공급사 이메일로 발주서 발송"
+                                    >
+                                      {isEmailSent ? '✅ 메일완료' : '✉️ 메일'}
+                                    </button>
+                                  );
+                                })()}
                                 <button 
-                                  onClick={() => handleSendPoEmail(supplierName, items)}
-                                  style={{ 
-                                    padding: '0 8px', 
-                                    height: '28px',
-                                    background: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#f0fdf4' : '#fff', 
-                                    border: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '1px solid #bbf7d0' : '1px solid #cbd5e1', 
-                                    color: ((order as any)?.po_dispatch_status?.[supplierName]?.emailSent || sentEmailSuppliers[supplierName]) ? '#166534' : '#334155', 
-                                    borderRadius: '4px', 
-                                    cursor: 'pointer', 
-                                    fontWeight: 600, 
-                                    fontSize: '12px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px'
-                                  }}
-                                  title="공급사 이메일로 발주서 발송"
-                                >
-                                  메일
-                                </button>
-                                <button 
+                                  type="button"
                                   onClick={() => handleCopyKatalkPoMessage(supplierName, items)}
                                   style={{ 
-                                    padding: '0 8px', 
+                                    padding: '0 9px', 
                                     height: '28px',
-                                    background: '#fff', 
-                                    border: '1px solid #cbd5e1', 
-                                    color: '#334155', 
+                                    background: '#fee500', 
+                                    border: '1px solid #facc15', 
+                                    color: '#371d1e', 
                                     borderRadius: '4px', 
                                     cursor: 'pointer', 
-                                    fontWeight: 600, 
+                                    fontWeight: 750, 
                                     fontSize: '12px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px'
+                                    gap: '4px',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                                    transition: 'all 0.15s ease'
                                   }}
                                   title="카카오톡 단체방 공유용 텍스트 복사"
                                 >
-                                  카톡
+                                  💬 카톡
                                 </button>
                               </div>
                             </div>
@@ -8938,19 +8949,19 @@ ${downloadLink}`;
                             {/* 1. 품목 테이블 영역 */}
                             <div style={{ padding: '6px 10px', background: '#fff', fontSize: '12.5px' }}>
                               <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '2px' }}>
-                                <table style={{ width: '100%', minWidth: '1320px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
+                                <table style={{ width: '100%', minWidth: '1390px', borderCollapse: 'collapse', fontSize: '13px', marginTop: '5px' }}>
                                   <thead>
                                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '360px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명 / 스펙</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>견적가<br/>(통화/단가)</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '160px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '130px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>단가 GAP<br/>(견적 대비)</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '110px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'right', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '120px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>비고</th>
-                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '80px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'left', width: '340px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목명 / 스펙</th>
+                                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>수량</th>
+                                      <th style={{ padding: '8px 6px', textAlign: 'right', width: '105px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>견적가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 6px', textAlign: 'right', width: '145px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>매입가<br/>(통화/단가)</th>
+                                      <th style={{ padding: '8px 6px', textAlign: 'right', width: '115px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>단가 GAP<br/>(견적 대비)</th>
+                                      <th style={{ padding: '8px 6px', textAlign: 'right', width: '100px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>금액</th>
+                                      <th style={{ padding: '8px 4px', textAlign: 'right', width: '85px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>부가세</th>
+                                      <th style={{ padding: '8px 6px', textAlign: 'right', width: '105px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>합계</th>
+                                      <th style={{ padding: '8px 8px', textAlign: 'center', width: '240px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>비고</th>
+                                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '75px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>순서/관리</th>
                                     </tr>
                                   </thead>
                                 <tbody>
@@ -9082,13 +9093,13 @@ ${downloadLink}`;
                                                     const val = e.target.value.replace(/[^0-9]/g, '');
                                                     handleSourcingItemChange(itemIndexInMain, 'qty', val === '' ? 0 : parseInt(val, 10));
                                                   }}
-                                                  style={{ width: '75px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'right' }}
+                                                  style={{ width: '54px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', textAlign: 'right' }}
                                                 />
                                                 <input
                                                   type="text"
                                                   value={it.unit || 'kg'}
                                                   onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'unit', e.target.value)}
-                                                  style={{ width: '45px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center' }}
+                                                  style={{ width: '34px', padding: '3px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', textAlign: 'center' }}
                                                 />
                                               </div>
                                             ) : (
@@ -9130,7 +9141,7 @@ ${downloadLink}`;
                                                     });
                                                   });
                                                 }}
-                                                style={{ width: '55px', padding: '4px 2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
+                                                style={{ width: '50px', padding: '3px 1px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
                                               >
                                                 {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
                                                 <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
@@ -9174,11 +9185,11 @@ ${downloadLink}`;
                                                   });
                                                 }}
                                                 style={{
-                                                  width: '85px',
-                                                  padding: '4px 6px',
+                                                  width: '80px',
+                                                  padding: '3px 5px',
                                                   border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
-                                                  fontSize: '13px',
+                                                  fontSize: '12.5px',
                                                   textAlign: 'right'
                                                 }}
                                               />
@@ -9259,7 +9270,7 @@ ${downloadLink}`;
                                             })()}
                                           </td>
                                           {/* 10. 비고 (REMARK) */}
-                                           <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                           <td style={{ padding: '6px 8px', textAlign: 'left', verticalAlign: 'middle' }}>
                                              {isEditing ? (
                                                <input
                                                  type="text"
@@ -9272,18 +9283,17 @@ ${downloadLink}`;
                                                  placeholder="비고 입력"
                                                  style={{
                                                    width: '100%',
-                                                   minWidth: '95px',
-                                                   padding: '4px 6px',
+                                                   padding: '4px 8px',
                                                    border: '1px solid #cbd5e1',
                                                    borderRadius: '4px',
                                                    fontSize: '12.5px',
                                                    color: '#1e293b',
-                                                   textAlign: 'center',
+                                                   textAlign: 'left',
                                                    boxSizing: 'border-box'
                                                  }}
                                                />
                                              ) : (
-                                               <span style={{ fontSize: '12.5px', color: '#475569' }}>
+                                               <span style={{ fontSize: '12.5px', color: '#334155', textAlign: 'left', display: 'block', wordBreak: 'break-all', padding: '0 2px' }}>
                                                  {getPoItemRemark(it) || '-'}
                                                </span>
                                              )}
