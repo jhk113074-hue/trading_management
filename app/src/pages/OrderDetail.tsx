@@ -7509,15 +7509,36 @@ export const OrderDetail: React.FC = () => {
                     basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
                   );
 
-      const targetSupplier = suppliersList.find(s => s.name === supplierName);
-      const supplierEmail = targetSupplier?.purchaseEmail || '미지정';
+      const matchedSupplierObj = suppliersList.find((s: any) => 
+        (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+        (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+        (s.name && supplierName.includes(s.name)) ||
+        (supplierName && s.name && (s.name.includes(supplierName)))
+      );
+      const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
+      const supplierEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
+
+      const ccFromContacts = (matchedSupplierObj?.contacts || [])
+        .filter((c: any) => c.isCc && c.email)
+        .map((c: any) => c.email!.trim());
+      const explicitCcList = (matchedSupplierObj?.defaultCcEmails || '')
+        .split(',')
+        .map((x: string) => x.trim())
+        .filter(Boolean);
+      const combinedSupplierCc = Array.from(new Set([...ccFromContacts, ...explicitCcList]));
+      const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+      const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
+
+      const dispatchStatus = (order as any)?.po_dispatch_status?.[supplierName];
+      const finalToEmail = dispatchStatus?.sentTo || supplierEmail || '미지정';
+      const finalCcEmails = dispatchStatus?.sentCc || defaultCc;
 
       const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || (poNum && d.po_number === poNum)));
       const pdfUrl = latestDoc?.fileUrl || '';
 
       const itemsText = items.map(it => {
         const name = (it.name || '').trim();
-        const spec = ((it as any).grade || '').trim();
+        const spec = ((it as any).grade || (it as any).spec || (it as any).size || '').trim();
         const qtyFormatted = (it.qty || 0).toLocaleString();
         const unit = it.unit || 'EA';
         if (spec) {
@@ -7526,11 +7547,44 @@ export const OrderDetail: React.FC = () => {
         return `• ${name} (${qtyFormatted}${unit})`;
       }).join('\n');
 
-      const totalAmt = items.reduce((sum, it) => {
-        const price = (it as any).purchaseUnitPrice != null ? (it as any).purchaseUnitPrice : it.unitPrice;
-        return sum + (price || 0) * (it.qty || 0);
-      }, 0);
-      const formattedAmt = totalAmt > 0 ? `₩${Math.round(totalAmt).toLocaleString()} (VAT포함)` : '₩0 (VAT포함)';
+      const taxType = basicForm.supplierTaxTypes?.[supplierName] || (order as any)?.supplierTaxTypes?.[supplierName] || '과세';
+      const hidePrices = !!(basicForm.supplierHidePrices?.[supplierName] || (order as any)?.supplierHidePrices?.[supplierName]);
+
+      let formattedAmt = '';
+      if (hidePrices) {
+        formattedAmt = '비공개 (단가 미표기)';
+      } else {
+        const parts: string[] = [];
+        const usdItems = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW');
+        const krwItems = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW');
+
+        const usdSub = usdItems.reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+        const krwSub = krwItems.reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+
+        if (usdSub > 0) {
+          const usdVat = taxType === '영세' ? 0 : parseFloat((usdSub * 0.1).toFixed(2));
+          const usdGrand = usdSub + usdVat;
+          const grandStr = `$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+          if (taxType === '영세') {
+            parts.push(`${grandStr} (영세율)`);
+          } else {
+            parts.push(`${grandStr} (VAT포함 / 공급가 $${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + VAT $${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
+          }
+        }
+
+        if (krwSub > 0) {
+          const krwVat = taxType === '영세' ? 0 : Math.round(krwSub * 0.1);
+          const krwGrand = krwSub + krwVat;
+          const grandStr = `₩${krwGrand.toLocaleString()}`;
+          if (taxType === '영세') {
+            parts.push(`${grandStr} (영세율)`);
+          } else {
+            parts.push(`${grandStr} (VAT포함 / 공급가 ₩${krwSub.toLocaleString()} + VAT ₩${krwVat.toLocaleString()})`);
+          }
+        }
+
+        formattedAmt = parts.length > 0 ? parts.join(' / ') : '₩0 (VAT포함)';
+      }
 
       const senderName = userProfile?.name || '김주한';
       const senderRank = userProfile?.role === 'admin' ? '대표이사' : (userProfile?.role || '담당');
@@ -7540,11 +7594,14 @@ export const OrderDetail: React.FC = () => {
       const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
       const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
 
-      const now = new Date();
-      const dateFormatted = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
-        + '. ' + now.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
-
-      const ccEmails = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+      let poDateTime = new Date();
+      if (dispatchStatus?.emailSentAt) {
+        poDateTime = new Date(dispatchStatus.emailSentAt);
+      } else if (latestDoc?.issuedAt) {
+        poDateTime = new Date(latestDoc.issuedAt);
+      }
+      const dateFormatted = poDateTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })
+        + '. ' + poDateTime.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true });
 
       const publicDocKey = `${order?.id}_${poNum}`.replace(/[^a-zA-Z0-9_-]/g, '_');
       if (pdfUrl && order?.id) {
@@ -7573,13 +7630,16 @@ ${itemsText}
 ▪ 발주금액: ${formattedAmt}
 ------------------------------------
 ▪ 발신담당: ${senderInfo}
-▪ 수신(TO): ${supplierEmail}
-▪ 참조(CC): ${ccEmails.join(', ')}
+▪ 수신(TO): ${finalToEmail}
+▪ 참조(CC): ${finalCcEmails}
 ▪ 발행일시: ${dateFormatted}
 ------------------------------------
 📄 발주서 PDF 다운로드:
 ${downloadLink}`;
 
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(msg).catch(() => {});
+      }
       setKatalkModalSupplier(supplierName);
       setKatalkModalMsg(msg);
     } catch (e) {
@@ -7628,7 +7688,7 @@ ${downloadLink}`;
 
     const itemsText = items.map(it => {
       const name = (it.name || '').trim();
-      const spec = ((it as any).grade || '').trim();
+      const spec = ((it as any).grade || (it as any).spec || (it as any).size || '').trim();
       const qtyFormatted = (it.qty || 0).toLocaleString();
       const unit = it.unit || 'EA';
       if (spec) {
@@ -7637,11 +7697,44 @@ ${downloadLink}`;
       return `• ${name} (${qtyFormatted}${unit})`;
     }).join('\n');
 
-    const totalAmt = items.reduce((sum, it) => {
-      const price = (it as any).purchaseUnitPrice != null ? (it as any).purchaseUnitPrice : it.unitPrice;
-      return sum + (price || 0) * (it.qty || 0);
-    }, 0);
-    const formattedAmt = totalAmt > 0 ? `₩${Math.round(totalAmt).toLocaleString()} (VAT포함)` : '₩0 (VAT포함)';
+    const taxType = basicForm.supplierTaxTypes?.[supplierName] || (order as any)?.supplierTaxTypes?.[supplierName] || '과세';
+    const hidePrices = !!(basicForm.supplierHidePrices?.[supplierName] || (order as any)?.supplierHidePrices?.[supplierName]);
+
+    let formattedAmt = '';
+    if (hidePrices) {
+      formattedAmt = '비공개 (단가 미표기)';
+    } else {
+      const parts: string[] = [];
+      const usdItems = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW');
+      const krwItems = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW');
+
+      const usdSub = usdItems.reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+      const krwSub = krwItems.reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+
+      if (usdSub > 0) {
+        const usdVat = taxType === '영세' ? 0 : parseFloat((usdSub * 0.1).toFixed(2));
+        const usdGrand = usdSub + usdVat;
+        const grandStr = `$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+        if (taxType === '영세') {
+          parts.push(`${grandStr} (영세율)`);
+        } else {
+          parts.push(`${grandStr} (VAT포함 / 공급가 $${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + VAT $${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
+        }
+      }
+
+      if (krwSub > 0) {
+        const krwVat = taxType === '영세' ? 0 : Math.round(krwSub * 0.1);
+        const krwGrand = krwSub + krwVat;
+        const grandStr = `₩${krwGrand.toLocaleString()}`;
+        if (taxType === '영세') {
+          parts.push(`${grandStr} (영세율)`);
+        } else {
+          parts.push(`${grandStr} (VAT포함 / 공급가 ₩${krwSub.toLocaleString()} + VAT ₩${krwVat.toLocaleString()})`);
+        }
+      }
+
+      formattedAmt = parts.length > 0 ? parts.join(' / ') : '₩0 (VAT포함)';
+    }
 
     const senderName = userProfile?.name || '김주한';
     const senderRank = userProfile?.role === 'admin' ? '대표이사' : (userProfile?.role || '담당');
@@ -7771,7 +7864,10 @@ ${downloadLink}`;
             [supplierName]: {
               ...supplierStatus,
               emailSent: true,
-              emailSentAt: new Date().toISOString()
+              emailSentAt: new Date().toISOString(),
+              sentTo: emailData.to,
+              sentCc: emailData.cc,
+              subject: emailData.subject
             }
           };
 
@@ -8494,11 +8590,27 @@ ${downloadLink}`;
     const items = groupedSupplierItems[supplierName] || [];
     const matchedSupplierObj = suppliersList.find((s: any) => 
       (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
+      (s.name && supplierName.includes(s.name)) ||
+      (supplierName && s.name && (s.name.includes(supplierName)))
     );
     const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
-    const toEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || '미지정';
-    const defaultCc = 'alexpark@ysacc.co.kr, jhk010624@ysacc.co.kr, jhkim1130@ysacc.co.kr';
+    const supplierEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
+
+    const ccFromContacts = (matchedSupplierObj?.contacts || [])
+      .filter((c: any) => c.isCc && c.email)
+      .map((c: any) => c.email!.trim());
+    const explicitCcList = (matchedSupplierObj?.defaultCcEmails || '')
+      .split(',')
+      .map((x: string) => x.trim())
+      .filter(Boolean);
+    const combinedSupplierCc = Array.from(new Set([...ccFromContacts, ...explicitCcList]));
+    const defaultInternalCc = ['alexpark@ysacc.co.kr', 'jhk010624@ysacc.co.kr', 'jhkim1130@ysacc.co.kr'];
+    const defaultCc = Array.from(new Set([...combinedSupplierCc, ...defaultInternalCc])).join(', ');
+
+    const dispatchStatus = (order as any)?.po_dispatch_status?.[`${supplierName}_arrival`];
+    const toEmail = dispatchStatus?.sentTo || supplierEmail || '미지정';
+    const finalCc = dispatchStatus?.sentCc || defaultCc;
 
     const arrivalLink = arrivalPdfUrl 
       ? `https://tradingmanagement-c1cf4.web.app/doc-view?id=${arrivalDocKey}`
@@ -8508,7 +8620,7 @@ ${downloadLink}`;
       ? `https://tradingmanagement-c1cf4.web.app/doc-view?id=${shippingDocKey}`
       : '발행 예정';
 
-    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${defaultCc}\n------------------------------------\n📄 도착보고서 PDF 다운로드:\n${arrivalLink}\n\n🏷️ 쉬핑마크 라벨 PDF 다운로드:\n${shippingLink}`;
+    const msg = `[${companyTitleName} 도착보고서 & 쉬핑마크 발행 및 카톡 공유 알림]\n------------------------------------\n▪ 발주번호: ${poNum}\n▪ 공급업체: ${supplierName}\n▪ 발행일시: ${new Date().toLocaleString('ko-KR')}\n------------------------------------\n▪ 발신담당: ${currentSender}\n▪ 수신(TO): ${toEmail}\n▪ 참조(CC): ${finalCc}\n------------------------------------\n📄 도착보고서 PDF 다운로드:\n${arrivalLink}\n\n🏷️ 쉬핑마크 라벨 PDF 다운로드:\n${shippingLink}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(msg).catch(() => {});
@@ -18310,14 +18422,6 @@ ${downloadLink}`;
         />
       )}
 
-      {katalkModalMsg && (
-        <KatalkMessageModal
-          message={katalkModalMsg}
-          supplierName={katalkModalSupplier}
-          onClose={() => setKatalkModalMsg(null)}
-          onCopySuccess={() => setCopiedKatalkSuppliers(prev => ({ ...prev, [katalkModalSupplier]: true }))}
-        />
-      )}
 
       {isCustomerSearchOpen && (
         <CustomerSearchModal

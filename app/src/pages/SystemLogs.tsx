@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.529',
+    version: 'v2.8.529',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '발주서 카카오톡 공유 메시지 수신자(TO/CC) 누락 및 통화(USD/KRW)·부가세(VAT) 불일치 완벽 수정',
+    content: '• 발주서 발행 후 카카오톡 공유 문구 복사 시 수신자(TO)가 "미지정"으로 출력되고 거래처 참조자(CC) 이메일이 누락되던 수신처 불일치 버그 완벽 교정\n• 공급업체 연락처(contacts)의 대표 담당자(isPrimary) 및 참조 수신자(isCc), 기본 참조 목록(defaultCcEmails)을 카카오톡 문구와 이메일 발송 모달에 100% 동일하게 동기화\n• 달러(USD) 기준 발주 품목임에도 카톡/메일 알림 문구에서 원화(₩) 기호로 출력되거나 공급가액에 임의로 (VAT포함)이 붙던 금액·통화 산출 로직 전면 개편\n• 발주 품목 통화별(USD / KRW) 공급가액 집계 및 과세/영세/면세 구분에 따른 VAT 산출: 최종 합계금액(VAT포함)과 함께 공급가액 및 부가세를 명확하게 구분 표기\n• 발주서 이메일 발송 시 실제 전송된 수신처(TO/CC) 및 발송일시를 DB(po_dispatch_status)에 저장하여 이후 카톡 복사 시에도 실제 발송 내역과 정확히 일치하도록 보장\n• 도착보고서 및 쉬핑마크 카카오톡 알림 문구에서도 동일하게 거래처 참조자(CC) 목록이 온전히 포함되도록 연동 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.528',
     version: 'v2.8.528',
     date: '2026-09-10',
