@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
@@ -9,6 +10,22 @@ import { db, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Task, User } from '../types';
 import { isOperationalUser, isCompletionReportExempt } from '../utils/userUtils';
+
+export interface CumulativeSalesItem {
+  id: string;
+  sourceType: 'EXPORT' | 'IMPORT';
+  companyKey: 'YS' | 'YSACC';
+  companyLabel: string;
+  date: string;
+  docNumber: string;
+  customerName: string;
+  itemName: string;
+  originalAmountDisplay: string;
+  salesKrw: number;
+  status: string;
+  link: string;
+  isThisMonth: boolean;
+}
 
 const getHoliday = (dateStr: string) => {
   const holidays: Record<string, { name: string; country: 'KR' | 'AE' }> = {
@@ -419,6 +436,21 @@ export const Dashboard: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [imports, setImports] = useState<any[]>([]);
   const [tradingLoading, setTradingLoading] = useState(true);
+
+  // ── Cumulative / Monthly Sales List Modal States ──
+  const [salesModalOpen, setSalesModalOpen] = useState(false);
+  const [salesModalCompany, setSalesModalCompany] = useState<'ALL' | 'YS' | 'YSACC'>('ALL');
+  const [salesModalPeriod, setSalesModalPeriod] = useState<'TOTAL' | 'MONTH'>('TOTAL');
+  const [salesModalType, setSalesModalType] = useState<'ALL' | 'EXPORT' | 'IMPORT'>('ALL');
+  const [salesModalSearch, setSalesModalSearch] = useState('');
+
+  const handleOpenSalesModal = (company: 'ALL' | 'YS' | 'YSACC', period: 'TOTAL' | 'MONTH' = 'TOTAL') => {
+    setSalesModalCompany(company);
+    setSalesModalPeriod(period);
+    setSalesModalType('ALL');
+    setSalesModalSearch('');
+    setSalesModalOpen(true);
+  };
   
   useEffect(() => {
     if (!currentUser) return;
@@ -1606,6 +1638,145 @@ export const Dashboard: React.FC = () => {
     };
   }, [pis, orders, imports]);
 
+  // ── 누적/당월 개별 매출 상세 리스트 데이터 집계 ──
+  const allSalesList = useMemo<CumulativeSalesItem[]>(() => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const list: CumulativeSalesItem[] = [];
+
+    // 1. 수출(Orders) 매출 목록
+    orders.forEach(o => {
+      const etd = (o.etd || '').trim();
+      if (!etd) return;
+
+      const pi = pis.find(p => p.id === o.quotationId);
+      const amount = o.totalAmount || pi?.totalUsd || 0;
+      const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+      const salesKrw = amount * rate;
+      const isYs = o.issuingCompany === 'YS';
+
+      const itemName = o.items && o.items.length > 0
+        ? (o.items.length === 1 ? o.items[0].itemName : `${o.items[0].itemName} 외 ${o.items.length - 1}건`)
+        : (o.itemName || o.custPo || '수출 품목');
+
+      list.push({
+        id: o.id,
+        sourceType: 'EXPORT',
+        companyKey: isYs ? 'YS' : 'YSACC',
+        companyLabel: isYs ? '영성ACC' : '(주)YSACC',
+        date: etd,
+        docNumber: o.ciNumber || o.custPo || o.orderNumber || o.id,
+        customerName: o.customer || o.buyer || '-',
+        itemName: itemName || '-',
+        originalAmountDisplay: o.currency === 'KRW'
+          ? `₩${Math.round(amount).toLocaleString()}`
+          : `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (환율 ₩${rate.toLocaleString()})`,
+        salesKrw,
+        status: o.status || '선적관리',
+        link: `/orders/${o.id}`,
+        isThisMonth: etd.startsWith(thisMonth)
+      });
+    });
+
+    // 2. 수입(Imports) 매출 목록
+    imports.forEach(req => {
+      const dateStr = req.eta || req.requestDate || '';
+      if (!dateStr) return;
+
+      const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+        : 0;
+      const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
+      const isYsacc = req.importCompany === 'YSACC' || req.importCompany === 'YS';
+
+      const itemName = req.itemName || (req.piItems?.[0]?.name ? `${req.piItems[0].name}${req.piItems.length > 1 ? ` 외 ${req.piItems.length - 1}건` : ''}` : '수입 품목');
+
+      list.push({
+        id: req.id,
+        sourceType: 'IMPORT',
+        companyKey: isYsacc ? 'YSACC' : 'YS',
+        companyLabel: isYsacc ? '(주)YSACC' : '영성ACC',
+        date: dateStr,
+        docNumber: req.poNumber || req.id,
+        customerName: req.finalCustomer || req.importerName || req.customerName || '-',
+        itemName: itemName || '-',
+        originalAmountDisplay: actualSales > 0
+          ? `세금계산서 ₩${Math.round(actualSales).toLocaleString()}`
+          : req.customerQuoteAmount
+            ? `고객견적 ₩${Math.round(Number(req.customerQuoteAmount)).toLocaleString()}`
+            : `의뢰금액 ₩${Math.round(Number(req.amount) || 0).toLocaleString()}`,
+        salesKrw,
+        status: req.customerDecision || req.stage || '수입완료',
+        link: `/imports/${req.id}`,
+        isThisMonth: dateStr.startsWith(thisMonth)
+      });
+    });
+
+    // 기본 정렬: 일자 최신순
+    return list.sort((a, b) => b.date.localeCompare(a.date));
+  }, [orders, imports, pis]);
+
+  // 필터링된 매출 리스트
+  const filteredSalesList = useMemo(() => {
+    return allSalesList.filter(item => {
+      if (salesModalCompany !== 'ALL' && item.companyKey !== salesModalCompany) {
+        return false;
+      }
+      if (salesModalPeriod === 'MONTH' && !item.isThisMonth) {
+        return false;
+      }
+      if (salesModalType !== 'ALL' && item.sourceType !== salesModalType) {
+        return false;
+      }
+      if (salesModalSearch.trim()) {
+        const q = salesModalSearch.trim().toLowerCase();
+        const matchCust = item.customerName.toLowerCase().includes(q);
+        const matchItem = item.itemName.toLowerCase().includes(q);
+        const matchDoc = item.docNumber.toLowerCase().includes(q);
+        const matchStatus = item.status.toLowerCase().includes(q);
+        if (!matchCust && !matchItem && !matchDoc && !matchStatus) return false;
+      }
+      return true;
+    });
+  }, [allSalesList, salesModalCompany, salesModalPeriod, salesModalType, salesModalSearch]);
+
+  // 매출 합계 요약
+  const salesSummary = useMemo(() => {
+    const totalCount = filteredSalesList.length;
+    const totalAmount = filteredSalesList.reduce((sum, item) => sum + item.salesKrw, 0);
+    const exportCount = filteredSalesList.filter(i => i.sourceType === 'EXPORT').length;
+    const exportAmount = filteredSalesList.filter(i => i.sourceType === 'EXPORT').reduce((sum, item) => sum + item.salesKrw, 0);
+    const importCount = filteredSalesList.filter(i => i.sourceType === 'IMPORT').length;
+    const importAmount = filteredSalesList.filter(i => i.sourceType === 'IMPORT').reduce((sum, item) => sum + item.salesKrw, 0);
+
+    return { totalCount, totalAmount, exportCount, exportAmount, importCount, importAmount };
+  }, [filteredSalesList]);
+
+  // 엑셀 다운로드 핸들러
+  const handleExportSalesExcel = () => {
+    const exportRows = filteredSalesList.map((item, idx) => ({
+      'No': idx + 1,
+      '구분': item.sourceType === 'EXPORT' ? '수출' : '수입',
+      '소속업체': item.companyLabel,
+      '기준일자(ETD/ETA)': item.date,
+      '문서/관리번호': item.docNumber,
+      '거래처/고객사': item.customerName,
+      '품목명': item.itemName,
+      '외화/기준금액': item.originalAmountDisplay,
+      '원화매출금액(KRW)': Math.round(item.salesKrw),
+      '진행상태': item.status
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportRows);
+    const wb = XLSX.utils.book_new();
+    const compName = salesModalCompany === 'YS' ? '영성ACC' : salesModalCompany === 'YSACC' ? 'YSACC' : '전체업체';
+    const periodName = salesModalPeriod === 'MONTH' ? '당월매출' : '전체누적매출';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `${compName}_${periodName}_상세리스트_${dateStr}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, '매출내역');
+    XLSX.writeFile(wb, filename);
+  };
+
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
@@ -1963,9 +2134,51 @@ export const Dashboard: React.FC = () => {
                   당월 매출 (원화 합산)
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
+                  <div
+                    onClick={() => handleOpenSalesModal('YS', 'MONTH')}
+                    title="영성ACC 당월 매출 리스트 조회 (클릭)"
+                    style={{
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      transition: 'background 0.15s ease',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#ffedd5'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
+                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span>
+                    <span style={{ fontSize: '10.5px', color: '#ea580c', background: '#fff', border: '1px solid #fed7aa', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                  </div>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
+                  <div
+                    onClick={() => handleOpenSalesModal('YSACC', 'MONTH')}
+                    title="(주)YSACC 당월 매출 리스트 조회 (클릭)"
+                    style={{
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      transition: 'background 0.15s ease',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#ffedd5'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
+                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span>
+                    <span style={{ fontSize: '10.5px', color: '#ea580c', background: '#fff', border: '1px solid #fed7aa', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                  </div>
                 </div>
               </div>
 
@@ -1976,9 +2189,51 @@ export const Dashboard: React.FC = () => {
                   전체 누적 매출금액
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
+                  <div
+                    onClick={() => handleOpenSalesModal('YS', 'TOTAL')}
+                    title="영성ACC 전체 누적 매출 리스트 조회 (클릭)"
+                    style={{
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      transition: 'background 0.15s ease',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
+                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span>
+                    <span style={{ fontSize: '10.5px', color: '#dc2626', background: '#fff', border: '1px solid #fecaca', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                  </div>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
+                  <div
+                    onClick={() => handleOpenSalesModal('YSACC', 'TOTAL')}
+                    title="(주)YSACC 전체 누적 매출 리스트 조회 (클릭)"
+                    style={{
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      transition: 'background 0.15s ease',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
+                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span>
+                    <span style={{ fontSize: '10.5px', color: '#dc2626', background: '#fff', border: '1px solid #fecaca', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                  </div>
                 </div>
               </div>
 
@@ -3462,6 +3717,492 @@ export const Dashboard: React.FC = () => {
           }}
           onCancel={() => setCompletingTask(null)}
         />
+      )}
+
+      {/* ── 전체 누적 / 당월 매출 상세 리스트 모달 ── */}
+      {salesModalOpen && (
+        <div
+          onClick={() => setSalesModalOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              boxShadow: '0 20px 40px rgba(15,23,42,0.2)',
+              width: '100%',
+              maxWidth: '1180px',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '12px 20px',
+                background: '#fafafa',
+                borderBottom: '1px solid #cbd5e1',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>💰</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
+                    매출 상세 리스트
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: salesModalPeriod === 'TOTAL' ? '#fee2e2' : '#ffedd5',
+                      color: salesModalPeriod === 'TOTAL' ? '#dc2626' : '#ea580c',
+                      fontWeight: 800,
+                      border: salesModalPeriod === 'TOTAL' ? '1px solid #fecaca' : '1px solid #fed7aa'
+                    }}
+                  >
+                    {salesModalPeriod === 'TOTAL' ? '전체 누적 매출' : '당월 매출'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: salesModalCompany === 'ALL' ? '#f1f5f9' : '#eff6ff',
+                      color: salesModalCompany === 'ALL' ? '#475569' : '#1d4ed8',
+                      fontWeight: 800,
+                      border: salesModalCompany === 'ALL' ? '1px solid #cbd5e1' : '1px solid #bfdbfe'
+                    }}
+                  >
+                    {salesModalCompany === 'YS' ? '영성ACC' : salesModalCompany === 'YSACC' ? '(주)YSACC' : '전체 업체'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSalesModalOpen(false)}
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  height: '34px',
+                  padding: '0 14px',
+                  cursor: 'pointer',
+                  color: '#475569',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'background 0.1s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; }}
+              >
+                닫기 ✕
+              </button>
+            </div>
+
+            {/* Filter Bar */}
+            <div style={{ padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                {/* 업체 선택 탭 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginRight: '4px' }}>
+                    소속업체:
+                  </span>
+                  {[
+                    { key: 'ALL', label: '전체', count: allSalesList.filter(i => salesModalPeriod === 'TOTAL' || i.isThisMonth).length },
+                    { key: 'YS', label: '영성ACC', count: allSalesList.filter(i => i.companyKey === 'YS' && (salesModalPeriod === 'TOTAL' || i.isThisMonth)).length },
+                    { key: 'YSACC', label: '(주)YSACC', count: allSalesList.filter(i => i.companyKey === 'YSACC' && (salesModalPeriod === 'TOTAL' || i.isThisMonth)).length }
+                  ].map(tab => {
+                    const active = salesModalCompany === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setSalesModalCompany(tab.key as any)}
+                        style={{
+                          height: '34px',
+                          padding: '0 12px',
+                          borderRadius: '4px',
+                          border: active ? '1px solid #3b82f6' : '1px solid #cbd5e1',
+                          background: active ? '#3b82f6' : '#fff',
+                          color: active ? '#fff' : '#1e293b',
+                          fontWeight: active ? 800 : 600,
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.1s'
+                        }}
+                      >
+                        <span>{tab.label}</span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            background: active ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+                            color: active ? '#fff' : '#64748b',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            fontWeight: 700
+                          }}
+                        >
+                          {tab.count}건
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 기간 전환 & 엑셀 다운로드 버튼 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'inline-flex', background: '#e2e8f0', borderRadius: '4px', padding: '2px', border: '1px solid #cbd5e1' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSalesModalPeriod('TOTAL')}
+                      style={{
+                        height: '30px',
+                        padding: '0 12px',
+                        border: 'none',
+                        borderRadius: '3px',
+                        background: salesModalPeriod === 'TOTAL' ? '#fff' : 'transparent',
+                        color: salesModalPeriod === 'TOTAL' ? '#dc2626' : '#64748b',
+                        fontWeight: salesModalPeriod === 'TOTAL' ? 800 : 600,
+                        fontSize: '12.5px',
+                        cursor: 'pointer',
+                        boxShadow: salesModalPeriod === 'TOTAL' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                    >
+                      전체 누적 매출
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSalesModalPeriod('MONTH')}
+                      style={{
+                        height: '30px',
+                        padding: '0 12px',
+                        border: 'none',
+                        borderRadius: '3px',
+                        background: salesModalPeriod === 'MONTH' ? '#fff' : 'transparent',
+                        color: salesModalPeriod === 'MONTH' ? '#ea580c' : '#64748b',
+                        fontWeight: salesModalPeriod === 'MONTH' ? 800 : 600,
+                        fontSize: '12.5px',
+                        cursor: 'pointer',
+                        boxShadow: salesModalPeriod === 'MONTH' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                    >
+                      당월 매출
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleExportSalesExcel}
+                    style={{
+                      background: '#10b981',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      height: '34px',
+                      padding: '0 14px',
+                      fontWeight: 750,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'background 0.1s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#059669'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#10b981'; }}
+                  >
+                    <span>📥 엑셀 다운로드</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub filters: Type pills & Search input */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginRight: '4px' }}>
+                    구분:
+                  </span>
+                  {[
+                    { key: 'ALL', label: '전체' },
+                    { key: 'EXPORT', label: '수출 🚢' },
+                    { key: 'IMPORT', label: '수입 🛬' }
+                  ].map(t => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setSalesModalType(t.key as any)}
+                      style={{
+                        height: '28px',
+                        padding: '0 10px',
+                        borderRadius: '4px',
+                        border: salesModalType === t.key ? '1px solid #3b82f6' : '1px solid #cbd5e1',
+                        background: salesModalType === t.key ? '#eff6ff' : '#fff',
+                        color: salesModalType === t.key ? '#1d4ed8' : '#475569',
+                        fontWeight: salesModalType === t.key ? 800 : 600,
+                        fontSize: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '380px' }}>
+                  <input
+                    type="text"
+                    value={salesModalSearch}
+                    onChange={e => setSalesModalSearch(e.target.value)}
+                    placeholder="고객사/바이어, 관리번호, 품목명 검색..."
+                    style={{
+                      height: '34px',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#1e293b',
+                      padding: '0 10px',
+                      width: '100%',
+                      outline: 'none',
+                      background: '#fff'
+                    }}
+                  />
+                  {salesModalSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setSalesModalSearch('')}
+                      style={{
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        height: '34px',
+                        padding: '0 8px',
+                        fontSize: '11.5px',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      초기화
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Stat Bar */}
+            <div
+              style={{
+                padding: '8px 20px',
+                background: '#f1f5f9',
+                borderBottom: '1px solid #cbd5e1',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '13px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#475569' }}>
+                <span>조회 결과: <strong style={{ color: '#1e293b', fontSize: '14px' }}>{salesSummary.totalCount}</strong>건</span>
+                <span style={{ color: '#cbd5e1' }}>|</span>
+                <span>수출: <strong style={{ color: '#2563eb' }}>{salesSummary.exportCount}</strong>건</span>
+                <span style={{ color: '#cbd5e1' }}>|</span>
+                <span>수입: <strong style={{ color: '#059669' }}>{salesSummary.importCount}</strong>건</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 700, color: '#475569', fontSize: '13px' }}>원화 환산 매출 합계:</span>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#dc2626', letterSpacing: '-0.02em' }}>
+                  ₩{Math.round(salesSummary.totalAmount).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', maxHeight: '55vh' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                  <tr>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '45px' }}>No</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '70px' }}>구분</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '85px' }}>업체</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '95px' }}>일자(ETD/ETA)</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', width: '140px' }}>관리/문서번호</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', width: '170px' }}>거래처 / 고객사</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px' }}>품목명</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'right', width: '145px' }}>외화 / 기준금액</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'right', width: '135px' }}>원화 매출액</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '75px' }}>상태</th>
+                    <th style={{ fontSize: '12.5px', fontWeight: 750, color: '#475569', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', padding: '9px 8px', textAlign: 'center', width: '65px' }}>상세</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSalesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '13px' }}>
+                        조회 조건에 일치하는 매출 데이터가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSalesList.map((item, idx) => (
+                      <tr
+                        key={`${item.sourceType}-${item.id}-${idx}`}
+                        style={{
+                          borderBottom: '1px solid #e2e8f0',
+                          transition: 'background 0.1s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+                      >
+                        <td style={{ padding: '8px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 750,
+                              background: item.sourceType === 'EXPORT' ? '#eff6ff' : '#ecfdf5',
+                              color: item.sourceType === 'EXPORT' ? '#1d4ed8' : '#047857',
+                              border: item.sourceType === 'EXPORT' ? '1px solid #bfdbfe' : '1px solid #a7f3d0'
+                            }}
+                          >
+                            {item.sourceType === 'EXPORT' ? '수출 🚢' : '수입 🛬'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              color: item.companyKey === 'YS' ? '#b91c1c' : '#1e40af'
+                            }}
+                          >
+                            {item.companyLabel}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center', color: '#334155', fontWeight: 600, fontSize: '12px' }}>
+                          {item.date}
+                        </td>
+                        <td style={{ padding: '8px', fontWeight: 700, color: '#0f172a', fontSize: '12.5px' }}>
+                          <span
+                            onClick={() => window.open(item.link, '_blank')}
+                            title="상세 보기 (새 창)"
+                            style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px', color: '#2563eb' }}
+                          >
+                            {item.docNumber}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', fontWeight: 600, color: '#334155', maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.customerName}>
+                          {item.customerName}
+                        </td>
+                        <td style={{ padding: '8px', color: '#475569', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.itemName}>
+                          {item.itemName}
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'right', color: '#64748b', fontSize: '11.5px' }}>
+                          {item.originalAmountDisplay}
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800, color: '#dc2626', fontSize: '13px' }}>
+                          ₩{Math.round(item.salesKrw).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              padding: '2px 5px',
+                              borderRadius: '3px',
+                              background: '#f1f5f9',
+                              color: '#475569',
+                              fontWeight: 600,
+                              border: '1px solid #e2e8f0'
+                            }}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => window.open(item.link, '_blank')}
+                            style={{
+                              background: '#f8fafc',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '3px',
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: '#3b82f6',
+                              cursor: 'pointer'
+                            }}
+                            title="새 창에서 상세 열기"
+                          >
+                            보기 ↗
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: '10px 20px',
+                background: '#fafafa',
+                borderTop: '1px solid #cbd5e1',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                💡 관리번호 또는 [보기 ↗]를 클릭하면 해당 주문(Order) 및 수입(Import)의 세부 페이지가 새 창으로 열립니다.
+              </div>
+              <button
+                type="button"
+                onClick={() => setSalesModalOpen(false)}
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  height: '34px',
+                  padding: '0 20px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

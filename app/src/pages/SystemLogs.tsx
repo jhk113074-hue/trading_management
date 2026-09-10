@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.518',
+    version: 'v2.8.518',
+    date: '2026-09-10',
+    category: '신규기능',
+    title: '통합 대시보드 전체 누적/당월 매출 업체별(영성ACC, YSACC) 상세 매출 리스트 조회 및 엑셀 다운로드',
+    content: '• 대시보드 [무역 실시간 매출 및 PI 현황]의 전체 누적 매출금액 및 당월 매출 카드에서 각 소속업체(영성ACC, (주)YSACC) 클릭 시 상세 매출 내역 팝업 모달 제공\n• 해당 업체의 누적 및 당월 매출을 구성하는 수출 주문(Orders, ETD 기준) 및 수입 의뢰(Imports, ETA/세금계산서 기준) 상세 내역을 건수와 원화 환산 매출액 오차 없이 정확히 연동 표시\n• 모달 내에서 [전체 / 영성ACC / (주)YSACC] 업체 탭 및 [전체 누적 / 당월 매출] 기간 탭, [전체 / 수출 / 수입] 구분 필터, 고객사/문서번호/품목명 실시간 검색 지원\n• 필터링된 전체 리스트를 즉시 표준 스프레드시트로 내려받을 수 있는 [📥 엑셀 다운로드] 기능 탑재\n• 각 매출 행의 관리번호(CI/PO) 및 [보기 ↗] 버튼 클릭 시 해당 상세 페이지를 새 창으로 바로 연결 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.517',
     version: 'v2.8.517',
     date: '2026-09-09',

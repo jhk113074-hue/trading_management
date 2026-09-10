@@ -13,7 +13,7 @@ if %errorlevel% neq 0 (
 cd ..
 
 echo [2/3] Deploying to Firebase Hosting...
-call npx firebase deploy --only hosting
+call firebase deploy --only hosting --non-interactive
 if %errorlevel% neq 0 (
     echo [ERROR] Firebase deployment failed!
     exit /b %errorlevel%
