@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot, writeBatch } from 'firebase/firestore';
@@ -92,6 +92,153 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   }, []);
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const isPiNumberManuallyEditedRef = useRef(false);
+
+  // Helper to suggest / generate PI Number based on customer's latest quotation
+  const generateCustomerPiNumber = useCallback(async (
+    targetCustomerId?: string,
+    targetIssuingCompany?: string,
+    targetPiDate?: string,
+    currentCustList: Customer[] = customers
+  ) => {
+    try {
+      if (!targetCustomerId) return null;
+      const cust = currentCustList.find(c => c.id === targetCustomerId) || customers.find(c => c.id === targetCustomerId);
+      if (!cust) return null;
+
+      const yy = targetPiDate ? targetPiDate.substring(0, 4) : new Date().getFullYear().toString();
+      const prefix = targetIssuingCompany === 'YS' ? 'YS' : 'YSACC';
+
+      // 1. Fetch existing PIs and Orders
+      const [piSnap, orderSnap] = await Promise.all([
+        getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices")),
+        getDocs(collection(doc(db, "companies", COMPANY_ID), "orders")).catch(() => ({ docs: [] } as any))
+      ]);
+
+      const allDocs = [...piSnap.docs, ...orderSnap.docs];
+
+      // 2. Identify all PI numbers belonging to this customer
+      const custId = cust.id?.trim();
+      const custCode = cust.customerCode?.trim().toUpperCase();
+      const custName = cust.name?.trim().toLowerCase();
+      const custNameKo = cust.nameKo?.trim().toLowerCase();
+
+      // Collect all candidate PI numbers
+      const customerPiNumbers: string[] = [];
+      const allExistingPiNumbers: string[] = [];
+
+      allDocs.forEach(d => {
+        const data = d.data();
+        const piNum = (data.piNumber || data.quotationNumber || '').trim();
+        if (piNum) {
+          allExistingPiNumbers.push(piNum);
+        }
+        if (data.orderNumber && typeof data.orderNumber === 'string' && data.orderNumber.startsWith('PI-')) {
+          allExistingPiNumbers.push(data.orderNumber.trim());
+        }
+
+        // Check if doc belongs to this customer
+        let belongsToCust = false;
+        if (data.customerId && (data.customerId === custId || (custCode && data.customerId === custCode))) {
+          belongsToCust = true;
+        } else if (custName && (data.customerName?.trim().toLowerCase() === custName || data.buyerName?.trim().toLowerCase() === custName || data.customer?.trim().toLowerCase() === custName)) {
+          belongsToCust = true;
+        } else if (custNameKo && (data.customerName?.trim().toLowerCase() === custNameKo || data.buyerName?.trim().toLowerCase() === custNameKo || data.customer?.trim().toLowerCase() === custNameKo)) {
+          belongsToCust = true;
+        }
+
+        if (belongsToCust && piNum) {
+          customerPiNumbers.push(piNum);
+        }
+      });
+
+      // 3. Determine Customer Abbreviation (abbr)
+      // Priority:
+      // a) Prior abbreviation used in this customer's existing PI numbers (e.g. 'PI-YS-2026-AB-01' -> 'AB')
+      // b) cust.customerCode (e.g. 'AB', 'UNG', 'CIE')
+      // c) cust.id if clean 2-6 alphanumeric chars
+      // d) Cleaned cust.nameKo if alphanumeric (2-6 chars), or first 2-4 chars of cust.name
+      let abbr = '';
+      for (const num of customerPiNumbers) {
+        const m = num.match(/^PI-(?:YS|YSACC)-\d{2,4}-([A-Za-z0-9_-]+)-\d+/i);
+        if (m && m[1] && m[1].toUpperCase() !== 'TBD') {
+          abbr = m[1].toUpperCase();
+          break;
+        }
+      }
+
+      if (!abbr && custCode && custCode !== 'TBD') {
+        abbr = custCode;
+      }
+      if (!abbr && cust.id && /^[A-Za-z0-9]{2,6}$/.test(cust.id.trim())) {
+        abbr = cust.id.trim().toUpperCase();
+      }
+      if (!abbr && cust.nameKo) {
+        const cleanKo = cust.nameKo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (cleanKo.length >= 2 && cleanKo.length <= 6) {
+          abbr = cleanKo;
+        }
+      }
+      if (!abbr && cust.name) {
+        const cleanEn = cust.name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (cleanEn) {
+          abbr = cleanEn.substring(0, Math.min(3, cleanEn.length));
+        }
+      }
+      if (!abbr) abbr = 'TBD';
+
+      // Also match any existing PIs in all docs that contain -${abbr}- in the PI number
+      if (abbr && abbr !== 'TBD') {
+        allExistingPiNumbers.forEach(num => {
+          const regex = new RegExp(`^PI-(?:YS|YSACC)-\\d{2,4}-${abbr}-\\d+`, 'i');
+          if (regex.test(num) && !customerPiNumbers.includes(num)) {
+            customerPiNumbers.push(num);
+          }
+        });
+      }
+
+      // 4. Extract sequence numbers from customer's existing PIs
+      const customerYearSeqs: number[] = [];
+      const customerAllSeqs: number[] = [];
+
+      customerPiNumbers.forEach(num => {
+        const clean = num.replace(/(?:[-_]?R\d+|\s*R\d+)$/i, '').trim();
+        const seqMatch = clean.match(/[-_](\d+)$/);
+        if (seqMatch) {
+          const seq = parseInt(seqMatch[1], 10);
+          if (!isNaN(seq)) {
+            customerAllSeqs.push(seq);
+            if (clean.includes(yy) || clean.includes(yy.slice(-2))) {
+              customerYearSeqs.push(seq);
+            }
+          }
+        }
+      });
+
+      // Find highest sequence number for this customer (prioritizing current year)
+      let maxSeq = 0;
+      if (customerYearSeqs.length > 0) {
+        maxSeq = Math.max(...customerYearSeqs);
+      } else if (customerAllSeqs.length > 0) {
+        maxSeq = Math.max(...customerAllSeqs);
+      }
+
+      let nextNum = maxSeq > 0 ? maxSeq + 1 : 1;
+
+      // Ensure global candidate uniqueness against all existing PIs in database
+      const existingAllSet = new Set(allExistingPiNumbers.map(n => n.toUpperCase().trim()));
+      let candidate = `PI-${prefix}-${yy}-${abbr}-${nextNum.toString().padStart(2, '0')}`;
+      while (existingAllSet.has(candidate.toUpperCase())) {
+        nextNum++;
+        candidate = `PI-${prefix}-${yy}-${abbr}-${nextNum.toString().padStart(2, '0')}`;
+      }
+
+      return candidate;
+    } catch (err) {
+      console.error("Error generating customer PI number:", err);
+      return null;
+    }
+  }, [customers]);
 
   // 행별 패킹 상세 펼침 토글 — idx를 key로 사용
   const [expandedPackingRows, setExpandedPackingRows] = useState<Set<number>>(new Set());
@@ -785,42 +932,28 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   useEffect(() => {
     if (initialPI) return;
     if (!formData.customerId || !formData.issuingCompany) return;
+    if (isPiNumberManuallyEditedRef.current) return;
 
-    const suggestPiNumber = async () => {
-      try {
-        const yy = formData.piDate ? formData.piDate.substring(0, 4) : new Date().getFullYear().toString();
-        const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
-        const cust = customers.find(c => c.id === formData.customerId);
-        // Using nameKo as Abbreviation, fallback to first 3 letters of name if empty
-        let abbr = cust?.nameKo ? cust.nameKo.trim().replace(/\s+/g, '') : '';
-        if (!abbr && cust?.name) {
-          abbr = cust.name.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
-        }
-        if (!abbr) abbr = 'TBD';
-
-        const basePrefix = `PI-${prefix}-${yy}-${abbr}-`;
-
-        // If the current piNumber already starts with the correct basePrefix, do not overwrite (preserves manual sequence edits)
-        if (formData.piNumber?.startsWith(basePrefix)) {
-          return;
-        }
-
-        // Find latest number for this specific prefix
-        const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
-        const existingNums = snap.docs
-          .map(d => d.data().piNumber)
-          .filter(n => n && n.startsWith(basePrefix))
-          .map(n => parseInt(n.replace(basePrefix, ''), 10))
-          .filter(n => !isNaN(n));
-
-        const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
-        setFormData(prev => ({ ...prev, piNumber: `${basePrefix}${nextNum.toString().padStart(2, '0')}` }));
-      } catch (err) {
-        console.error("Error auto-suggesting PI number:", err);
+    let isMounted = true;
+    const updatePiNum = async () => {
+      const nextPiNum = await generateCustomerPiNumber(formData.customerId, formData.issuingCompany, formData.piDate, customers);
+      if (nextPiNum && isMounted) {
+        setFormData(prev => {
+          if (isPiNumberManuallyEditedRef.current) return prev;
+          const current = (prev.piNumber || '').trim();
+          // If current is empty, temp TBD, or doesn't match the new candidate prefix:
+          const targetPrefix = nextPiNum.replace(/\d+$/, '');
+          if (!current || current.includes('TBD') || !current.startsWith(targetPrefix)) {
+            return { ...prev, piNumber: nextPiNum };
+          }
+          return prev;
+        });
       }
     };
-    suggestPiNumber();
-  }, [initialPI, formData.customerId, formData.issuingCompany, formData.piDate, customers]);
+
+    updatePiNum();
+    return () => { isMounted = false; };
+  }, [initialPI, formData.customerId, formData.issuingCompany, formData.piDate, customers, generateCustomerPiNumber]);
 
 
 
@@ -944,6 +1077,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
 
       if (matchedCustomer) {
+        isPiNumberManuallyEditedRef.current = false;
+        const nextPiNum = await generateCustomerPiNumber(matchedCustomer.id, formData.issuingCompany, formData.piDate, customers);
         setFormData(prev => ({
           ...prev,
           customerId: matchedCustomer!.id,
@@ -952,7 +1087,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           contactPerson: matchedCustomer!.representative || '',
           email: matchedCustomer!.email || '',
           paymentTerms: aiPrompt.includes("LC") || aiPrompt.includes("신용장") ? "Usance LC 30days" : "100% T/T in advance",
-          incoterms: aiPrompt.includes("CIF") ? "CIF" : (aiPrompt.includes("DDP") ? "DDP" : "FOB")
+          incoterms: aiPrompt.includes("CIF") ? "CIF" : (aiPrompt.includes("DDP") ? "DDP" : "FOB"),
+          piNumber: nextPiNum || prev.piNumber
         }));
       }
 
@@ -2822,7 +2958,63 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
-              <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    PI Number <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {!initialPI && formData.customerId && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        isPiNumberManuallyEditedRef.current = false;
+                        const nextPiNum = await generateCustomerPiNumber(formData.customerId, formData.issuingCompany, formData.piDate, customers);
+                        if (nextPiNum) {
+                          setFormData(prev => ({ ...prev, piNumber: nextPiNum }));
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#3b82f6',
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: '0 2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                        lineHeight: 1
+                      }}
+                      title="해당 고객의 최근 견적 기반 번호 다시 계산"
+                    >
+                      <span>🔄</span> 번호 재계산
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={formData.piNumber || ''}
+                  onChange={e => {
+                    isPiNumberManuallyEditedRef.current = true;
+                    setFormData(prev => ({ ...prev, piNumber: e.target.value }));
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13.5px',
+                    color: '#1e293b',
+                    background: '#fff',
+                    height: '34px',
+                    boxSizing: 'border-box',
+                    width: '100%',
+                    outline: 'none',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                />
+              </div>
               <CompactInput label="Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
               <CompactInput label="Validity(d)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
               <CompactInput label="Valid Until" value={formData.validUntilDate} disabled />
@@ -2850,7 +3042,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     }}
                   />
                   {formData.customerId && (
-                    <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
+                    <button type="button" onClick={() => {
+                      isPiNumberManuallyEditedRef.current = false;
+                      const yy = formData.piDate ? formData.piDate.substring(0, 4) : new Date().getFullYear().toString();
+                      const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+                      setFormData(prev => ({
+                        ...prev,
+                        customerId: '',
+                        customerName: '',
+                        customerAddress: '',
+                        contactPerson: '',
+                        email: '',
+                        piNumber: `PI-${prefix}-${yy}-TBD`
+                      }));
+                    }}
                       style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
                       title="비우기">✕</button>
                   )}
@@ -3943,7 +4148,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           customers={customers}
           initialSearchQuery={formData.customerName || ''}
           onClose={() => setIsCustomerSearchOpen(false)}
-          onSelect={(c) => {
+          onSelect={async (c) => {
+            isPiNumberManuallyEditedRef.current = false;
             setFormData(prev => ({
               ...prev,
               customerId: c.id,
@@ -3956,6 +4162,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               paymentTerms: c.paymentTerms || prev.paymentTerms
             }));
             setIsCustomerSearchOpen(false);
+
+            if (!initialPI) {
+              const nextPiNum = await generateCustomerPiNumber(c.id, formData.issuingCompany, formData.piDate, customers);
+              if (nextPiNum) {
+                setFormData(prev => ({ ...prev, piNumber: nextPiNum }));
+              }
+            }
           }}
         />
       )}

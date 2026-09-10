@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.534',
+    version: 'v2.8.534',
+    date: '2026-09-10',
+    category: '기능개선',
+    title: '견적서(PI) 신규 작성 시 선택된 고객의 최근 견적 이력 기반 PI Number 자동 채번 및 넘버링 연속성 완벽 보장',
+    content: '• 견적서 작성(PIFormModal) 시 고객(Customer)을 선택하면 해당 고객의 과거 견적(PI) 및 주문(PO) 내역을 실시간으로 조회하여 직전 견적 번호의 일련번호를 기준으로 다음 순번(예: 01 → 02)이 자동 채번되도록 개선\n• 고객 약어(Abbreviation) 판별 시 과거 발행된 PI 번호 패턴, 고객 코드(customerCode), 고객 ID 및 영문 상호를 정밀 분석하여 `PI-YS-2026-AB-02` 등 회사 표준 규격에 부합하는 일련번호를 정확하게 생성\n• 발행사(YS / YSACC) 변경 시에도 고객의 최근 견적 순번을 온전히 유지하며 접두어와 일련번호를 자연스럽게 연동\n• PI Number 입력란 우측 상단에 [🔄 번호 재계산] 버튼을 신설하여 필요 시 언제든 해당 고객의 최신 견적 순번으로 원클릭 동기화 지원\n• 사용자가 수동으로 번호를 직접 입력하거나 수정한 경우 자동 덮어쓰기를 방지하여 유연한 편집 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.533',
     version: 'v2.8.533',
     date: '2026-09-10',
