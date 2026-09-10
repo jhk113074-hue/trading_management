@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.537',
+    version: 'v2.8.537',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '견적서 번호 변경/수정 시 중복 행 생성 원천 차단 및 지능형 중복 제거(Deduplication) 엔진 탑재',
+    content: '• 기존 견적서의 번호 변경(예: `PI-MNT-2026-05` → `PI-YSACC-2026-MNT-06`) 시 이전 번호와 신규 번호의 견적서가 목록에 동시에 노출되던 문제를 근본적으로 차단\n• 견적서 목록(allPis) 지능형 중복 제거 엔진 탑재: Firestore 실존 문서 간 번호 충돌(정규화 포함) 및 동일 고객·동일 일자·동일 총금액 거래는 최신 버전(CurrentVersion 높은 리비전) 단일 행으로 자동 통합\n• 신규 작성 및 수정 시 동일 번호의 고아 문서 발생 방지: 저장 시 동일 PI 번호의 기존 문서가 존재할 경우 새 임의 문서를 중복 생성하지 않고 해당 문서를 직접 업데이트하거나 안전하게 통합\n• 견적서 모달 URL 딥링크 키를 PI 번호 대신 Firestore 불변 고유 ID(docId)로 표준화하여 번호 변경 시에도 문서 식별 혼선 완전 배제\n• 모달 세션 간 PI 데이터 오염 방지: 다른 견적서 오픈 시 이전 데이터가 유지되지 않도록 loadedPiIdRef 기반 리셋 보장\n• NATIONAL FACTORY 사 견적서 데이터베이스 복구 완료: `PI-YSACC-2026-MNT-06`($226,040, R3) 및 `PI-YSACC-2026-MNT-01`($2,520) 정상화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.536',
     version: 'v2.8.536',
     date: '2026-09-10',

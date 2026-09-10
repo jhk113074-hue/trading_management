@@ -602,6 +602,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
 
   const isLoadedRef = useRef(false);
+  const loadedPiIdRef = useRef<string | null>(null);
   const baselineStateRef = useRef<{ formData: any, items: any } | null>(null);
 
   // Helper to deep clone state for dirty checking
@@ -688,8 +689,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     });
 
     if (initialPI) {
-      // If we have already loaded the data for this modal session, do not re-load on subsequent prop updates
-      if (isLoadedRef.current) {
+      // If we switched to a different PI or already loaded for this PI:
+      if (loadedPiIdRef.current !== initialPI.id) {
+        isLoadedRef.current = false;
+        loadedPiIdRef.current = initialPI.id;
+      } else if (isLoadedRef.current) {
         return () => {
           unsubProducts();
           unsubCustomers();
@@ -2005,11 +2009,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     setSavingType(isRevision ? 'revision' : 'normal');
     try {
       let piId = initialPI?.id;
-      let piNum = formData.piNumber;
+      let piNum = (formData.piNumber || '').trim();
 
       if (!initialPI) {
-        const newDocRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
-        piId = newDocRef.id;
+        // If creating new PI, check if document with this piNum already exists in proforma_invoices
+        if (piNum) {
+          const piSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+          const existingWithNum = piSnap.docs.find(d => (d.data().piNumber || '').trim().toLowerCase() === piNum.toLowerCase());
+          if (existingWithNum) {
+            piId = existingWithNum.id;
+          }
+        }
+        if (!piId) {
+          const newDocRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+          piId = newDocRef.id;
+        }
 
         if (!piNum) {
           const yy = new Date().getFullYear();
@@ -2024,6 +2038,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           
           const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
           piNum = `PI-${prefix}-${yy}-${nextNum.toString().padStart(4, '0')}`;
+        }
+      } else {
+        // If editing an existing PI and user renamed the PI number:
+        if (initialPI.piNumber && piNum && initialPI.piNumber.trim().toLowerCase() !== piNum.toLowerCase()) {
+          try {
+            const piSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+            const conflictDoc = piSnap.docs.find(d => d.id !== piId && (d.data().piNumber || '').trim().toLowerCase() === piNum.toLowerCase());
+            if (conflictDoc) {
+              const conflictData = conflictDoc.data();
+              const sameCust = conflictData.customerId === formData.customerId || conflictData.customerName === formData.customerName;
+              if (sameCust) {
+                // Automatically remove conflicting duplicate doc so only the edited one persists
+                const { deleteDoc } = await import('firebase/firestore');
+                await deleteDoc(conflictDoc.ref).catch(() => {});
+              }
+            }
+          } catch (err) {
+            console.warn("PI rename conflict check warning:", err);
+          }
         }
       }
 

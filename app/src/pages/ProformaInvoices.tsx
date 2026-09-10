@@ -142,9 +142,7 @@ export const ProformaInvoices: React.FC = () => {
     setSelectedPiId(piId || null);
     setIsFormOpen(true);
     if (piId) {
-      const targetPi = allPis.find(p => p.id === piId);
-      const urlId = targetPi?.piNumber || piId;
-      setSearchParams({ id: urlId }, { replace: true });
+      setSearchParams({ id: piId }, { replace: true });
     } else {
       setSearchParams({ id: 'new' }, { replace: true });
     }
@@ -156,7 +154,7 @@ export const ProformaInvoices: React.FC = () => {
     setSearchParams({}, { replace: true });
   };
 
-  // 🔗 URL Query Sync for Proforma Invoice direct linking (?id=PI-YS-26-AB-05 or docId)
+  // 🔗 URL Query Sync for Proforma Invoice direct linking (?id=docId or piNumber)
   useEffect(() => {
     const targetId = searchParams.get('id');
     if (targetId && pis.length > 0 && !isFormOpen) {
@@ -164,14 +162,24 @@ export const ProformaInvoices: React.FC = () => {
         setSelectedPiId(null);
         setIsFormOpen(true);
       } else {
-        const found = pis.find(p => p.id === targetId || p.piNumber === targetId);
+        // Priority 1: Exact match by Firestore document ID
+        let found = pis.find(p => p.id === targetId);
+        // Priority 2: Exact match by PI Number
+        if (!found) {
+          found = pis.find(p => p.piNumber === targetId);
+        }
+        // Priority 3: Normalized PI Number match (e.g. 2-digit vs 4-digit year)
+        if (!found) {
+          const norm = normalizePiNumber(targetId);
+          found = pis.find(p => normalizePiNumber(p.piNumber) === norm);
+        }
         if (found) {
           setSelectedPiId(found.id);
           setIsFormOpen(true);
         }
       }
     }
-  }, [searchParams, pis]);
+  }, [searchParams, pis, isFormOpen]);
 
   // Helper to normalize PI number (e.g. PI-YS-26-AB-05 -> pi-ys-2026-ab-05) for unified matching
   const normalizePiNumber = (num?: string) => {
@@ -185,11 +193,46 @@ export const ProformaInvoices: React.FC = () => {
 
   // Merge PIs from proforma_invoices collection + Orders that have PI numbers
   const allPis = useMemo(() => {
-    const list = [...pis];
-    const existingPiDocIds = new Set(list.map(p => p.id).filter(Boolean));
-    const existingPiNumbers = new Set(list.map(p => (p.piNumber || '').trim().toLowerCase()).filter(Boolean));
-    const normalizedExistingPiNumbers = new Set(list.map(p => normalizePiNumber(p.piNumber)).filter(Boolean));
+    // ── Phase 1: Real Firestore Documents Deduplication ───────────────────
+    // Sort real PIs: highest version first, then latest updated
+    const sortedPis = [...pis].sort((a, b) => {
+      const vDiff = (Number(b.currentVersion) || 1) - (Number(a.currentVersion) || 1);
+      if (vDiff !== 0) return vDiff;
+      const tB = (b.updatedAt as any)?.toMillis ? (b.updatedAt as any).toMillis() : (b.updatedAt ? new Date(b.updatedAt as any).getTime() : 0);
+      const tA = (a.updatedAt as any)?.toMillis ? (a.updatedAt as any).toMillis() : (a.updatedAt ? new Date(a.updatedAt as any).getTime() : 0);
+      return tB - tA;
+    });
 
+    const list: ProformaInvoice[] = [];
+    const seenPiNumbers = new Set<string>();
+    const seenNormPiNumbers = new Set<string>();
+    const seenDealKeys = new Set<string>();
+
+    sortedPis.forEach(p => {
+      const rawNum = (p.piNumber || '').trim().toLowerCase();
+      const normNum = normalizePiNumber(p.piNumber);
+      const custKey = (p.customerId || (p as any).customerName || (p as any).buyerName || '').trim().toLowerCase();
+      const amountKey = Math.round((p.totalUsd || 0) * 100);
+
+      // Check for exact or normalized PI number collision across real Firestore documents
+      if (rawNum && seenPiNumbers.has(rawNum)) return;
+      if (normNum && seenNormPiNumbers.has(normNum)) return;
+
+      // Check for identical deal collision (same customer + same non-zero amount + same date)
+      if (custKey && amountKey > 0 && p.piDate) {
+        const dealKey = `${custKey}___${amountKey}___${p.piDate}`;
+        if (seenDealKeys.has(dealKey)) return;
+        seenDealKeys.add(dealKey);
+      }
+
+      if (rawNum) seenPiNumbers.add(rawNum);
+      if (normNum) seenNormPiNumbers.add(normNum);
+      list.push(p);
+    });
+
+    const existingPiDocIds = new Set(list.map(p => p.id).filter(Boolean));
+
+    // ── Phase 2: Orders Virtual PI Synthesis & Merge ──────────────────────
     orders.forEach((ord: any) => {
       // 1. If this order already links to a real PI document in proforma_invoices, NEVER synthesize a virtual PI!
       if (ord.quotationId && existingPiDocIds.has(ord.quotationId)) {
@@ -216,22 +259,30 @@ export const ProformaInvoices: React.FC = () => {
       const normOrdPiNum = normalizePiNumber(ordPiNum);
 
       // 2. If the PI number already exists in real PIs (exact or normalized 26 vs 2026), skip!
-      const hasMatchingNumber = (
-        existingPiNumbers.has(ordPiNum.toLowerCase()) ||
-        (normOrdPiNum && normalizedExistingPiNumbers.has(normOrdPiNum))
-      );
-
-      if (hasMatchingNumber) {
+      if (seenPiNumbers.has(ordPiNum.toLowerCase()) || (normOrdPiNum && seenNormPiNumbers.has(normOrdPiNum))) {
         return;
       }
 
-      existingPiNumbers.add(ordPiNum.toLowerCase());
-      if (normOrdPiNum) normalizedExistingPiNumbers.add(normOrdPiNum);
-      const items = ord.items || [];
-      const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
-      const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
-
       const customerName = ord.customer || ord.buyerName || ord.customerName || '';
+      const items = ord.items || [];
+      const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
+      const amountKey = Math.round((totalUsd || 0) * 100);
+      const custKey = customerName.trim().toLowerCase();
+
+      // 3. If an order matches an existing real PI by customer and total amount, skip virtual creation!
+      if (custKey && amountKey > 0) {
+        const hasMatchingRealDeal = list.some(p => {
+          const pCust = (p.customerId || (p as any).customerName || (p as any).buyerName || '').trim().toLowerCase();
+          const pAmount = Math.round((p.totalUsd || 0) * 100);
+          return pCust === custKey && pAmount === amountKey;
+        });
+        if (hasMatchingRealDeal) return;
+      }
+
+      seenPiNumbers.add(ordPiNum.toLowerCase());
+      if (normOrdPiNum) seenNormPiNumbers.add(normOrdPiNum);
+      const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
+
       const matchingCust = Object.values(customers).find((c: any) => c.name === customerName || c.id === ord.customerId);
 
       let dateStr = ord.poDate || ord.orderDate || ord.date || '';
