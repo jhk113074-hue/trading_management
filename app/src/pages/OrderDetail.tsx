@@ -52,7 +52,58 @@ const cleanItemDescription = (desc: string | undefined): string => {
     .trim();
 };
 
+const getRawProductCode = (code: string | undefined): string => {
+  if (!code) return '';
+  const val = code.trim();
+  const match = val.match(/^\[+([A-Za-z0-9_.-]+)\]/);
+  if (match) return match[1].trim();
+  if (val.startsWith('[') && val.includes(']')) {
+    return val.substring(1, val.indexOf(']')).replace(/^\[+/, '').trim();
+  }
+  return val;
+};
 
+const formatItemDisplayName = (name: string | undefined, productCode?: string): string => {
+  if (!name) return productCode ? `[${productCode}]` : '-';
+  let s = name.trim();
+  const doubleMatch = s.match(/^\[\[(.*?)\]\s*(.*?)\]\s*(.*)$/);
+  if (doubleMatch) {
+    const code = doubleMatch[1].trim();
+    const desc1 = doubleMatch[2].trim();
+    const desc2 = doubleMatch[3].trim();
+    const desc = desc2 || desc1;
+    return desc ? `[${code}] ${desc}` : `[${code}]`;
+  }
+  return s;
+};
+
+const getEffectiveItemPurchaseCurrency = (item: any): 'KRW' | 'USD' => {
+  if (!item) return 'USD';
+  const pKrw = item.purchasePriceKrw != null ? Number(item.purchasePriceKrw) : 0;
+  const pUsd = item.purchasePriceUsd != null ? Number(item.purchasePriceUsd) : 0;
+  // 1. Explicit purchasePriceKrw > 0 and no purchasePriceUsd -> KRW
+  if (pKrw > 0 && (!pUsd || pUsd === 0)) {
+    return 'KRW';
+  }
+  // 2. Explicit purchasePriceUsd > 0 and no purchasePriceKrw -> USD
+  if (pUsd > 0 && (!pKrw || pKrw === 0)) {
+    return 'USD';
+  }
+  // 3. Explicit currency field
+  if (item.purchasePriceCurrency === 'KRW') return 'KRW';
+  if (item.purchasePriceCurrency === 'USD') return 'USD';
+  if (item.originalPurchaseCurrency === 'KRW') return 'KRW';
+  if (item.originalPurchaseCurrency === 'USD') return 'USD';
+  if (item.purchaseUnitCurrency === 'KRW') return 'KRW';
+  if (item.purchaseUnitCurrency === 'USD') return 'USD';
+
+  // 4. Threshold check: KRW unit prices are almost always >= 500
+  if (pKrw > 0) return 'KRW';
+  if (item.purchaseUnitPrice && Number(item.purchaseUnitPrice) > 500) return 'KRW';
+  if (item.originalPurchasePrice && Number(item.originalPurchasePrice) > 500) return 'KRW';
+
+  return item.currency === 'KRW' ? 'KRW' : 'USD';
+};
 
 const formatFullCiName = (it: any): string => {
   if (!it) return '';
@@ -3171,10 +3222,20 @@ export const OrderDetail: React.FC = () => {
           const sIt = (it.itemId && rawSourcing.find((s: any) => s.itemId && s.itemId === it.itemId)) || rawSourcing[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (sIt?.supplier?.trim() || '');
           const activeContact = (it.supplierContact != null && it.supplierContact.trim() !== '') ? it.supplierContact.trim() : (sIt?.supplierContact?.trim() || '');
+          const pKrw = it.purchasePriceKrw || sIt?.purchasePriceKrw || 0;
+          const pUsd = it.purchasePriceUsd || sIt?.purchasePriceUsd || 0;
+          const effCurrency = (pKrw > 0 && (!pUsd || pUsd === 0))
+            ? 'KRW'
+            : ((pUsd > 0 && (!pKrw || pKrw === 0))
+              ? 'USD'
+              : (it.purchasePriceCurrency || sIt?.purchasePriceCurrency || (pKrw > 0 ? 'KRW' : (pUsd > 0 ? 'USD' : (it.currency === 'KRW' ? 'KRW' : 'USD')))));
           return {
             ...it,
             supplier: activeSupplier,
-            supplierContact: activeContact
+            supplierContact: activeContact,
+            purchasePriceKrw: pKrw,
+            purchasePriceUsd: pUsd,
+            purchasePriceCurrency: effCurrency
           };
         });
 
@@ -3417,17 +3478,24 @@ export const OrderDetail: React.FC = () => {
                     newOi.packingSpecOverride = qi.packingSpecOverride;
                     changed = true;
                   }
-                  if ((newOi.purchasePriceKrw === undefined || newOi.purchasePriceKrw === null || newOi.purchasePriceKrw === 0) && qi.purchasePriceKrw) {
-                    newOi.purchasePriceKrw = qi.purchasePriceKrw;
-                    changed = true;
-                  }
-                  if ((newOi.purchasePriceUsd === undefined || newOi.purchasePriceUsd === null || newOi.purchasePriceUsd === 0) && qi.purchasePriceUsd) {
-                    newOi.purchasePriceUsd = qi.purchasePriceUsd;
-                    changed = true;
-                  }
-                  if (!newOi.purchasePriceCurrency && (qi.purchasePriceCurrency || qi.purchasePriceKrw > 0)) {
-                    newOi.purchasePriceCurrency = qi.purchasePriceCurrency || (qi.purchasePriceKrw > 0 ? 'KRW' : 'USD');
-                    changed = true;
+                  if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                    if (newOi.purchasePriceKrw !== qi.purchasePriceKrw) {
+                      newOi.purchasePriceKrw = qi.purchasePriceKrw;
+                      changed = true;
+                    }
+                    if (newOi.purchasePriceCurrency !== 'KRW') {
+                      newOi.purchasePriceCurrency = 'KRW';
+                      changed = true;
+                    }
+                  } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                    if (newOi.purchasePriceUsd !== qi.purchasePriceUsd) {
+                      newOi.purchasePriceUsd = qi.purchasePriceUsd;
+                      changed = true;
+                    }
+                    if (newOi.purchasePriceCurrency !== 'USD') {
+                      newOi.purchasePriceCurrency = 'USD';
+                      changed = true;
+                    }
                   }
                   const qPrice = (qi.purchasePriceKrw != null && qi.purchasePriceKrw > 0)
                     ? qi.purchasePriceKrw 
@@ -3513,17 +3581,24 @@ export const OrderDetail: React.FC = () => {
                       changedItem.purchaseUnitCurrency = quoteCurr || (quotePrice > 1000 ? 'KRW' : 'USD');
                       hasChanges = true;
                     }
-                    if (qi.purchasePriceKrw && !changedItem.purchasePriceKrw) {
-                      changedItem.purchasePriceKrw = qi.purchasePriceKrw;
-                      hasChanges = true;
-                    }
-                    if (qi.purchasePriceUsd && !changedItem.purchasePriceUsd) {
-                      changedItem.purchasePriceUsd = qi.purchasePriceUsd;
-                      hasChanges = true;
-                    }
-                    if (!changedItem.purchasePriceCurrency && quoteCurr) {
-                      changedItem.purchasePriceCurrency = quoteCurr;
-                      hasChanges = true;
+                    if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                      if (changedItem.purchasePriceKrw !== qi.purchasePriceKrw) {
+                        changedItem.purchasePriceKrw = qi.purchasePriceKrw;
+                        hasChanges = true;
+                      }
+                      if (changedItem.purchasePriceCurrency !== 'KRW') {
+                        changedItem.purchasePriceCurrency = 'KRW';
+                        hasChanges = true;
+                      }
+                    } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                      if (changedItem.purchasePriceUsd !== qi.purchasePriceUsd) {
+                        changedItem.purchasePriceUsd = qi.purchasePriceUsd;
+                        hasChanges = true;
+                      }
+                      if (changedItem.purchasePriceCurrency !== 'USD') {
+                        changedItem.purchasePriceCurrency = 'USD';
+                        hasChanges = true;
+                      }
                     }
                   }
                   return changedItem;
@@ -3923,13 +3998,15 @@ export const OrderDetail: React.FC = () => {
           const matchingSourcing = (it.itemId && curSourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || curSourcingItems[idx];
           const activeSupplier = (it.supplier != null && it.supplier.trim() !== '') ? it.supplier.trim() : (matchingSourcing?.supplier?.trim() || '');
           const rawCode = getRawProductCode(it.productCode || it.name);
-          const buyPrice = it.purchasePriceKrw && it.purchasePriceKrw > 0 ? it.purchasePriceKrw : (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? it.purchasePriceUsd : (it.purchaseUnitPrice || 0));
-          const buyCurr = it.purchasePriceCurrency || (it.purchasePriceKrw && it.purchasePriceKrw > 0 ? 'KRW' : (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? 'USD' : (it.purchaseUnitCurrency || 'USD')));
+          const buyCurr = getEffectiveItemPurchaseCurrency(it);
+          const buyPrice = buyCurr === 'KRW'
+            ? (it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : 0))
+            : (it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : 0));
           return {
             itemId: it.itemId || (idx + 1).toString(),
             lineNumber: it.lineNumber || (idx + 1).toString(),
             productCode: rawCode || it.productCode || '',
-            name: it.name || '',
+            name: formatItemDisplayName(it.name || '', rawCode),
             supplier: activeSupplier,
             supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
             grade: it.grade || it.spec || '',
@@ -3941,8 +4018,8 @@ export const OrderDetail: React.FC = () => {
             purchaseUnitPrice: buyPrice,
             purchaseUnitCurrency: buyCurr as any,
             purchasePriceCurrency: buyCurr,
-            purchasePriceKrw: parseFloat(it.purchasePriceKrw as any) || 0,
-            purchasePriceUsd: parseFloat(it.purchasePriceUsd as any) || 0,
+            purchasePriceKrw: buyCurr === 'KRW' ? buyPrice : (parseFloat(it.purchasePriceKrw as any) || 0),
+            purchasePriceUsd: buyCurr === 'USD' ? buyPrice : (parseFloat(it.purchasePriceUsd as any) || 0),
             exchangeRate: parseFloat(it.exchangeRate as any) || (basicForm.exchangeRate || order?.exchangeRate || 1350),
             marginRate: it.marginRate != null ? (parseFloat(it.marginRate as any) || 0) : 10,
             roundDigits: it.roundDigits !== undefined ? it.roundDigits : 1,
@@ -4083,15 +4160,6 @@ export const OrderDetail: React.FC = () => {
 
   const dataSupplierProdDates = (datesObj: any) => {
     return datesObj || {};
-  };
-
-  const getRawProductCode = (code: string | undefined): string => {
-    if (!code) return '';
-    const val = code.trim();
-    if (val.startsWith('[') && val.includes(']')) {
-      return val.substring(1, val.indexOf(']')).trim();
-    }
-    return val;
   };
 
   const handleItemChange = (index: number, fieldOrUpdates: keyof OrderItem | any, value?: any) => {
@@ -9378,8 +9446,10 @@ ${downloadLink}`;
                         const rowBgColor = isColoredRow ? '#f1f5f9' : '#ffffff';
                         const rawCode = getRawProductCode(item.productCode || item.name || '');
                         const prod = products.find(p => p.productCode === rawCode || p.id === rawCode);
-                        const curCurrency = item.purchasePriceCurrency || (item.purchasePriceUsd && item.purchasePriceUsd > 0 ? 'USD' : (item.currency === 'KRW' ? 'KRW' : 'USD'));
+                        const curCurrency = getEffectiveItemPurchaseCurrency(item);
                         const exRate = item.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
+                        const unitPriceKrw = item.purchasePriceKrw || (item.purchaseUnitPrice && item.purchaseUnitPrice > 500 ? item.purchaseUnitPrice : 0);
+                        const unitPriceUsd = item.purchasePriceUsd || (item.purchaseUnitPrice && item.purchaseUnitPrice <= 500 ? item.purchaseUnitPrice : 0);
 
                         return (
                           <tr 
@@ -9401,7 +9471,7 @@ ${downloadLink}`;
                             <td style={{ padding: '8px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                 <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>
-                                  {item.name || (item.productCode ? `[${item.productCode}]` : '-')}
+                                  {formatItemDisplayName(item.name || (item.productCode ? `[${item.productCode}]` : '-'))}
                                 </span>
                                 {(item.spec || item.grade) && (
                                   <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 6px', borderRadius: '3px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.4 }}>
@@ -9473,7 +9543,7 @@ ${downloadLink}`;
                                 {curCurrency === 'KRW' ? (
                                   <>
                                     <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
-                                      ₩{(item.purchasePriceKrw || 0).toLocaleString()}
+                                      ₩{unitPriceKrw.toLocaleString()}
                                     </span>
                                     <span style={{ fontSize: '10.5px', color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                                       환율: {formatNumberWithCommas(item.exchangeRate || exRate)}원
@@ -9481,7 +9551,7 @@ ${downloadLink}`;
                                   </>
                                 ) : (
                                   <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
-                                    ${(item.purchasePriceUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                                    ${unitPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                                   </span>
                                 )}
                               </div>
@@ -9492,7 +9562,7 @@ ${downloadLink}`;
                               {(() => {
                                 const qty = item.qty || 0;
                                 if (curCurrency === 'KRW') {
-                                  const totalKrw = Math.round((item.purchasePriceKrw || 0) * qty);
+                                  const totalKrw = Math.round(unitPriceKrw * qty);
                                   const totalUsdEq = totalKrw / (item.exchangeRate || exRate || 1400);
                                   return (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
@@ -9505,7 +9575,7 @@ ${downloadLink}`;
                                     </div>
                                   );
                                 } else {
-                                  const totalUsd = (item.purchasePriceUsd || 0) * qty;
+                                  const totalUsd = unitPriceUsd * qty;
                                   return (
                                     <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px', fontVariantNumeric: 'tabular-nums' }}>
                                       ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -9543,9 +9613,9 @@ ${downloadLink}`;
                             <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800, fontSize: '14px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                               ${(() => {
                                 const salePrice = item.salePriceUsd ?? item.unitPrice ?? 0;
-                                const buyUsd = (item.purchasePriceUsd && item.purchasePriceUsd > 0)
-                                  ? item.purchasePriceUsd
-                                  : ((item.purchasePriceKrw || 0) / (item.exchangeRate || exRate || 1400));
+                                const buyUsd = (curCurrency === 'USD')
+                                  ? unitPriceUsd
+                                  : (unitPriceKrw / (item.exchangeRate || exRate || 1400));
                                 const profit = item.qty ? (salePrice - buyUsd) * item.qty : 0;
                                 return profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                               })()}
@@ -9571,27 +9641,31 @@ ${downloadLink}`;
 
                       validItems.forEach(it => {
                         const qty = it.qty || 0;
-                        const curCurr = it.purchasePriceCurrency || (it.purchasePriceUsd && it.purchasePriceUsd > 0 ? 'USD' : (it.currency === 'KRW' ? 'KRW' : 'USD'));
+                        const curCurr = getEffectiveItemPurchaseCurrency(it);
                         const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
+                        const uKrw = it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : 0);
+                        const uUsd = it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : 0);
 
                         if (curCurr === 'KRW') {
-                          const pKrw = (it.purchasePriceKrw || 0) * qty;
+                          const pKrw = uKrw * qty;
                           totalPurchaseKrw += pKrw;
                           totalPurchaseUsdCombined += (pKrw / (exRate || 1400));
                         } else {
-                          const pUsd = (it.purchasePriceUsd || 0) * qty;
+                          const pUsd = uUsd * qty;
                           totalPurchaseUsd += pUsd;
                           totalPurchaseUsdCombined += pUsd;
                         }
                       });
 
                       const totalProfit = validItems.reduce((sum, it) => {
+                        const qty = it.qty || 0;
+                        const curCurr = getEffectiveItemPurchaseCurrency(it);
                         const salePrice = it.salePriceUsd ?? it.unitPrice ?? 0;
                         const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
-                        const buyUsd = (it.purchasePriceUsd && it.purchasePriceUsd > 0)
-                          ? it.purchasePriceUsd
-                          : ((it.purchasePriceKrw || 0) / (it.exchangeRate || exRate || 1400));
-                        const profit = it.qty ? (salePrice - buyUsd) * it.qty : 0;
+                        const uKrw = it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : 0);
+                        const uUsd = it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : 0);
+                        const buyUsd = (curCurr === 'USD') ? uUsd : (uKrw / (exRate || 1400));
+                        const profit = qty ? (salePrice - buyUsd) * qty : 0;
                         return sum + profit;
                       }, 0);
 

@@ -4077,8 +4077,10 @@ const parseCommas = (value: string): number => {
 const getRawProductCode = (code: string | undefined): string => {
   if (!code) return '';
   const val = code.trim();
+  const match = val.match(/^\[+([A-Za-z0-9_.-]+)\]/);
+  if (match) return match[1].trim();
   if (val.startsWith('[') && val.includes(']')) {
-    return val.substring(1, val.indexOf(']')).trim();
+    return val.substring(1, val.indexOf(']')).replace(/^\[+/, '').trim();
   }
   return val;
 };

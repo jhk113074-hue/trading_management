@@ -6,10 +6,13 @@ import type { ProformaInvoice, PIItem } from '../types/pi';
 
 const getRawProductCode = (code: string) => {
   if (!code) return '';
-  if (code.startsWith('[') && code.includes(']')) {
-    return code.substring(1, code.indexOf(']')).trim();
+  const val = code.trim();
+  const match = val.match(/^\[+([A-Za-z0-9_.-]+)\]/);
+  if (match) return match[1].trim();
+  if (val.startsWith('[') && val.includes(']')) {
+    return val.substring(1, val.indexOf(']')).replace(/^\[+/, '').trim();
   }
-  return code.trim();
+  return val;
 };
 
 export const generatePIExcel = async (

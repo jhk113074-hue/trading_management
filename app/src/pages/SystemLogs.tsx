@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.528',
+    version: 'v2.8.528',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '주문 상세 발주 품목 매입단가·매입가총액 표기 정상화 및 견적 연동 통화 판정 오류 완벽 교정',
+    content: '• 주문 상세 [수주정보] 탭의 [발주 품목 목록]에서 견적서(PI)에 등록된 원화(KRW) 매입가가 $0.00으로 표시되고 하단 합계에서 누락되던 통화 판별 버그 완벽 교정\n• 주문 통화(USD)와 품목 매입 통화(KRW)가 다른 경우에도 매입가 속성(purchasePriceKrw, purchaseUnitPrice)을 정밀 분석하는 getEffectiveItemPurchaseCurrency 엔진 탑재로 원화 매입단가(₩) 및 매입가총액이 정확하게 표시되도록 개선\n• 하단 TOTAL(합계) 행의 원화 매입 총액(₩) 및 달러 환산 총액(≈ $) 집계 로직을 전면 정비하여 견적서 총액과 100% 일치하도록 보정\n• 상품코드/명칭에 중복 대괄호([[[코드] 명칭] 명칭])가 생성되거나 파싱 오류로 견적 품목과 연결이 어긋나던 현상을 해결(getRawProductCode 정규식 고도화 및 formatItemDisplayName 적용)\n• 신규 주문 생성(NewOrderModal) 시 견적서의 매입 통화 및 단가가 왜곡 없이 주문 품목 데이터로 안전하게 승계되도록 연동 강화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.527',
     version: 'v2.8.527',
     date: '2026-09-10',

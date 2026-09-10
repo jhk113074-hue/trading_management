@@ -16,8 +16,10 @@ import { DateInput } from './ui/DateInput';
 const getRawProductCode = (code: string | undefined): string => {
   if (!code) return '';
   const val = code.trim();
+  const match = val.match(/^\[+([A-Za-z0-9_.-]+)\]/);
+  if (match) return match[1].trim();
   if (val.startsWith('[') && val.includes(']')) {
-    return val.substring(1, val.indexOf(']')).trim();
+    return val.substring(1, val.indexOf(']')).replace(/^\[+/, '').trim();
   }
   return val;
 };
@@ -331,10 +333,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
               }
 
+              const cleanCode = getRawProductCode(qi.productCode);
+              const desc = (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '').trim();
+              const formattedName = cleanCode ? (desc ? `[${cleanCode}] ${desc}` : `[${cleanCode}]`) : desc;
+              const effPurchaseCurr = (purchaseCurrency === 'KRW' || (qi.purchasePriceKrw && qi.purchasePriceKrw > 0)) ? 'KRW' : (qi.purchasePriceCurrency || purchaseCurrency);
+
               return {
                 itemId: (idx + 1).toString(),
                 productCode: rawCode || qi.productCode || '',
-                name: qi.productCode ? `[${qi.productCode}] ${qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''}` : (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''),
+                name: formattedName,
                 supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
                 supplierContact: contactInfo || '',
                 grade: qi.spec || qi.grade || matchedProd?.spec || '',
@@ -344,10 +351,10 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 unitPrice: orderPrice,
                 salePriceUsd: qi.salePriceUsd || orderPrice,
                 purchaseUnitPrice: purchasePrice,
-                purchaseUnitCurrency: purchaseCurrency,
-                purchasePriceCurrency: qi.purchasePriceCurrency || purchaseCurrency,
-                purchasePriceKrw: qi.purchasePriceKrw || (purchaseCurrency === 'KRW' ? purchasePrice : 0),
-                purchasePriceUsd: qi.purchasePriceUsd || (purchaseCurrency === 'USD' ? purchasePrice : 0),
+                purchaseUnitCurrency: effPurchaseCurr as any,
+                purchasePriceCurrency: effPurchaseCurr,
+                purchasePriceKrw: qi.purchasePriceKrw || (effPurchaseCurr === 'KRW' ? purchasePrice : 0),
+                purchasePriceUsd: qi.purchasePriceUsd || (effPurchaseCurr === 'USD' ? purchasePrice : 0),
                 exchangeRate: qi.exchangeRate || latestRevData?.exchangeRate || 1400,
                 marginRate: qi.marginRate != null ? qi.marginRate : 15,
                 roundDigits: qi.roundDigits,
