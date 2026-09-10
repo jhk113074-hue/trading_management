@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.519',
+    version: 'v2.8.519',
+    date: '2026-09-10',
+    category: 'UI/UX',
+    title: '대시보드 실시간 매출 현황 카드 1줄 슬림화 정돈 및 목록 아이콘 심플화',
+    content: '• 당월 매출 및 전체 누적 매출 카드의 업체별(영성ACC, (주)YSACC) 텍스트와 금액, 건수가 2줄로 줄바꿈되지 않도록 1줄 고정(nowrap) 및 최적 글자 크기로 깔끔하게 정돈\n• 목록 열기 버튼에서 한글 "목록" 텍스트를 제거하고 세련된 돋보기 아이콘(🔍)만 컴팩트하게 단독 표기하여 시각적 여백 및 가독성 대폭 향상\n• 4개 행 전체의 구분선(|)과 좌우 열 너비를 균일하게 일치시켜 대시보드 그리드 정렬 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.518',
     version: 'v2.8.518',
     date: '2026-09-10',

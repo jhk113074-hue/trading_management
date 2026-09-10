@@ -2103,58 +2103,60 @@ export const Dashboard: React.FC = () => {
 
               {/* 1. 이번달 PI 건수 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '15.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
                   이번달 PI 건수
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsCount}</span> 건</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '265px 14px 281px', alignItems: 'center', fontSize: '15px', fontWeight: 700, width: '560px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}><strong className="company-bold" style={{ fontSize: '14px' }}>영성ACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '17px' }}>{tradingKPIs.piYsCount}</span> 건</span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}><strong className="company-bold" style={{ fontSize: '14px' }}>(주)YSACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '17px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
                 </div>
               </div>
 
               {/* 2. 수주 금액 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '15.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
                   수주 금액
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
+                <div style={{ display: 'grid', gridTemplateColumns: '265px 14px 281px', alignItems: 'center', fontSize: '15px', fontWeight: 700, width: '560px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}><strong className="company-bold" style={{ fontSize: '14px' }}>영성ACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
-                  <span style={{ textAlign: 'left' }}><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
+                  <span style={{ textAlign: 'left', whiteSpace: 'nowrap' }}><strong className="company-bold" style={{ fontSize: '14px' }}>(주)YSACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
                 </div>
               </div>
 
               {/* 3. 당월 매출 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '15.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
                   당월 매출 (원화 합산)
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '265px 14px 281px', alignItems: 'center', fontSize: '15px', fontWeight: 700, width: '560px', flexShrink: 0, whiteSpace: 'nowrap' }}>
                   <div
                     onClick={() => handleOpenSalesModal('YS', 'MONTH')}
                     title="영성ACC 당월 매출 리스트 조회 (클릭)"
                     style={{
                       textAlign: 'left',
                       cursor: 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 4px',
-                      borderRadius: '6px',
+                      gap: '3px',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
                       transition: 'background 0.15s ease',
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap',
+                      width: 'fit-content'
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#ffedd5'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
-                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span>
-                    <span style={{ fontSize: '10.5px', color: '#ea580c', background: '#fff', border: '1px solid #fed7aa', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                    <strong className="company-bold" style={{ fontSize: '14px', whiteSpace: 'nowrap', textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
+                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '15.5px', whiteSpace: 'nowrap' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal', whiteSpace: 'nowrap' }}>({tradingKPIs.salesYsCount}건)</span>
+                    <span style={{ fontSize: '11px', color: '#ea580c', opacity: 0.85, marginLeft: '2px', whiteSpace: 'nowrap', lineHeight: 1 }}>🔍</span>
                   </div>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
                   <div
@@ -2163,53 +2165,57 @@ export const Dashboard: React.FC = () => {
                     style={{
                       textAlign: 'left',
                       cursor: 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 4px',
-                      borderRadius: '6px',
+                      gap: '3px',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
                       transition: 'background 0.15s ease',
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap',
+                      width: 'fit-content'
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#ffedd5'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
-                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span>
-                    <span style={{ fontSize: '10.5px', color: '#ea580c', background: '#fff', border: '1px solid #fed7aa', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                    <strong className="company-bold" style={{ fontSize: '14px', whiteSpace: 'nowrap', textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
+                    <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '15.5px', whiteSpace: 'nowrap' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal', whiteSpace: 'nowrap' }}>({tradingKPIs.salesYsaccCount}건)</span>
+                    <span style={{ fontSize: '11px', color: '#ea580c', opacity: 0.85, marginLeft: '2px', whiteSpace: 'nowrap', lineHeight: 1 }}>🔍</span>
                   </div>
                 </div>
               </div>
 
               {/* 4. 전체 누적 매출금액 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '15.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626' }} />
                   전체 누적 매출금액
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '250px 20px 290px', alignItems: 'center', fontSize: '16.5px', fontWeight: 700, width: '560px', flexShrink: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '265px 14px 281px', alignItems: 'center', fontSize: '15px', fontWeight: 700, width: '560px', flexShrink: 0, whiteSpace: 'nowrap' }}>
                   <div
                     onClick={() => handleOpenSalesModal('YS', 'TOTAL')}
                     title="영성ACC 전체 누적 매출 리스트 조회 (클릭)"
                     style={{
                       textAlign: 'left',
                       cursor: 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 4px',
-                      borderRadius: '6px',
+                      gap: '3px',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
                       transition: 'background 0.15s ease',
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap',
+                      width: 'fit-content'
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
-                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span>
-                    <span style={{ fontSize: '10.5px', color: '#dc2626', background: '#fff', border: '1px solid #fecaca', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                    <strong className="company-bold" style={{ fontSize: '14px', whiteSpace: 'nowrap', textDecoration: 'underline', textUnderlineOffset: '2px' }}>영성ACC:</strong>
+                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '15.5px', whiteSpace: 'nowrap' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal', whiteSpace: 'nowrap' }}>({tradingKPIs.salesYsTotalCount}건)</span>
+                    <span style={{ fontSize: '11px', color: '#dc2626', opacity: 0.85, marginLeft: '2px', whiteSpace: 'nowrap', lineHeight: 1 }}>🔍</span>
                   </div>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal', textAlign: 'center' }}>|</span>
                   <div
@@ -2218,21 +2224,23 @@ export const Dashboard: React.FC = () => {
                     style={{
                       textAlign: 'left',
                       cursor: 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 4px',
-                      borderRadius: '6px',
+                      gap: '3px',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
                       transition: 'background 0.15s ease',
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap',
+                      width: 'fit-content'
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <strong className="company-bold" style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
-                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span>
-                    <span style={{ fontSize: '10.5px', color: '#dc2626', background: '#fff', border: '1px solid #fecaca', padding: '0 4px', borderRadius: '3px', fontWeight: 750, marginLeft: '2px' }}>목록 🔍</span>
+                    <strong className="company-bold" style={{ fontSize: '14px', whiteSpace: 'nowrap', textDecoration: 'underline', textUnderlineOffset: '2px' }}>(주)YSACC:</strong>
+                    <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '15.5px', whiteSpace: 'nowrap' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal', whiteSpace: 'nowrap' }}>({tradingKPIs.salesYsaccTotalCount}건)</span>
+                    <span style={{ fontSize: '11px', color: '#dc2626', opacity: 0.85, marginLeft: '2px', whiteSpace: 'nowrap', lineHeight: 1 }}>🔍</span>
                   </div>
                 </div>
               </div>
