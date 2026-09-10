@@ -344,6 +344,7 @@ export const Orders: React.FC = () => {
                   qty,
                   unit: qi.unit || 'kg',
                   unitPrice: orderPrice,
+                  exchangeRate: qi.exchangeRate || targetPi.exchangeRate || 1400,
                   purchaseUnitPrice: purchasePrice,
                   purchaseUnitCurrency: purchaseCurrency,
                   originalPurchasePrice: purchasePrice,

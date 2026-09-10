@@ -2218,6 +2218,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           qty,
           unit: item.unit || 'kg',
           unitPrice: orderPrice,
+          exchangeRate: item.exchangeRate || formData.exchangeRate || 1400,
           purchaseUnitPrice: purchasePrice,
           purchaseUnitCurrency: purchaseCurrency,
           originalPurchasePrice: purchasePrice,

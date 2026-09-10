@@ -283,6 +283,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             incoterms: prev.incoterms || latestRevData.incoterms || 'FOB',
             paymentTerms: prev.paymentTerms || latestRevData.paymentTerms || '',
             customerAddress: prev.customerAddress || latestRevData.customerAddress || '',
+            exchangeRate: latestRevData.exchangeRate || prev.exchangeRate,
           }));
 
           const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));

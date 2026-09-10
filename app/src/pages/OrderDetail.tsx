@@ -3913,6 +3913,7 @@ export const OrderDetail: React.FC = () => {
         externalLinks: links,
         issuingCompany: basicForm.issuingCompany,
         type: basicForm.type || 'trade',
+        exchangeRate: Number(basicForm.exchangeRate) || 1400,
         
         ciNumber: basicForm.ciNumber,
         bookingNo: basicForm.bookingNo || '',
@@ -9452,8 +9453,44 @@ ${downloadLink}`;
               )}
             </div>
 
-            {/* 줄 4: 일정 및 비고 (ETD / 제품준비일 / 비고) */}
-            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr' : '1.1fr 1.1fr 3.5fr', gap: '10px', width: '100%', alignItems: 'end' }}>
+            {/* 줄 4: 일정 및 비고 (기준 환율 / ETD / 제품준비일 / 비고) */}
+            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr 3fr' : '1fr 1fr 1.1fr 3fr', gap: '10px', width: '100%', alignItems: 'end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>기준 환율 (USD/KRW)</span>
+                <input
+                  type="number"
+                  step="1"
+                  value={basicForm.exchangeRate || ''}
+                  onChange={e => {
+                    const newExRate = parseFloat(e.target.value) || 0;
+                    setBasicForm(prev => ({ ...prev, exchangeRate: newExRate }));
+                    // Also update items that don't have explicit item-level exchange rate
+                    setOrderItems(prev => prev.map(it => ({
+                      ...it,
+                      exchangeRate: newExRate
+                    })));
+                  }}
+                  disabled={!isEditing}
+                  placeholder="예: 1330"
+                  style={{
+                    width: '100%',
+                    minWidth: '0',
+                    padding: '6px 8px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    height: '34px',
+                    background: isEditing ? '#fff' : '#f1f5f9',
+                    color: isEditing ? '#1e293b' : '#334155',
+                    fontWeight: 700,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    textAlign: 'right',
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                />
+              </div>
+
               {order?.type !== 'consulting' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                   <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>ETD (출항예정일)</span>

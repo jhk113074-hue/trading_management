@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.532',
+    version: 'v2.8.532',
+    date: '2026-09-10',
+    category: '기능개선',
+    title: '견적서 품목별 환율과 주문(PO) 발주 품목 환율 동기화 및 주문 기준 환율 입력 지원',
+    content: '• 견적서(PI) 품목 라인에 입력된 개별 환율(예: 1,330원)이 신규 주문 생성(NewOrderModal / Orders / PIFormModal) 시 주문 품목(order.items) 및 주문 헤더(exchangeRate)로 100% 온전하게 승계되도록 연동 로직 개선\n• 주문 상세 [수주정보] 기본 정보 영역에 [기준 환율 (USD/KRW)] 입력 필드를 신설하여 견적 당시 환율 확인 및 필요 시 손쉽게 환율을 조정할 수 있도록 지원\n• 기준 환율 수정 시 연결된 주문 품목의 환율 및 원화 매입가 환산액(≈ $), 이익($)이 실시간으로 정확하게 재계산되도록 동기화 보강\n• 기존에 1,400원으로 불일치 상태이던 주문 데이터(YSACC(YGZ)-26-03 등)를 견적서(Rev 4)와 일치하는 1,330원으로 즉시 보정 조치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.531',
     version: 'v2.8.531',
     date: '2026-09-10',
