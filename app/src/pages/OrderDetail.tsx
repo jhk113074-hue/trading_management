@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage, auth } from '../firebase';
-import type { Order, OrderItem, ForwarderEntry } from '../types/order';
+import type { Order, OrderItem, ForwarderEntry, ShipmentRound, ShipmentRoundAllocatedItem } from '../types/order';
 import type { Supplier } from '../types/supplier';
 import type { Product } from '../types/product';
 import { ProductModal } from '../components/ProductModal';
@@ -2044,6 +2044,221 @@ export const OrderDetail: React.FC = () => {
     exchangeRate: 1400
   });
 
+  // ── 분할 선적 (Split Shipment) 상태 관리 ──────────────────────────────
+  const [isSplitShipment, setIsSplitShipment] = useState<boolean>(false);
+  const [shipmentRounds, setShipmentRounds] = useState<ShipmentRound[]>([]);
+  const [activeRoundId, setActiveRoundId] = useState<string>('round-1');
+
+  const activeRound = useMemo(() => {
+    if (!shipmentRounds || shipmentRounds.length === 0) return null;
+    return shipmentRounds.find(r => r.id === activeRoundId) || shipmentRounds[0];
+  }, [shipmentRounds, activeRoundId]);
+
+  const handleUpdateActiveRound = (fieldOrUpdates: keyof ShipmentRound | Partial<ShipmentRound>, value?: any) => {
+    setShipmentRounds(prev => {
+      const targetId = activeRoundId || prev[0]?.id;
+      const idx = prev.findIndex(r => r.id === targetId);
+      if (idx === -1) return prev;
+      const updatedRounds = [...prev];
+      let current = { ...updatedRounds[idx] };
+      if (typeof fieldOrUpdates === 'string') {
+        current = { ...current, [fieldOrUpdates]: value };
+      } else {
+        current = { ...current, ...fieldOrUpdates };
+      }
+      updatedRounds[idx] = current;
+      latestOrderStateRef.current.shipmentRounds = updatedRounds;
+
+      // 1차 선적이 수정될 경우, 기존 최상위 basicForm에도 동기화하여 하위 호환성 100% 보장
+      if (current.roundNumber === 1) {
+        setBasicForm(bf => {
+          const nextBf = { ...bf };
+          if (current.bookingNo !== undefined) nextBf.bookingNo = current.bookingNo;
+          if (current.vesselBooking !== undefined) nextBf.vesselBooking = current.vesselBooking;
+          if (current.forwarderConfirmed !== undefined) nextBf.forwarderConfirmed = current.forwarderConfirmed;
+          if (current.etd !== undefined) nextBf.etd = current.etd;
+          if (current.eta !== undefined) nextBf.eta = current.eta;
+          if (current.docCutoffDate !== undefined) nextBf.docCutoffDate = current.docCutoffDate;
+          if (current.cargoCutoffDate !== undefined) nextBf.cargoCutoffDate = current.cargoCutoffDate;
+          if (current.cfsEntryDate !== undefined) nextBf.cfsEntryDate = current.cfsEntryDate;
+          if (current.cfsEntryTime !== undefined) nextBf.cfsEntryTime = current.cfsEntryTime;
+          if (current.cfsContactInfo !== undefined) nextBf.cfsContactInfo = current.cfsContactInfo;
+          if (current.cfsAddress !== undefined) nextBf.cfsAddress = current.cfsAddress;
+          if (current.shipmentType !== undefined) nextBf.shipmentType = current.shipmentType;
+          if (current.fclSpecs !== undefined) nextBf.fclSpecs = current.fclSpecs;
+          if (current.containerWorkspaceType !== undefined) nextBf.containerWorkspaceType = current.containerWorkspaceType;
+          if (current.shipmentCompleted !== undefined) nextBf.shipmentCompleted = current.shipmentCompleted;
+          if (current.ciNumber !== undefined) nextBf.ciNumber = current.ciNumber;
+          if (current.blNumber !== undefined) nextBf.blNumber = current.blNumber;
+          if (current.blNumbers !== undefined) nextBf.blNumbers = current.blNumbers;
+          if (current.exportDeclarationNo !== undefined) nextBf.exportDeclarationNo = current.exportDeclarationNo;
+          if (current.customsExchangeRate !== undefined) nextBf.customsExchangeRate = current.customsExchangeRate;
+          return nextBf;
+        });
+      }
+      return updatedRounds;
+    });
+  };
+
+  const handleAddShipmentRound = () => {
+    const nextRoundNum = (shipmentRounds.length || 0) + 1;
+    const baseCi = (basicForm.ciNumber || shipmentRounds[0]?.ciNumber || (order?.piNumber ? `CI-${order.piNumber}` : `CI-${order?.id || 'PO'}`)).replace(/-[0-9]+$/, '');
+    
+    // 타 차수들의 선적 수량 집계하여 미선적 잔여 수량 자동 배정
+    const currentOrderItems = latestOrderStateRef.current.orderItems || orderItems || [];
+    const newAllocated: ShipmentRoundAllocatedItem[] = currentOrderItems.map(it => {
+      const alreadyShipped = (shipmentRounds || []).reduce((sum, r) => {
+        const matched = (r.allocatedItems || []).find(ai => ai.itemId === it.itemId);
+        return sum + (matched?.shippedQty || 0);
+      }, 0);
+      const remaining = Math.max(0, (it.qty || 0) - alreadyShipped);
+      return {
+        itemId: it.itemId || '',
+        productCode: it.productCode || '',
+        name: it.name || '',
+        grade: it.grade || it.spec || '',
+        unit: it.unit || 'kg',
+        orderQty: Number(it.qty) || 0,
+        shippedQty: remaining,
+        unitPrice: Number(it.unitPrice) || 0,
+        amount: (Number(it.unitPrice) || 0) * remaining,
+        currency: it.currency || 'USD'
+      };
+    });
+
+    const newRoundId = `round-${Date.now()}`;
+    const newRound: ShipmentRound = {
+      id: newRoundId,
+      roundNumber: nextRoundNum,
+      title: `${nextRoundNum}차 선적`,
+      status: '준비중',
+      ciNumber: `${baseCi}-${nextRoundNum}`,
+      bookingNo: '',
+      vesselBooking: '',
+      forwarderConfirmed: activeRound?.forwarderConfirmed || basicForm.forwarderConfirmed || '',
+      shipmentType: activeRound?.shipmentType || basicForm.shipmentType || 'FCL',
+      fclSpecs: activeRound?.fclSpecs ? JSON.parse(JSON.stringify(activeRound.fclSpecs)) : [],
+      docCutoffDate: '',
+      cargoCutoffDate: '',
+      etd: '',
+      eta: '',
+      cfsEntryDate: '',
+      cfsEntryTime: '오전 10시까지',
+      cfsContactInfo: activeRound?.cfsContactInfo || basicForm.cfsContactInfo || '',
+      cfsAddress: activeRound?.cfsAddress || basicForm.cfsAddress || '',
+      containerWorkspaceType: activeRound?.containerWorkspaceType || basicForm.containerWorkspaceType || '',
+      shipmentCompleted: 'N',
+      blNumber: '',
+      blNumbers: [],
+      exportDeclarationNo: '',
+      customsExchangeRate: activeRound?.customsExchangeRate || basicForm.customsExchangeRate || 0,
+      blFiles: [],
+      ciFiles: [],
+      plFiles: [],
+      exportDeclarationFiles: [],
+      cooFiles: [],
+      allocatedItems: newAllocated
+    };
+
+    // 1차 선적 CI 번호가 접미사가 없었을 경우 자동으로 -1 추천
+    setShipmentRounds(prev => {
+      let updatedPrev = [...prev];
+      if (updatedPrev[0] && (!updatedPrev[0].ciNumber || !/-[0-9]+$/.test(updatedPrev[0].ciNumber))) {
+        updatedPrev[0] = {
+          ...updatedPrev[0],
+          title: '1차 선적',
+          ciNumber: `${baseCi}-1`
+        };
+      }
+      const updated = [...updatedPrev, newRound];
+      latestOrderStateRef.current.shipmentRounds = updated;
+      return updated;
+    });
+
+    setIsSplitShipment(true);
+    setActiveRoundId(newRoundId);
+  };
+
+  const handleDeleteShipmentRound = (roundId: string) => {
+    if (!window.confirm('이 선적 차수를 삭제하시겠습니까? 해당 차수에 배정된 스케줄과 품목 배정 내역이 제거됩니다.')) return;
+    setShipmentRounds(prev => {
+      const filtered = prev.filter(r => r.id !== roundId).map((r, idx) => ({
+        ...r,
+        roundNumber: idx + 1,
+        title: `${idx + 1}차 선적`
+      }));
+      latestOrderStateRef.current.shipmentRounds = filtered;
+      if (filtered.length <= 1) {
+        setIsSplitShipment(false);
+      }
+      if (activeRoundId === roundId) {
+        setActiveRoundId(filtered[0]?.id || 'round-1');
+      }
+      return filtered;
+    });
+  };
+
+  const handleAllocatedQtyChange = (itemId: string, newShippedQty: number) => {
+    setShipmentRounds(prev => {
+      const targetId = activeRoundId || prev[0]?.id;
+      const roundIdx = prev.findIndex(r => r.id === targetId);
+      if (roundIdx === -1) return prev;
+
+      const round = prev[roundIdx];
+      const currentOrderItems = latestOrderStateRef.current.orderItems || orderItems || [];
+      const items = (round.allocatedItems && round.allocatedItems.length > 0)
+        ? [...round.allocatedItems]
+        : currentOrderItems.map(it => ({
+            itemId: it.itemId || '',
+            productCode: it.productCode || '',
+            name: it.name || '',
+            grade: it.grade || it.spec || '',
+            unit: it.unit || 'kg',
+            orderQty: Number(it.qty) || 0,
+            shippedQty: Number(it.qty) || 0,
+            unitPrice: Number(it.unitPrice) || 0,
+            amount: (Number(it.unitPrice) || 0) * (Number(it.qty) || 0),
+            currency: it.currency || 'USD'
+          }));
+
+      const itIdx = items.findIndex(ai => ai.itemId === itemId);
+      if (itIdx !== -1) {
+        const item = items[itIdx];
+        const val = Math.max(0, newShippedQty || 0);
+        items[itIdx] = {
+          ...item,
+          shippedQty: val,
+          amount: (item.unitPrice || 0) * val
+        };
+      } else {
+        const matchingOrderIt = currentOrderItems.find(it => it.itemId === itemId);
+        if (matchingOrderIt) {
+          const val = Math.max(0, newShippedQty || 0);
+          items.push({
+            itemId: matchingOrderIt.itemId || '',
+            productCode: matchingOrderIt.productCode || '',
+            name: matchingOrderIt.name || '',
+            grade: matchingOrderIt.grade || matchingOrderIt.spec || '',
+            unit: matchingOrderIt.unit || 'kg',
+            orderQty: Number(matchingOrderIt.qty) || 0,
+            shippedQty: val,
+            unitPrice: Number(matchingOrderIt.unitPrice) || 0,
+            amount: (Number(matchingOrderIt.unitPrice) || 0) * val,
+            currency: matchingOrderIt.currency || 'USD'
+          });
+        }
+      }
+
+      const updatedRounds = [...prev];
+      updatedRounds[roundIdx] = {
+        ...round,
+        allocatedItems: items
+      };
+      latestOrderStateRef.current.shipmentRounds = updatedRounds;
+      return updatedRounds;
+    });
+  };
+
   useEffect(() => {
     if (!products || products.length === 0) return;
     setOrderItems(prev => {
@@ -2587,8 +2802,8 @@ export const OrderDetail: React.FC = () => {
   latestPackingDataRef.current = { basicForm, orderItems, products, order };
 
   const isInitialOrderLoadRef = useRef(false);
-  const latestOrderStateRef = useRef({ basicForm, orderItems, sourcingItems, forwardersList, order });
-  latestOrderStateRef.current = { basicForm, orderItems, sourcingItems, forwardersList, order };
+  const latestOrderStateRef = useRef({ basicForm, orderItems, sourcingItems, forwardersList, order, shipmentRounds, activeRoundId, isSplitShipment });
+  latestOrderStateRef.current = { basicForm, orderItems, sourcingItems, forwardersList, order, shipmentRounds, activeRoundId, isSplitShipment };
 
   // Listen for Container Packer EXPORT_PACKING_LIST & IFRAME_READY messages
   useEffect(() => {
@@ -3052,6 +3267,73 @@ export const OrderDetail: React.FC = () => {
           });
         }
 
+        // 분할 선적 (Split Shipment) 차수 로드 및 동기화
+        const rawRounds: ShipmentRound[] = (data as any).shipmentRounds || [];
+        const isSplit = (data as any).isSplitShipment ?? (rawRounds.length > 1);
+        setIsSplitShipment(isSplit);
+
+        const currentLocalRounds = latestOrderStateRef.current.shipmentRounds || [];
+        if (currentLocalRounds.length > 0 && isInitialOrderLoadRef.current) {
+          // 로컬 편집 중인 차수 상태 유지
+          setShipmentRounds(currentLocalRounds);
+        } else if (rawRounds.length > 0) {
+          setShipmentRounds(rawRounds);
+          if ((data as any).activeShipmentRoundId) {
+            setActiveRoundId((data as any).activeShipmentRoundId);
+          }
+        } else {
+          // 1차 선적 기본값 초기화
+          const initialRound: ShipmentRound = {
+            id: 'round-1',
+            roundNumber: 1,
+            title: '1차 선적',
+            status: data.shipmentCompleted === 'Y' ? '선적완료' : '준비중',
+            bookingNo: data.bookingNo || '',
+            vesselBooking: data.vesselBooking || '',
+            forwarderConfirmed: data.forwarderConfirmed || '',
+            shipmentType: data.shipmentType || 'FCL',
+            fclSpecs: data.fclSpecs || [],
+            docCutoffDate: data.docCutoffDate || '',
+            cargoCutoffDate: data.cargoCutoffDate || '',
+            etd: data.etd || '',
+            eta: data.eta || '',
+            cfsEntryDate: data.cfsEntryDate || '',
+            cfsEntryTime: data.cfsEntryTime || '오전 10시까지',
+            cfsContactInfo: data.cfsContactInfo || '',
+            cfsAddress: data.cfsAddress || '',
+            containerWorkspaceType: data.containerWorkspaceType || '',
+            shipmentCompleted: data.shipmentCompleted || '',
+            ciNumber: data.ciNumber || '',
+            blNumber: data.blNumber || '',
+            blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
+            exportDeclarationNo: data.exportDeclarationNo || '',
+            customsExchangeRate: data.customsExchangeRate || 0,
+            blFiles: data.blFiles || [],
+            ciFiles: data.ciFiles || [],
+            plFiles: data.plFiles || [],
+            exportDeclarationFiles: data.exportDeclarationFiles || [],
+            cooFiles: data.cooFiles || [],
+            packingList: data.packingList || null,
+            customCiItems: (data as any).customCiItems || [],
+            customCiExtra: (data as any).customCiExtra || {},
+            customPlRemarks: (data as any).customPlRemarks || '',
+            allocatedItems: restoredOrderItems.map((it: any) => ({
+              itemId: it.itemId || '',
+              productCode: it.productCode || '',
+              name: it.name || '',
+              grade: it.grade || it.spec || '',
+              unit: it.unit || 'kg',
+              orderQty: Number(it.qty) || 0,
+              shippedQty: Number(it.qty) || 0,
+              unitPrice: Number(it.unitPrice) || 0,
+              amount: (Number(it.unitPrice) || 0) * (Number(it.qty) || 0),
+              currency: it.currency || 'USD'
+            }))
+          };
+          setShipmentRounds([initialRound]);
+          setActiveRoundId('round-1');
+        }
+
         // stageCompletion 로드 — 없으면 기본값 유지
         if ((data as any).stageCompletion) {
           setStageCompletion(prev => ({
@@ -3382,6 +3664,7 @@ export const OrderDetail: React.FC = () => {
       shipmentType,
       fclSpecs
     }));
+    handleUpdateActiveRound({ shipmentType, fclSpecs });
     try {
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await updateDoc(docRef, {
@@ -3391,7 +3674,8 @@ export const OrderDetail: React.FC = () => {
           qty: Number(c.qty) || 1,
           containerNo: c.containerNo || '',
           sealNo: c.sealNo || ''
-        }))
+        })),
+        shipmentRounds: latestOrderStateRef.current.shipmentRounds || []
       });
     } catch (err) {
       console.error("Direct volume update error:", err);
@@ -3604,6 +3888,36 @@ export const OrderDetail: React.FC = () => {
         quotationId: basicForm.quotationId || '',
         blNumbers: basicForm.blNumbers || [],
         blNumber: basicForm.blNumber || '',
+        isSplitShipment: isSplitShipment,
+        shipmentRounds: (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r => {
+          if (r.roundNumber === 1) {
+            return {
+              ...r,
+              bookingNo: basicForm.bookingNo,
+              vesselBooking: basicForm.vesselBooking,
+              forwarderConfirmed: basicForm.forwarderConfirmed,
+              etd: basicForm.etd,
+              eta: basicForm.eta,
+              docCutoffDate: basicForm.docCutoffDate,
+              cargoCutoffDate: basicForm.cargoCutoffDate,
+              cfsEntryDate: basicForm.cfsEntryDate,
+              cfsEntryTime: basicForm.cfsEntryTime,
+              cfsContactInfo: basicForm.cfsContactInfo,
+              cfsAddress: basicForm.cfsAddress,
+              shipmentType: basicForm.shipmentType,
+              fclSpecs: basicForm.fclSpecs,
+              containerWorkspaceType: basicForm.containerWorkspaceType,
+              shipmentCompleted: basicForm.shipmentCompleted,
+              ciNumber: basicForm.ciNumber,
+              blNumber: basicForm.blNumber,
+              blNumbers: basicForm.blNumbers,
+              exportDeclarationNo: basicForm.exportDeclarationNo,
+              customsExchangeRate: basicForm.customsExchangeRate
+            };
+          }
+          return r;
+        }),
+        activeShipmentRoundId: activeRoundId,
         
         items: curOrderItems.map((it, idx) => {
           const matchingSourcing = (it.itemId && curSourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || curSourcingItems[idx];
@@ -5266,6 +5580,11 @@ export const OrderDetail: React.FC = () => {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       const updatedList = [...(order[fieldName] || []), ...uploadedFiles];
       await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+      const isSplitShipmentField = ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
+      if (activeRound && isSplitShipmentField) {
+        const currentRoundFiles = ((activeRound as any)[fieldName] as any[]) || [];
+        handleUpdateActiveRound(fieldName as any, [...currentRoundFiles, ...uploadedFiles]);
+      }
       await autoRegisterOrderTask(order.piNumber || '알수없음', order.customer || '알수없음', `${fieldName} 파일 첨부 업로드: ${uploadedFiles.map(f => f.name).join(', ')}`);
       
       alert("✅ 모든 파일이 성공적으로 업로드되었습니다.");
@@ -5635,10 +5954,260 @@ export const OrderDetail: React.FC = () => {
       const updatedList = fileList.filter((_, i) => i !== idx);
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+      const isSplitShipmentField = ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
+      if (activeRound && isSplitShipmentField) {
+        const currentRoundFiles = ((activeRound as any)[fieldName] as any[]) || [];
+        handleUpdateActiveRound(fieldName as any, currentRoundFiles.filter((_, i) => i !== idx));
+      }
       alert("✅ 파일이 삭제되었습니다.");
     } catch (err: any) {
       alert("파일 삭제 실패: " + err.message);
     }
+  };
+
+  // ── [분할 선적 차수 선택 바] ──
+  const renderShipmentRoundBar = () => {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px', marginBottom: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>🚢</span> 선적 차수 선택:
+          </span>
+          {shipmentRounds.map((r, idx) => {
+            const isSelected = activeRoundId === r.id;
+            return (
+              <button
+                key={r.id || idx}
+                type="button"
+                onClick={() => setActiveRoundId(r.id)}
+                style={{
+                  height: '34px',
+                  padding: '0 14px',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  background: isSelected ? '#3b82f6' : '#f1f5f9',
+                  color: isSelected ? '#ffffff' : '#475569',
+                  border: isSelected ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: isSelected ? '0 2px 4px rgba(59, 130, 246, 0.25)' : 'none',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span>{r.title || `${idx + 1}차 선적`}</span>
+                {r.etd && <span style={{ fontSize: '11px', opacity: isSelected ? 0.9 : 0.7 }}>({r.etd})</span>}
+                {isEditing && shipmentRounds.length > 1 && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteShipmentRound(r.id);
+                    }}
+                    title="해당 차수 삭제"
+                    style={{
+                      marginLeft: '4px',
+                      color: isSelected ? '#fee2e2' : '#ef4444',
+                      fontWeight: 900,
+                      fontSize: '14px',
+                      lineHeight: 1,
+                      padding: '0 2px'
+                    }}
+                  >
+                    ×
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          {isEditing && (
+            <button
+              type="button"
+              onClick={handleAddShipmentRound}
+              style={{
+                height: '34px',
+                padding: '0 12px',
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 700,
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: '1px dashed #60a5fa',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <span>＋</span> 분할 선적 추가
+            </button>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+            {isSplitShipment || shipmentRounds.length > 1 ? (
+              <span style={{ color: '#2563eb', fontWeight: 750, background: '#eff6ff', padding: '4px 10px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                ⚡ 분할 선적 모드 ({shipmentRounds.length}개 차수 운용 중)
+              </span>
+            ) : (
+              <span style={{ color: '#64748b' }}>단일 선적 모드</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── [차수별 선적 품목 및 수량 배정 테이블] ──
+  const renderItemAllocationTable = () => {
+    if (!activeRound) return null;
+    const currentItems = orderItems || [];
+    if (currentItems.length === 0) return null;
+
+    return (
+      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginTop: '8px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+              📦 [{activeRound.title || `${activeRound.roundNumber}차 선적`}] 선적 품목 및 수량 배정
+            </h4>
+            <span style={{ fontSize: '11px', color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+              총 주문 수량 대비 본 차수에 선적할 수량을 입력하세요
+            </span>
+          </div>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={() => {
+                currentItems.forEach(it => {
+                  const orderQty = Number(it.qty) || 0;
+                  const shippedOther = (shipmentRounds || []).reduce((sum, r) => {
+                    if (r.id === activeRound.id) return sum;
+                    const found = r.allocatedItems?.find(ai => ai.itemId === it.itemId);
+                    return sum + (Number(found?.shippedQty) || 0);
+                  }, 0);
+                  const remaining = Math.max(0, orderQty - shippedOther);
+                  handleAllocatedQtyChange(it.itemId || '', remaining);
+                });
+              }}
+              style={{
+                height: '34px',
+                padding: '0 14px',
+                background: '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
+              }}
+            >
+              ⚡ 잔여 수량 전량 자동 배정
+            </button>
+          )}
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>품목코드 / 품목명</th>
+                <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>규격/스펙</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '60px' }}>단위</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '100px' }}>총 주문수량</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '110px' }}>타 차수 선적수량</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '100px' }}>잔여 수량</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#1e40af', width: '140px', background: '#eff6ff' }}>현재 차수 선적수량</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '100px' }}>단가</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569', width: '120px' }}>선적 금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.map((it, idx) => {
+                const orderQty = Number(it.qty) || 0;
+                const shippedOther = (shipmentRounds || []).reduce((sum, r) => {
+                  if (r.id === activeRound.id) return sum;
+                  const found = r.allocatedItems?.find(ai => ai.itemId === it.itemId);
+                  return sum + (Number(found?.shippedQty) || 0);
+                }, 0);
+                const remaining = Math.max(0, orderQty - shippedOther);
+                const allocatedItem = activeRound.allocatedItems?.find(ai => ai.itemId === it.itemId);
+                const currentShipped = allocatedItem !== undefined ? (Number(allocatedItem.shippedQty) || 0) : (activeRound.roundNumber === 1 ? orderQty : remaining);
+                const unitPrice = Number(it.unitPrice) || 0;
+                const lineAmount = currentShipped * unitPrice;
+                const isOver = currentShipped > remaining;
+
+                return (
+                  <tr key={it.itemId || idx} style={{ borderBottom: '1px solid #cbd5e1', background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <td style={{ padding: '8px 10px' }}>
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{it.name}</div>
+                      {it.productCode && <div style={{ fontSize: '11px', color: '#64748b' }}>{it.productCode}</div>}
+                    </td>
+                    <td style={{ padding: '8px 10px', color: '#475569', fontSize: '12px' }}>{it.grade || it.spec || '-'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>{it.unit || 'kg'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 650, color: '#334155' }}>{orderQty.toLocaleString()}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748b' }}>
+                      {shippedOther > 0 ? (
+                        <span style={{ color: '#0284c7', fontWeight: 600 }}>{shippedOther.toLocaleString()}</span>
+                      ) : (
+                        '0'
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: remaining === 0 ? '#10b981' : '#059669' }}>
+                      {remaining.toLocaleString()}
+                    </td>
+                    <td style={{ padding: '6px 10px', textAlign: 'right', background: '#eff6ff' }}>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            value={currentShipped}
+                            onChange={(e) => handleAllocatedQtyChange(it.itemId || '', parseFloat(e.target.value) || 0)}
+                            style={{
+                              width: '90px',
+                              height: '34px',
+                              padding: '4px 8px',
+                              border: isOver ? '2px solid #ef4444' : '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              textAlign: 'right',
+                              outline: 'none',
+                              color: isOver ? '#b91c1c' : '#1e3a8a',
+                              background: isOver ? '#fef2f2' : '#fff'
+                            }}
+                          />
+                          {isOver && (
+                            <span title="잔여수량 초과 선적!" style={{ color: '#ef4444', fontSize: '12px', fontWeight: 800 }}>⚠️</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13.5px' }}>
+                          {currentShipped.toLocaleString()}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: '#475569', fontSize: '12.5px' }}>
+                      ${unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 750, color: '#0f766e', fontSize: '13px' }}>
+                      ${lineAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   // Helper render for document file attachment widgets
@@ -5648,7 +6217,8 @@ export const OrderDetail: React.FC = () => {
     inputDocId: string,
     gridSpan?: string
   ) => {
-    const fileList = order?.[fieldName] || [];
+    const isRoundField = isSplitShipment && activeRound && ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
+    const fileList = (isRoundField && (activeRound as any)[fieldName]) ? ((activeRound as any)[fieldName] as any[]) : (order?.[fieldName] || []);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
@@ -10424,6 +10994,9 @@ ${downloadLink}`;
           {/* 4. 물류/선적 */}
           {activeStep === '물류/선적' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* 분할 선적 차수 선택 바 */}
+              {renderShipmentRoundBar()}
+
               {/* 물류/선적 하위 탭 메뉴 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
@@ -10462,45 +11035,54 @@ ${downloadLink}`;
 
               {/* 1) 선적관리 정보 등록 */}
               {activeLogisticsTab === '선적관리' && (
+                <>
+                  {/* 차수별 선적 품목 및 수량 배정 테이블 */}
+                  {renderItemAllocationTable()}
 
-                <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🚢 포워딩/운송사 선정</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                    {/* 제품준비일 및 선적일정 수립 가이드 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '8px', gridColumn: 'span 3', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>💡</span> 생산 기준 제품준비일 (최종 생산완료일)
-                        </span>
-                        <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
-                          {basicForm.cargoReadyDate ? `📅 ${basicForm.cargoReadyDate}` : '미정 (소싱발주 탭에서 생산완료일 지정)'}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '15.5px', color: '#166534', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                        <span>각사별 생산완료일 중 가장 늦은 날짜를 제품준비일로 판단하며, 이를 토대로 선적 스케줄을 결정합니다.</span>
-                        {basicForm.cargoReadyDate && isEditing && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              try {
-                                const baseDate = new Date(basicForm.cargoReadyDate);
-                                const addDays = (d: Date, days: number) => {
-                                  const nd = new Date(d);
-                                  nd.setDate(nd.getDate() + days);
-                                  return nd.toISOString().split('T')[0];
-                                };
-                                setBasicForm(prev => ({
-                                  ...prev,
-                                  cfsEntryDate: addDays(baseDate, 1),      // 1일 뒤 입고
-                                  docCutoffDate: addDays(baseDate, 2),     // 2일 뒤 서류마감
-                                  cargoCutoffDate: addDays(baseDate, 3),   // 3일 뒤 Cargo 마감
-                                  etd: addDays(baseDate, 4),               // 4일 뒤 출항
-                                  eta: addDays(baseDate, 18)               // 14일 운송 표준 적용
-                                }));
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
+                  <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🚢 포워딩/운송사 선정</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      {/* 제품준비일 및 선적일정 수립 가이드 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '8px', gridColumn: 'span 3', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>💡</span> 생산 기준 제품준비일 (최종 생산완료일)
+                          </span>
+                          <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                            {basicForm.cargoReadyDate ? `📅 ${basicForm.cargoReadyDate}` : '미정 (소싱발주 탭에서 생산완료일 지정)'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '15.5px', color: '#166534', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                          <span>각사별 생산완료일 중 가장 늦은 날짜를 제품준비일로 판단하며, 이를 토대로 선적 스케줄을 결정합니다.</span>
+                          {basicForm.cargoReadyDate && isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                try {
+                                  const baseDate = new Date(basicForm.cargoReadyDate);
+                                  const addDays = (d: Date, days: number) => {
+                                    const nd = new Date(d);
+                                    nd.setDate(nd.getDate() + days);
+                                    return nd.toISOString().split('T')[0];
+                                  };
+                                  const schedUpdates = {
+                                    cfsEntryDate: addDays(baseDate, 1),      // 1일 뒤 입고
+                                    docCutoffDate: addDays(baseDate, 2),     // 2일 뒤 서류마감
+                                    cargoCutoffDate: addDays(baseDate, 3),   // 3일 뒤 Cargo 마감
+                                    etd: addDays(baseDate, 4),               // 4일 뒤 출항
+                                    eta: addDays(baseDate, 18)               // 14일 운송 표준 적용
+                                  };
+                                  handleUpdateActiveRound(schedUpdates);
+                                  if (!activeRound || activeRound.roundNumber === 1) {
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      ...schedUpdates
+                                    }));
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
                             style={{
                               padding: '4px 10px',
                               background: '#16af52',
@@ -10770,10 +11352,13 @@ ${downloadLink}`;
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>BOOKING 번호</span>
                         <input 
                           type="text" 
-                          value={basicForm.bookingNo || ''} 
+                          value={activeRound?.bookingNo ?? basicForm.bookingNo ?? ''} 
                           onChange={e => {
                             const newBookingNo = e.target.value;
-                            setBasicForm(p => ({ ...p, bookingNo: newBookingNo }));
+                            handleUpdateActiveRound('bookingNo', newBookingNo);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, bookingNo: newBookingNo }));
+                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
@@ -10797,27 +11382,84 @@ ${downloadLink}`;
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
-                        <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
+                        <input 
+                          type="text" 
+                          value={activeRound?.vesselBooking ?? basicForm.vesselBooking ?? ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateActiveRound('vesselBooking', val);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, vesselBooking: val }));
+                            }
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                          placeholder="예: HYUNDAI TOKYO V.024E" 
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>DOC CLS</span>
-                        <DateInput value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput 
+                          value={activeRound?.docCutoffDate ?? basicForm.docCutoffDate ?? ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateActiveRound('docCutoffDate', val);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, docCutoffDate: val }));
+                            }
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>CARGO CLS</span>
-                        <DateInput value={basicForm.cargoCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, cargoCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput 
+                          value={activeRound?.cargoCutoffDate ?? basicForm.cargoCutoffDate ?? ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateActiveRound('cargoCutoffDate', val);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, cargoCutoffDate: val }));
+                            }
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>
-                          ETD (출항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!basicForm.etd?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                          ETD (출항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!(activeRound?.etd || basicForm.etd)?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
                         </span>
-                        <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput 
+                          value={activeRound?.etd ?? basicForm.etd ?? ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateActiveRound('etd', val);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, etd: val }));
+                            }
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>
-                          ETA (입항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!basicForm.eta?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                          ETA (입항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!(activeRound?.eta || basicForm.eta)?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
                         </span>
-                        <DateInput value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput 
+                          value={activeRound?.eta ?? basicForm.eta ?? ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            handleUpdateActiveRound('eta', val);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, eta: val }));
+                            }
+                          }} 
+                          disabled={!isEditing} 
+                          style={inputStyle(isEditing)} 
+                        />
                       </div>
                     </div>
 
@@ -10826,27 +11468,40 @@ ${downloadLink}`;
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소</span>
                         {isEditing ? (
-                          <select value={basicForm.containerWorkspaceType} onChange={e => setBasicForm(p => ({ ...p, containerWorkspaceType: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14.5px', width: '100%', height: '37px' }}>
+                          <select 
+                            value={activeRound?.containerWorkspaceType ?? basicForm.containerWorkspaceType ?? ''} 
+                            onChange={e => {
+                              const val = e.target.value as any;
+                              handleUpdateActiveRound('containerWorkspaceType', val);
+                              if (!activeRound || activeRound.roundNumber === 1) {
+                                setBasicForm(p => ({ ...p, containerWorkspaceType: val }));
+                              }
+                            }} 
+                            style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14.5px', width: '100%', height: '37px' }}
+                          >
                             <option value="">선택사항</option>
                             <option value="CFS">CFS 작업</option>
                             <option value="Door">Door 작업</option>
                           </select>
                         ) : (
-                          <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
+                          <input type="text" value={(activeRound?.containerWorkspaceType || basicForm.containerWorkspaceType) === 'CFS' ? 'CFS 작업' : (activeRound?.containerWorkspaceType || basicForm.containerWorkspaceType) === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
                         )}
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
                         <DateInput 
-                          value={basicForm.cfsEntryDate || ''} 
+                          value={activeRound?.cfsEntryDate ?? basicForm.cfsEntryDate ?? ''} 
                           onChange={e => {
                             const newDate = e.target.value;
-                            setBasicForm(p => ({ ...p, cfsEntryDate: newDate }));
+                            handleUpdateActiveRound('cfsEntryDate', newDate);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, cfsEntryDate: newDate }));
+                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
-                              const timeVal = basicForm.cfsEntryTime || '오전 10시까지';
+                              const timeVal = activeRound?.cfsEntryTime || basicForm.cfsEntryTime || '오전 10시까지';
                               Object.keys(currentReports).forEach(sup => {
                                 const r = { ...currentReports[sup] };
                                 let rem = r.remarks || 'ORIGIN : MADE IN KOREA';
@@ -10877,14 +11532,17 @@ ${downloadLink}`;
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>입고시간</span>
                         <input 
                           type="text" 
-                          value={basicForm.cfsEntryTime || ''} 
+                          value={activeRound?.cfsEntryTime ?? basicForm.cfsEntryTime ?? ''} 
                           onChange={e => {
                             const newTime = e.target.value;
-                            setBasicForm(p => ({ ...p, cfsEntryTime: newTime }));
+                            handleUpdateActiveRound('cfsEntryTime', newTime);
+                            if (!activeRound || activeRound.roundNumber === 1) {
+                              setBasicForm(p => ({ ...p, cfsEntryTime: newTime }));
+                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
-                              const dateVal = basicForm.cfsEntryDate || '';
+                              const dateVal = activeRound?.cfsEntryDate || basicForm.cfsEntryDate || '';
                               if (dateVal) {
                                 Object.keys(currentReports).forEach(sup => {
                                   const r = { ...currentReports[sup] };
@@ -11118,8 +11776,8 @@ ${downloadLink}`;
                     </div>
                   </div>
                 </div>
-              
-              )}
+              </>
+            )}
 
               {/* 2) 패킹리스트 작성 및 검토 */}
               {activeLogisticsTab === '패킹리스트' && (
@@ -13273,6 +13931,9 @@ ${downloadLink}`;
           {/* 5. 서류관리 */}
           {activeStep === '서류관리' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* 분할 선적 차수 선택 바 */}
+              {renderShipmentRoundBar()}
+
               {/* 서류관리 하위 탭 */}
               <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
                 {[
@@ -13310,38 +13971,77 @@ ${downloadLink}`;
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {/* 수출신고번호, 수출면장 기준환율 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                      <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!(activeRound?.exportDeclarationNo || basicForm.exportDeclarationNo)?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                      <input 
+                        type="text" 
+                        value={activeRound?.exportDeclarationNo ?? basicForm.exportDeclarationNo ?? ''} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          handleUpdateActiveRound('exportDeclarationNo', val);
+                          if (!activeRound || activeRound.roundNumber === 1) {
+                            setBasicForm(p => ({ ...p, exportDeclarationNo: val }));
+                          }
+                        }} 
+                        disabled={!isEditing} 
+                        style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} 
+                        placeholder="예: 010-22-19-1234567" 
+                      />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                      <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1478.44" />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!(activeRound?.customsExchangeRate || basicForm.customsExchangeRate) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={activeRound?.customsExchangeRate ?? basicForm.customsExchangeRate ?? ''} 
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          handleUpdateActiveRound('customsExchangeRate', val);
+                          if (!activeRound || activeRound.roundNumber === 1) {
+                            setBasicForm(p => ({ ...p, customsExchangeRate: val }));
+                          }
+                        }} 
+                        disabled={!isEditing} 
+                        style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} 
+                        placeholder="예: 1478.44" 
+                      />
                     </div>
 
                     {/* B/L 번호 목록 다중 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {(basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])).some(bl => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                        {isEditing && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
-                              setBasicForm(p => ({
-                                ...p,
-                                blNumbers: [...currentBls, '']
-                              }));
-                            }}
-                            style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            + 추가
-                          </button>
-                        )}
+                        {(() => {
+                          const currentBls = (activeRound?.blNumbers && activeRound.blNumbers.length > 0) ? activeRound.blNumbers : (activeRound?.blNumber ? [activeRound.blNumber] : (basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])));
+                          return (
+                            <>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {currentBls.some((bl: string) => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+                              {isEditing && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextBls = [...currentBls, ''];
+                                    const combined = nextBls.filter(Boolean).join(', ');
+                                    handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
+                                    if (!activeRound || activeRound.roundNumber === 1) {
+                                      setBasicForm(p => ({
+                                        ...p,
+                                        blNumbers: nextBls,
+                                        blNumber: combined
+                                      }));
+                                    }
+                                  }}
+                                  style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  + 추가
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
                         {(() => {
-                          const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                          const currentBls = (activeRound?.blNumbers && activeRound.blNumbers.length > 0) ? activeRound.blNumbers : (activeRound?.blNumber ? [activeRound.blNumber] : (basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])));
                           if (currentBls.length === 0) {
                             return (
                               <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>등록된 B/L 번호가 없습니다. (수정 모드에서 추가 가능)</div>
@@ -13356,11 +14056,15 @@ ${downloadLink}`;
                                 onChange={(e) => {
                                   const nextBls = [...currentBls];
                                   nextBls[idx] = e.target.value;
-                                  setBasicForm(p => ({
-                                    ...p,
-                                    blNumbers: nextBls,
-                                    blNumber: nextBls.filter(Boolean).join(', ')
-                                  }));
+                                  const combined = nextBls.filter(Boolean).join(', ');
+                                  handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
+                                  if (!activeRound || activeRound.roundNumber === 1) {
+                                    setBasicForm(p => ({
+                                      ...p,
+                                      blNumbers: nextBls,
+                                      blNumber: combined
+                                    }));
+                                  }
                                 }}
                                 placeholder={`B/L 번호 #${idx + 1}`}
                                 style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
@@ -13370,11 +14074,15 @@ ${downloadLink}`;
                                   type="button"
                                   onClick={() => {
                                     const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
-                                    setBasicForm(p => ({
-                                      ...p,
-                                      blNumbers: nextBls,
-                                      blNumber: nextBls.filter(Boolean).join(', ')
-                                    }));
+                                    const combined = nextBls.filter(Boolean).join(', ');
+                                    handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
+                                    if (!activeRound || activeRound.roundNumber === 1) {
+                                      setBasicForm(p => ({
+                                        ...p,
+                                        blNumbers: nextBls,
+                                        blNumber: combined
+                                      }));
+                                    }
                                   }}
                                   style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
                                 >
@@ -13720,15 +14428,25 @@ ${downloadLink}`;
                     }
                     return customCiItems;
                   }
+
+                  // 분할 선적 모드인 경우 activeRound에 배정된 선적 품목 및 수량 기준 (0보다 큰 수량만)
+                  const itemsSource = (isSplitShipment && activeRound?.allocatedItems && activeRound.allocatedItems.length > 0)
+                    ? activeRound.allocatedItems.filter(ai => (Number(ai.shippedQty) || 0) > 0)
+                    : (orderItems || []);
+
                   return [
-                    ...(orderItems || []).map(it => {
+                    ...itemsSource.map(it => {
+                      const origIt = (orderItems || []).find(oi => oi.itemId === (it as any).itemId);
+                      const fullItem = origIt ? { ...origIt, ...it } : it;
+                      const qtyVal = Number((it as any).shippedQty !== undefined ? (it as any).shippedQty : (it as any).qty) || 0;
+                      const priceVal = Number(fullItem.unitPrice) || 0;
                       return {
-                        name: formatFullCiName(it),
-                        hsCode: getProductHsCode(it, products, basicForm.customer),
-                        qty: Number(it.qty) || 0,
-                        unit: it.unit || 'PCS',
-                        unitPrice: Number(it.unitPrice) || 0,
-                        amount: Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)),
+                        name: formatFullCiName(fullItem),
+                        hsCode: origIt ? getProductHsCode(origIt, products, basicForm.customer) : getProductHsCode(fullItem, products, basicForm.customer),
+                        qty: qtyVal,
+                        unit: fullItem.unit || 'PCS',
+                        unitPrice: priceVal,
+                        amount: qtyVal * priceVal,
                         isFreight: false
                       };
                     }),
@@ -13788,7 +14506,7 @@ ${downloadLink}`;
                   });
                   const entries = Object.entries(distinct);
                   if (entries.length > 0) {
-                    return entries.map(([name, code], i) => `${i + 1}) ${name}: ${code}`).join('\n');
+                    return entries.map(([name, hs]) => `${name} : HS CODE ${hs}`).join('\n');
                   }
                   return '';
                 })();
@@ -13797,17 +14515,25 @@ ${downloadLink}`;
                   ? customCiExtra.hsCodeSummary
                   : computedHsSummary;
 
-                // Auto-aggregate Container Info from FCL specs
+                // Container / Seal summary for Section B
+                const containerSummary = (basicForm.packingList?.containers || [])
+                  .map((c: any) => [c.containerNo, c.sealNo ? `(SEAL: ${c.sealNo})` : ''].filter(Boolean).join(' '))
+                  .filter(Boolean)
+                  .join(' / ');
                 const computedContainerInfo = formatContainerInfoFromSpecs(basicForm.shipmentType, basicForm.fclSpecs);
                 const effectiveContainerInfo = (customCiExtra.containerInfo !== undefined && customCiExtra.containerInfo !== '')
                   ? customCiExtra.containerInfo
-                  : computedContainerInfo;
+                  : (containerSummary || computedContainerInfo || 'N/M');
+
+                const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
+                const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
+                const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
+
+                const effectiveInvoiceNo = (isSplitShipment && activeRound?.ciNumber) ? activeRound.ciNumber : (basicForm.ciNumber || basicForm.piNumber || order.id);
+                const effectiveVessel = (isSplitShipment && activeRound?.vesselBooking) ? activeRound.vesselBooking : basicForm.vesselBooking;
+                const effectiveEtd = (isSplitShipment && activeRound?.etd) ? activeRound.etd : basicForm.etd;
 
                 exportExcelRef.current = (overrideIncludeLetterhead?: boolean) => {
-                  const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
-                  const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
-                  const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
-
                   const isYSComp = (basicForm.issuingCompany as string) === 'YS' || (basicForm.issuingCompany as string) === '영성ACC';
                   const activeCompDoc = myCompaniesList.find(c => 
                     c.id === basicForm.issuingCompany ||
@@ -13827,7 +14553,7 @@ ${downloadLink}`;
                     customerName: customApplicantVal,
                     customerAddress: '',
                     issuingCompany: basicForm.issuingCompany,
-                    invoiceNo: basicForm.ciNumber || basicForm.piNumber || order.id,
+                    invoiceNo: effectiveInvoiceNo,
                     invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
                     lcNo: basicForm.lcNo,
                     lcDate: basicForm.lcIssuingDate,
@@ -13836,8 +14562,8 @@ ${downloadLink}`;
                     remarks: basicForm.remark,
                     portOfLoading: basicForm.portOfLoading,
                     portOfDischarge: basicForm.portOfDischarge,
-                    vesselName: basicForm.vesselBooking,
-                    etd: basicForm.etd,
+                    vesselName: effectiveVessel,
+                    etd: effectiveEtd,
                     paymentTerms: basicForm.paymentTerms,
                     deliveryTerms: basicForm.incoterms,
                     shippingMarks: formattedMarkText || 'N/M',

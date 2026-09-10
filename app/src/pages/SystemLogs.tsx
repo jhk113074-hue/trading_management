@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.527',
+    version: 'v2.8.527',
+    date: '2026-09-10',
+    category: '신규기능',
+    title: '단일 오더 다회차 분할 선적(Split Shipment) 통합 아키텍처 및 선박·서류·품목배정 인터페이스 구축',
+    content: '• 한 건의 주문(PO)을 2~3회 이상에 걸쳐 선적할 수 있는 [분할 선적(Split Shipment)] 관리 체계 구축\n• [물류/선적] 및 [서류관리] 단계 상단에 유기적으로 동기화되는 [선적 차수 선택 바]([🚢 1차 선적] [🚢 2차 선적] [＋ 분할 선적 추가]) 배치\n• 차수별 선적 품목 및 수량 배정 테이블 구축: 총 주문 수량 대비 타 차수 선적수량 집계 및 잔여 수량 자동 계산, 초과선적 경고 방지 및 [⚡ 잔여 수량 전량 자동 배정] 원클릭 기능 지원\n• 차수별 독립 물류 스케줄 관리: 선박명/항차(Vessel/Voyage), BOOKING 번호, DOC CLS, CARGO CLS, ETD, ETA, 컨테이너 스펙 및 CFS 입고일시 독립 보관\n• 차수별 선적 서류(CI/PL 및 통관 서류) 완전 분리: 차수별 CI 번호 접미사 자동 추천, 배정된 품목 및 수량 기준 CI/PL 금액/수량 계산, B/L 번호 및 업로드 파일(B/L, 면장 등) 차수별 분리 보관\n• 기존 단일 선적 주문과의 100% 하위 호환성 유지(1차 선적 데이터 루트 필드 항시 동기화) 및 오더 목록(Orders)에서 [분할(N차)] 뱃지 및 차수별 ETD/ETA 동시 표시',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.526',
     version: 'v2.8.526',
     date: '2026-09-10',

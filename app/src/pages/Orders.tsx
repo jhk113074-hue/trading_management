@@ -1248,7 +1248,16 @@ export const Orders: React.FC = () => {
                     >
                       <td style={getTdStyle(0, { color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' })}>{orderIndex + 1}</td>
                       <td style={getTdStyle(1, { color: '#64748b', fontSize: '12px', fontWeight: 600, textAlign: 'center' })}>{formatDateShort(order.etd || order.poDate)}</td>
-                      <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
+                      <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{order.ciNumber || order.id}</span>
+                          {order.isSplitShipment && (order.shipmentRounds?.length || 0) > 1 && (
+                            <span style={{ fontSize: '11px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '1px 5px', fontWeight: 750, whiteSpace: 'nowrap' }}>
+                              분할({order.shipmentRounds?.length}차)
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>
                         {cleanCompanyName(order.customer)}
@@ -1276,9 +1285,33 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                       {/* 9: ETD */}
-                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.etd)}</td>
+                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
+                        {order.isSplitShipment && (order.shipmentRounds?.length || 0) > 1 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {order.shipmentRounds?.map((r, rIdx) => (
+                              <span key={r.id || rIdx} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                                <b style={{ color: '#2563eb' }}>{r.roundNumber || rIdx + 1}차:</b> {formatDateShort(r.etd) || '-'}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          formatDateShort(order.etd)
+                        )}
+                      </td>
                       {/* 10: ETA */}
-                      <td style={getTdStyle(10, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>{formatDateShort(order.eta)}</td>
+                      <td style={getTdStyle(10, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
+                        {order.isSplitShipment && (order.shipmentRounds?.length || 0) > 1 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {order.shipmentRounds?.map((r, rIdx) => (
+                              <span key={r.id || rIdx} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                                <b style={{ color: '#2563eb' }}>{r.roundNumber || rIdx + 1}차:</b> {formatDateShort(r.eta) || '-'}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          formatDateShort(order.eta)
+                        )}
+                      </td>
                       {/* 11: 단계 */}
                       <td style={getTdStyle(11)}>
                         {(() => {

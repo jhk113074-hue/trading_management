@@ -50,6 +50,75 @@ export interface OrderItem {
   supplierRemark?: string;
 }
 
+export interface ShipmentRoundAllocatedItem {
+  itemId: string;
+  productCode?: string;
+  name: string;
+  grade?: string;
+  unit: string;
+  orderQty: number; // 총 주문수량
+  shippedQty: number; // 이번 차수 선적 수량
+  unitPrice: number;
+  amount: number;
+  currency: string;
+}
+
+export interface ShipmentRound {
+  id: string; // 'round-1', 'round-2', ...
+  roundNumber: number; // 1, 2, 3...
+  title?: string; // '1차 선적', '2차 선적'
+  status?: '준비중' | '선적완료' | '지연' | string;
+  
+  // 1. 해당 차수 선적 품목 및 배정 수량
+  allocatedItems?: ShipmentRoundAllocatedItem[];
+
+  // 2. 물류 및 스케줄
+  bookingNo?: string;
+  vesselBooking?: string; // 선박명 / 항차
+  forwarderConfirmed?: string; // 포워더명
+  forwarders?: ForwarderEntry[]; // 포워더 목록
+  shipmentType?: 'LCL' | 'FCL' | '';
+  fclSpecs?: Array<{
+    type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG';
+    qty: number;
+    containerNo?: string;
+    sealNo?: string;
+  }>;
+  docCutoffDate?: string;
+  cargoCutoffDate?: string;
+  etd?: string;
+  eta?: string;
+  cfsEntryDate?: string;
+  cfsEntryTime?: string;
+  cfsContactInfo?: string;
+  cfsAddress?: string;
+  containerWorkspaceType?: 'CFS' | 'Door' | '';
+  shipmentCompleted?: 'Y' | 'N' | '';
+  
+  // 3. 서류 정보
+  ciNumber?: string; // 예: CI2609-01-1
+  blNumber?: string;
+  blNumbers?: string[];
+  exportDeclarationNo?: string;
+  customsExchangeRate?: number;
+  
+  // 4. 차수별 업로드 파일
+  blFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  ciFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  plFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  exportDeclarationFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  cooFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  
+  // 5. 차수별 패킹리스트 & 쉬핑마크
+  packingList?: any;
+  customCiItems?: any[];
+  customCiExtra?: any;
+  customPlRemarks?: string;
+  commonShippingMark?: any;
+  supplierArrivalReports?: Record<string, any>;
+  supplierArrivalReportFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>;
+}
+
 export interface Order {
   type?: 'trade' | 'consulting';
   id: string; // PO-YYYY-NNNN
@@ -236,6 +305,9 @@ export interface Order {
   }>;
   blNumbers?: string[];
   blNumber?: string;
+  isSplitShipment?: boolean; // 분할 선적 활성화 여부
+  shipmentRounds?: ShipmentRound[]; // 분할 선적 차수 목록 (1차, 2차, ...)
+  activeShipmentRoundId?: string; // 활성 선적 차수 ID
 }
 
 export const getFormattedPoId = (poId: string, _issuingCompany?: 'YSACC' | 'YS'): string => {
