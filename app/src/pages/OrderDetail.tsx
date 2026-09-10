@@ -3027,8 +3027,9 @@ export const OrderDetail: React.FC = () => {
               const localIt = (aIt.itemId && currentLocal.find((c: any) => c.itemId && c.itemId === aIt.itemId)) || currentLocal[idx];
               return {
                 ...aIt,
+                name: localIt?.name != null && localIt.name.trim() !== '' ? localIt.name : aIt.name,
                 supplier: localIt?.supplier != null && localIt.supplier.trim() !== '' ? localIt.supplier : aIt.supplier,
-                grade: localIt?.grade != null && localIt.grade.trim() !== '' ? localIt.grade : aIt.grade,
+                grade: localIt?.grade !== undefined ? localIt.grade : aIt.grade,
                 purchaseUnitPrice: localIt?.purchaseUnitPrice != null ? localIt.purchaseUnitPrice : aIt.purchaseUnitPrice,
                 purchaseUnitCurrency: localIt?.purchaseUnitCurrency || aIt.purchaseUnitCurrency
               };
@@ -3968,44 +3969,6 @@ export const OrderDetail: React.FC = () => {
       const updated = [...prev];
       let it = { ...updated[index], [field]: value };
       
-      if (field === 'name') {
-        const parsedCode = getRawProductCode(value);
-        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
-        if (prod) {
-          const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
-          const displayName = prod.nameEn || prod.nameKo || '';
-          
-          let supName = prod.supplierName || '';
-          if (prod.suppliers && prod.suppliers.length > 0) {
-            const defLink = prod.suppliers.find(s => s.isDefault);
-            if (defLink) {
-              supName = defLink.supplierName;
-            }
-          }
-          
-          const priceObj = getPriceForSupplier(prod, supName);
-          let buyPrice = priceObj.price;
-          let itemCurrency = priceObj.currency;
-
-          const qty = it.qty || 0;
-          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
-
-          it = {
-            ...it,
-            name: `[${prod.productCode}] ${displayName}`,
-            supplier: supName,
-            supplierContact: contactInfo || '',
-            grade: prod.spec || '',
-            unit: (prod.unit || 'kg') as any,
-            unitPrice: buyPrice,
-            currency: itemCurrency,
-            amount: amt,
-            purchaseUnitPrice: buyPrice,
-            purchaseUnitCurrency: itemCurrency
-          };
-        }
-      }
-
       if (field === 'supplier') {
         const parsedCode = getRawProductCode(it.name);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
@@ -4033,6 +3996,7 @@ export const OrderDetail: React.FC = () => {
       }
       
       updated[index] = it;
+      latestOrderStateRef.current.sourcingItems = updated;
       return updated;
     });
   };
@@ -5055,11 +5019,14 @@ export const OrderDetail: React.FC = () => {
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
-      const displayName = prod.nameEn || prod.nameKo || '';
+      const rawName = prod.nameEn || prod.nameKo || '';
+      const cleanDisplayName = rawName.replace(/^\[.*?\]\s*/, '').trim();
+      const codePrefix = prod.productCode ? `[${prod.productCode}] ` : '';
+      const finalName = `${codePrefix}${cleanDisplayName}`;
 
       updated[idx] = {
         ...updated[idx],
-        name: `[${prod.productCode}] ${displayName}`,
+        name: finalName,
         supplier: supName,
         supplierContact: contactInfo || '',
         grade: prod.spec || '',
@@ -5070,6 +5037,7 @@ export const OrderDetail: React.FC = () => {
         purchaseUnitPrice: buyPrice,
         purchaseUnitCurrency: itemCurrency
       };
+      latestOrderStateRef.current.sourcingItems = updated;
       return updated;
     });
   };
@@ -5094,11 +5062,14 @@ export const OrderDetail: React.FC = () => {
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
-      const displayName = prod.nameEn || prod.nameKo || '';
+      const rawName = prod.nameEn || prod.nameKo || '';
+      const cleanDisplayName = rawName.replace(/^\[.*?\]\s*/, '').trim();
+      const codePrefix = prod.productCode ? `[${prod.productCode}] ` : '';
+      const finalName = `${codePrefix}${cleanDisplayName}`;
 
       const targetItem = {
         ...updated[idx],
-        name: `[${prod.productCode}] ${displayName}`,
+        name: finalName,
         supplier: supName,
         supplierContact: contactInfo || '',
         grade: prod.spec || '',
@@ -5110,6 +5081,7 @@ export const OrderDetail: React.FC = () => {
         purchaseUnitCurrency: itemCurrency
       };
       updated[idx] = targetItem;
+      latestOrderStateRef.current.orderItems = updated;
 
       // 동기화: 수주 품목 정보 변경 시, 소싱/발주 탭(sourcingItems)에도 실시간 반영
       setSourcingItems(sourcingPrev => {
@@ -5129,6 +5101,7 @@ export const OrderDetail: React.FC = () => {
             currency: targetItem.currency
           };
         }
+        latestOrderStateRef.current.sourcingItems = sourcingUpdated;
         return sourcingUpdated;
       });
 
@@ -9722,12 +9695,25 @@ ${downloadLink}`;
                                                     ⋮⋮
                                                   </span>
                                                   <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', minWidth: '18px' }}>{idx + 1}.</span>
-                                                  <input
-                                                    type="text"
+                                                  <textarea
+                                                    rows={2}
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ flex: 1, minWidth: '0', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
+                                                    style={{
+                                                      flex: 1,
+                                                      minWidth: '0',
+                                                      padding: '4px 6px',
+                                                      border: '1px solid #cbd5e1',
+                                                      borderRadius: '4px',
+                                                      fontSize: '13px',
+                                                      fontWeight: 600,
+                                                      color: '#1e293b',
+                                                      resize: 'vertical',
+                                                      lineHeight: '18px',
+                                                      fontFamily: 'inherit',
+                                                      boxSizing: 'border-box'
+                                                    }}
                                                     title={it.name || ''}
                                                   />
                                                   <button
@@ -9748,25 +9734,13 @@ ${downloadLink}`;
                                                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap', marginTop: '3px' }}>스펙:</span>
                                                   <textarea
                                                     value={it.grade || ''}
-                                                    onChange={(e) => {
-                                                      const val = e.target.value;
-                                                      setSourcingItems(prev => {
-                                                        return prev.map(item => {
-                                                          if (item === it) {
-                                                            return { ...item, grade: val };
-                                                          }
-                                                          return item;
-                                                        });
-                                                      });
-                                                    }}
-                                                    rows={1}
+                                                    onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'grade', e.target.value)}
+                                                    rows={2}
                                                     placeholder="스펙/규격 입력"
                                                     style={{
                                                       flex: 1,
                                                       minWidth: '0',
-                                                      height: '24px',
-                                                      minHeight: '24px',
-                                                      padding: '2px 6px',
+                                                      padding: '4px 6px',
                                                       border: '1px solid #cbd5e1',
                                                       borderRadius: '4px',
                                                       fontSize: '12px',

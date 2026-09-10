@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.525',
+    version: 'v2.8.525',
+    date: '2026-09-10',
+    category: '기능개선',
+    title: '소싱/발주 단계 내 발주 품목명 및 스펙(Spec/Grade) 자유 편집 및 다줄(Multiline) 입력 개선',
+    content: '• 주문 상세 [소싱/발주] 단계의 공급업체별 발주 품목 테이블에서 [품목명 직접 입력] 및 [스펙: 규격 입력]을 자유롭게 수정 및 저장할 수 있도록 개선\n• 키 입력 시 기존 카탈로그 매칭 로직으로 인해 입력 텍스트가 초기화되거나 덮어씌워지던 현상을 제거하고 자유로운 텍스트 입력 지원\n• 품목명 및 스펙 입력창을 자동 개행 가능한 멀티라인 텍스트영역(Textarea)으로 업그레이드하여 긴 규격이나 상세 명칭도 잘림 없이 한눈에 확인 및 입력 가능\n• 품목 검색(🔍) 시 중복 대괄호 prefix(\'[[코드] ...]\') 발생 방지 처리 및 로컬 수정 내용이 실시간 메모리 참조(Ref)와 데이터베이스(DB)에 안전하게 반영되도록 보강',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.524',
     version: 'v2.8.524',
     date: '2026-09-10',
