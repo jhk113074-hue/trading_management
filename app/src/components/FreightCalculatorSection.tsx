@@ -80,10 +80,7 @@ const FormattedNumberInput: React.FC<{
 
 export const FreightCalculatorSection: React.FC<Props> = ({
   formData,
-  setFormData,
-  updateFreightCharge,
-  addFreightCharge,
-  removeFreightCharge
+  setFormData
 }) => {
   const [customContainerTypes, setCustomContainerTypes] = useState<string[]>([]);
   useEffect(() => {
@@ -93,11 +90,19 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const combinedContainerTypes = useMemo(() => {
     return Array.from(new Set([...DEFAULT_CONTAINER_TYPES, ...customContainerTypes]));
   }, [customContainerTypes]);
+
   const calc = formData.freightCalculationDetails || {
     oceanCurrency: 'USD',
     oceanPriceRaw: formData.freightCharges?.[0]?.price || 0,
     oceanExchangeRate: formData.exchangeRate || 1400,
     oceanVarianceRate: 0,
+    containers: [{
+      type: formData.freightCharges?.[0]?.type || '20GP',
+      qty: formData.freightCharges?.[0]?.qty ?? 1,
+      oceanPriceRaw: formData.freightCharges?.[0]?.price || 0
+    }],
+    extraCharges: [],
+    freightRemarks: '',
     coFee: { amount: 0, currency: 'KRW' },
     customsFee: { amount: 0, currency: 'KRW' },
     purchaseCertFee: { amount: 0, currency: 'KRW' },
@@ -106,11 +111,50 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     roundUpType: 'none'
   };
 
+  // Derive active containers (backward compatibility with legacy oceanPriceRaw)
+  const containers: Array<{ type: string; qty: number; oceanPriceRaw: number }> = useMemo(() => {
+    if (calc.containers && calc.containers.length > 0) {
+      return calc.containers;
+    }
+    const legacyType = formData.freightCharges?.[0]?.type || '20GP';
+    const legacyQty = formData.freightCharges?.[0]?.qty ?? 1;
+    const legacyPrice = calc.oceanPriceRaw || formData.freightCharges?.[0]?.price || 0;
+    return [{ type: legacyType, qty: legacyQty, oceanPriceRaw: legacyPrice }];
+  }, [calc.containers, calc.oceanPriceRaw, formData.freightCharges]);
+
+  // Derive active extra charges
+  const extraCharges: Array<{ type: string; qty: number; price: number; remarks: string }> = useMemo(() => {
+    if (calc.extraCharges !== undefined) {
+      return calc.extraCharges;
+    }
+    const list = formData.freightCharges || [];
+    const containerCount = calc.containers?.length || 1;
+    const candidates = list.slice(containerCount);
+    return candidates
+      .filter(fc => !fc.type?.includes('부대비용') && !fc.type?.includes('Incidental'))
+      .map(fc => ({
+        type: fc.type || '',
+        qty: fc.qty ?? 1,
+        price: fc.price ?? 0,
+        remarks: fc.remarks || ''
+      }));
+  }, [calc.extraCharges, calc.containers, formData.freightCharges]);
+
   const currentExRate = Number(calc.oceanExchangeRate || formData.exchangeRate || 1400);
-  const rawOcean = Number(calc.oceanPriceRaw || 0);
-  const baseOceanUsd = calc.oceanCurrency === 'KRW' ? (currentExRate > 0 ? rawOcean / currentExRate : 0) : rawOcean;
   const variance = Number(calc.oceanVarianceRate || 0);
-  const appliedOceanUsd = baseOceanUsd * (1 + variance / 100);
+
+  // Compute total ocean freight in USD
+  const appliedOceanTotalUsd = useMemo(() => {
+    return containers.reduce((acc, c) => {
+      const rawPrice = Number(c.oceanPriceRaw || 0);
+      const baseUnitUsd = calc.oceanCurrency === 'KRW'
+        ? (currentExRate > 0 ? rawPrice / currentExRate : 0)
+        : rawPrice;
+      const appliedUnitUsd = parseFloat((baseUnitUsd * (1 + variance / 100)).toFixed(2));
+      const lineQty = Number(c.qty || 1);
+      return acc + parseFloat((lineQty * appliedUnitUsd).toFixed(2));
+    }, 0);
+  }, [containers, calc.oceanCurrency, currentExRate, variance]);
 
   const toUsd = (fee?: { amount: number; currency: 'KRW' | 'USD' }) => {
     if (!fee || !fee.amount) return 0;
@@ -123,7 +167,14 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const purchaseCertUsd = toUsd(calc.purchaseCertFee);
   const inlandUsd = toUsd(calc.inlandFreight);
   const otherUsd = toUsd(calc.otherFee);
-  
+  const incidentalTotalUsd = coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd;
+
+  const extraTotalUsd = useMemo(() => {
+    return extraCharges.reduce((acc, ex) => {
+      return acc + (Number(ex.qty ?? 1) * Number(ex.price || 0));
+    }, 0);
+  }, [extraCharges]);
+
   const excelRoundup = (value: number, digits: number): number => {
     if (value === 0) return 0;
     const epsilon = 1e-9;
@@ -137,8 +188,8 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     return sign * Math.ceil((absValue * factor) - epsilon) / factor;
   };
 
-  const rawTotalCalculated = appliedOceanUsd + coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd;
-  
+  const rawTotalCalculated = appliedOceanTotalUsd + incidentalTotalUsd + extraTotalUsd;
+
   let finalCalculated = parseFloat(rawTotalCalculated.toFixed(2));
   const activeRoundType = calc.roundUpType || 'none';
   if (activeRoundType === 'ceil_1' || activeRoundType === '0') {
@@ -159,6 +210,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     finalCalculated = Math.ceil(finalCalculated / 10) * 10;
   }
 
+  // Unified updater for freightCalculationDetails & formData.freightCharges
   const updateFreightCalculation = (updates: any) => {
     setFormData(prev => {
       const prevDetails = prev.freightCalculationDetails || {
@@ -166,6 +218,13 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         oceanPriceRaw: prev.freightCharges?.[0]?.price || 0,
         oceanExchangeRate: prev.exchangeRate || 1400,
         oceanVarianceRate: 0,
+        containers: [{
+          type: prev.freightCharges?.[0]?.type || '20GP',
+          qty: prev.freightCharges?.[0]?.qty ?? 1,
+          oceanPriceRaw: prev.freightCharges?.[0]?.price || 0
+        }],
+        extraCharges: [],
+        freightRemarks: '',
         coFee: { amount: 0, currency: 'KRW' },
         customsFee: { amount: 0, currency: 'KRW' },
         purchaseCertFee: { amount: 0, currency: 'KRW' },
@@ -176,15 +235,43 @@ export const FreightCalculatorSection: React.FC<Props> = ({
 
       const newDetails = { ...prevDetails, ...updates };
       const exRate = Number(newDetails.oceanExchangeRate || prev.exchangeRate || 1400);
-
-      const rPrice = Number(newDetails.oceanPriceRaw || 0);
-      const bOceanUsd = newDetails.oceanCurrency === 'KRW'
-        ? (exRate > 0 ? rPrice / exRate : 0)
-        : rPrice;
-
       const vRate = Number(newDetails.oceanVarianceRate || 0);
-      const appOceanUsd = bOceanUsd * (1 + vRate / 100);
 
+      // 1. Containers list
+      const curContainers = (newDetails.containers && newDetails.containers.length > 0)
+        ? newDetails.containers
+        : [{
+            type: prev.freightCharges?.[0]?.type || '20GP',
+            qty: prev.freightCharges?.[0]?.qty ?? 1,
+            oceanPriceRaw: Number(newDetails.oceanPriceRaw || prev.freightCharges?.[0]?.price || 0)
+          }];
+
+      let oceanTotalUsd = 0;
+      const containerRows = curContainers.map((c: any) => {
+        const rawPrice = Number(c.oceanPriceRaw || 0);
+        const baseUnitUsd = newDetails.oceanCurrency === 'KRW'
+          ? (exRate > 0 ? rawPrice / exRate : 0)
+          : rawPrice;
+        const appliedUnitUsd = parseFloat((baseUnitUsd * (1 + vRate / 100)).toFixed(2));
+        const lineQty = Number(c.qty || 1);
+        const lineTotalUsd = parseFloat((lineQty * appliedUnitUsd).toFixed(2));
+        oceanTotalUsd += lineTotalUsd;
+
+        return {
+          type: c.type || '20GP',
+          qty: lineQty,
+          price: appliedUnitUsd,
+          amount: lineTotalUsd,
+          remarks: '기본 해상운임',
+          name: c.type || '20GP'
+        };
+      });
+
+      // Synchronize backward-compatible oceanPriceRaw to first container
+      newDetails.oceanPriceRaw = curContainers[0]?.oceanPriceRaw || 0;
+      newDetails.containers = curContainers;
+
+      // 2. Incidental fees in USD
       const toUsdHelper = (fee?: { amount: number; currency: 'KRW' | 'USD' }) => {
         if (!fee || !fee.amount) return 0;
         if (fee.currency === 'USD') return Number(fee.amount);
@@ -196,67 +283,147 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       const pCertUsd = toUsdHelper(newDetails.purchaseCertFee);
       const inlUsd = toUsdHelper(newDetails.inlandFreight);
       const othUsd = toUsdHelper(newDetails.otherFee);
+      const rawIncidentalUsd = parseFloat((cUsd + custUsd + pCertUsd + inlUsd + othUsd).toFixed(2));
 
-      let totalCalcUsd = parseFloat((appOceanUsd + cUsd + custUsd + pCertUsd + inlUsd + othUsd).toFixed(2));
-      
+      // 3. Extra charges
+      const curExtras = newDetails.extraCharges || [];
+      let extraTotalUsd = 0;
+      const extraRows = curExtras.map((ex: any) => {
+        const exQty = Number(ex.qty ?? 1);
+        const exPrice = Number(ex.price || 0);
+        const exAmt = parseFloat((exQty * exPrice).toFixed(2));
+        extraTotalUsd += exAmt;
+        return {
+          type: ex.type || '추가 운송',
+          qty: exQty,
+          price: exPrice,
+          amount: exAmt,
+          remarks: ex.remarks || '',
+          name: ex.type || '추가 운송'
+        };
+      });
+
+      // 4. Roundup on subtotal (Ocean + Incidental + Extras)
+      const rawSubtotal = oceanTotalUsd + rawIncidentalUsd + extraTotalUsd;
+      let finalWithRoundup = parseFloat(rawSubtotal.toFixed(2));
       const rType = newDetails.roundUpType || 'none';
       if (rType === 'ceil_1' || rType === '0') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, 0);
+        finalWithRoundup = excelRoundup(rawSubtotal, 0);
       } else if (rType === '1') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, 1);
+        finalWithRoundup = excelRoundup(rawSubtotal, 1);
       } else if (rType === '2') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, 2);
+        finalWithRoundup = excelRoundup(rawSubtotal, 2);
       } else if (rType === '-1') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, -1);
+        finalWithRoundup = excelRoundup(rawSubtotal, -1);
       } else if (rType === '-2') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, -2);
+        finalWithRoundup = excelRoundup(rawSubtotal, -2);
       } else if (rType === '-3') {
-        totalCalcUsd = excelRoundup(totalCalcUsd, -3);
+        finalWithRoundup = excelRoundup(rawSubtotal, -3);
       } else if (rType === 'ceil_5') {
-        totalCalcUsd = Math.ceil(totalCalcUsd / 5) * 5;
+        finalWithRoundup = Math.ceil(finalWithRoundup / 5) * 5;
       } else if (rType === 'ceil_10') {
-        totalCalcUsd = Math.ceil(totalCalcUsd / 10) * 10;
+        finalWithRoundup = Math.ceil(finalWithRoundup / 10) * 10;
       }
 
-      let currentCharges = [...(prev.freightCharges || [])];
-      if (currentCharges.length === 0) {
-        currentCharges = [{ type: 'LCL', qty: 1, price: totalCalcUsd, remarks: '', name: 'LCL', amount: totalCalcUsd }];
-      } else {
-        currentCharges[0] = {
-          ...currentCharges[0],
-          price: totalCalcUsd,
-          amount: (currentCharges[0].qty || 1) * totalCalcUsd
-        };
+      const roundupDiff = parseFloat((finalWithRoundup - rawSubtotal).toFixed(2));
+
+      // 5. Construct freightCharges list
+      const finalFreightCharges: any[] = [...containerRows];
+
+      if (rawIncidentalUsd > 0 || roundupDiff !== 0) {
+        const adjustedIncidentalUsd = parseFloat(Math.max(0, rawIncidentalUsd + roundupDiff).toFixed(2));
+        finalFreightCharges.push({
+          type: '부대비용 (Incidental Charges)',
+          qty: 1,
+          price: adjustedIncidentalUsd,
+          amount: adjustedIncidentalUsd,
+          remarks: newDetails.freightRemarks || '수출신고/내륙운송 등 세부 부대비용',
+          name: '부대비용 (Incidental Charges)'
+        });
+      } else if (newDetails.freightRemarks && finalFreightCharges.length > 0) {
+        finalFreightCharges[0].remarks = newDetails.freightRemarks;
       }
+
+      // Append extra charges
+      finalFreightCharges.push(...extraRows);
 
       return {
         ...prev,
         freightCalculationDetails: newDetails,
-        freightCharges: currentCharges
+        freightCharges: finalFreightCharges,
+        freightTotal: finalWithRoundup
       };
     });
   };
 
+  // Container handlers
+  const handleAddContainer = () => {
+    const nextContainers = [
+      ...containers,
+      { type: '40HQ', qty: 1, oceanPriceRaw: 0 }
+    ];
+    updateFreightCalculation({ containers: nextContainers });
+  };
+
+  const handleUpdateContainer = (idx: number, field: 'type' | 'qty' | 'oceanPriceRaw', value: any) => {
+    const nextContainers = [...containers];
+    nextContainers[idx] = { ...nextContainers[idx], [field]: value };
+    updateFreightCalculation({ containers: nextContainers });
+  };
+
+  const handleRemoveContainer = (idx: number) => {
+    if (containers.length <= 1) return;
+    const nextContainers = containers.filter((_, i) => i !== idx);
+    updateFreightCalculation({ containers: nextContainers });
+  };
+
+  // Extra charges handlers
+  const handleAddExtraCharge = () => {
+    const nextExtras = [
+      ...extraCharges,
+      { type: '추가 운송', qty: 1, price: 0, remarks: '' }
+    ];
+    updateFreightCalculation({ extraCharges: nextExtras });
+  };
+
+  const handleUpdateExtraCharge = (idx: number, field: 'type' | 'qty' | 'price' | 'remarks', value: any) => {
+    const nextExtras = [...extraCharges];
+    nextExtras[idx] = { ...nextExtras[idx], [field]: value };
+    updateFreightCalculation({ extraCharges: nextExtras });
+  };
+
+  const handleRemoveExtraCharge = (idx: number) => {
+    const nextExtras = extraCharges.filter((_, i) => i !== idx);
+    updateFreightCalculation({ extraCharges: nextExtras });
+  };
+
+  // Auto-generate remarks
   const generateFreightRemarks = () => {
-    const details = formData.freightCalculationDetails;
-    if (!details) return;
     const parts: string[] = [];
 
-    const rPrice = Number(details.oceanPriceRaw || 0);
-    if (rPrice > 0) {
-      const currSym = details.oceanCurrency === 'KRW' ? '₩' : '$';
-      const varStr = (details.oceanVarianceRate || 0) !== 0 ? ` (변동률 ${(details.oceanVarianceRate || 0) > 0 ? '+' : ''}${details.oceanVarianceRate}%)` : '';
-      parts.push(`해상운임: ${currSym}${rPrice.toLocaleString()}${varStr}`);
+    const containerParts = containers
+      .filter(c => Number(c.oceanPriceRaw || 0) > 0)
+      .map(c => {
+        const currSym = calc.oceanCurrency === 'KRW' ? '₩' : '$';
+        return `${c.type || '20GP'} ${c.qty || 1}대 (${currSym}${Number(c.oceanPriceRaw || 0).toLocaleString()})`;
+      });
+
+    if (containerParts.length > 0) {
+      const varStr = (calc.oceanVarianceRate || 0) !== 0
+        ? ` (변동률 ${(calc.oceanVarianceRate || 0) > 0 ? '+' : ''}${calc.oceanVarianceRate}%)`
+        : '';
+      parts.push(`해상운임: ${containerParts.join(' + ')}${varStr}`);
     }
-    if (details.coFee?.amount) parts.push(`상공회의소: ${details.coFee.currency === 'USD' ? '$' : '₩'}${Number(details.coFee.amount).toLocaleString()}`);
-    if (details.customsFee?.amount) parts.push(`수출신고: ${details.customsFee.currency === 'USD' ? '$' : '₩'}${Number(details.customsFee.amount).toLocaleString()}`);
-    if (details.purchaseCertFee?.amount) parts.push(`구매확인서: ${details.purchaseCertFee.currency === 'USD' ? '$' : '₩'}${Number(details.purchaseCertFee.amount).toLocaleString()}`);
-    if (details.inlandFreight?.amount) parts.push(`내륙운송: ${details.inlandFreight.currency === 'USD' ? '$' : '₩'}${Number(details.inlandFreight.amount).toLocaleString()}`);
-    if (details.otherFee?.amount) parts.push(`기타부대: ${details.otherFee.currency === 'USD' ? '$' : '₩'}${Number(details.otherFee.amount).toLocaleString()}`);
+
+    if (calc.coFee?.amount) parts.push(`상공회의소: ${calc.coFee.currency === 'USD' ? '$' : '₩'}${Number(calc.coFee.amount).toLocaleString()}`);
+    if (calc.customsFee?.amount) parts.push(`수출신고: ${calc.customsFee.currency === 'USD' ? '$' : '₩'}${Number(calc.customsFee.amount).toLocaleString()}`);
+    if (calc.purchaseCertFee?.amount) parts.push(`구매확인서: ${calc.purchaseCertFee.currency === 'USD' ? '$' : '₩'}${Number(calc.purchaseCertFee.amount).toLocaleString()}`);
+    if (calc.inlandFreight?.amount) parts.push(`내륙운송: ${calc.inlandFreight.currency === 'USD' ? '$' : '₩'}${Number(calc.inlandFreight.amount).toLocaleString()}`);
+    if (calc.otherFee?.amount) parts.push(`기타부대: ${calc.otherFee.currency === 'USD' ? '$' : '₩'}${Number(calc.otherFee.amount).toLocaleString()}`);
 
     const summary = parts.join(' / ');
     if (summary) {
-      updateFreightCharge(0, 'remarks', summary);
+      updateFreightCalculation({ freightRemarks: summary });
     }
   };
 
@@ -283,7 +450,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           </button>
           <button 
             type="button" 
-            onClick={addFreightCharge} 
+            onClick={handleAddExtraCharge} 
             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#475569' }}
           >
             ＋ 추가 운송행
@@ -291,108 +458,199 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 1. 기본 해상운임 섹션 */}
-      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>🌊 1. 기본 해상운임 (Ocean Freight & Variance)</span>
-          <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 800 }}>
-            적용 해상운임: ${appliedOceanUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.6fr 0.8fr 1.2fr 1fr 0.8fr', gap: '8px', alignItems: 'center' }}>
-          {/* Container Type */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>컨테이너 타입</label>
-            <select
-              value={formData.freightCharges?.[0]?.type || 'LCL'}
-              onChange={e => {
-                const selectedVal = e.target.value;
-                const currentVal = formData.freightCharges?.[0]?.type || 'LCL';
-                handleContainerTypeSelection(selectedVal, currentVal, customContainerTypes, (newType) => {
-                  if (formData.freightCharges && formData.freightCharges.length > 0) {
-                    updateFreightCharge(0, 'type', newType);
-                  } else {
-                    addFreightCharge();
-                    updateFreightCharge(0, 'type', newType);
-                  }
-                });
-              }}
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, background: '#fff', outline: 'none' }}
+      {/* 1. 기본 해상운임 섹션 (복수 컨테이너 행 지원) */}
+      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px' }}>
+        {/* Header & Global Settings Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase' }}>
+              🌊 1. 기본 해상운임 (Ocean Freight & Variance)
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#2563eb', background: '#dbeafe', padding: '2px 8px', borderRadius: '4px' }}>
+              적용 해상운임 총액: ${appliedOceanTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          {/* Section 1 Common Controls: Currency, ExRate, Variance, Add Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* 운임 통화 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b' }}>통화:</label>
+              <select
+                value={calc.oceanCurrency || 'USD'}
+                onChange={e => updateFreightCalculation({ oceanCurrency: e.target.value as 'USD' | 'KRW' })}
+                style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, background: calc.oceanCurrency === 'KRW' ? '#f0fdf4' : '#eff6ff', color: calc.oceanCurrency === 'KRW' ? '#166534' : '#1d4ed8', outline: 'none' }}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="KRW">KRW (₩)</option>
+              </select>
+            </div>
+
+            {/* 적용 기준환율 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b' }}>기준환율:</label>
+              <FormattedNumberInput
+                value={calc.oceanExchangeRate || formData.exchangeRate || 1400}
+                isInteger={false}
+                placeholder="1,400"
+                onChange={val => updateFreightCalculation({ oceanExchangeRate: val || 1400 })}
+                style={{ width: '80px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* 변동률 % */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b' }}>변동률:</label>
+              <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  step="1"
+                  value={calc.oceanVarianceRate || ''}
+                  onChange={e => updateFreightCalculation({ oceanVarianceRate: parseFloat(e.target.value) || 0 })}
+                  placeholder="0"
+                  style={{ width: '55px', height: '30px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px 0 0 4px', fontSize: '12px', fontWeight: 700, color: (calc.oceanVarianceRate || 0) > 0 ? '#16a34a' : (calc.oceanVarianceRate || 0) < 0 ? '#dc2626' : '#1e293b', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+                />
+                <span style={{ height: '30px', display: 'flex', alignItems: 'center', background: '#f1f5f9', border: '1px solid #cbd5e1', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 5px', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>%</span>
+              </div>
+            </div>
+
+            {/* 컨테이너 규격 추가 버튼 */}
+            <button
+              type="button"
+              onClick={handleAddContainer}
+              style={{ height: '30px', background: '#2563eb', color: '#fff', border: 'none', padding: '0 10px', borderRadius: '4px', fontSize: '11.5px', fontWeight: 750, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 1px 2px rgba(37,99,235,0.2)' }}
             >
-              {combinedContainerTypes.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-              <option value="ADD_NEW_CONTAINER_TYPE" style={{ color: '#2563eb', fontWeight: 'bold' }}>
-                ➕ 신규 타입 직접 추가...
-              </option>
-            </select>
-          </div>
-
-          {/* Qty */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>수량</label>
-            <FormattedNumberInput
-              value={formData.freightCharges?.[0]?.qty ?? 1}
-              isInteger={false}
-              placeholder="1"
-              onChange={val => updateFreightCharge(0, 'qty', val || 1)}
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          {/* Currency */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>운임 통화</label>
-            <select
-              value={calc.oceanCurrency || 'USD'}
-              onChange={e => updateFreightCalculation({ oceanCurrency: e.target.value as 'USD' | 'KRW' })}
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, background: calc.oceanCurrency === 'KRW' ? '#f0fdf4' : '#eff6ff', color: calc.oceanCurrency === 'KRW' ? '#166534' : '#1d4ed8', outline: 'none' }}
-            >
-              <option value="USD">USD ($)</option>
-              <option value="KRW">KRW (₩)</option>
-            </select>
-          </div>
-
-          {/* Raw Ocean Price */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
-              해상운임 단가 ({calc.oceanCurrency || 'USD'})
-            </label>
-            <FormattedNumberInput
-              value={calc.oceanPriceRaw || 0}
-              isInteger={calc.oceanCurrency === 'KRW'}
-              placeholder={calc.oceanCurrency === 'KRW' ? '예: 1,400,000' : '예: 1,000.00'}
-              onChange={val => updateFreightCalculation({ oceanPriceRaw: val })}
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          {/* Exchange Rate */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>적용 기준환율 (₩/$)</label>
-            <FormattedNumberInput
-              value={calc.oceanExchangeRate || formData.exchangeRate || 1400}
-              isInteger={false}
-              placeholder="1,400"
-              onChange={val => updateFreightCalculation({ oceanExchangeRate: val || 1400 })}
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          {/* Variance Rate % */}
-          <div>
-            <label style={{ fontSize: '10.5px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>변동률 (%)</label>
-            <input
-              type="number"
-              step="1"
-              value={calc.oceanVarianceRate || ''}
-              onChange={e => updateFreightCalculation({ oceanVarianceRate: parseFloat(e.target.value) || 0 })}
-              placeholder="예: 10"
-              style={{ width: '100%', height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: (calc.oceanVarianceRate || 0) > 0 ? '#16a34a' : (calc.oceanVarianceRate || 0) < 0 ? '#dc2626' : '#1e293b', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
-            />
+              ➕ 컨테이너 규격 추가
+            </button>
           </div>
         </div>
+
+        {/* Container Rows List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {containers.map((c, idx) => {
+            const rawP = Number(c.oceanPriceRaw || 0);
+            const unitUsd = (calc.oceanCurrency === 'KRW' ? (currentExRate > 0 ? rawP / currentExRate : 0) : rawP);
+            const appliedUnitUsd = unitUsd * (1 + (calc.oceanVarianceRate || 0) / 100);
+            const lineTotalUsd = (c.qty || 1) * appliedUnitUsd;
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.4fr 0.7fr 1.3fr 1.2fr 34px',
+                  gap: '8px',
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '5px',
+                  padding: '6px 10px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                }}
+              >
+                {/* Container Type */}
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
+                    컨테이너 규격 #{idx + 1}
+                  </label>
+                  <select
+                    value={c.type || '20GP'}
+                    onChange={e => {
+                      const selectedVal = e.target.value;
+                      handleContainerTypeSelection(selectedVal, c.type || '20GP', customContainerTypes, (newType) => {
+                        handleUpdateContainer(idx, 'type', newType);
+                      });
+                    }}
+                    style={{ width: '100%', height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#1e293b', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                  >
+                    {combinedContainerTypes.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    <option value="ADD_NEW_CONTAINER_TYPE" style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                      ➕ 신규 타입 직접 추가...
+                    </option>
+                  </select>
+                </div>
+
+                {/* Qty */}
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
+                    수량 (대)
+                  </label>
+                  <FormattedNumberInput
+                    value={c.qty ?? 1}
+                    isInteger={true}
+                    placeholder="1"
+                    onChange={val => handleUpdateContainer(idx, 'qty', val || 1)}
+                    style={{ width: '100%', height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Ocean Freight Unit Price */}
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
+                    운임 단가 ({calc.oceanCurrency || 'USD'})
+                  </label>
+                  <FormattedNumberInput
+                    value={c.oceanPriceRaw || 0}
+                    isInteger={calc.oceanCurrency === 'KRW'}
+                    placeholder={calc.oceanCurrency === 'KRW' ? '예: 1,400,000' : '예: 1,000.00'}
+                    onChange={val => handleUpdateContainer(idx, 'oceanPriceRaw', val)}
+                    style={{ width: '100%', height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Row Applied Subtotal USD */}
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
+                    적용 소계 (USD)
+                  </label>
+                  <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12.5px', fontWeight: 800, color: '#1d4ed8', boxSizing: 'border-box' }}>
+                    ${lineTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                {/* Remove Container Button */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%', paddingBottom: '1px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveContainer(idx)}
+                    disabled={containers.length <= 1}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      background: containers.length <= 1 ? '#f1f5f9' : '#fee2e2',
+                      color: containers.length <= 1 ? '#94a3b8' : '#dc2626',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: containers.length <= 1 ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title={containers.length <= 1 ? '최소 1개의 컨테이너 규격이 필요합니다' : '컨테이너 규격 삭제'}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Multi-container summary badge if > 1 containers */}
+        {containers.length > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', padding: '6px 10px', background: '#eff6ff', borderRadius: '4px', border: '1px dashed #93c5fd' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#1e40af' }}>
+              📦 컨테이너 구성 합계: {containers.map(c => `${c.type || '20GP'} ${c.qty || 1}대`).join(' + ')} (총 {containers.reduce((sum, c) => sum + (c.qty || 1), 0)}대)
+            </span>
+            <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1d4ed8' }}>
+              총 해상운임 소계: ${appliedOceanTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 2. 5종 부대비용 그리드 */}
@@ -400,16 +658,16 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         <div style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>📑 2. 부대비용 세부 분리 입력 (Incidental Logistics Costs)</span>
           <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
-            부대비용 소계: ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            부대비용 소계: ${incidentalTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-          {/* 1. 상공회의소 (상업송장, 원산지증명) */}
+          {/* 1. 상공회의소 */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="상공회의소(상업송장,원산지증명)">
-                📜 상공회의소(상업송장,원산지증명)
+                📜 상공회의소
               </span>
               <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700, marginLeft: '4px' }}>${coUsd.toFixed(2)}</span>
             </div>
@@ -507,7 +765,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 5. Other Fee (기타) */}
+          {/* 5. Other Fee */}
           <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>📦 기타 부대비용</span>
@@ -540,50 +798,53 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', width: '90px' }}>비고 (Remarks):</span>
           <textarea
             placeholder="비고란 (비고 자동생성 버튼 클릭 시 세부 항목이 자동 입력됩니다)"
-            value={formData.freightCharges?.[0]?.remarks || ''}
-            onChange={e => updateFreightCharge(0, 'remarks', e.target.value)}
+            value={calc.freightRemarks || formData.freightCharges?.[0]?.remarks || ''}
+            onChange={e => updateFreightCalculation({ freightRemarks: e.target.value })}
             rows={1}
             style={{ flex: 1, minHeight: '34px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
 
-        {/* Extra Freight Rows if any (Index >= 1) */}
-        {(formData.freightCharges || []).slice(1).map((fc, idx) => {
-          const actualIdx = idx + 1;
-          return (
-            <div key={actualIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fdf2f8', padding: '6px 8px', borderRadius: '4px', border: '1px dashed #f472b6' }}>
-              <input
-                type="text"
-                placeholder="추가 운송 항목명"
-                value={fc.type || ''}
-                onChange={e => updateFreightCharge(actualIdx, 'type', e.target.value)}
-                style={{ width: '130px', height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px' }}
-              />
-              <FormattedNumberInput
-                value={fc.qty ?? 1}
-                isInteger={false}
-                placeholder="수량"
-                onChange={val => updateFreightCharge(actualIdx, 'qty', val || 1)}
-                style={{ width: '60px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right' }}
-              />
-              <FormattedNumberInput
-                value={fc.price ?? 0}
-                isInteger={false}
-                placeholder="금액(USD)"
-                onChange={val => updateFreightCharge(actualIdx, 'price', val)}
-                style={{ width: '100px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right' }}
-              />
-              <textarea
-                placeholder="비고"
-                value={fc.remarks || ''}
-                onChange={e => updateFreightCharge(actualIdx, 'remarks', e.target.value)}
-                rows={1}
-                style={{ flex: 1, minHeight: '30px', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px' }}
-              />
-              <button type="button" onClick={() => removeFreightCharge(actualIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '3px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}>✕</button>
-            </div>
-          );
-        })}
+        {/* Extra Freight Rows (from extraCharges) */}
+        {extraCharges.map((fc, idx) => (
+          <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fdf2f8', padding: '6px 8px', borderRadius: '4px', border: '1px dashed #f472b6' }}>
+            <input
+              type="text"
+              placeholder="추가 운송 항목명"
+              value={fc.type || ''}
+              onChange={e => handleUpdateExtraCharge(idx, 'type', e.target.value)}
+              style={{ width: '130px', height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+            />
+            <FormattedNumberInput
+              value={fc.qty ?? 1}
+              isInteger={false}
+              placeholder="수량"
+              onChange={val => handleUpdateExtraCharge(idx, 'qty', val || 1)}
+              style={{ width: '60px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+            />
+            <FormattedNumberInput
+              value={fc.price ?? 0}
+              isInteger={false}
+              placeholder="금액(USD)"
+              onChange={val => handleUpdateExtraCharge(idx, 'price', val)}
+              style={{ width: '100px', height: '30px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', textAlign: 'right', outline: 'none', boxSizing: 'border-box' }}
+            />
+            <input
+              type="text"
+              placeholder="비고"
+              value={fc.remarks || ''}
+              onChange={e => handleUpdateExtraCharge(idx, 'remarks', e.target.value)}
+              style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+            />
+            <button
+              type="button"
+              onClick={() => handleRemoveExtraCharge(idx)}
+              style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '3px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* 4. Final Decided Total Freight Badge with Round Up Feature */}
@@ -594,7 +855,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
               🎯 최종 결정 운송비 (Final Total Freight)
             </span>
             <span style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 600 }}>
-              (해상운임 ${appliedOceanUsd.toFixed(2)} + 부대비용 ${(coUsd + customsUsd + purchaseCertUsd + inlandUsd + otherUsd).toFixed(2)})
+              (해상운임 ${appliedOceanTotalUsd.toFixed(2)} + 부대비용 ${incidentalTotalUsd.toFixed(2)}{extraTotalUsd > 0 ? ` + 추가운송 $${extraTotalUsd.toFixed(2)}` : ''})
             </span>
           </div>
           {activeRoundType !== 'none' && (

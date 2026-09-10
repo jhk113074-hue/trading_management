@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.533',
+    version: 'v2.8.533',
+    date: '2026-09-10',
+    category: '신규기능',
+    title: '정밀 운송비 산출기 복수 컨테이너 규격(20FT 1개 + 40FT 1개 등) 개별 운임 산출 및 주문(PO) FCL 규격 자동 연동',
+    content: '• 견적서 작성(PIFormModal) 내 [FREIGHT CHARGES & LOGISTICS CALCULATOR] 정밀 운송비 산출기에 [＋ 컨테이너 규격 추가] 기능 신설\n• 20GP 1개 + 40HQ 1개 등 여러 컨테이너 규격과 각 규격별 수량, 개별 해상운임 단가를 행별로 각각 입력하고 실시간 적용 소계 및 총 해상운임을 정밀하게 자동 계산\n• 운임 통화(USD/KRW), 기준환율(₩/$), 변동률(%) 설정을 모든 컨테이너 규격 행에 일괄 적용하여 직관적이고 편리한 입력 환경 제공\n• 견적서(PI) 및 PDF 출력물 상에서 컨테이너별 순수 해상운임 행과 5종 부대비용(상공회의소, 수출신고비, 구매확인서, 내륙운송비, 기타부대) 합계 행(부대비용 (Incidental Charges))을 독립 행으로 투명하게 분리 반영\n• 비고 자동생성(Remarks) 클릭 시 복수 컨테이너 구성 및 개별 운임 내역(예: 20GP 1대 ($1,200) + 40HQ 1대 ($2,100)...)을 자동으로 명확하게 요약 기재\n• 견적서에서 [PO 확정] 또는 PI 기반 신규 주문 등록 시, 산출기에 입력된 복수 컨테이너 목록이 주문(PO)의 FCL 컨테이너 규격(fclSpecs) 및 운송타입(shipmentType: FCL)으로 100% 자동 초기화/연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.532',
     version: 'v2.8.532',
     date: '2026-09-10',

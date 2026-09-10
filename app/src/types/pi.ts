@@ -96,6 +96,18 @@ export interface ProformaInvoice {
     oceanPriceRaw?: number;
     oceanExchangeRate?: number;
     oceanVarianceRate?: number; // 변동률 (%)
+    containers?: Array<{
+      type: string;
+      qty: number;
+      oceanPriceRaw: number;
+    }>;
+    extraCharges?: Array<{
+      type: string;
+      qty: number;
+      price: number;
+      remarks: string;
+    }>;
+    freightRemarks?: string;
     coFee?: { amount: number; currency: 'KRW' | 'USD' }; // 원산지증명서 발급비
     customsFee?: { amount: number; currency: 'KRW' | 'USD' }; // 수출신고비
     purchaseCertFee?: { amount: number; currency: 'KRW' | 'USD' }; // 구매확인서 발급비

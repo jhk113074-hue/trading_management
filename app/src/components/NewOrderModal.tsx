@@ -599,6 +599,37 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         issuingCompany: formData.issuingCompany,
+        shipmentType: (() => {
+          const selectedQuote = quotations.find(q => q.id === formData.quotationId);
+          if (selectedQuote) {
+            const calcContainers = selectedQuote.freightCalculationDetails?.containers || [];
+            if (calcContainers.some((c: any) => !['LCL', 'AIR'].includes(c.type))) return 'FCL';
+            const fcs = selectedQuote.freightCharges || [];
+            if (fcs.some((f: any) => ['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', '20OT', '40OT', '20FR', '40FR'].includes(f.type))) return 'FCL';
+          }
+          return 'LCL';
+        })(),
+        fclSpecs: (() => {
+          const specs: any[] = [];
+          const selectedQuote = quotations.find(q => q.id === formData.quotationId);
+          if (selectedQuote) {
+            const calcContainers = selectedQuote.freightCalculationDetails?.containers;
+            if (calcContainers && calcContainers.length > 0) {
+              calcContainers.forEach((c: any) => {
+                if (!['LCL', 'AIR', '부대비용 (Incidental Charges)'].includes(c.type)) {
+                  specs.push({ type: c.type, qty: Number(c.qty || 1), containerNo: '', sealNo: '' });
+                }
+              });
+            } else {
+              (selectedQuote.freightCharges || []).forEach((fc: any) => {
+                if (['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', '20OT', '40OT', '20FR', '40FR'].includes(fc.type)) {
+                  specs.push({ type: fc.type, qty: Number(fc.qty || 1), containerNo: '', sealNo: '' });
+                }
+              });
+            }
+          }
+          return specs;
+        })(),
         forwarders: forwarders,
         forwarderConfirmed: forwarders[0]?.name || '',
         forwarderFreightAmount: forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0,

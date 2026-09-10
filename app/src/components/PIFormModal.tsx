@@ -2244,6 +2244,31 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         requestedDelivery: formData.validUntilDate || '',
         remark: formData.remarks || '',
         status: '주문',
+        shipmentType: (() => {
+          const calcContainers = formData.freightCalculationDetails?.containers || [];
+          if (calcContainers.some(c => !['LCL', 'AIR'].includes(c.type))) return 'FCL';
+          const fcs = formData.freightCharges || [];
+          if (fcs.some(f => ['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', '20OT', '40OT', '20FR', '40FR'].includes(f.type))) return 'FCL';
+          return 'LCL';
+        })(),
+        fclSpecs: (() => {
+          const specs: any[] = [];
+          const calcContainers = formData.freightCalculationDetails?.containers;
+          if (calcContainers && calcContainers.length > 0) {
+            calcContainers.forEach(c => {
+              if (!['LCL', 'AIR', '부대비용 (Incidental Charges)'].includes(c.type)) {
+                specs.push({ type: c.type, qty: Number(c.qty || 1), containerNo: '', sealNo: '' });
+              }
+            });
+          } else {
+            (formData.freightCharges || []).forEach(fc => {
+              if (['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG', '20OT', '40OT', '20FR', '40FR'].includes(fc.type)) {
+                specs.push({ type: fc.type, qty: Number(fc.qty || 1), containerNo: '', sealNo: '' });
+              }
+            });
+          }
+          return specs;
+        })(),
         items: mappedOrderItems,
         totalAmount: orderGrandTotal || 0,
         currency: 'USD',
