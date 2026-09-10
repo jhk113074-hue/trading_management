@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.524',
+    version: 'v2.8.524',
+    date: '2026-09-10',
+    category: '신규기능',
+    title: '영업관리 하단 통합 이익관리(수출·수입 건별 손익 분석) 메뉴 신설 및 엑셀 다운로드 탑재',
+    content: '• 사이드바 [영업관리] 메뉴 최하단에 [📊 이익관리] (/profit-management) 독립 메뉴 신설\n• 수출(Orders, ETD 기준) 및 수입(Imports, ETA/세금계산서 기준) 전 건에 대하여 건별 매출액, 매입원가, 부대비용(운송비/관세통관/지급수수료), 순 이익금(손익), 이익률(마진율 %)을 실시간 집계 및 분석 제공\n• 상단 4대 핵심 KPI 카드 제공: 전체 총 매출액, 총 원가(매입+부대비용), 총 이익금, 가중평균 이익률 및 수출/수입별 세부 손익 및 흑자/적자 건수 요약\n• 다차원 실시간 필터(수출/수입 구분, 영성ACC/(주)YSACC 소속업체, 연도/월별 기간, 흑자/적자/고마진 상태, 고객사/관리번호/품목/담당자 검색) 제공\n• 표 하단 Sticky TOTAL(합계) 요약 행 및 조회된 손익 데이터를 즉시 내려받을 수 있는 [📥 엑셀 다운로드] 기능 완벽 탑재',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.523',
     version: 'v2.8.523',
     date: '2026-09-10',

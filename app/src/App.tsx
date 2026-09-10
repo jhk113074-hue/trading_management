@@ -1,41 +1,41 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
+
 import { AuthProvider } from './contexts/AuthContext';
 import { TaskProvider } from './contexts/TaskContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
+import { FilePreviewModal } from './components/FilePreviewModal';
+
+import { Login } from './pages/Login';
+import { AuthCallback } from './pages/AuthCallback';
 import { Dashboard } from './pages/Dashboard';
 import { TaskList } from './pages/TaskList';
-import { TeamManagement } from './pages/TeamManagement';
-import { ProfileSettings } from './pages/ProfileSettings';
-import { MyCompanySettings } from './pages/MyCompanySettings';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { Login } from './pages/Login';
+import { ProformaInvoices } from './pages/ProformaInvoices';
+import { Orders } from './pages/Orders';
+import { OrderDetail } from './pages/OrderDetail';
 import { Products } from './pages/Products';
 import { Customers } from './pages/Customers';
 import { Suppliers } from './pages/Suppliers';
-import { ProformaInvoices } from './pages/ProformaInvoices';
-import { ContainerPacker } from './pages/ContainerPacker';
-import { AuthCallback } from './pages/AuthCallback';
-import { Orders } from './pages/Orders';
-import { OrderDetail } from './pages/OrderDetail';
+import { TeamManagement } from './pages/TeamManagement';
+import { ProfileSettings } from './pages/ProfileSettings';
+import { MyCompanySettings } from './pages/MyCompanySettings';
+import { Credentials } from './pages/Credentials';
 import { IssueBoard } from './pages/IssueBoard';
+import { SystemLogs } from './pages/SystemLogs';
 import { LeaveManagement } from './pages/LeaveManagement';
 import { ApprovalSystem } from './pages/ApprovalSystem';
 import { Mails } from './pages/Mails';
 import { MeetingMinutes } from './pages/MeetingMinutes';
 import { Imports } from './pages/Imports';
 import { ImportDetail } from './pages/ImportDetail';
-import { Credentials } from './pages/Credentials';
-import { DomesticTrade } from './pages/DomesticTrade';
 import { DomesticQuotes } from './pages/DomesticQuotes';
-import { SystemLogs } from './pages/SystemLogs';
+import { DomesticTrade } from './pages/DomesticTrade';
+import { ProfitManagement } from './pages/ProfitManagement';
 import { DocViewerPage } from './pages/DocViewerPage';
-
-import { FilePreviewModal } from './components/FilePreviewModal';
-
-import { useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { ContainerPacker } from './pages/ContainerPacker';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -89,6 +89,7 @@ const App: React.FC = () => {
               <Route path="domestic-quotes" element={<DomesticQuotes />} />
               <Route path="domestic-orders" element={<DomesticTrade />} />
               <Route path="domestic-trade" element={<Navigate to="/domestic-orders" replace />} />
+              <Route path="profit-management" element={<ProfitManagement />} />
             </Route>
             <Route path="/doc-view" element={<DocViewerPage />} />
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
