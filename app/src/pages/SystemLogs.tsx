@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.520',
+    version: 'v2.8.520',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '대시보드 수입 국내 매출 데이터 실시간 연동 정상화 및 수입주체 분류 기준 교정',
+    content: '• 대시보드에서 수입(Imports) 데이터를 불러올 때 잘못 참조하던 컬렉션명(\'importRequests\')을 실제 저장소인 \'imports\'로 정상 교정하여, 수입으로 인한 국내 매출 내역(총 17건)이 대시보드 매출 KPI 및 상세 리스트 모달에 누락 없이 실시간 반영되도록 복구\n• 수입주체 판별 시 영성ACC(YS, 영성ACC)와 (주)YSACC가 정확한 소속 업체로 자동 분류되도록 집계 로직 교정\n• 세금계산서 발행액(supplyAmount) 및 고객견적가액 기준 원화 매출액이 대시보드와 모달 테이블에 오차 없이 완벽하게 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.519',
     version: 'v2.8.519',
     date: '2026-09-10',

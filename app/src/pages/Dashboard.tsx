@@ -497,7 +497,7 @@ export const Dashboard: React.FC = () => {
       console.error("Orders subscription error:", err);
     });
 
-    const unsubImports = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "importRequests"), (snapshot) => {
+    const unsubImports = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "imports"), (snapshot) => {
       const importData: any[] = [];
       snapshot.forEach(doc => {
         importData.push({ id: doc.id, ...doc.data() });
@@ -1593,38 +1593,38 @@ export const Dashboard: React.FC = () => {
         : 0;
       const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
 
-      const isYsacc = req.importCompany === 'YSACC' || req.importCompany === 'YS';
+      const isYs = req.importCompany === 'YS' || req.importCompany === '영성ACC';
       
       // ETA 날짜 기준 집계
       const dateStr = req.eta || req.requestDate || "";
       if (dateStr) {
         // 1. This Month
         if (dateStr.startsWith(thisMonth)) {
-          if (isYsacc) {
-            salesYsaccAmount += salesKrw;
-            salesYsaccCount++;
-          } else {
+          if (isYs) {
             salesYsAmount += salesKrw;
             salesYsCount++;
+          } else {
+            salesYsaccAmount += salesKrw;
+            salesYsaccCount++;
           }
         }
         // 2. This Year
         if (dateStr.startsWith(thisYear)) {
-          if (isYsacc) {
-            salesYsaccYearAmount += salesKrw;
-            salesYsaccYearCount++;
-          } else {
+          if (isYs) {
             salesYsYearAmount += salesKrw;
             salesYsYearCount++;
+          } else {
+            salesYsaccYearAmount += salesKrw;
+            salesYsaccYearCount++;
           }
         }
         // 3. Total Cumulative
-        if (isYsacc) {
-          salesYsaccTotalAmount += salesKrw;
-          salesYsaccTotalCount++;
-        } else {
+        if (isYs) {
           salesYsTotalAmount += salesKrw;
           salesYsTotalCount++;
+        } else {
+          salesYsaccTotalAmount += salesKrw;
+          salesYsaccTotalCount++;
         }
       }
     });
@@ -1687,15 +1687,15 @@ export const Dashboard: React.FC = () => {
         ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
         : 0;
       const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
-      const isYsacc = req.importCompany === 'YSACC' || req.importCompany === 'YS';
+      const isYs = req.importCompany === 'YS' || req.importCompany === '영성ACC';
 
       const itemName = req.itemName || (req.piItems?.[0]?.name ? `${req.piItems[0].name}${req.piItems.length > 1 ? ` 외 ${req.piItems.length - 1}건` : ''}` : '수입 품목');
 
       list.push({
         id: req.id,
         sourceType: 'IMPORT',
-        companyKey: isYsacc ? 'YSACC' : 'YS',
-        companyLabel: isYsacc ? '(주)YSACC' : '영성ACC',
+        companyKey: isYs ? 'YS' : 'YSACC',
+        companyLabel: isYs ? '영성ACC' : '(주)YSACC',
         date: dateStr,
         docNumber: req.poNumber || req.id,
         customerName: req.finalCustomer || req.importerName || req.customerName || '-',
