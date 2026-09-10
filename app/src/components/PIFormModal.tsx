@@ -2228,6 +2228,40 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
       }
 
+      // Sync linked orders if PI number changed or order is linked
+      const targetLinkedOrderId = (initialPI as any)?.linkedOrderId || (initialPI?.id?.startsWith('ORDER_PI_') ? initialPI.id.replace('ORDER_PI_', '') : null);
+      if (targetLinkedOrderId) {
+        try {
+          const { updateDoc } = await import('firebase/firestore');
+          await updateDoc(doc(db, "companies", COMPANY_ID, "orders", targetLinkedOrderId), {
+            piNumber: piNum,
+            quotationNumber: piNum,
+            quotationId: piId,
+            updatedAt: serverTimestamp()
+          });
+        } catch (err) {
+          console.warn("Could not sync linked order:", err);
+        }
+      } else if (initialPI?.id) {
+        try {
+          const { updateDoc } = await import('firebase/firestore');
+          const orderSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "orders"));
+          for (const ordDoc of orderSnap.docs) {
+            const oData = ordDoc.data();
+            if (oData.quotationId === initialPI.id || (initialPI.piNumber && oData.piNumber === initialPI.piNumber)) {
+              await updateDoc(ordDoc.ref, {
+                piNumber: piNum,
+                quotationNumber: piNum,
+                quotationId: piId,
+                updatedAt: serverTimestamp()
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("Could not sync linked orders:", err);
+        }
+      }
+
       // Reload revisions in real-time after save
       const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
       if (!revSnap.empty) {

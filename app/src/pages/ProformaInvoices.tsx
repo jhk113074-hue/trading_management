@@ -173,12 +173,35 @@ export const ProformaInvoices: React.FC = () => {
     }
   }, [searchParams, pis]);
 
+  // Helper to normalize PI number (e.g. PI-YS-26-AB-05 -> pi-ys-2026-ab-05) for unified matching
+  const normalizePiNumber = (num?: string) => {
+    if (!num) return '';
+    return num
+      .trim()
+      .toLowerCase()
+      .replace(/^pi-(ys|ysacc)-(\d{2})-/i, (_, issuer, yy) => `pi-${issuer.toLowerCase()}-20${yy}-`)
+      .replace(/[^a-z0-9]/gi, '');
+  };
+
   // Merge PIs from proforma_invoices collection + Orders that have PI numbers
   const allPis = useMemo(() => {
     const list = [...pis];
-    const existingPiNumbers = new Set(list.map(p => (p.piNumber || '').trim().toLowerCase()));
+    const existingPiDocIds = new Set(list.map(p => p.id).filter(Boolean));
+    const existingPiNumbers = new Set(list.map(p => (p.piNumber || '').trim().toLowerCase()).filter(Boolean));
+    const normalizedExistingPiNumbers = new Set(list.map(p => normalizePiNumber(p.piNumber)).filter(Boolean));
 
     orders.forEach((ord: any) => {
+      // 1. If this order already links to a real PI document in proforma_invoices, NEVER synthesize a virtual PI!
+      if (ord.quotationId && existingPiDocIds.has(ord.quotationId)) {
+        return;
+      }
+      if (ord.id && (existingPiDocIds.has(ord.id) || existingPiDocIds.has(`ORDER_PI_${ord.id}`))) {
+        return;
+      }
+      if (list.some(p => (p as any).linkedOrderId === ord.id || (p as any).orderId === ord.id || p.id === ord.quotationId)) {
+        return;
+      }
+
       const ordPiNum = (
         ord.piNumber || 
         ord.quotationNumber || 
@@ -188,50 +211,66 @@ export const ProformaInvoices: React.FC = () => {
         ''
       ).trim();
 
-      const hasMatchingNumber = ordPiNum && existingPiNumbers.has(ordPiNum.toLowerCase());
+      if (!ordPiNum) return;
 
-      if (!hasMatchingNumber && ordPiNum) {
-        existingPiNumbers.add(ordPiNum.toLowerCase());
-        const items = ord.items || [];
-        const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
-        const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
+      const normOrdPiNum = normalizePiNumber(ordPiNum);
 
-        const customerName = ord.customer || ord.buyerName || ord.customerName || '';
-        const matchingCust = Object.values(customers).find((c: any) => c.name === customerName || c.id === ord.customerId);
+      // 2. If the PI number already exists in real PIs (exact or normalized 26 vs 2026), skip!
+      const hasMatchingNumber = (
+        existingPiNumbers.has(ordPiNum.toLowerCase()) ||
+        (normOrdPiNum && normalizedExistingPiNumbers.has(normOrdPiNum))
+      );
 
-        let dateStr = ord.poDate || ord.orderDate || ord.date || '';
-        if (!dateStr && ord.createdAt) {
-          if (ord.createdAt.toDate) dateStr = ord.createdAt.toDate().toISOString().split('T')[0];
-          else if (typeof ord.createdAt === 'string') dateStr = ord.createdAt.split('T')[0];
-        }
-        if (!dateStr) dateStr = '2026-08-10';
-
-        const virtualPi: ProformaInvoice = {
-          id: `ORDER_PI_${ord.id}`,
-          piNumber: ordPiNum,
-          piDate: dateStr,
-          customerId: ord.customerId || matchingCust?.id || '',
-          buyerName: customerName,
-          customerName: customerName,
-          issuingCompany: ord.issuingCompany || ord.issuer || 'YSACC',
-          createdByName: ord.manager || ord.createdByName || ord.registeredBy || '김주한',
-          totalUsd: totalUsd,
-          grandTotal: totalUsd,
-          status: '수주확정',
-          piStatus: '수주확정',
-          items: items,
-          itemsSummary: itemsSummary,
-          linkedOrderId: ord.id
-        } as any;
-        list.push(virtualPi);
+      if (hasMatchingNumber) {
+        return;
       }
+
+      existingPiNumbers.add(ordPiNum.toLowerCase());
+      if (normOrdPiNum) normalizedExistingPiNumbers.add(normOrdPiNum);
+      const items = ord.items || [];
+      const itemsSummary = items.map((it: any) => it.name || it.productName || it.desc).filter(Boolean);
+      const totalUsd = ord.totalAmount || ord.grandTotal || items.reduce((acc: number, it: any) => acc + (it.amount || ((it.qty || it.quantity || 0) * (it.unitPrice || it.price || 0))), 0);
+
+      const customerName = ord.customer || ord.buyerName || ord.customerName || '';
+      const matchingCust = Object.values(customers).find((c: any) => c.name === customerName || c.id === ord.customerId);
+
+      let dateStr = ord.poDate || ord.orderDate || ord.date || '';
+      if (!dateStr && ord.createdAt) {
+        if (ord.createdAt.toDate) dateStr = ord.createdAt.toDate().toISOString().split('T')[0];
+        else if (typeof ord.createdAt === 'string') dateStr = ord.createdAt.split('T')[0];
+      }
+      if (!dateStr) dateStr = '2026-08-10';
+
+      const virtualPi: ProformaInvoice = {
+        id: `ORDER_PI_${ord.id}`,
+        piNumber: ordPiNum,
+        piDate: dateStr,
+        customerId: ord.customerId || matchingCust?.id || '',
+        buyerName: customerName,
+        customerName: customerName,
+        issuingCompany: ord.issuingCompany || ord.issuer || 'YSACC',
+        createdByName: ord.manager || ord.createdByName || ord.registeredBy || '김주한',
+        totalUsd: totalUsd,
+        grandTotal: totalUsd,
+        status: '수주확정',
+        piStatus: '수주확정',
+        items: items,
+        itemsSummary: itemsSummary,
+        linkedOrderId: ord.id
+      } as any;
+      list.push(virtualPi);
     });
     return list;
   }, [pis, orders, customers]);
 
   const getPiStatus = (p: ProformaInvoice) => {
     if ((p as any).linkedOrderId) return '수주확정';
-    const hasOrder = orders.some(o => o.quotationId === p.id || (o.piNumber && p.piNumber && o.piNumber === p.piNumber));
+    const normP = normalizePiNumber(p.piNumber);
+    const hasOrder = orders.some(o => 
+      o.quotationId === p.id || 
+      (o.piNumber && p.piNumber && o.piNumber === p.piNumber) ||
+      (o.piNumber && normP && normalizePiNumber(o.piNumber) === normP)
+    );
     if (hasOrder) return '수주확정';
     return (p as any).piStatus || '협상중';
   };
@@ -401,7 +440,16 @@ export const ProformaInvoices: React.FC = () => {
   const handleDelete = async (id: string, num: string) => {
     if (!window.confirm(`⚠️ 정말로 PI [${num}]을(를) 영구 삭제하시겠습니까?`)) return;
     try {
-      await deleteDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", id));
+      if (id.startsWith('ORDER_PI_')) {
+        const ordId = id.replace('ORDER_PI_', '');
+        const { updateDoc } = await import('firebase/firestore');
+        await updateDoc(doc(db, "companies", COMPANY_ID, "orders", ordId), {
+          piNumber: '',
+          quotationNumber: ''
+        });
+      } else {
+        await deleteDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", id));
+      }
       alert("✅ 성공적으로 삭제되었습니다.");
     } catch (e: any) {
       alert("❌ 삭제 실패: " + e.message);
@@ -803,7 +851,13 @@ export const ProformaInvoices: React.FC = () => {
                 const sc = piStatusConfig[piStatus] || piStatusConfig['협상중'];
 
                 // 연결된 주문 찾기
-                const linkedOrder = orders.find(o => o.quotationId === p.id || o.id === (p as any).linkedOrderId || (o.piNumber && p.piNumber && o.piNumber === p.piNumber));
+                const normP = normalizePiNumber(p.piNumber);
+                const linkedOrder = orders.find(o => 
+                  o.quotationId === p.id || 
+                  o.id === (p as any).linkedOrderId || 
+                  (o.piNumber && p.piNumber && o.piNumber === p.piNumber) ||
+                  (o.piNumber && normP && normalizePiNumber(o.piNumber) === normP)
+                );
 
                 return (
                   <tr 

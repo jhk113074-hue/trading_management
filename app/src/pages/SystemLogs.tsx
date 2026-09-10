@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.535',
+    version: 'v2.8.535',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '견적서(PI) 번호 수정 시 가상 견적서 중복 생성 현상 완벽 차단 및 연결 주문(PO) 동기화',
+    content: '• 기존 견적서의 번호를 수정(예: `PI-YS-26-AB-05` → `PI-YS-2026-AB-05`)했을 때, 연결된 주문(PO)의 이전 번호로 인해 목록에 가상 견적서가 중복 생성되던 오류 완벽 해결\n• 견적서 목록 병합 시 2자리 연도(26)와 4자리 연도(2026) 간 정규화 비교(normalizePiNumber) 엔진을 적용하여 동일 견적서를 단일 행으로 정확하게 통합\n• 연결된 주문의 `quotationId` 및 `linkedOrderId` 매칭 검증을 강화하여 실존 견적서가 존재하는 주문은 가상 견적서로 중복 합성되지 않도록 원천 방지\n• 견적서 번호 수정 저장 시 연결된 주문(PO)의 `piNumber` 및 `quotationNumber`도 동일하게 실시간 자동 동기화\n• 가상 견적서 항목 삭제 시에도 연결 주문 데이터가 안전하게 정리되도록 보강',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.534',
     version: 'v2.8.534',
     date: '2026-09-10',
