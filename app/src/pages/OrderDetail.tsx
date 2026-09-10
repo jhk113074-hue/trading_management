@@ -1046,6 +1046,14 @@ export const OrderDetail: React.FC = () => {
       }
     }
 
+    // 견적서(Quote / PI) 연동 여부 확인
+    const hasQuotation = Boolean(
+      (order?.quotationId && order.quotationId.trim() !== '') ||
+      (basicForm?.quotationId && basicForm.quotationId.trim() !== '') ||
+      (order?.piNumber && order.piNumber.trim() !== '') ||
+      piData
+    );
+
     // 견적서(Quote / PI) 및 발주 품목(orderItems)에서 실제 견적 매입단가 탐색
     const matchingOi = (orderItems || []).find((oi: any) =>
       (oi.itemId && it.itemId && String(oi.itemId) === String(it.itemId)) ||
@@ -1060,43 +1068,66 @@ export const OrderDetail: React.FC = () => {
     let quotedPrice: number | null = null;
     let quotedCurrency: string | null | undefined = null;
 
-    if (it.originalPurchasePrice != null && it.originalPurchasePrice > 0) {
-      quotedPrice = it.originalPurchasePrice;
-      quotedCurrency = it.originalPurchaseCurrency;
-    } else if (it.purchasePriceKrw != null && it.purchasePriceKrw > 0) {
-      quotedPrice = it.purchasePriceKrw;
-      quotedCurrency = 'KRW';
-    } else if (it.purchasePriceUsd != null && it.purchasePriceUsd > 0) {
-      quotedPrice = it.purchasePriceUsd;
-      quotedCurrency = 'USD';
-    }
-
-    if (quotedPrice == null && matchingOi) {
-      if (matchingOi.originalPurchasePrice != null && matchingOi.originalPurchasePrice > 0) {
-        quotedPrice = matchingOi.originalPurchasePrice;
-        quotedCurrency = matchingOi.originalPurchaseCurrency;
-      } else if (matchingOi.purchasePriceKrw != null && matchingOi.purchasePriceKrw > 0) {
-        quotedPrice = matchingOi.purchasePriceKrw;
+    if (hasQuotation) {
+      if (it.originalPurchasePrice != null && it.originalPurchasePrice > 0) {
+        quotedPrice = it.originalPurchasePrice;
+        quotedCurrency = it.originalPurchaseCurrency;
+      } else if (it.purchasePriceKrw != null && it.purchasePriceKrw > 0) {
+        quotedPrice = it.purchasePriceKrw;
         quotedCurrency = 'KRW';
-      } else if (matchingOi.purchasePriceUsd != null && matchingOi.purchasePriceUsd > 0) {
-        quotedPrice = matchingOi.purchasePriceUsd;
+      } else if (it.purchasePriceUsd != null && it.purchasePriceUsd > 0) {
+        quotedPrice = it.purchasePriceUsd;
         quotedCurrency = 'USD';
-      } else if (matchingOi.purchaseUnitPrice != null && matchingOi.purchaseUnitPrice > 0) {
-        quotedPrice = matchingOi.purchaseUnitPrice;
-        quotedCurrency = matchingOi.purchaseUnitCurrency || matchingOi.purchasePriceCurrency;
+      }
+
+      if (quotedPrice == null && matchingOi) {
+        if (matchingOi.originalPurchasePrice != null && matchingOi.originalPurchasePrice > 0) {
+          quotedPrice = matchingOi.originalPurchasePrice;
+          quotedCurrency = matchingOi.originalPurchaseCurrency;
+        } else if (matchingOi.purchasePriceKrw != null && matchingOi.purchasePriceKrw > 0) {
+          quotedPrice = matchingOi.purchasePriceKrw;
+          quotedCurrency = 'KRW';
+        } else if (matchingOi.purchasePriceUsd != null && matchingOi.purchasePriceUsd > 0) {
+          quotedPrice = matchingOi.purchasePriceUsd;
+          quotedCurrency = 'USD';
+        } else if (matchingOi.purchaseUnitPrice != null && matchingOi.purchaseUnitPrice > 0) {
+          quotedPrice = matchingOi.purchaseUnitPrice;
+          quotedCurrency = matchingOi.purchaseUnitCurrency || matchingOi.purchasePriceCurrency;
+        }
       }
     }
 
-    const originalPurchasePrice = quotedPrice != null ? quotedPrice : defaultPrice;
-    const originalPurchaseCurrency = quotedCurrency || it.originalPurchaseCurrency || (originalPurchasePrice > 1000 ? 'KRW' : (defaultCurrency || 'USD'));
+    const effPurchaseCurr = it.purchaseUnitCurrency 
+      || matchingOi?.purchaseUnitCurrency 
+      || it.purchasePriceCurrency 
+      || matchingOi?.purchasePriceCurrency 
+      || (it.purchasePriceKrw ? 'KRW' : null)
+      || (matchingOi?.purchasePriceKrw ? 'KRW' : null)
+      || (it.currency === 'KRW' || matchingOi?.currency === 'KRW' ? 'KRW' : null)
+      || (defaultCurrency === 'KRW' ? 'KRW' : 'USD');
 
-    // purchaseUnitPrice가 견적단가 혹은 기본단가와 어떻게 설정되어 있는지 확인
-    const purchasePrice = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : originalPurchasePrice;
+    // 견적이 없는 직접 등록 주문은 견적가를 null로 유지
+    const originalPurchasePrice = hasQuotation ? (quotedPrice != null ? quotedPrice : defaultPrice) : null;
+    let originalPurchaseCurrency = hasQuotation ? (quotedCurrency || it.originalPurchaseCurrency || (originalPurchasePrice && originalPurchasePrice > 1000 ? 'KRW' : (defaultCurrency || 'USD'))) : null;
+
+    // 만약 견적가가 1000 이상이고 통화가 USD인데 실제 품목은 KRW인 경우 오류 보정
+    if (originalPurchasePrice && originalPurchasePrice > 1000 && originalPurchaseCurrency === 'USD' && effPurchaseCurr === 'KRW') {
+      originalPurchaseCurrency = 'KRW';
+    }
+
+    // purchaseUnitPrice가 있으면 사용하고, 없으면 KRW/USD 필드 또는 견적단가/기본단가 사용
+    let purchasePrice = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : (
+      effPurchaseCurr === 'KRW' 
+        ? (it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : (matchingOi?.purchasePriceKrw || matchingOi?.purchaseUnitPrice || originalPurchasePrice || defaultPrice)))
+        : (it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : (matchingOi?.purchasePriceUsd || matchingOi?.purchaseUnitPrice || originalPurchasePrice || defaultPrice)))
+    );
     
     let purchaseCurrency = it.purchaseUnitCurrency;
     if (!purchaseCurrency) {
       if (it.purchasePriceCurrency) {
         purchaseCurrency = it.purchasePriceCurrency;
+      } else if (effPurchaseCurr) {
+        purchaseCurrency = effPurchaseCurr;
       } else if (originalPurchaseCurrency) {
         purchaseCurrency = originalPurchaseCurrency;
       } else if (purchasePrice > 1000) {
@@ -1107,7 +1138,7 @@ export const OrderDetail: React.FC = () => {
         purchaseCurrency = 'USD';
       }
     }
-    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice, originalPurchaseCurrency };
+    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice, originalPurchaseCurrency, hasQuotation };
   };
 
   const findMatchingProduct = (it: any, prodList: Product[]) => {
@@ -10448,8 +10479,9 @@ ${downloadLink}`;
                                     </tr>
                                   ) : (
                                     items.map((it, idx) => {
-                                      const { purchasePrice, purchaseCurrency, itemName, originalPurchasePrice, originalPurchaseCurrency } = getSupplierPurchaseInfo(it);
-                                      const origCurrency = it.originalPurchaseCurrency || originalPurchaseCurrency || (originalPurchasePrice > 1000 ? 'KRW' : purchaseCurrency);
+                                      const { purchasePrice, purchaseCurrency, itemName, originalPurchasePrice, originalPurchaseCurrency, hasQuotation: itemHasQuote } = getSupplierPurchaseInfo(it);
+                                      const effectiveHasQuote = Boolean(itemHasQuote && originalPurchasePrice != null && originalPurchasePrice > 0);
+                                      const origCurrency = it.originalPurchaseCurrency || originalPurchaseCurrency || (originalPurchasePrice && originalPurchasePrice > 1000 ? 'KRW' : purchaseCurrency);
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       const itemIndexInMain = sourcingItems.findIndex(x => x === it);
@@ -10586,20 +10618,24 @@ ${downloadLink}`;
                                           </td>
                                           {/* 4. 견적가 (통화/단가) - 견적 기준단가 (수정불가) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <span 
-                                              style={{ 
-                                                fontSize: '13px', 
-                                                fontWeight: 600, 
-                                                color: '#475569',
-                                                fontVariantNumeric: 'tabular-nums',
-                                                display: 'inline-block'
-                                              }}
-                                              title="견적 시점 기준 단가 (수정 불가)"
-                                            >
-                                              {origCurrency === 'KRW' 
-                                                ? `₩${Math.round(originalPurchasePrice || 0).toLocaleString('ko-KR')}` 
-                                                : `${origCurrency} ${(originalPurchasePrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`}
-                                            </span>
+                                            {effectiveHasQuote ? (
+                                              <span 
+                                                style={{ 
+                                                  fontSize: '13px', 
+                                                  fontWeight: 600, 
+                                                  color: '#475569',
+                                                  fontVariantNumeric: 'tabular-nums',
+                                                  display: 'inline-block'
+                                                }}
+                                                title="견적 시점 기준 단가 (수정 불가)"
+                                              >
+                                                {origCurrency === 'KRW' 
+                                                  ? `₩${Math.round(originalPurchasePrice || 0).toLocaleString('ko-KR')}` 
+                                                  : `${origCurrency} ${(originalPurchasePrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`}
+                                              </span>
+                                            ) : (
+                                              <span style={{ color: '#94a3b8', fontSize: '12.5px', fontWeight: 500 }}>-</span>
+                                            )}
                                           </td>
                                           {/* 5. 매입가 (통화/단가) - 공급사 실발주단가 (수정가능) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
@@ -10676,6 +10712,9 @@ ${downloadLink}`;
                                           {/* 6. 단가 GAP (견적 대비) */}
                                           <td style={{ padding: '6px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
                                             {(() => {
+                                              if (!effectiveHasQuote) {
+                                                return <span style={{ color: '#94a3b8', fontSize: '12.5px', fontWeight: 500 }}>-</span>;
+                                              }
                                               const exRate = basicForm.exchangeRate || order.exchangeRate || 1400;
                                               const actualPrice = purchasePrice || 0;
                                               const origPrice = originalPurchasePrice || 0;
@@ -10816,7 +10855,16 @@ ${downloadLink}`;
                                           let hasKrw = false;
                                           let hasUsd = false;
 
-                                          items.forEach(it => {
+                                          const validQuoteItems = items.filter(it => {
+                                            const info = getSupplierPurchaseInfo(it);
+                                            return info.hasQuotation && info.originalPurchasePrice != null && info.originalPurchasePrice > 0;
+                                          });
+
+                                          if (validQuoteItems.length === 0) {
+                                            return <span style={{ color: '#94a3b8', fontSize: '12.5px', fontWeight: 500 }}>-</span>;
+                                          }
+
+                                          validQuoteItems.forEach(it => {
                                             const info = getSupplierPurchaseInfo(it);
                                             const itOrigCurrency = it.originalPurchaseCurrency || info.originalPurchaseCurrency || (info.originalPurchasePrice > 1000 ? 'KRW' : 'USD');
                                             const qty = it.qty || 0;

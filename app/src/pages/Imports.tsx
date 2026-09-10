@@ -1384,10 +1384,34 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       
       {/* Title Header */}
       <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isQuoteMode ? '수입 견적관리' : '수입 주문관리'}
-          <span style={{ fontSize: '10px', fontWeight: 500, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>v1.4.2_clean</span>
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isQuoteMode ? '수입 견적관리' : '수입 주문관리'}
+            <span style={{ fontSize: '10px', fontWeight: 500, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>v1.4.2_clean</span>
+          </h2>
+          {/* 🔍 수입주체 필터 */}
+          <select
+            value={selectedImportCompany}
+            onChange={(e) => setSelectedImportCompany(e.target.value)}
+            style={{ 
+              padding: '0 12px', 
+              border: '1px solid #cbd5e1', 
+              borderRadius: '4px', 
+              fontSize: '13px', 
+              fontWeight: 700, 
+              color: '#475569', 
+              background: '#fff', 
+              height: '34px', 
+              boxSizing: 'border-box', 
+              cursor: 'pointer', 
+              outline: 'none' 
+            }}
+          >
+            <option value="All">전체 수입주체</option>
+            <option value="YSACC">YSACC</option>
+            <option value="YS">영성ACC</option>
+          </select>
+        </div>
         <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
           {isQuoteMode
             ? '고객사 수입요청 접수 및 해외공급사 견적/원가 산정 단계입니다. 고객이 진행을 승인하면 수입 주문관리로 자동 이동합니다.'
@@ -1519,17 +1543,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           >
             <option value="All">전체 최종고객</option>
             {uniqueCustomers.map(cust => <option key={cust} value={cust}>{cust}</option>)}
-          </select>
-
-          {/* 🔍 수입주체 필터 */}
-          <select
-            value={selectedImportCompany}
-            onChange={(e) => setSelectedImportCompany(e.target.value)}
-            style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', cursor: 'pointer', outline: 'none' }}
-          >
-            <option value="All">전체 수입주체</option>
-            <option value="YSACC">YSACC</option>
-            <option value="YS">영성ACC</option>
           </select>
         </div>
 

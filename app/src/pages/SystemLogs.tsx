@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.531',
+    version: 'v2.8.531',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '견적서 없이 직접 등록된 주문의 발주(PO) 견적가 왜곡 및 단가 GAP 이상치 완벽 교정',
+    content: '• 견적서(PI) 없이 [신규 주문] 모달에서 수동으로 직접 등록한 주문의 경우, 소싱/발주 탭에서 견적가(originalPurchasePrice)가 존재하지 않음에도 매입단가(KRW)가 미화(USD) 단위로 오지정되어 천문학적인 단가 GAP(▼-99.9%)이 계산되던 오류 완벽 해결\n• 견적 연동이 없는 직접 등록 주문(hasQuotation: false)의 경우 견적가 및 단가 GAP 컬럼을 하이픈(-)으로 명확하게 처리하여 불필요하거나 왜곡된 비교 데이터가 표시되지 않도록 개선\n• NewOrderModal에서 품목 저장 시 견적서가 없는 경우 originalPurchasePrice를 0으로 안전하게 초기화하고, 통화가 임의로 USD로 기본 지정되지 않도록 보정\n• 기등록된 데이터 중 원화 매입가(예: 43,000원)가 달러($43,000)로 둔갑되어 있던 이상치 데이터를 자동 감지하여 원화로 보정 및 정상화 처리\n• 소싱/발주 탭 품목 목록 하단 SUBTOTAL 행의 GAP 집계에서도 견적 품목이 없는 경우 비정상 마이너스 금액 대신 정상적으로 (-) 처리되도록 보완',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.530',
+    version: 'v2.8.530',
+    date: '2026-09-10',
+    category: 'UI/UX',
+    title: '수입 견적관리·주문관리 상단 타이틀 옆 수입주체(전체 수입주체/YSACC/영성ACC) 필터 재배치 및 필터바 최적화',
+    content: '• 수입 견적관리 및 주문관리 화면에서 하단 검색·필터 바에 위치하던 [전체 수입주체] 선택 셀렉트박스를 상단 페이지 타이틀 바로 옆으로 이동 배치\n• 수출 견적관리 및 수출 주문관리와 일관된 주체 선택 인터페이스 UX 구축(34px 높이 규격, 폰트 및 테두리 정렬)\n• 복잡하던 하단 필터 툴바의 가로 공간을 확보하여 검색창 및 품명/수입처/고객 필터의 가독성과 사용성 대폭 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.529',
     version: 'v2.8.529',
     date: '2026-09-10',
