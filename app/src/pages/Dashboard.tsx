@@ -1657,9 +1657,33 @@ export const Dashboard: React.FC = () => {
       const salesKrw = amount * rate;
       const isYs = o.issuingCompany === 'YS';
 
-      const itemName = o.items && o.items.length > 0
-        ? (o.items.length === 1 ? o.items[0].itemName : `${o.items[0].itemName} 외 ${o.items.length - 1}건`)
-        : (o.itemName || o.custPo || '수출 품목');
+      // 품목명 추출 (OrderItem의 기본 명칭 필드는 'name')
+      const orderItemNames = (o.items || [])
+        .map((it: any) => (it?.name || it?.itemName || it?.description || it?.productCode || '').trim())
+        .filter(Boolean);
+
+      let itemName = '';
+      if (orderItemNames.length > 0) {
+        const firstName = orderItemNames[0];
+        itemName = orderItemNames.length === 1 ? firstName : `${firstName} 외 ${orderItemNames.length - 1}건`;
+      } else if (pi?.itemsSummary && pi.itemsSummary.length > 0) {
+        const firstName = String(pi.itemsSummary[0] || '').trim();
+        if (firstName) {
+          itemName = pi.itemsSummary.length === 1 ? firstName : `${firstName} 외 ${pi.itemsSummary.length - 1}건`;
+        }
+      } else if (pi?.items && (pi.items as any).length > 0) {
+        const piNames = (pi.items as any)
+          .map((it: any) => (it?.name || it?.itemName || it?.description || '').trim())
+          .filter(Boolean);
+        if (piNames.length > 0) {
+          const firstName = piNames[0];
+          itemName = piNames.length === 1 ? firstName : `${firstName} 외 ${piNames.length - 1}건`;
+        }
+      }
+
+      if (!itemName) {
+        itemName = (o as any).itemName || (o as any).productName || o.custPo || '수출 품목';
+      }
 
       list.push({
         id: o.id,
@@ -1693,7 +1717,18 @@ export const Dashboard: React.FC = () => {
       const isYsacc = !req.importCompany || req.importCompany === 'YSACC' || req.importCompany === 'YS';
       const isYs = !isYsacc;
 
-      const itemName = req.itemName || (req.piItems?.[0]?.name ? `${req.piItems[0].name}${req.piItems.length > 1 ? ` 외 ${req.piItems.length - 1}건` : ''}` : '수입 품목');
+      const importItemNames = (req.piItems || [])
+        .map((it: any) => (it?.name || it?.itemName || it?.description || '').trim())
+        .filter(Boolean);
+
+      let itemName = (req.itemName || '').trim();
+      if (!itemName && importItemNames.length > 0) {
+        const firstName = importItemNames[0];
+        itemName = importItemNames.length === 1 ? firstName : `${firstName} 외 ${importItemNames.length - 1}건`;
+      }
+      if (!itemName) {
+        itemName = req.piItemName || req.dealStatementItem || (req.poNumber ? `수입 (${req.poNumber})` : '수입 품목');
+      }
 
       list.push({
         id: req.id,

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.523',
+    version: 'v2.8.523',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '매출 상세 리스트 모달 내 품목명 undefined 노출 버그 교정',
+    content: '• 수출 주문(Order) 아이템 객체의 표준 명칭 필드인 \'name\'(및 description, itemName 등 다중 속성)을 우선 참조하도록 교정하여 \'undefined 외 N건\'으로 표기되던 오류 완벽 해결\n• 단일 품목 및 다품목 주문의 품목명, PI 품목 요약(itemsSummary)을 단계별로 탐색하여 대표 품목명이 정확히 노출되도록 개선\n• 수입(Import) 항목에서도 품목명이 누락되지 않고 대표 품목명 및 외 N건 형식으로 정확히 표시되도록 처리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.522',
     version: 'v2.8.522',
     date: '2026-09-10',
