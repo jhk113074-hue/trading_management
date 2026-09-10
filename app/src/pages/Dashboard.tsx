@@ -1593,7 +1593,9 @@ export const Dashboard: React.FC = () => {
         : 0;
       const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
 
-      const isYs = req.importCompany === 'YS' || req.importCompany === '영성ACC';
+      // 수입주체 판정: 수입 모듈 규칙에 따라 'YSACC', 'YS', 빈값은 (주)YSACC로 귀속, 오직 '영성ACC'인 경우만 영성ACC로 귀속
+      const isYsacc = !req.importCompany || req.importCompany === 'YSACC' || req.importCompany === 'YS';
+      const isYs = !isYsacc;
       
       // ETA 날짜 기준 집계
       const dateStr = req.eta || req.requestDate || "";
@@ -1687,15 +1689,17 @@ export const Dashboard: React.FC = () => {
         ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
         : 0;
       const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
-      const isYs = req.importCompany === 'YS' || req.importCompany === '영성ACC';
+      // 수입주체 판정: 수입 모듈 규칙에 따라 'YSACC', 'YS', 빈값은 (주)YSACC로 귀속, 오직 '영성ACC'인 경우만 영성ACC로 귀속
+      const isYsacc = !req.importCompany || req.importCompany === 'YSACC' || req.importCompany === 'YS';
+      const isYs = !isYsacc;
 
       const itemName = req.itemName || (req.piItems?.[0]?.name ? `${req.piItems[0].name}${req.piItems.length > 1 ? ` 외 ${req.piItems.length - 1}건` : ''}` : '수입 품목');
 
       list.push({
         id: req.id,
         sourceType: 'IMPORT',
-        companyKey: isYs ? 'YS' : 'YSACC',
-        companyLabel: isYs ? '영성ACC' : '(주)YSACC',
+        companyKey: isYsacc ? 'YSACC' : 'YS',
+        companyLabel: isYsacc ? '(주)YSACC' : '영성ACC',
         date: dateStr,
         docNumber: req.poNumber || req.id,
         customerName: req.finalCustomer || req.importerName || req.customerName || '-',

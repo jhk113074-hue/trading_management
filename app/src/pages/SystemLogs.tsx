@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.521',
+    version: 'v2.8.521',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '수입 매출 소속업체 판정 기준 수입관리 모듈과 완벽 일치화 (CNC ROUTER 등 (주)YSACC 정상 귀속)',
+    content: '• 수입관리(Imports) 모듈의 수입주체 표기 기준과 동일하게, importCompany가 \'YSACC\', \'YS\'(레거시 코드)이거나 미지정된 건은 (주)YSACC로 정확히 귀속 처리\n• 오직 \'영성ACC\'로 명시된 수입 건만 영성ACC 매출로 분류되도록 교정하여, CNC ROUTER((주)삼오, ₩17,000,000) 건이 영성ACC가 아닌 (주)YSACC 매출로 정상 귀속되도록 해결\n• 대시보드 KPI(당월/금년/전체 누적 매출액 및 건수)와 [전체누적매출/당월매출] 상세 모달 리스트의 업체별 탭/필터에 즉시 실시간 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.520',
     version: 'v2.8.520',
     date: '2026-09-10',
