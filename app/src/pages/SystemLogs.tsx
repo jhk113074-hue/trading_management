@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.536',
+    version: 'v2.8.536',
+    date: '2026-09-10',
+    category: 'UI/UX',
+    title: '정밀 운송비 산출기 UI 간소화: 불필요한 비고 자동생성 및 추가 운송행 버튼 제거',
+    content: '• 운송비 산출기(FreightCalculatorSection) 상단의 [비고 자동생성] 및 [+ 추가 운송행] 버튼을 완전히 제거하여 사용자 인터페이스 간소화 및 시각적 피로도 해소\n• 복수 컨테이너 규격(20GP, 40HQ 등) 행 추가와 5종 부대비용(상공회의소, 수출신고비, 구매확인서, 내륙운송비, 기타부대) 입력 기능으로 모든 운송/물류비가 온전히 산출되므로, 중복되던 추가 운송행(extraCharges) 요소를 정리\n• 비고(Remarks) 란은 별도 자동생성 버튼 없이 사용자가 필요한 운송 특약 및 메모를 직접 자유롭게 입력할 수 있도록 직관적 텍스트 입력 인터페이스로 최적화\n• 최종 결정 운송비 배지에서도 순수 해상운임 합계와 부대비용 소계만 깔끔하게 합산 표기되도록 정돈',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.535',
     version: 'v2.8.535',
     date: '2026-09-10',
