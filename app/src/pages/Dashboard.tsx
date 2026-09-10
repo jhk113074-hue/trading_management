@@ -4178,6 +4178,42 @@ export const Dashboard: React.FC = () => {
                     ))
                   )}
                 </tbody>
+                {filteredSalesList.length > 0 && (
+                  <tfoot style={{ position: 'sticky', bottom: 0, zIndex: 10 }}>
+                    <tr style={{ background: '#f1f5f9', borderTop: '2px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
+                      <td colSpan={7} style={{ padding: '10px 12px', color: '#0f172a', fontWeight: 800, fontSize: '12.5px', background: '#f1f5f9' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            background: '#1e293b',
+                            color: '#fff',
+                            fontSize: '11px',
+                            fontWeight: 900,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            letterSpacing: '0.04em'
+                          }}>
+                            TOTAL
+                          </span>
+                          <span style={{ color: '#334155' }}>
+                            합계 (총 <strong style={{ color: '#0f172a' }}>{salesSummary.totalCount}</strong>건 : 수출 {salesSummary.exportCount}건 / 수입 {salesSummary.importCount}건)
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#64748b', fontSize: '11.5px', fontWeight: 700, background: '#f1f5f9' }}>
+                        합계 금액
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 900, color: '#dc2626', fontSize: '14.5px', background: '#f1f5f9' }}>
+                        ₩{Math.round(salesSummary.totalAmount).toLocaleString()}
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'center', color: '#94a3b8', fontSize: '11px', background: '#f1f5f9' }}>
+                        -
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'center', color: '#94a3b8', fontSize: '11px', background: '#f1f5f9' }}>
+                        -
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
 

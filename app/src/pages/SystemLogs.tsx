@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.522',
+    version: 'v2.8.522',
+    date: '2026-09-10',
+    category: 'UI/UX',
+    title: '대시보드 매출 상세 리스트 모달 하단 TOTAL(합계) 요약 행 추가',
+    content: '• [전체누적매출/당월매출] 상세 모달 테이블 하단에 세련된 TOTAL(합계) 행을 추가하여 검색 및 필터링된 결과의 총 건수(수출/수입 건수)와 원화 매출액 총합을 표의 마지막 줄에서 직관적으로 확인 가능\n• 테이블 스크롤 시에도 TOTAL 행이 하단에 고정(Sticky)되어 대량 데이터 탐색 시에도 합계 금액이 항상 시야에 유지되도록 편의성 강화\n• 디자인 시스템 규격(배경 #f1f5f9, 굵은 구분선, 가독성 높은 폰트 및 TOTAL 뱃지)을 엄격히 준수하여 일체감 있는 UI 구현',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.521',
     version: 'v2.8.521',
     date: '2026-09-10',
