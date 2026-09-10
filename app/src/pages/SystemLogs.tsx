@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.526',
+    version: 'v2.8.526',
+    date: '2026-09-10',
+    category: '버그수정',
+    title: '소싱/발주 공급업체 발주 품목 비고(REMARK) 입력 후 자동 저장 및 포커스 아웃 시 내용 사라짐 버그 완벽 교정',
+    content: '• 공급업체별 발주 품목 테이블의 [비고] 칸에 텍스트 입력 후 다른 곳을 클릭하거나 자동 저장(Blur / Enter / 단축키 / 저장 버튼) 시 입력 내용이 초기화되어 사라지던 치명적인 현상 완벽 교정\n• Firestore 저장 로직(handleSaveBasic, handleSaveSupplierPoDetails, issueAndSavePO) 내 cleanSourcingItems에 비고(remark, supplierRemark) 속성이 누락되어 저장 시 삭제되던 필드를 완벽 보강\n• 백그라운드 실시간 스냅샷 동기화 및 alignedSourcing 복원 시 사용자가 로컬에서 수정한 비고 텍스트를 최우선 유지하도록 방어 로직 탑재\n• 품목 비고 헬퍼(getPoItemRemark)에서 사용자 입력 비고 텍스트가 정상 유지되도록 개선 및 발주서 인쇄/PDF 미리보기 연동 검증',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.525',
     version: 'v2.8.525',
     date: '2026-09-10',

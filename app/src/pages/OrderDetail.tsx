@@ -629,9 +629,11 @@ export const OrderDetail: React.FC = () => {
 
   // 발주서 품목 비고 정리 헬퍼 (EA발주, M발주 등 자동단위 접미사 제거 및 순수 비고 반환)
   const getPoItemRemark = (it: any) => {
-    const r = (it.supplierRemark !== undefined && it.supplierRemark !== null)
-      ? it.supplierRemark
-      : (it.remark !== undefined && it.remark !== null ? it.remark : '');
+    if (!it) return '';
+    if (it.supplierRemark !== undefined && it.supplierRemark !== null && String(it.supplierRemark).trim() !== '') {
+      return String(it.supplierRemark);
+    }
+    const r = (it.remark !== undefined && it.remark !== null) ? it.remark : '';
     if (typeof r === 'string') {
       const trimmed = r.trim();
       if (trimmed === `${it.unit || ''} 발주`.trim() || /^(EA|M|SET|ROLL|BOX|KG|PCS|PK|CAN|BTL|MTR)\s*발주$/i.test(trimmed)) {
@@ -2991,6 +2993,8 @@ export const OrderDetail: React.FC = () => {
             ...sIt,
             supplier: activeSupplier,
             supplierContact: activeContact,
+            remark: sIt.remark !== undefined ? sIt.remark : (sIt.supplierRemark || rIt?.remark || rIt?.supplierRemark || ''),
+            supplierRemark: sIt.supplierRemark !== undefined ? sIt.supplierRemark : (sIt.remark || rIt?.supplierRemark || rIt?.remark || ''),
             purchasePriceKrw: sIt.purchasePriceKrw || rIt?.purchasePriceKrw,
             purchasePriceUsd: sIt.purchasePriceUsd || rIt?.purchasePriceUsd,
             purchasePriceCurrency: sIt.purchasePriceCurrency || rIt?.purchasePriceCurrency || quoteCurr,
@@ -3030,6 +3034,8 @@ export const OrderDetail: React.FC = () => {
                 name: localIt?.name != null && localIt.name.trim() !== '' ? localIt.name : aIt.name,
                 supplier: localIt?.supplier != null && localIt.supplier.trim() !== '' ? localIt.supplier : aIt.supplier,
                 grade: localIt?.grade !== undefined ? localIt.grade : aIt.grade,
+                remark: localIt?.remark !== undefined ? localIt.remark : (localIt?.supplierRemark !== undefined ? localIt.supplierRemark : aIt.remark),
+                supplierRemark: localIt?.supplierRemark !== undefined ? localIt.supplierRemark : (localIt?.remark !== undefined ? localIt.remark : aIt.supplierRemark),
                 purchaseUnitPrice: localIt?.purchaseUnitPrice != null ? localIt.purchaseUnitPrice : aIt.purchaseUnitPrice,
                 purchaseUnitCurrency: localIt?.purchaseUnitCurrency || aIt.purchaseUnitCurrency
               };
@@ -3629,7 +3635,9 @@ export const OrderDetail: React.FC = () => {
             palletQty: parseFloat(it.palletQty as any) || 0,
             selectedPackingMethodId: it.selectedPackingMethodId || '',
             packingSpecOverride: it.packingSpecOverride || null,
-            remarks: it.remarks || it.remark || '',
+            remarks: it.remarks || it.remark || matchingSourcing?.remark || matchingSourcing?.supplierRemark || '',
+            remark: it.remark !== undefined ? it.remark : (it.remarks || matchingSourcing?.remark || matchingSourcing?.supplierRemark || ''),
+            supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (matchingSourcing?.supplierRemark || matchingSourcing?.remark || ''),
             originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : buyPrice,
             originalPurchaseCurrency: (it.originalPurchaseCurrency || buyCurr) as any,
             amount: it.amount || 0,
@@ -3667,6 +3675,8 @@ export const OrderDetail: React.FC = () => {
             supplier: activeSupplier,
             supplierContact: it.supplierContact || matchingOrderItem?.supplierContact || '',
             grade: it.grade || '',
+            remark: it.remark !== undefined ? it.remark : (it.supplierRemark || matchingOrderItem?.remark || matchingOrderItem?.remarks || ''),
+            supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (it.remark || matchingOrderItem?.supplierRemark || ''),
             qty: parseFloat(it.qty as any) || 0,
             unit: (it.unit || 'kg') as any,
             unitPrice: parseFloat(it.unitPrice as any) || 0,
@@ -3969,6 +3979,11 @@ export const OrderDetail: React.FC = () => {
       const updated = [...prev];
       let it = { ...updated[index], [field]: value };
       
+      if (field === 'supplierRemark' || field === 'remark') {
+        it.supplierRemark = value;
+        it.remark = value;
+      }
+
       if (field === 'supplier') {
         const parsedCode = getRawProductCode(it.name);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
@@ -4009,6 +4024,7 @@ export const OrderDetail: React.FC = () => {
       const newItems = [...prev];
       newItems.splice(indexInMain + 1, 0, newItem);
       const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      latestOrderStateRef.current.sourcingItems = cleaned;
       if (order) {
         const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
         setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
@@ -4122,6 +4138,7 @@ export const OrderDetail: React.FC = () => {
       const [movedItem] = newItems.splice(sourceIndexInMain, 1);
       newItems.splice(targetIndexInMain, 0, movedItem);
       cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      latestOrderStateRef.current.sourcingItems = cleaned;
       return cleaned;
     });
 
@@ -5496,6 +5513,8 @@ export const OrderDetail: React.FC = () => {
           supplier: it.supplier || '',
           supplierContact: it.supplierContact || '',
           grade: it.grade || '',
+          remark: it.remark !== undefined ? it.remark : (it.supplierRemark || matchingOrderItem?.remark || matchingOrderItem?.remarks || ''),
+          supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (it.remark || matchingOrderItem?.supplierRemark || ''),
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
@@ -5520,6 +5539,8 @@ export const OrderDetail: React.FC = () => {
             purchaseUnitCurrency: matched.purchaseUnitCurrency || it.purchaseUnitCurrency || null,
             originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : (it.originalPurchasePrice != null ? it.originalPurchasePrice : null),
             originalPurchaseCurrency: matched.originalPurchaseCurrency || it.originalPurchaseCurrency || null,
+            remark: matched.remark !== undefined ? matched.remark : (it.remark || matched.supplierRemark || ''),
+            supplierRemark: matched.supplierRemark !== undefined ? matched.supplierRemark : (it.supplierRemark || matched.remark || ''),
           };
         }
         return it;
@@ -6250,6 +6271,8 @@ export const OrderDetail: React.FC = () => {
           supplier: it.supplier || '',
           supplierContact: it.supplierContact || '',
           grade: it.grade || '',
+          remark: it.remark !== undefined ? it.remark : (it.supplierRemark || matchingOrderItem?.remark || matchingOrderItem?.remarks || ''),
+          supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (it.remark || matchingOrderItem?.supplierRemark || ''),
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
@@ -6274,6 +6297,8 @@ export const OrderDetail: React.FC = () => {
             purchaseUnitCurrency: matched.purchaseUnitCurrency || it.purchaseUnitCurrency || null,
             originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : (it.originalPurchasePrice != null ? it.originalPurchasePrice : null),
             originalPurchaseCurrency: matched.originalPurchaseCurrency || it.originalPurchaseCurrency || null,
+            remark: matched.remark !== undefined ? matched.remark : (it.remark || matched.supplierRemark || ''),
+            supplierRemark: matched.supplierRemark !== undefined ? matched.supplierRemark : (it.supplierRemark || matched.remark || ''),
           };
         }
         return it;
@@ -9461,21 +9486,27 @@ ${downloadLink}`;
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setSourcingItems(prev => [
-                                      ...prev,
-                                      {
-                                        itemId: (prev.length + 1).toString(),
-                                        name: '',
-                                        supplier: supplierName,
-                                        supplierContact: '',
-                                        grade: '',
-                                        qty: 0,
-                                        unit: 'kg',
-                                        unitPrice: 0,
-                                        amount: 0,
-                                        currency: 'USD'
-                                      }
-                                    ]);
+                                    setSourcingItems(prev => {
+                                      const updated = [
+                                        ...prev,
+                                        {
+                                          itemId: (prev.length + 1).toString(),
+                                          name: '',
+                                          supplier: supplierName,
+                                          supplierContact: '',
+                                          grade: '',
+                                          remark: '',
+                                          supplierRemark: '',
+                                          qty: 0,
+                                          unit: 'kg',
+                                          unitPrice: 0,
+                                          amount: 0,
+                                          currency: 'USD'
+                                        }
+                                      ];
+                                      latestOrderStateRef.current.sourcingItems = updated;
+                                      return updated;
+                                    });
                                   }}
                                   style={{ padding: '0 8px', height: '28px', background: '#fff', border: '1px solid #cbd5e1', color: '#1e293b', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                                 >
@@ -9966,11 +9997,7 @@ ${downloadLink}`;
                                                <input
                                                  type="text"
                                                  value={getPoItemRemark(it)}
-                                                 onChange={(e) => {
-                                                   const val = e.target.value;
-                                                   handleSourcingItemChange(itemIndexInMain, 'supplierRemark', val);
-                                                   handleSourcingItemChange(itemIndexInMain, 'remark', val);
-                                                 }}
+                                                 onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'remark', e.target.value)}
                                                  placeholder="비고 입력"
                                                  style={{
                                                    width: '100%',
