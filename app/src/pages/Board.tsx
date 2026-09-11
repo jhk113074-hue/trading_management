@@ -14,7 +14,7 @@ const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bg: st
 ];
 
 export const Board: React.FC = () => {
-  const { tasks, updateTask, updateTaskStatus, addTask } = useTasks();
+  const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -211,6 +211,10 @@ export const Board: React.FC = () => {
           onClose={() => handleSelectTask(null)}
           onSave={async (data) => {
             await updateTask({ ...selectedTask, ...data } as Task);
+            handleSelectTask(null);
+          }}
+          onDelete={async (taskId) => {
+            await deleteTask(taskId);
             handleSelectTask(null);
           }}
         />

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.538',
+    version: 'v2.8.538',
+    date: '2026-09-11',
+    category: '기능개선',
+    title: '메인화면 및 보드 업무 상세 정보에서 안전한 즉시 업무 삭제 기능 지원',
+    content: '• 전체 업무리스트(TaskList)로 이동하지 않고도 메인 대시보드 및 칸반 보드에서 해야 할 일(업무) 카드를 클릭해 열리는 [업무 상세 정보] 모달에서 바로 업무를 삭제할 수 있도록 하단에 [🗑️ 업무 삭제] 기능 신설\n• 데이터 안전성 완벽 보장: 실수로 인한 오삭제를 방지하기 위해 업무명을 명시한 2단계 확인 알림창 제공\n• 시스템 데이터 무결성 안내: 업무 삭제 시 할 일(Task) 내역만 단독 삭제되며, 바이어(거래처), 제품(Product), 견적서(PI), 주문(PO) 등 연결된 일체의 원본 무역 데이터는 전혀 손상되거나 삭제되지 않도록 독립성 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.537',
     version: 'v2.8.537',
     date: '2026-09-10',

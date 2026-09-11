@@ -382,7 +382,7 @@ const parseTitleAndDate = (rawTitle: string, explicitDate: string) => {
 export const Dashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { tasks, addTask, updateTask, updateTaskStatus, loading } = useTasks();
+  const { tasks, addTask, updateTask, updateTaskStatus, deleteTask, loading } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile, currentUser } = useAuth();
 
@@ -3627,6 +3627,10 @@ export const Dashboard: React.FC = () => {
           onClose={() => setEditingTask(null)}
           onSave={async (data) => {
             await updateTask({ ...editingTask, ...data } as Task);
+            setEditingTask(null);
+          }}
+          onDelete={async (taskId) => {
+            await deleteTask(taskId);
             setEditingTask(null);
           }}
         />

@@ -1102,6 +1102,10 @@ export const TaskList: React.FC = () => {
             await updateTask({ ...editingTask, ...data } as Task);
             handleCloseTask();
           }}
+          onDelete={async (taskId) => {
+            await deleteTask(taskId);
+            handleCloseTask();
+          }}
         />
       )}
     </div>

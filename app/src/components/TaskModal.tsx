@@ -27,9 +27,10 @@ interface Props {
   initialTask?: Task;
   onClose: () => void;
   onSave: (task: Partial<Task>) => void;
+  onDelete?: (taskId: string) => void | Promise<void>;
 }
 
-export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => {
+export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave, onDelete }) => {
   const [title, setTitle] = useState(initialTask?.title || '');
   const [description, setDescription] = useState(initialTask?.description || '');
   const [visibility, setVisibility] = useState<Visibility>(initialTask?.visibility || 'PUBLIC');
@@ -566,6 +567,33 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const currentQuadrant = calculateQuadrant(importance, urgency);
 
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleDeleteTask = async () => {
+    if (!initialTask?.id) return;
+    const taskTitle = title || initialTask.title || '업무';
+    const isConfirmed = window.confirm(
+      `[업무 삭제 확인]\n\n` +
+      `선택하신 업무를 정말 삭제하시겠습니까?\n\n` +
+      `• 업무명: ${taskTitle}\n\n` +
+      `※ 안전 안내: 해당 업무(할 일) 내역만 안전하게 삭제되며, 거래처(바이어), 견적서(PI), 제품 등 다른 원본 데이터에는 전혀 영향을 주지 않습니다.`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      setIsSaving(true);
+      if (onDelete) {
+        await onDelete(initialTask.id);
+      } else {
+        await deleteDoc(doc(db, 'tasks', initialTask.id));
+        onClose();
+      }
+    } catch (err) {
+      console.error('Task delete error:', err);
+      alert('업무 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     const reqUser = users.find(u => u.id === requesterId);
@@ -1606,6 +1634,21 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   title="지시자/담당자에게 업무 최종 처리 완료 보고 쪽지 및 실시간 알림 발송"
                 >
                   ✅ 완료보고 발송
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteTask}
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px',
+                    fontSize: '0.82rem', fontWeight: 750, color: '#dc2626', cursor: isSaving ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '4px', transition: 'background-color 0.15s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                  title="이 업무 삭제 (안전 확인 후 삭제)"
+                >
+                  🗑️ 업무 삭제
                 </button>
               </>
             )}
