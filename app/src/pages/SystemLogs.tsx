@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.540',
+    version: 'v2.8.540',
+    date: '2026-09-11',
+    category: '버그수정',
+    title: '발주서(PO) 미리보기/출력 시 수신(공급업체) 법인명 Full Name((주) 등) 반영 보장',
+    content: '• 주문 상세(OrderDetail)에서 공급업체명을 `(주)하나테크` 등으로 변경 및 발행 시, 발주서 인쇄/미리보기 화면의 [수 신 :] 란에 법인 표기((주), 주식회사 등)가 누락되지 않고 주문에 지정된 정식 명칭 그대로 반영되도록 수정\n• 마스터 공급사 매칭 엔진 개선: 공급업체 검색 시 완전 일치(Exact Match)를 우선 탐색하고, 주소/연락처가 비어 있는 경우 정규화된 상호 파트너 마스터로부터 주소 및 담당자 정보를 지능적으로 연동하여 수신처 정보의 완성도 극대화\n• 카카오톡 및 이메일 발주서 발송 시 공급사 탐색 로직 동기화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.539',
     version: 'v2.8.539',
     date: '2026-09-11',

@@ -6599,36 +6599,63 @@ export const OrderDetail: React.FC = () => {
 
     // 수신처 정보 (도착보고서의 Shipper 정보 연동)
     const getShipperLines = () => {
-      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper;
+      const normSup = (supplierName || '').replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper
+        || (normSup ? Object.entries(order?.supplierArrivalReports || {}).find(([k]) => k.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase() === normSup)?.[1]?.shipper : null);
+
       if (savedArrivalShipper && (savedArrivalShipper.includes('TEL') || savedArrivalShipper.includes('담당자') || savedArrivalShipper.includes('\n'))) {
-        return savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+        const rawLines = savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+        if (rawLines.length > 0) {
+          rawLines[0] = supplierName || rawLines[0];
+          return rawLines;
+        }
       }
 
       const cleanTarget = (supplierName || '').trim().toLowerCase();
-      const matched = (suppliersList || []).find((s: any) => 
+      const normTarget = cleanTarget.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+
+      // 1. Exact match first by code or name
+      let matched = (suppliersList || []).find((s: any) => 
         (s.name || '').trim().toLowerCase() === cleanTarget || 
-        (s.supplierCode || '').trim().toLowerCase() === cleanTarget ||
-        (s.name && cleanTarget.includes(s.name.trim().toLowerCase())) ||
-        (cleanTarget && (s.name || '').toLowerCase().includes(cleanTarget))
+        (s.supplierCode || '').trim().toLowerCase() === cleanTarget
       );
 
-      if (matched) {
-        const primaryContact = matched.contacts?.find((c: any) => c.isPrimary) || matched.contacts?.[0];
-        const contactName = primaryContact?.name || matched.managerName || '';
-        const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
-        const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
-        const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
-
-        const lines = [matched.name || supplierName];
-        if (matched.address) lines.push(matched.address);
-        if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
-        if (contactPhone) lines.push(`TEL: ${contactPhone}`);
-        if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
-
-        return lines.filter(Boolean);
+      // 2. Normalized match (without (주)/주식회사)
+      if (!matched && normTarget) {
+        matched = (suppliersList || []).find((s: any) => {
+          const normName = (s.name || '').trim().toLowerCase().replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+          return normName && (normName === normTarget || normTarget.includes(normName) || normName.includes(normTarget));
+        });
       }
 
-      return [supplierName];
+      // If matched has missing address or email, check partner record
+      let address = matched?.address || '';
+      const primaryContact = matched?.contacts?.find((c: any) => c.isPrimary) || matched?.contacts?.[0];
+      let contactName = primaryContact?.name || matched?.managerName || '';
+      let contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+      let contactPhone = primaryContact?.phone || matched?.managerPhone || matched?.phone || '';
+      let contactEmail = primaryContact?.email || matched?.purchaseEmail || '';
+
+      if ((!address || !contactEmail) && normTarget) {
+        const partner = (suppliersList || []).find((s: any) => {
+          const normName = (s.name || '').trim().toLowerCase().replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+          return normName === normTarget && (s.address || s.purchaseEmail);
+        });
+        if (partner) {
+          if (!address && partner.address) address = partner.address;
+          if (!contactEmail && partner.purchaseEmail) contactEmail = partner.purchaseEmail;
+          if (!contactName && partner.managerName) contactName = partner.managerName;
+          if (!contactPhone && (partner.managerPhone || partner.phone)) contactPhone = partner.managerPhone || partner.phone;
+        }
+      }
+
+      const lines = [supplierName || matched?.name || ''];
+      if (address) lines.push(address);
+      if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+      if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+      if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+      return lines.filter(Boolean);
     };
 
     const recipientShipperLines = getShipperLines();
@@ -7090,36 +7117,63 @@ export const OrderDetail: React.FC = () => {
 
     // 수신처 정보 (도착보고서의 Shipper 정보 연동)
     const getShipperLines = () => {
-      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper;
+      const normSup = (supplierName || '').replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+      const savedArrivalShipper = order?.supplierArrivalReports?.[supplierName]?.shipper
+        || (normSup ? Object.entries(order?.supplierArrivalReports || {}).find(([k]) => k.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase() === normSup)?.[1]?.shipper : null);
+
       if (savedArrivalShipper && (savedArrivalShipper.includes('TEL') || savedArrivalShipper.includes('담당자') || savedArrivalShipper.includes('\n'))) {
-        return savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+        const rawLines = savedArrivalShipper.split('\n').map((l: string) => l.trim()).filter(Boolean);
+        if (rawLines.length > 0) {
+          rawLines[0] = supplierName || rawLines[0];
+          return rawLines;
+        }
       }
 
       const cleanTarget = (supplierName || '').trim().toLowerCase();
-      const matched = (suppliersList || []).find((s: any) => 
+      const normTarget = cleanTarget.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+
+      // 1. Exact match first by code or name
+      let matched = (suppliersList || []).find((s: any) => 
         (s.name || '').trim().toLowerCase() === cleanTarget || 
-        (s.supplierCode || '').trim().toLowerCase() === cleanTarget ||
-        (s.name && cleanTarget.includes(s.name.trim().toLowerCase())) ||
-        (cleanTarget && (s.name || '').toLowerCase().includes(cleanTarget))
+        (s.supplierCode || '').trim().toLowerCase() === cleanTarget
       );
 
-      if (matched) {
-        const primaryContact = matched.contacts?.find((c: any) => c.isPrimary) || matched.contacts?.[0];
-        const contactName = primaryContact?.name || matched.managerName || '';
-        const contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
-        const contactPhone = primaryContact?.phone || matched.managerPhone || matched.phone || '';
-        const contactEmail = primaryContact?.email || matched.purchaseEmail || '';
-
-        const lines = [matched.name || supplierName];
-        if (matched.address) lines.push(matched.address);
-        if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
-        if (contactPhone) lines.push(`TEL: ${contactPhone}`);
-        if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
-
-        return lines.filter(Boolean);
+      // 2. Normalized match (without (주)/주식회사)
+      if (!matched && normTarget) {
+        matched = (suppliersList || []).find((s: any) => {
+          const normName = (s.name || '').trim().toLowerCase().replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+          return normName && (normName === normTarget || normTarget.includes(normName) || normName.includes(normTarget));
+        });
       }
 
-      return [supplierName];
+      // If matched has missing address or email, check partner record
+      let address = matched?.address || '';
+      const primaryContact = matched?.contacts?.find((c: any) => c.isPrimary) || matched?.contacts?.[0];
+      let contactName = primaryContact?.name || matched?.managerName || '';
+      let contactPosition = primaryContact?.position ? `(${primaryContact.position})` : '';
+      let contactPhone = primaryContact?.phone || matched?.managerPhone || matched?.phone || '';
+      let contactEmail = primaryContact?.email || matched?.purchaseEmail || '';
+
+      if ((!address || !contactEmail) && normTarget) {
+        const partner = (suppliersList || []).find((s: any) => {
+          const normName = (s.name || '').trim().toLowerCase().replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '');
+          return normName === normTarget && (s.address || s.purchaseEmail);
+        });
+        if (partner) {
+          if (!address && partner.address) address = partner.address;
+          if (!contactEmail && partner.purchaseEmail) contactEmail = partner.purchaseEmail;
+          if (!contactName && partner.managerName) contactName = partner.managerName;
+          if (!contactPhone && (partner.managerPhone || partner.phone)) contactPhone = partner.managerPhone || partner.phone;
+        }
+      }
+
+      const lines = [supplierName || matched?.name || ''];
+      if (address) lines.push(address);
+      if (contactName) lines.push(`담당자: ${contactName} ${contactPosition}`.trim());
+      if (contactPhone) lines.push(`TEL: ${contactPhone}`);
+      if (contactEmail) lines.push(`E-mail: ${contactEmail}`);
+
+      return lines.filter(Boolean);
     };
 
     const recipientShipperLines = getShipperLines();
@@ -7541,12 +7595,17 @@ export const OrderDetail: React.FC = () => {
                     basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber
                   );
 
-      const matchedSupplierObj = suppliersList.find((s: any) => 
+      let matchedSupplierObj = suppliersList.find((s: any) => 
         (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-        (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-        (s.name && supplierName.includes(s.name)) ||
-        (supplierName && s.name && (s.name.includes(supplierName)))
+        (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
       );
+      if (!matchedSupplierObj) {
+        const normTarget = supplierName.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+        matchedSupplierObj = suppliersList.find((s: any) => {
+          const normName = (s.name || '').replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+          return normName && normTarget && (normName === normTarget || normTarget.includes(normName) || normName.includes(normTarget));
+        });
+      }
       const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
       const supplierEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
 
@@ -7686,12 +7745,17 @@ ${downloadLink}`;
     const isYS = (order?.issuingCompany || basicForm?.issuingCompany) === 'YS';
     const companyTitleName = isYS ? '영성ACC' : '(주)와이에스에이씨씨';
 
-    const matchedSupplierObj = suppliersList.find((s: any) => 
+    let matchedSupplierObj = suppliersList.find((s: any) => 
       (s.name || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase() ||
-      (s.name && supplierName.includes(s.name)) ||
-      (supplierName && s.name && (s.name.includes(supplierName)))
+      (s.supplierCode || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
     );
+    if (!matchedSupplierObj) {
+      const normTarget = supplierName.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+      matchedSupplierObj = suppliersList.find((s: any) => {
+        const normName = (s.name || '').replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').trim().toLowerCase();
+        return normName && normTarget && (normName === normTarget || normTarget.includes(normName) || normName.includes(normTarget));
+      });
+    }
     const primaryContact = matchedSupplierObj?.contacts?.find((c: any) => c.isPrimary) || matchedSupplierObj?.contacts?.[0];
     const supplierEmail = primaryContact?.email || (order as any)?.supplier_emails?.[supplierName] || items[0]?.supplierContact || matchedSupplierObj?.purchaseEmail || '';
 
