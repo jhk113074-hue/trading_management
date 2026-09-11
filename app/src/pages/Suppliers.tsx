@@ -49,10 +49,7 @@ export const Suppliers: React.FC = () => {
         
         Object.entries(grouped).forEach(([supName, supItems]) => {
           const cleanName = supName.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-          if (!stats[cleanName]) {
-            stats[cleanName] = { count: 0, totalKrw: 0, totalUsd: 0 };
-          }
-          stats[cleanName].count += 1;
+          const normKey = supName.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
           
           let sumKrw = 0;
           let sumUsd = 0;
@@ -71,8 +68,21 @@ export const Suppliers: React.FC = () => {
             sumKrw = Math.round(sumKrw * 1.1);
             sumUsd = parseFloat((sumUsd * 1.1).toFixed(2));
           }
-          stats[cleanName].totalKrw += sumKrw;
-          stats[cleanName].totalUsd += sumUsd;
+
+          const addKey = (k: string) => {
+            if (!k) return;
+            if (!stats[k]) {
+              stats[k] = { count: 0, totalKrw: 0, totalUsd: 0 };
+            }
+            stats[k].count += 1;
+            stats[k].totalKrw += sumKrw;
+            stats[k].totalUsd += sumUsd;
+          };
+
+          addKey(cleanName);
+          if (normKey && normKey !== cleanName) {
+            addKey(normKey);
+          }
         });
       });
       setOrderStatsBySupplier(stats);
@@ -387,7 +397,8 @@ export const Suppliers: React.FC = () => {
                       <span>대표: {s.representative || '-'}</span>
                       {(() => {
                         const cleanName = (s.name || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-                        const stat = orderStatsBySupplier[cleanName];
+                        const normKey = (s.name || '').replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+                        const stat = orderStatsBySupplier[cleanName] || orderStatsBySupplier[normKey];
                         if (stat && stat.count > 0) {
                           const amtStr = [
                             stat.totalKrw > 0 ? `₩${Math.round(stat.totalKrw).toLocaleString()}` : null,

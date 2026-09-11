@@ -3359,7 +3359,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               <div style={{ height: '28px', display: 'flex', alignItems: 'center' }}>
                                 {p && p.supplierName ? (
                                   <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '140px', background: '#eff6ff', padding: '3px 6px', borderRadius: '4px', border: '1px solid #bfdbfe' }} title={p.supplierName}>
-                                    {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                    {p.supplierName.trim()}
                                   </span>
                                 ) : null}
                               </div>

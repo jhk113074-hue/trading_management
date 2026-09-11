@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.539',
+    version: 'v2.8.539',
+    date: '2026-09-11',
+    category: '기능개선',
+    title: '회사명 Full Name((주), 주식회사 등) 온전한 표기 지원 및 공급사 발주 실적 매칭 고도화',
+    content: '• 공급업체(Suppliers), 고객사(Customers), 발주/주문(Orders), 견적서(PI) 등 전체 시스템에서 법인 표기((주), 주식회사, ㈜ 등)가 생략되지 않고 등록된 공식 정식 명칭(Full Name) 그대로 온전히 노출되도록 개선\n• 공급업체 관리(Suppliers) 목록에서 `(주)하나테크` 등 법인 형태가 포함된 회사명이 마스터 등록 내용 그대로 정확히 표시되도록 정제 로직 개편\n• 공급사별 주문 집계(orderStats) 지능형 듀얼 매칭: 주문서 내 기재된 공급사명과 마스터 업체명 간 `(주)` 유무에 관계없이 발주 건수 및 금액 통계가 누락 없이 완벽 연동되도록 정규화 매칭 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.538',
     version: 'v2.8.538',
     date: '2026-09-11',

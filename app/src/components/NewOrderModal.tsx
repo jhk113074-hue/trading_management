@@ -1212,7 +1212,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           if (p && p.supplierName) {
                             return (
                               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
-                                {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                {p.supplierName.trim()}
                               </span>
                             );
                           }
