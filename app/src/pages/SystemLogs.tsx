@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.542',
+    version: 'v2.8.542',
+    date: '2026-09-12',
+    category: '기능개선',
+    title: '견적서(PI) 고객사 바이어 담당자 및 담당 이메일 선택/동기화 기능 지원',
+    content: '• 견적서(PI) 작성 시 고객사(바이어)에 등록된 다중 담당자(영업/구매 담당 등)를 원클릭으로 선택할 수 있는 드롭다운 선택 기능 신설 및 수기 직접 입력 지원\n• 담당자 선택 시 해당 담당자의 이메일 주소(Email)가 1:1로 자동 연동되며, 견적서 폼 내에 전용 [이메일 (Email)] 입력란을 추가하여 언제든 확인 및 자유로운 수정/저장이 가능하도록 개선\n• 고객 검색/선택 모달(CustomerSearchModal)에서 고객사를 선택했을 때도 기존에 영문/약칭이 잘못 들어가던 현상을 수정하고 등록된 주담당자명과 이메일이 정확히 초기 연동되도록 보정\n• 발행 정보의 [작성자] 표기를 [작성자 / 영업담당]으로 명확화하고 고객사 관리 모달의 담당자 직책/부서 입력 시 영업/구매 직책 자동완성 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.541',
     version: 'v2.8.541',
     date: '2026-09-12',

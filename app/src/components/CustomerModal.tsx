@@ -1155,7 +1155,22 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>직책/부서</label>
-                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input
+                    type="text"
+                    list="contact-position-suggestions"
+                    value={newContactPosition}
+                    onChange={e => setNewContactPosition(e.target.value)}
+                    placeholder="예: 영업담당 / 구매담당"
+                    style={{ boxSizing: 'border-box', width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                  />
+                  <datalist id="contact-position-suggestions">
+                    <option value="영업담당 (Sales Rep)" />
+                    <option value="영업팀장 (Sales Manager)" />
+                    <option value="구매담당 (Purchasing)" />
+                    <option value="구매팀장 (Purchase Manager)" />
+                    <option value="총괄대표 (Director / MD)" />
+                    <option value="무역물류 (Logistics)" />
+                  </datalist>
                 </div>
                 <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>연락처 (Mobile)</label>

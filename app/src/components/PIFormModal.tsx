@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot, writeBatch } from 'firebase/firestore';
@@ -385,6 +385,35 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return defaults;
   });
+
+  // 선택된 고객사의 등록된 바이어 담당자 목록
+  const customerContacts = useMemo(() => {
+    if (!formData.customerId) return [];
+    const cust = customers.find((c: any) => c.id === formData.customerId || c.customerCode === formData.customerId);
+    if (!cust) return [];
+    const list: Array<{ id: string; name: string; position?: string; email?: string; phone?: string; isPrimary?: boolean }> = [];
+    if (Array.isArray(cust.contacts) && cust.contacts.length > 0) {
+      cust.contacts.forEach((ct: any) => {
+        list.push({
+          id: ct.id,
+          name: ct.name,
+          position: ct.position,
+          email: ct.email,
+          phone: ct.phone,
+          isPrimary: ct.isPrimary
+        });
+      });
+    } else if (cust.contactPerson) {
+      list.push({
+        id: 'primary',
+        name: cust.contactPerson,
+        position: '대표담당',
+        email: cust.contactEmail || cust.email || '',
+        isPrimary: true
+      });
+    }
+    return list;
+  }, [formData.customerId, customers]);
 
   const [items, setItems] = useState<PIItem[]>([]);
   const [revisionReason, setRevisionReason] = useState('');
@@ -2440,7 +2469,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         custPo: formData.yourRef || '',
         quotationId: piId,
         customer: formData.customerName || '',
-        manager: currentUser,
+        manager: formData.createdByName || currentUser,
         incoterms: formData.incoterms || 'FOB',
         paymentTerms: formData.paymentTerms || '',
         poDate: new Date().toISOString().split('T')[0],
@@ -3023,7 +3052,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 </select>
               </div>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
-              <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
+              <CompactComboSelect label="작성자 / 영업담당" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -3131,7 +3160,88 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     title="고객 검색">🔍</button>
                 </div>
               </div>
-              <CompactInput label="담당" value={formData.contactPerson || ''} onChange={(v: any) => setFormData(prev => ({...prev, contactPerson: v}))} />
+              {/* Contact Person Selector & Direct Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    바이어 담당자 (Attn)
+                  </label>
+                  {customerContacts.length > 0 && (
+                    <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 700 }}>
+                      {customerContacts.length}명 등록됨
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '4px', height: '34px' }}>
+                  {customerContacts.length > 0 && (
+                    <select
+                      value=""
+                      onChange={e => {
+                        const sel = customerContacts.find((c: any) => c.id === e.target.value);
+                        if (sel) {
+                          setFormData(prev => ({
+                            ...prev,
+                            contactPerson: sel.name,
+                            email: sel.email || prev.email || ''
+                          }));
+                        }
+                      }}
+                      style={{
+                        maxWidth: '125px',
+                        flex: '0 0 auto',
+                        padding: '0 4px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                        backgroundColor: '#f8fafc',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        height: '34px',
+                        boxSizing: 'border-box'
+                      }}
+                      title="등록된 바이어 담당자 선택 시 이름 및 이메일 자동 입력"
+                    >
+                      <option value="">-- 담당자 선택 --</option>
+                      {customerContacts.map((ct: any) => (
+                        <option key={ct.id} value={ct.id}>
+                          {ct.isPrimary ? '★ ' : ''}{ct.name}{ct.position ? ` (${ct.position})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <input
+                    type="text"
+                    value={formData.contactPerson || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, contactPerson: e.target.value }))}
+                    placeholder="담당자명 (예: Mr. Ashwin)"
+                    style={{
+                      flex: 1,
+                      minWidth: '90px',
+                      padding: '4px 8px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#1e293b',
+                      background: '#fff',
+                      height: '34px',
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Email Input */}
+              <CompactInput
+                label="이메일 (Email)"
+                type="email"
+                value={formData.email || ''}
+                onChange={(v: any) => setFormData(prev => ({ ...prev, email: v }))}
+                placeholder="buyer@company.com"
+              />
               {formData.type !== 'consulting' && (
                 <>
                   <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
@@ -4217,13 +4327,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={async (c) => {
             isPiNumberManuallyEditedRef.current = false;
+            const primaryContact = Array.isArray(c.contacts) && c.contacts.length > 0
+              ? (c.contacts.find((ct: any) => ct.isPrimary) || c.contacts[0])
+              : null;
+            const initialContactPerson = primaryContact?.name || c.contactPerson || '';
+            const initialEmail = primaryContact?.email || c.contactEmail || c.email || '';
+
             setFormData(prev => ({
               ...prev,
               customerId: c.id,
               customerName: c.name,
               customerAddress: c.addressEn || '',
-              contactPerson: c.nameKo || '',
-              email: c.email || '',
+              contactPerson: initialContactPerson,
+              email: initialEmail,
               destinationPort: c.shippingPort || prev.destinationPort,
               incoterms: c.preferredIncoterms || prev.incoterms,
               paymentTerms: c.paymentTerms || prev.paymentTerms
