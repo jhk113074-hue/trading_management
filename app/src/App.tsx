@@ -34,6 +34,7 @@ import { ImportDetail } from './pages/ImportDetail';
 import { DomesticQuotes } from './pages/DomesticQuotes';
 import { DomesticTrade } from './pages/DomesticTrade';
 import { ProfitManagement } from './pages/ProfitManagement';
+import { ReceivablesManagement } from './pages/ReceivablesManagement';
 import { DocViewerPage } from './pages/DocViewerPage';
 import { ContainerPacker } from './pages/ContainerPacker';
 
@@ -90,6 +91,7 @@ const App: React.FC = () => {
               <Route path="domestic-orders" element={<DomesticTrade />} />
               <Route path="domestic-trade" element={<Navigate to="/domestic-orders" replace />} />
               <Route path="profit-management" element={<ProfitManagement />} />
+              <Route path="receivables" element={<ReceivablesManagement />} />
             </Route>
             <Route path="/doc-view" element={<DocViewerPage />} />
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />

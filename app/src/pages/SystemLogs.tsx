@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.545',
+    version: 'v2.8.545',
+    date: '2026-09-12',
+    category: '신규기능',
+    title: '영업관리: 거래처별 채권관리 & 채권회전일(DSO) 포함 수금관리 시스템 신설',
+    content: '• 영업관리 메뉴 내 [💰 채권/수금관리] 신규 모듈 신설: 수출(Orders), 수입(Imports), 국내(Domestic) 거래의 청구금액, 기수금액, 미수채권 잔액을 거래처별/건별로 실시간 자동 집계\n• 채권회전일수(DSO : Days Sales Outstanding) 산출 지표 도입: 바이어별 물품 공급 후 현금 회수까지 평균 소요일수를 자동 계산하고 30일/60일/90일/90일초과 4단계 건전성 뱃지 표시\n• 채권 연령 분석(Aging Analysis): 30일 이내 정상, 31~60일 주의, 61~90일 경고, 90일 초과 위험 채권액을 한눈에 파악하여 부실 채권 조기 방지\n• 건별 실시간 분할 수금 등록 팝업: 입금일자, 입금액, 수수료 입력 즉시 Firestore 장부와 미수 잔액을 실시간 동기화\n• 엑셀 다운로드, 법인별/사업부문별/기간별 다각도 필터 및 고객사 마스터 모달 원클릭 연동 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.544',
     version: 'v2.8.544',
     date: '2026-09-12',
