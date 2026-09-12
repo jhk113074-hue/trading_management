@@ -2342,11 +2342,37 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
               {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}
               <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 수입 제품 및 패킹 명세 목록</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 수입 제품 및 패킹 명세 목록</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af' }}>기본 통화:</span>
+                      <select
+                        value={editingRequest.currency || 'USD'}
+                        onChange={e => {
+                          const newCur = e.target.value;
+                          setEditingRequest(p => {
+                            if (!p) return null;
+                            const next = (p.piItems || []).map(it => ({
+                              ...it,
+                              currency: it.currency || newCur
+                            }));
+                            return { ...p, currency: newCur, piItems: next };
+                          });
+                        }}
+                        style={{ height: '22px', fontSize: '11px', fontWeight: 700, color: '#1e3a8a', border: '1px solid #93c5fd', borderRadius: '3px', background: '#fff', outline: 'none', padding: '0 4px', cursor: 'pointer' }}
+                      >
+                        <option value="USD">USD ($)</option>
+                        <option value="KRW">KRW (₩)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="RMB">RMB (¥)</option>
+                        <option value="JPY">JPY (¥)</option>
+                      </select>
+                    </div>
+                  </div>
                   <button 
                     type="button" 
-                    onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }] }) : null)}
+                    onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '', currency: p.currency || 'USD' }] }) : null)}
                     style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     ＋ 항목 추가
@@ -2362,8 +2388,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
                         <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>QTY</th>
                         <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>UNIT</th>
+                        <th style={{ padding: '4px', width: '75px', textAlign: 'center' }}>통화</th>
                         <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>U.PRICE</th>
-                        <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                        <th style={{ padding: '4px', width: '100px', textAlign: 'right' }}>TOTAL AMOUNT</th>
                         <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
                         <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
                         <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>N.WT (KG)</th>
@@ -2372,7 +2399,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       </tr>
                     </thead>
                     <tbody>
-                      {(editingRequest.piItems || []).map((item, idx) => (
+                      {(editingRequest.piItems || []).map((item, idx) => {
+                        const itemCur = item.currency || item.buyingCurrency || editingRequest.currency || 'USD';
+                        const curSym = itemCur === 'KRW' ? '₩' : itemCur === 'EUR' ? '€' : (itemCur === 'RMB' || itemCur === 'CNY' || itemCur === 'JPY') ? '¥' : '$';
+                        const itemTotal = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+
+                        return (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                           <td style={{ padding: '4px' }}>
@@ -2453,6 +2485,28 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
                             />
                           </td>
+                          {/* 통화 선택 셀 */}
+                          <td style={{ padding: '4px' }}>
+                            <select
+                              value={itemCur}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], currency: val, buyingCurrency: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700, color: itemCur === 'KRW' ? '#047857' : '#1d4ed8', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                            >
+                              <option value="USD">USD ($)</option>
+                              <option value="KRW">KRW (₩)</option>
+                              <option value="EUR">EUR (€)</option>
+                              <option value="RMB">RMB (¥)</option>
+                              <option value="JPY">JPY (¥)</option>
+                            </select>
+                          </td>
                           <td style={{ padding: '4px' }}>
                             <input 
                               type="text" 
@@ -2474,11 +2528,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               type="text" 
                               readOnly
                               value={
-                                ((Number(item.qty) || 0) * (Number(item.unitPrice) || 0))
-                                  ? String(((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toFixed(2))
+                                itemTotal
+                                  ? (itemCur === 'KRW' || itemCur === 'JPY' ? `${curSym}${Math.round(itemTotal).toLocaleString()}` : `${curSym}${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                                   : ''
                               } 
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: 'var(--text-secondary)', fontWeight: 'bold' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: itemCur === 'KRW' ? '#047857' : 'var(--text-secondary)', fontWeight: 'bold' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -2561,7 +2615,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                             )}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
 
                       {/* 제일 밑줄에 nos of package and CBM and weight의 합계를 보여주는 요약행 */}
                       <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid var(--border-default)' }}>
@@ -2569,7 +2624,22 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1e3a8a' }}>
                           {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0)}
                         </td>
-                        <td colSpan={3} style={{ padding: '6px 8px' }}></td>
+                        <td colSpan={2} style={{ padding: '6px 8px' }}></td>
+                        <td colSpan={2} style={{ padding: '6px 8px', textAlign: 'right', color: '#0f766e', fontSize: '11.5px' }}>
+                          {(() => {
+                            const curTotals = (editingRequest.piItems || []).reduce((acc: Record<string, number>, it: any) => {
+                              const cur = (it.currency || it.buyingCurrency || editingRequest.currency || 'USD').toUpperCase();
+                              const amt = (Number(it.qty) || 0) * (Number(it.unitPrice) || 0);
+                              acc[cur] = (acc[cur] || 0) + amt;
+                              return acc;
+                            }, {});
+                            return Object.entries(curTotals).map(([cur, sumAmt]) => {
+                              const sym = cur === 'KRW' ? '₩' : cur === 'EUR' ? '€' : (cur === 'RMB' || cur === 'CNY' || cur === 'JPY') ? '¥' : '$';
+                              const formatted = (cur === 'KRW' || cur === 'JPY') ? `${sym}${Math.round(sumAmt).toLocaleString()}` : `${sym}${sumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                              return <span key={cur} style={{ marginLeft: '6px', background: cur === 'KRW' ? '#ecfdf5' : '#eff6ff', color: cur === 'KRW' ? '#065f46' : '#1e40af', padding: '1px 5px', borderRadius: '3px' }}>{formatted}</span>;
+                            });
+                          })()}
+                        </td>
                         <td style={{ padding: '6px 8px', textAlign: 'center' }}>NOS of PLT/PKG</td>
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#0f766e' }}>
                           {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)}

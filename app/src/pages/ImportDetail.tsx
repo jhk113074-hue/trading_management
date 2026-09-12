@@ -1411,6 +1411,31 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
     extra: 'E-mail: jhkim1130@ysacc.co.kr'
   };
 
+  const getCurrencySymbol = (c?: string) => {
+    const cur = (c || request.currency || 'USD').toUpperCase();
+    if (cur === 'KRW') return '₩';
+    if (cur === 'EUR') return '€';
+    if (cur === 'RMB' || cur === 'CNY' || cur === 'JPY') return '¥';
+    return '$';
+  };
+
+  const formatCurrencyAmount = (amt: number, c?: string) => {
+    const cur = (c || request.currency || 'USD').toUpperCase();
+    const sym = getCurrencySymbol(cur);
+    if (cur === 'KRW' || cur === 'JPY') {
+      return `${sym}${Math.round(amt).toLocaleString()}`;
+    }
+    return `${sym}${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const piItemsCurrencyTotals = (request.piItems || []).reduce((acc: Record<string, number>, it: any) => {
+    const cur = (it.currency || it.buyingCurrency || request.currency || 'USD').toUpperCase();
+    const amt = (Number(it.qty) || 0) * (Number(it.unitPrice) || 0);
+    acc[cur] = (acc[cur] || 0) + amt;
+    return acc;
+  }, {});
+
+
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
       
@@ -1656,8 +1681,9 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                       <th style={{ padding: '6px 8px', textAlign: 'left', width: '85px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
                       <th style={{ padding: '6px 8px', textAlign: 'right', width: '65px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>QTY</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '55px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>UNIT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>통화</th>
                       <th style={{ padding: '6px 8px', textAlign: 'right', width: '85px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>U.PRICE</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '90px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
                       <th style={{ padding: '6px 8px', textAlign: 'left', width: '100px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>PALLET SIZE</th>
                       <th style={{ padding: '6px 8px', textAlign: 'right', width: '60px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>CBM</th>
                       <th style={{ padding: '6px 8px', textAlign: 'right', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>N.WT (KG)</th>
@@ -1666,7 +1692,13 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(request.piItems || []).map((item, idx) => (
+                    {(request.piItems || []).map((item, idx) => {
+                      const itemCur = item.currency || item.buyingCurrency || request.currency || 'USD';
+                      const itemQty = Number(item.qty) || 0;
+                      const itemUPrice = Number(item.unitPrice) || 0;
+                      const itemAmt = itemQty * itemUPrice;
+
+                      return (
                       <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '36px' }}>
                         <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
                         <td style={{ padding: '2px 4px' }}>
@@ -1743,6 +1775,25 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                             <option value="PALLET">PALLET</option>
                           </select>
                         </td>
+                        {/* 통화 선택 셀 */}
+                        <td style={{ padding: '2px 4px' }}>
+                          <select
+                            value={itemCur}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, currency: val, buyingCurrency: val };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700, color: itemCur === 'KRW' ? '#047857' : '#1d4ed8', background: '#fff', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                          >
+                            <option value="USD">USD ($)</option>
+                            <option value="KRW">KRW (₩)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="RMB">RMB (¥)</option>
+                            <option value="JPY">JPY (¥)</option>
+                          </select>
+                        </td>
                         <td style={{ padding: '2px 4px' }}>
                           <input
                             type="number"
@@ -1764,8 +1815,8 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                             style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                           />
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b', paddingRight: '8px' }}>
-                          {Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: itemCur === 'KRW' ? '#047857' : '#1e293b', paddingRight: '8px', whiteSpace: 'nowrap' }}>
+                          {formatCurrencyAmount(itemAmt, itemCur)}
                         </td>
                         <td style={{ padding: '2px 4px' }}>
                           <input
@@ -1831,7 +1882,8 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     {request.piItems && request.piItems.length > 0 && (
                       <tr style={{ background: '#f1f5f9', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
                         <td colSpan={3} style={{ padding: '6px 12px', textAlign: 'center', color: '#1e293b' }}>TOTAL</td>
@@ -1839,10 +1891,25 @@ const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
                           {request.piItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         </td>
                         <td colSpan={2}></td>
-                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
-                          {request.piItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td colSpan={2} style={{ padding: '6px 12px', textAlign: 'right', color: '#0f766e', fontSize: '12px' }}>
+                          {Object.keys(piItemsCurrencyTotals).length > 0 ? (
+                            <span style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              {Object.entries(piItemsCurrencyTotals).map(([cur, sumAmt]) => (
+                                <span key={cur} style={{ 
+                                  background: cur === 'KRW' ? '#ecfdf5' : '#eff6ff', 
+                                  color: cur === 'KRW' ? '#065f46' : '#1e40af', 
+                                  padding: '1px 6px', 
+                                  borderRadius: '3px', 
+                                  border: `1px solid ${cur === 'KRW' ? '#a7f3d0' : '#bfdbfe'}` 
+                                }}>
+                                  {formatCurrencyAmount(sumAmt, cur)}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            formatCurrencyAmount(totalAmount, request.currency || 'USD')
+                          )}
                         </td>
-                        <td></td>
                         <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
                           {request.piItems.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 3 })}
                         </td>
@@ -3418,12 +3485,39 @@ customsDuty,
 
             {/* Section 2: 품목 명세 */}
             <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>수입 제품 및 패킹 명세 리스트</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>수입 제품 및 패킹 명세 리스트</h3>
+                  
+                  {/* 기본 통화 설정 드롭다운 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#eff6ff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af' }}>기본 통화 (Currency):</span>
+                    <select
+                      value={request.currency || 'USD'}
+                      onChange={(e) => {
+                        const newCur = e.target.value;
+                        const nextItems = (request.piItems || []).map(it => ({
+                          ...it,
+                          currency: it.currency || newCur
+                        }));
+                        saveToStorage(importRequests.map(r => r.id === id ? { ...r, currency: newCur, piItems: nextItems } : r));
+                      }}
+                      style={{ height: '24px', fontSize: '11.5px', fontWeight: 750, color: '#1e3a8a', border: '1px solid #93c5fd', borderRadius: '3px', background: '#fff', outline: 'none', padding: '0 4px', cursor: 'pointer' }}
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="KRW">KRW (₩)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="RMB">RMB (¥)</option>
+                      <option value="JPY">JPY (¥)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
-                    const next = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
+                    const defaultCur = request.currency || 'USD';
+                    const next = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '', currency: defaultCur }];
                     saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
                   }}
                   style={{ padding: '0 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
@@ -3435,23 +3529,30 @@ customsDuty,
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '34px' }}>
-                      <th style={{ padding: '8px 12px', width: '40px', textAlign: 'center' }}>No</th>
-                      <th style={{ padding: '8px 12px' }}>DESCRIPTION OF COMMODITY</th>
-                      <th style={{ padding: '8px 12px', width: '110px' }}>HS CODE</th>
-                      <th style={{ padding: '8px 12px', width: '90px', textAlign: 'right' }}>QTY</th>
-                      <th style={{ padding: '8px 12px', width: '70px', textAlign: 'center' }}>UNIT</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>U.PRICE</th>
-                      <th style={{ padding: '8px 12px', width: '120px', textAlign: 'right' }}>TOTAL AMOUNT</th>
-                      <th style={{ padding: '8px 12px', width: '120px' }}>PALLET SIZE</th>
-                      <th style={{ padding: '8px 12px', width: '80px', textAlign: 'right' }}>CBM</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>N.WT (KG)</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>G.WT (KG)</th>
-                      <th style={{ padding: '8px 12px', width: '60px', textAlign: 'center' }}>액션</th>
+                      <th style={{ padding: '8px 8px', width: '35px', textAlign: 'center' }}>No</th>
+                      <th style={{ padding: '8px 10px' }}>DESCRIPTION OF COMMODITY</th>
+                      <th style={{ padding: '8px 10px', width: '100px' }}>HS CODE</th>
+                      <th style={{ padding: '8px 10px', width: '75px', textAlign: 'right' }}>QTY</th>
+                      <th style={{ padding: '8px 6px', width: '65px', textAlign: 'center' }}>UNIT</th>
+                      <th style={{ padding: '8px 6px', width: '85px', textAlign: 'center' }}>통화</th>
+                      <th style={{ padding: '8px 10px', width: '100px', textAlign: 'right' }}>U.PRICE</th>
+                      <th style={{ padding: '8px 10px', width: '125px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '8px 10px', width: '110px' }}>PALLET SIZE</th>
+                      <th style={{ padding: '8px 8px', width: '70px', textAlign: 'right' }}>CBM</th>
+                      <th style={{ padding: '8px 8px', width: '90px', textAlign: 'right' }}>N.WT (KG)</th>
+                      <th style={{ padding: '8px 8px', width: '90px', textAlign: 'right' }}>G.WT (KG)</th>
+                      <th style={{ padding: '8px 6px', width: '50px', textAlign: 'center' }}>액션</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(request.piItems && request.piItems.length > 0) ? (
-                      request.piItems.map((item, idx) => (
+                      request.piItems.map((item, idx) => {
+                        const itemCur = item.currency || item.buyingCurrency || request.currency || 'USD';
+                        const itemQty = Number(item.qty) || 0;
+                        const itemUPrice = Number(item.unitPrice) || 0;
+                        const itemAmt = itemQty * itemUPrice;
+
+                        return (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '38px' }}>
                           <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</td>
                           <td style={{ padding: '4px 6px' }}>
@@ -3525,6 +3626,35 @@ customsDuty,
                               <option value="KG">KG</option>
                             </select>
                           </td>
+                          {/* 통화 선택 셀 */}
+                          <td style={{ padding: '4px 6px' }}>
+                            <select
+                              value={itemCur}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], currency: val, buyingCurrency: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ 
+                                width: '100%', 
+                                height: '30px', 
+                                border: '1px solid #cbd5e1', 
+                                borderRadius: '4px', 
+                                fontSize: '11px', 
+                                fontWeight: 700, 
+                                background: '#fff', 
+                                color: itemCur === 'KRW' ? '#047857' : '#1d4ed8',
+                                boxSizing: 'border-box' 
+                              }}
+                            >
+                              <option value="USD">USD ($)</option>
+                              <option value="KRW">KRW (₩)</option>
+                              <option value="EUR">EUR (€)</option>
+                              <option value="RMB">RMB (¥)</option>
+                              <option value="JPY">JPY (¥)</option>
+                            </select>
+                          </td>
                           <td style={{ padding: '4px 6px' }}>
                             <input
                               type="number"
@@ -3538,8 +3668,8 @@ customsDuty,
                               style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
-                          <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700 }}>
-                            ${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700, color: itemCur === 'KRW' ? '#047857' : '#0f766e', whiteSpace: 'nowrap' }}>
+                            {formatCurrencyAmount(itemAmt, itemCur)}
                           </td>
                           <td style={{ padding: '4px 6px' }}>
                             <input
@@ -3607,10 +3737,11 @@ customsDuty,
                             </button>
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={12} style={{ padding: '24px', textAlign: 'center' }}>등록된 제품 명세가 없습니다.</td>
+                        <td colSpan={13} style={{ padding: '24px', textAlign: 'center' }}>등록된 제품 명세가 없습니다.</td>
                       </tr>
                     )}
                     
@@ -3618,7 +3749,25 @@ customsDuty,
                       <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid var(--border-default)', height: '36px' }}>
                         <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'center' }}>합계 (Total Summary)</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>{totalQty.toLocaleString()}</td>
-                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right', color: '#0f766e' }}>${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', color: '#0f766e', fontSize: '13px' }}>
+                          {Object.keys(piItemsCurrencyTotals).length > 0 ? (
+                            <span style={{ display: 'inline-flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              {Object.entries(piItemsCurrencyTotals).map(([cur, sumAmt]) => (
+                                <span key={cur} style={{ 
+                                  background: cur === 'KRW' ? '#ecfdf5' : '#eff6ff', 
+                                  color: cur === 'KRW' ? '#065f46' : '#1e40af', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '4px', 
+                                  border: `1px solid ${cur === 'KRW' ? '#a7f3d0' : '#bfdbfe'}` 
+                                }}>
+                                  {formatCurrencyAmount(sumAmt, cur)}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            formatCurrencyAmount(totalAmount, request.currency || 'USD')
+                          )}
+                        </td>
                         <td style={{ padding: '8px 12px', textAlign: 'center' }}>NOS of PLT/PKG</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>{totalCbm.toFixed(2)} CBM</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right' }}>{totalNetWt.toLocaleString()} kg</td>
@@ -3779,17 +3928,28 @@ customsDuty,
                   const printWin = window.open('', '_blank');
                   if (!printWin) return alert('팝업 차단기를 해제해주세요.');
                   
-                  const itemsHtml = (request.piItems || []).map((item, idx) => `
+                  const itemsHtml = (request.piItems || []).map((item, idx) => {
+                    const itemCur = item.currency || item.buyingCurrency || request.currency || 'USD';
+                    const itemQty = Number(item.qty) || 0;
+                    const itemUPrice = Number(item.unitPrice) || 0;
+                    const itemAmt = itemQty * itemUPrice;
+                    return `
                     <tr style="border-bottom: 1px solid var(--border-default); height: 32px;">
                       <td style="text-align: center; border: 1px solid var(--border-default);">${idx + 1}</td>
                       <td style="border: 1px solid var(--border-default); padding-left: 8px;">${item.name}</td>
                       <td style="text-align: center; border: 1px solid var(--border-default);">${item.hsCode || '-'}</td>
-                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">${(Number(item.qty) || 0).toLocaleString()}</td>
+                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">${itemQty.toLocaleString()}</td>
                       <td style="text-align: center; border: 1px solid var(--border-default);">${item.unit || 'EA'}</td>
-                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">$${(Number(item.unitPrice) || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">$${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">${formatCurrencyAmount(itemUPrice, itemCur)}</td>
+                      <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px; font-weight: bold;">${formatCurrencyAmount(itemAmt, itemCur)}</td>
                     </tr>
-                  `).join('');
+                  `;
+                  }).join('');
+
+                  const poSummaryTotalHtml = Object.keys(piItemsCurrencyTotals).length > 0
+                    ? Object.entries(piItemsCurrencyTotals).map(([cur, sAmt]) => formatCurrencyAmount(sAmt, cur)).join(' / ')
+                    : formatCurrencyAmount(totalAmount, request.currency || 'USD');
+
 
                   printWin.document.write(`
                     <html>
@@ -3885,7 +4045,7 @@ customsDuty,
                             <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">${totalQty.toLocaleString()}</td>
                             <td style="border: 1px solid var(--border-default);"></td>
                             <td style="border: 1px solid var(--border-default);"></td>
-                            <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">$${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td style="text-align: right; border: 1px solid var(--border-default); padding-right: 8px;">${poSummaryTotalHtml}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -5905,24 +6065,33 @@ customsDuty,
                 </tr>
               </thead>
               <tbody>
-                {(request.piItems || []).map((item, idx) => (
+                {(request.piItems || []).map((item, idx) => {
+                  const itemCur = item.currency || item.buyingCurrency || request.currency || 'USD';
+                  const itemQty = Number(item.qty) || 0;
+                  const itemUPrice = Number(item.unitPrice) || 0;
+                  const itemAmt = itemQty * itemUPrice;
+
+                  return (
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '28px' }}>
                     <td style={{ border: '1px solid var(--border-default)', textAlign: 'center' }}>{idx + 1}</td>
                     <td style={{ border: '1px solid var(--border-default)', padding: '4px', fontWeight: 600 }}>{item.name}</td>
                     <td style={{ border: '1px solid var(--border-default)', textAlign: 'center' }}>{item.hsCode || '-'}</td>
-                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px' }}>{(Number(item.qty) || 0).toLocaleString()}</td>
+                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px' }}>{itemQty.toLocaleString()}</td>
                     <td style={{ border: '1px solid var(--border-default)', textAlign: 'center' }}>{item.unit || 'EA'}</td>
-                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px' }}>${(Number(item.unitPrice) || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px', fontWeight: 700 }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px' }}>{formatCurrencyAmount(itemUPrice, itemCur)}</td>
+                    <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px', fontWeight: 700 }}>{formatCurrencyAmount(itemAmt, itemCur)}</td>
                   </tr>
-                ))}
+                  );
+                })}
                 <tr style={{ background: '#f8fafc', fontWeight: 'bold', height: '30px' }}>
                   <td colSpan={3} style={{ border: '1px solid var(--border-default)', textAlign: 'center' }}>TOTAL SUM</td>
                   <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px', color: '#1e3a8a' }}>{totalQty.toLocaleString()}</td>
                   <td style={{ border: '1px solid var(--border-default)' }}></td>
                   <td style={{ border: '1px solid var(--border-default)' }}></td>
                   <td style={{ border: '1px solid var(--border-default)', textAlign: 'right', padding: '4px', color: '#0f766e' }}>
-                    ${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                    {Object.keys(piItemsCurrencyTotals).length > 0
+                      ? Object.entries(piItemsCurrencyTotals).map(([cur, sAmt]) => formatCurrencyAmount(sAmt, cur)).join(' / ')
+                      : formatCurrencyAmount(totalAmount, request.currency || 'USD')}
                   </td>
                 </tr>
               </tbody>

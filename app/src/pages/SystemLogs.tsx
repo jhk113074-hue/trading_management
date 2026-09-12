@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.549',
+    version: 'v2.8.549',
+    date: '2026-09-12',
+    category: '기능개선',
+    title: '수입관리 제품/패킹 명세 리스트 통화(Currency: USD/KRW/EUR/RMB/JPY) 선택 및 자동 심볼/서식 적용',
+    content: '• 수입 제품 및 패킹 명세 리스트에 [통화(Currency)] 선택 기능 전면 도입\n• 섹션 헤더에 [기본 통화(Currency)] 일괄 지정 드롭다운(USD, KRW, EUR, RMB, JPY) 신설\n• 테이블 행마다 [통화] 선택 셀 추가: 품목별로 USD($), KRW(₩), EUR(€), RMB(¥), JPY(¥)를 자유롭게 개별 지정 가능\n• 국내 발생 비용(운송비, 통관비 등)을 원화(KRW)로 입력 시 종전 달러($) 기호가 잘못 붙던 현상을 완벽 해결하고 ₩ 기호 및 원화 정수 서식 자동 적용\n• 하단 합계 요약(Total Summary) 행: 달러($)와 원화(₩) 등 복수 통화가 혼재할 때 각 통화별 합계액($69,500.00 / ₩3,800,000)을 명확하게 분리 표시\n• 발주서(PO) 즉시 인쇄 및 미리보기 모달에도 각 품목별 통화 심볼 및 분리 합계 완벽 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.548',
     version: 'v2.8.548',
     date: '2026-09-12',
