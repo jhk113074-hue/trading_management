@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.552',
+    version: 'v2.8.552',
+    date: '2026-09-12',
+    category: '버그수정',
+    title: '한국 국내 고객사 채권(수입 납품 및 세금계산서/고객견적) 실발생 매출액 연동 복구 및 원화(KRW) 통화 정상화',
+    content: '• 수입 납품 건의 국내 고객사 실매출 연동 정상화: 수입관리(Imports) 모듈에서 국내 거래처((주)삼오, (주)삼익HDS, 승민산업 등)로 납품된 거래의 매출액이 미존재 필드(imp.totalAmount) 참조로 인해 발생액 $0.00으로 누락되던 현상을 해결하고, 실제 고객사 세금계산서 정산액(taxDocumentRows), 거래명세서 품목합계(dealStatementItems), 고객견적가(customerQuoteAmount)를 정확히 반영하도록 전면 개편\n• 한국 거래처 통화 판정 교정: 해외 공장 매입통화(USD)가 고객사 채권 통화로 오인되던 오류를 바로잡아, 국내 고객사 대상 수입 매출을 정상적인 원화(KRW) 채권으로 확정 분류\n• 수입 건별 실시간 수금 내역(collections) 연동: 수입 모듈의 차수별 수금 등록 내역(collections) 및 최상위 수금액(paymentCollectedAmount)을 채권관리 장부에 완벽 연동\n• 국내 고객사 채권 현황 및 통화 배지 정상 표기: 0원으로 표시되던 국내 고객사들의 매출액, 기수금액, 미수잔액이 실제 거래 원화(₩) 금액으로 즉시 집계되고, 통화 배지가 [🪙 KRW 전용]으로 올바르게 부여\n• 수금 즉시 등록 기능 보강: 수입 납품 건에 대해 채권관리 모듈에서 [➕ 수금등록] 시 수입 원장의 collections 차수 배열 및 paymentCollectedAmount를 실시간 양방향 갱신',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.551',
     version: 'v2.8.551',
     date: '2026-09-12',

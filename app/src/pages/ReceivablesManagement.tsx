@@ -177,19 +177,20 @@ export const ReceivablesManagement: React.FC = () => {
 
     // A. 수출 주문(Orders)
     orders.forEach(o => {
+      const orderCurrency: 'USD' | 'KRW' = o.currency === 'KRW' ? 'KRW' : 'USD';
       let totAmt = 0;
       if (Array.isArray(o.items) && o.items.length > 0) {
-        const itemsUsdSum = o.items
-          .filter((it: any) => !it.isSourcingOnly && it.currency !== 'KRW')
+        const itemsSum = o.items
+          .filter((it: any) => !it.isSourcingOnly)
           .reduce((sum: number, it: any) => sum + (Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0))), 0);
-        const forwardersUsdSum = (o.forwarders || [])
-          .reduce((sum: number, fw: any) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
-        if (itemsUsdSum > 0 || forwardersUsdSum > 0) {
-          totAmt = itemsUsdSum + forwardersUsdSum;
+        const forwardersSum = (o.forwarders || [])
+          .reduce((sum: number, fw: any) => sum + (parseFloat(fw.budgetAmountUsd as any) || parseFloat(fw.amount as any) || 0), 0);
+        if (itemsSum > 0 || forwardersSum > 0) {
+          totAmt = itemsSum + (orderCurrency === 'USD' ? forwardersSum : 0);
         }
       }
       if (totAmt === 0) {
-        totAmt = Number(o.totalAmount || o.grandTotal || o.orderAmountUsd || o.contractAmount || 0);
+        totAmt = Number(o.totalAmount || o.grandTotal || o.orderAmountUsd || o.orderAmountKrw || o.contractAmount || 0);
       }
 
       let paidAmt = 0;
@@ -207,7 +208,7 @@ export const ReceivablesManagement: React.FC = () => {
       }
 
       const dateStr = parseDateStr(o.orderDate || o.piDate || o.poDate || o.createdAt);
-      const isFull = paidAmt >= totAmt - 0.01 && totAmt > 0;
+      const isFull = paidAmt >= totAmt - (orderCurrency === 'KRW' ? 1 : 0.01) && totAmt > 0;
       const isPartial = !isFull && paidAmt > 0;
       const rawComp = String(o.issuingCompany || o.companyType || o.seller || o.myCompany || '').trim();
       const ciNoStr = String(o.ciNumber || o.piNumber || o.custPo || o.orderNo || o.id);
@@ -239,7 +240,7 @@ export const ReceivablesManagement: React.FC = () => {
         customerName: o.customer || o.customerName || o.buyer || '미지정 고객',
         customerCode: o.customerCode || o.customerId || '',
         totalAmount: totAmt,
-        currency: 'USD',
+        currency: orderCurrency,
         paidAmount: paidAmt,
         uncollectedAmount: uncollected,
         paymentStatus: isFull ? 'PAID' : isPartial ? 'PARTIAL' : 'UNPAID',
@@ -252,26 +253,74 @@ export const ReceivablesManagement: React.FC = () => {
       });
     });
 
-    // B. 수입 주문(Imports)
+    // B. 수입 주문(Imports) - 국내 고객 납품 및 세금계산서/고객견적/거래명세서 매출 채권
     imports.forEach(imp => {
-      const totAmt = Number(imp.totalAmount || imp.invoiceAmount || 0);
-      let paidAmt = 0;
-      if (imp.paymentStatus === 'COMPLETED' || imp.paymentStatus === 'PAID' || imp.status === '완료' || imp.paymentStatus === '수금완료') {
-        paidAmt = totAmt;
+      // 1) 매출 총액 (고객 청구액) 산출
+      // A. 세금계산서 증빙 행 합계
+      const taxRows = Array.isArray(imp.taxDocumentRows) ? imp.taxDocumentRows : [];
+      const taxDocGrand = taxRows.reduce((sum: number, r: any) => sum + (Number(r.grandTotal) || (Number(r.supplyAmount) || 0) + (Number(r.vatAmount) || 0)), 0);
+      const taxDocSupply = taxRows.reduce((sum: number, r: any) => sum + (Number(r.supplyAmount) || 0), 0);
+      const taxDocTotal = taxDocGrand > 0 ? taxDocGrand : taxDocSupply;
+
+      // B. 거래명세서 품목 합계
+      const stmtItems = Array.isArray(imp.dealStatementItems) ? imp.dealStatementItems : [];
+      const dealStmtTotal = stmtItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.price) || 0)), 0);
+
+      // C. 고객 제시 견적금액 or 의뢰금액 or PI items 견적액
+      const quoteAmt = Number(imp.customerQuoteAmount || imp.dealStatementTotal || imp.dealStatementAmount || imp.amount || 0);
+
+      let totAmt = 0;
+      if (imp.settlementBasis === 'DEAL_STATEMENT' && dealStmtTotal > 0) {
+        totAmt = dealStmtTotal;
+      } else if (taxDocTotal > 0) {
+        totAmt = taxDocTotal;
+      } else if (dealStmtTotal > 0) {
+        totAmt = dealStmtTotal;
       } else {
-        let sumCollected = 0;
-        if (Array.isArray(imp.paymentInstallments) && imp.paymentInstallments.length > 0) {
-          sumCollected = imp.paymentInstallments.reduce((sum: number, inst: any) => sum + (Number(inst.amount) || Number(inst.total) || 0), 0);
-        }
-        const rootPaid = Number(imp.paidAmount || imp.depositAmount || imp.collectedAmount || 0);
-        paidAmt = Math.max(sumCollected, rootPaid);
+        totAmt = quoteAmt;
       }
 
-      const dateStr = parseDateStr(imp.importDate || imp.blDate || imp.createdAt);
-      const isFull = paidAmt >= totAmt - 0.01 && totAmt > 0;
+      // D. 만약 위에서도 0인 경우, piItems의 quoteAmount나 amount 확인
+      if (totAmt === 0 && Array.isArray(imp.piItems) && imp.piItems.length > 0) {
+        totAmt = imp.piItems.reduce((sum: number, it: any) => sum + (Number(it.quoteAmount) || Number(it.amount) || ((Number(it.qty) || 0) * (Number(it.quoteUnitPrice || it.unitPrice) || 0))), 0);
+      }
+      if (totAmt === 0) {
+        totAmt = Number(imp.totalAmount || imp.invoiceAmount || 0);
+      }
+
+      // 통화 결정:
+      // 수입 납품 건의 국내 고객사(최종고객) 대상 매출은 기본적으로 KRW(원화) 채권입니다.
+      // (단, 고객 견적이나 거래명세서 통화가 USD로 명시된 경우에만 USD)
+      const isUsdTrade = imp.quoteCurrencyMode === 'USD' ||
+                         imp.dealStatementCurrency === 'USD' ||
+                         (imp.settlementBasis === 'DEAL_STATEMENT' && stmtItems[0]?.currency === 'USD');
+      const recCurrency: 'USD' | 'KRW' = isUsdTrade ? 'USD' : 'KRW';
+
+      // 2) 기 수금액 산출
+      let sumCollected = 0;
+      if (Array.isArray(imp.collections) && imp.collections.length > 0) {
+        sumCollected = imp.collections.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+      }
+      if (Array.isArray(imp.paymentCollectedInstallments) && imp.paymentCollectedInstallments.length > 0) {
+        sumCollected = Math.max(sumCollected, imp.paymentCollectedInstallments.reduce((sum: number, inst: any) => sum + (Number(inst.total) || Number(inst.amount) || 0), 0));
+      }
+      if (Array.isArray(imp.paymentInstallments) && imp.paymentInstallments.length > 0) {
+        sumCollected = Math.max(sumCollected, imp.paymentInstallments.reduce((sum: number, inst: any) => sum + (Number(inst.total) || Number(inst.amount) || 0), 0));
+      }
+      const rootPaid = Number(imp.paymentCollectedAmount || imp.collectedAmount || imp.depositAmount || imp.paidAmount || 0);
+      let paidAmt = Math.max(sumCollected, rootPaid);
+
+      if (imp.status === '정산완료' || imp.collectionStatus === 'PAID' || imp.paymentStatus === 'PAID' || imp.paymentStatus === '수금완료') {
+        if (paidAmt === 0 && totAmt > 0) {
+          paidAmt = totAmt;
+        }
+      }
+
+      const dateStr = parseDateStr(imp.taxInvoiceIssuedDate || imp.dealStatementSentDate || imp.importDate || imp.eta || imp.requestDate || imp.blDate || imp.createdAt);
+      const isFull = paidAmt >= totAmt - (recCurrency === 'KRW' ? 1 : 0.01) && totAmt > 0;
       const isPartial = !isFull && paidAmt > 0;
       const rawComp = String(imp.importCompany || imp.companyType || imp.issuingCompany || '').trim();
-      const invNoStr = String(imp.invoiceNo || imp.blNo || imp.importNo || imp.id);
+      const invNoStr = String(imp.poNumber || imp.invoiceNo || imp.blNo || imp.importNo || imp.id);
       const isYS = rawComp === 'YS' || rawComp === '영성ACC' || invNoStr.startsWith('YS-') || String(imp.id).startsWith('YS-');
       const uncollected = Math.max(0, totAmt - paidAmt);
 
@@ -299,7 +348,7 @@ export const ReceivablesManagement: React.FC = () => {
         customerName: imp.finalCustomer || imp.customerName || imp.buyer || '미지정 고객',
         customerCode: imp.customerCode || imp.customerId || '',
         totalAmount: totAmt,
-        currency: (imp.currency === 'KRW' ? 'KRW' : 'USD'),
+        currency: recCurrency,
         paidAmount: paidAmt,
         uncollectedAmount: uncollected,
         paymentStatus: isFull ? 'PAID' : isPartial ? 'PARTIAL' : 'UNPAID',
@@ -307,14 +356,23 @@ export const ReceivablesManagement: React.FC = () => {
         dueDate: imp.deliveryDate || '',
         overdueDays,
         agingBucket,
-        installments: imp.paymentInstallments || [],
+        installments: imp.collections && imp.collections.length > 0
+          ? imp.collections.map((c: any) => ({ date: c.date, amount: c.amount, total: c.amount, currency: recCurrency }))
+          : (imp.paymentCollectedInstallments || imp.paymentInstallments || []),
         rawDoc: imp
       });
     });
 
     // C. 국내 주문(Domestic Trades)
     domesticTrades.forEach(dom => {
-      const totAmt = Number(dom.salesAmount || dom.totalAmount || dom.totalPrice || 0);
+      let totAmt = Number(dom.salesAmount || 0);
+      if (totAmt === 0 && Array.isArray(dom.items) && dom.items.length > 0) {
+        totAmt = dom.items.reduce((sum: number, it: any) => sum + (Number(it.salesAmount) || ((Number(it.quantity) || 0) * (Number(it.salesUnitPrice) || 0))), 0);
+      }
+      if (totAmt === 0) {
+        totAmt = Number(dom.taxInvoiceAmount || dom.totalAmount || dom.totalPrice || 0);
+      }
+
       let paidAmt = 0;
       if (dom.collectionStatus === 'PAID' || dom.depositStatus === '입금완료' || dom.status === 'COMPLETED' || dom.status === '완료') {
         paidAmt = totAmt;
@@ -741,7 +799,8 @@ export const ReceivablesManagement: React.FC = () => {
 
       const updatedInstallments = [...prevInstallments, newInstallment];
       const newTotalCollected = updatedInstallments.reduce((sum, inst) => sum + (Number(inst.total) || Number(inst.amount) || 0), 0);
-      const isFullPaid = newTotalCollected >= quickCollectionRecord.totalAmount - 0.01;
+      const isKrw = quickCollectionRecord.currency === 'KRW';
+      const isFullPaid = newTotalCollected >= quickCollectionRecord.totalAmount - (isKrw ? 1 : 0.01);
 
       if (quickCollectionRecord.sourceType === 'EXPORT') {
         await updateDoc(doc(db, 'companies', COMPANY_ID, 'orders', quickCollectionRecord.id), {
@@ -752,10 +811,28 @@ export const ReceivablesManagement: React.FC = () => {
           updatedAt: serverTimestamp()
         });
       } else if (quickCollectionRecord.sourceType === 'IMPORT') {
+        const currentCollections = Array.isArray(targetDoc.collections) ? [...targetDoc.collections] : [];
+        const nextCol = {
+          id: "col_" + Date.now(),
+          round: currentCollections.length + 1,
+          date: newCollectionDate,
+          amount: Number(newCollectionAmount),
+          remarks: '채권관리 실시간 수금등록'
+        };
+        const updatedCollections = [...currentCollections, nextCol];
+        const newColTotal = updatedCollections.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+        const actualCollected = Math.max(newTotalCollected, newColTotal);
+
         await updateDoc(doc(db, 'companies', COMPANY_ID, 'imports', quickCollectionRecord.id), {
+          collections: updatedCollections,
+          paymentCollectedInstallments: updatedInstallments,
           paymentInstallments: updatedInstallments,
-          paidAmount: newTotalCollected,
+          paymentCollectedAmount: actualCollected,
+          paymentCollectedDate: newCollectionDate,
+          collectedAmount: actualCollected,
+          paidAmount: actualCollected,
           paymentStatus: isFullPaid ? 'PAID' : 'PARTIAL',
+          collectionStatus: isFullPaid ? 'PAID' : 'PARTIAL',
           updatedAt: serverTimestamp()
         });
       } else {
