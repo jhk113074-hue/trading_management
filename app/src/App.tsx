@@ -36,6 +36,7 @@ import { DomesticTrade } from './pages/DomesticTrade';
 import { ProfitManagement } from './pages/ProfitManagement';
 import { ReceivablesManagement } from './pages/ReceivablesManagement';
 import { PayablesManagement } from './pages/PayablesManagement';
+import { PurchasesManagement } from './pages/PurchasesManagement';
 import { DocViewerPage } from './pages/DocViewerPage';
 import { ContainerPacker } from './pages/ContainerPacker';
 
@@ -94,6 +95,7 @@ const App: React.FC = () => {
               <Route path="profit-management" element={<ProfitManagement />} />
               <Route path="receivables" element={<ReceivablesManagement />} />
               <Route path="payables" element={<PayablesManagement />} />
+              <Route path="purchases" element={<PurchasesManagement />} />
             </Route>
             <Route path="/doc-view" element={<DocViewerPage />} />
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />

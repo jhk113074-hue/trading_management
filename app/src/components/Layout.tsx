@@ -661,7 +661,10 @@ export const Layout: React.FC = () => {
         { path: '/domestic-quotes', label: '📋 국내 견적관리', external: false },
         { path: '/domestic-orders', label: '🏬 국내 주문관리', external: false },
         { path: '/profit-management', label: '📊 이익관리', external: false },
-        { path: '/receivables', label: '💰 채권/수금관리', external: false },
+        { path: '/receivables', label: '💰 채권/수금관리', external: false }
+      ] as any },
+      { section: '구매관리', items: [
+        { path: '/purchases', label: '📦 매입관리', external: false },
         { path: '/payables', label: '💳 채무/지급관리', external: false }
       ] as any },
       { section: 'DB관리', items: [
