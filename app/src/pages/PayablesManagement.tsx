@@ -93,9 +93,23 @@ export const PayablesManagement: React.FC = () => {
   // 필터 상태
   const [companyFilter, setCompanyFilter] = useState<'ALL' | 'YS' | 'YSACC'>('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'EXPORT_SUPPLIER' | 'DOMESTIC_SUPPLIER' | 'IMPORT_SUPPLIER' | 'FORWARDER'>('ALL');
+  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'USD' | 'KRW'>('ALL');
+  const [exchangeRate, setExchangeRate] = useState<number>(1400);
   const [periodFilter, setPeriodFilter] = useState<'ALL' | 'THIS_YEAR' | 'DAYS_90' | 'DAYS_365'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID_ONLY' | 'OVERDUE_ONLY' | 'COMPLETED_ONLY'>('UNPAID_ONLY');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // 실시간 환율 조회 (기본값 1,400원)
+  useEffect(() => {
+    fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=KRW')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.rates?.KRW) {
+          setExchangeRate(Math.round(data.rates.KRW * 10) / 10);
+        }
+      })
+      .catch(err => console.warn('실시간 환율 조회 실패, 기본 1,400원 유지:', err));
+  }, []);
 
   // 서브 모달 상태
   const [selectedSuppSummary, setSelectedSuppSummary] = useState<SupplierPayableSummary | null>(null);
@@ -441,6 +455,9 @@ export const PayablesManagement: React.FC = () => {
       // 2. 사업 부문 필터
       if (sourceFilter !== 'ALL' && r.sourceType !== sourceFilter) return false;
 
+      // 2-1. 통화 구분 필터
+      if (currencyFilter !== 'ALL' && r.currency !== currencyFilter) return false;
+
       // 3. 기간 필터
       if (periodFilter === 'THIS_YEAR') {
         if (!r.date.startsWith(currentYear)) return false;
@@ -467,7 +484,7 @@ export const PayablesManagement: React.FC = () => {
 
       return true;
     });
-  }, [allRecords, companyFilter, sourceFilter, periodFilter, statusFilter, searchTerm]);
+  }, [allRecords, companyFilter, sourceFilter, currencyFilter, periodFilter, statusFilter, searchTerm]);
 
   // ── 공급업체별 채무 집계 및 DPO 계산 ──
   const supplierSummaries = useMemo<SupplierPayableSummary[]>(() => {
@@ -476,8 +493,8 @@ export const PayablesManagement: React.FC = () => {
     // 공급업체 마스터 맵
     const suppMasterMap = new Map<string, Supplier>();
     suppliers.forEach(s => {
-      if (s.name) suppMasterMap.set(s.name.trim().toLowerCase(), s);
-      if (s.supplierCode) suppMasterMap.set(s.supplierCode.trim().toLowerCase(), s);
+      if (s.name) suppMasterMap.set(cleanCompanyName(s.name).toLowerCase(), s);
+      if (s.supplierCode) suppMasterMap.set(s.supplierCode.toLowerCase(), s);
     });
 
     filteredRecords.forEach(r => {
@@ -488,16 +505,16 @@ export const PayablesManagement: React.FC = () => {
       if (!map.has(supKey)) {
         map.set(supKey, {
           supplierId: master?.id,
-          supplierCode: master?.supplierCode || '-',
+          supplierCode: master?.supplierCode || r.supplierCode || '-',
           supplierName: master?.name || r.supplierName,
           category: master?.category || r.category || '공급사',
-          representative: master?.representative || '',
-          bizNumber: master?.bizNumber || '',
-          managerName: master?.managerName || '',
-          managerPhone: master?.managerPhone || '',
-          purchaseEmail: master?.purchaseEmail || '',
-          bankKrw: master?.bankKrw || '',
-          bankUsd: master?.bankUsd || '',
+          representative: master?.representative,
+          bizNumber: master?.bizNumber,
+          managerName: master?.managerName,
+          managerPhone: master?.managerPhone,
+          purchaseEmail: master?.purchaseEmail,
+          bankKrw: master?.bankKrw,
+          bankUsd: master?.bankUsd,
           totalOrdersCount: 0,
           totalPurchaseUsd: 0,
           totalPaidUsd: 0,
@@ -551,12 +568,12 @@ export const PayablesManagement: React.FC = () => {
     // DPO 및 지급률 계산
     const result = Array.from(map.values());
     result.forEach(item => {
-      const totPurchaseApprox = item.totalPurchaseUsd + (item.totalPurchaseKrw / 1400);
-      const unpaidApprox = item.unpaidUsd + (item.unpaidKrw / 1400);
+      const totPurchaseApprox = item.totalPurchaseUsd + (exchangeRate > 0 ? item.totalPurchaseKrw / exchangeRate : 0);
+      const unpaidApprox = item.unpaidUsd + (exchangeRate > 0 ? item.unpaidKrw / exchangeRate : 0);
 
       // 지급률 (%)
       if (totPurchaseApprox > 0) {
-        const paidApprox = (item.totalPaidUsd + (item.totalPaidKrw / 1400));
+        const paidApprox = (item.totalPaidUsd + (exchangeRate > 0 ? item.totalPaidKrw / exchangeRate : 0));
         item.paymentRate = Math.min(100, Math.round((paidApprox / totPurchaseApprox) * 100));
       } else {
         item.paymentRate = 0;
@@ -573,13 +590,13 @@ export const PayablesManagement: React.FC = () => {
 
     // 미지급액 내림차순 정렬
     result.sort((a, b) => {
-      const unpA = a.unpaidUsd + (a.unpaidKrw / 1400);
-      const unpB = b.unpaidUsd + (b.unpaidKrw / 1400);
+      const unpA = a.unpaidUsd + (exchangeRate > 0 ? a.unpaidKrw / exchangeRate : 0);
+      const unpB = b.unpaidUsd + (exchangeRate > 0 ? b.unpaidKrw / exchangeRate : 0);
       return unpB - unpA;
     });
 
     return result;
-  }, [filteredRecords, suppliers, periodFilter]);
+  }, [filteredRecords, suppliers, periodFilter, exchangeRate]);
 
   // ── 상단 종합 KPI 집계 ──
   const kpis = useMemo(() => {
@@ -612,8 +629,20 @@ export const PayablesManagement: React.FC = () => {
       }
     });
 
-    const grandPurchase = totPurchaseUsd + (totPurchaseKrw / 1400);
-    const grandUnpaid = unpaidUsd + (unpaidKrw / 1400);
+    const totPurchaseCombinedKrw = totPurchaseKrw + Math.round(totPurchaseUsd * exchangeRate);
+    const totPurchaseCombinedUsd = totPurchaseUsd + (exchangeRate > 0 ? parseFloat((totPurchaseKrw / exchangeRate).toFixed(2)) : 0);
+
+    const totPaidCombinedKrw = totPaidKrw + Math.round(totPaidUsd * exchangeRate);
+    const totPaidCombinedUsd = totPaidUsd + (exchangeRate > 0 ? parseFloat((totPaidKrw / exchangeRate).toFixed(2)) : 0);
+
+    const unpaidCombinedKrw = unpaidKrw + Math.round(unpaidUsd * exchangeRate);
+    const unpaidCombinedUsd = unpaidUsd + (exchangeRate > 0 ? parseFloat((unpaidKrw / exchangeRate).toFixed(2)) : 0);
+
+    const overdueCombinedKrw = overdueKrw + Math.round(overdueUsd * exchangeRate);
+    const overdueCombinedUsd = overdueUsd + (exchangeRate > 0 ? parseFloat((overdueKrw / exchangeRate).toFixed(2)) : 0);
+
+    const grandPurchase = totPurchaseUsd + (exchangeRate > 0 ? totPurchaseKrw / exchangeRate : 0);
+    const grandUnpaid = unpaidUsd + (exchangeRate > 0 ? unpaidKrw / exchangeRate : 0);
     const avgDpo = grandPurchase > 0 ? Math.round((grandUnpaid / grandPurchase) * 90) : 0;
 
     return {
@@ -625,11 +654,19 @@ export const PayablesManagement: React.FC = () => {
       unpaidKrw,
       overdueUsd,
       overdueKrw,
+      totPurchaseCombinedKrw,
+      totPurchaseCombinedUsd,
+      totPaidCombinedKrw,
+      totPaidCombinedUsd,
+      unpaidCombinedKrw,
+      unpaidCombinedUsd,
+      overdueCombinedKrw,
+      overdueCombinedUsd,
       avgDpo,
       suppliersCount: supplierSummaries.length,
       recordsCount: filteredRecords.length
     };
-  }, [filteredRecords, supplierSummaries]);
+  }, [filteredRecords, supplierSummaries, exchangeRate]);
 
   // ── 엑셀 내보내기 ──
   const handleExportExcel = () => {
@@ -857,37 +894,37 @@ export const PayablesManagement: React.FC = () => {
             총 매입 발생액 (USD / KRW)
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>
-            ${kpis.totPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${kpis.totPurchaseCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
-            ₩{kpis.totPurchaseKrw.toLocaleString()}
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#059669' }}>
+            ₩{kpis.totPurchaseCombinedKrw.toLocaleString()}
           </div>
         </div>
 
         {/* 2. 기지급(결재완료) 누적액 */}
         <div style={{ background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>
-            지급(결재) 완료액
+            지급(결재) 완료액 (USD / KRW)
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#16a34a' }}>
-            ${kpis.totPaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${kpis.totPaidCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>
-            ₩{kpis.totPaidKrw.toLocaleString()}
+            ₩{kpis.totPaidCombinedKrw.toLocaleString()}
           </div>
         </div>
 
         {/* 3. 미지급 채무 잔액 */}
         <div style={{ background: '#fff', padding: '16px', borderRadius: '4px', border: '2px solid #ef4444', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ fontSize: '11px', fontWeight: 750, color: '#ef4444', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between' }}>
-            <span>⚠️ 미지급 채무 잔액</span>
+            <span>⚠️ 미지급 채무 잔액 (USD / KRW)</span>
             <span style={{ fontSize: '10.5px', background: '#fee2e2', color: '#b91c1c', padding: '1px 6px', borderRadius: '3px' }}>미결재</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, color: '#dc2626' }}>
-            ${kpis.unpaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${kpis.unpaidCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '14px', fontWeight: 800, color: '#b91c1c' }}>
-            ₩{kpis.unpaidKrw.toLocaleString()}
+            ₩{kpis.unpaidCombinedKrw.toLocaleString()}
           </div>
         </div>
 
@@ -920,16 +957,45 @@ export const PayablesManagement: React.FC = () => {
             <span style={{ fontSize: '10.5px', background: '#fee2e2', color: '#b91c1c', padding: '1px 6px', borderRadius: '3px' }}>주의 요망</span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#b91c1c' }}>
-            ${kpis.overdueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${kpis.overdueCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#dc2626' }}>
-            ₩{kpis.overdueKrw.toLocaleString()}
+            ₩{kpis.overdueCombinedKrw.toLocaleString()}
           </div>
         </div>
       </div>
 
       {/* ── FILTER & SEARCH CONTROLS ── */}
       <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+        {/* 통화 구분 필터 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>통화 구분</label>
+          <select
+            value={currencyFilter}
+            onChange={e => setCurrencyFilter(e.target.value as any)}
+            style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, color: '#1e293b', background: currencyFilter !== 'ALL' ? '#eff6ff' : '#fff' }}
+          >
+            <option value="ALL">🌐 전체 통화 (USD / KRW)</option>
+            <option value="USD">💵 USD (달러 전용)</option>
+            <option value="KRW">🪙 KRW (원화 전용)</option>
+          </select>
+        </div>
+
+        {/* 기준 환율 컨트롤 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>기준 환율 (USD/KRW)</label>
+          <div style={{ display: 'flex', alignItems: 'center', height: '34px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', gap: '4px' }}>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>1$ =</span>
+            <input
+              type="number"
+              value={exchangeRate}
+              onChange={e => setExchangeRate(Number(e.target.value) || 1400)}
+              style={{ width: '56px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0 4px', fontSize: '12px', fontWeight: 800, color: '#2563eb', textAlign: 'right' }}
+            />
+            <span style={{ fontSize: '11px', color: '#64748b' }}>원</span>
+          </div>
+        </div>
+
         {/* 법인 필터 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>법인 구분</label>
@@ -1009,6 +1075,7 @@ export const PayablesManagement: React.FC = () => {
             onClick={() => {
               setCompanyFilter('ALL');
               setSourceFilter('ALL');
+              setCurrencyFilter('ALL');
               setPeriodFilter('ALL');
               setStatusFilter('UNPAID_ONLY');
               setSearchTerm('');
@@ -1122,9 +1189,9 @@ export const PayablesManagement: React.FC = () => {
                   <th style={{ padding: '10px 10px', width: '80px', textAlign: 'center' }}>구분</th>
                   <th style={{ padding: '10px 10px', width: '130px' }}>계좌정보 / 담당자</th>
                   <th style={{ padding: '10px 10px', width: '70px', textAlign: 'center' }}>발주건수</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>총 매입금액</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>기지급 완료</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', color: '#dc2626', fontWeight: 800 }}>미지급 채무 잔액</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>총 매입금액 (USD / KRW)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>기지급 완료 (USD / KRW)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', color: '#dc2626', fontWeight: 800 }}>미지급 채무 잔액 (USD / KRW)</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '100px', color: '#2563eb', fontWeight: 800 }}>채무회전일(DPO)</th>
                   <th style={{ padding: '10px 10px', textAlign: 'center', width: '140px' }}>채무 연령 (Aging)</th>
                   <th style={{ padding: '10px 10px', textAlign: 'center', width: '100px' }}>관리</th>
@@ -1140,6 +1207,12 @@ export const PayablesManagement: React.FC = () => {
                 ) : (
                   supplierSummaries.map((s, idx) => {
                     const isOverdueAlert = s.dpo > 60 || s.agingOver90dUsd > 0 || s.agingOver90dKrw > 0;
+                    const suppTotPurchaseUsd = s.totalPurchaseUsd + (exchangeRate > 0 ? s.totalPurchaseKrw / exchangeRate : 0);
+                    const suppTotPurchaseKrw = Math.round(s.totalPurchaseKrw + (s.totalPurchaseUsd * exchangeRate));
+                    const suppPaidUsd = s.totalPaidUsd + (exchangeRate > 0 ? s.totalPaidKrw / exchangeRate : 0);
+                    const suppPaidKrw = Math.round(s.totalPaidKrw + (s.totalPaidUsd * exchangeRate));
+                    const suppUnpaidUsd = s.unpaidUsd + (exchangeRate > 0 ? s.unpaidKrw / exchangeRate : 0);
+                    const suppUnpaidKrw = Math.round(s.unpaidKrw + (s.unpaidUsd * exchangeRate));
                     return (
                       <tr
                         key={s.supplierName}
@@ -1203,19 +1276,36 @@ export const PayablesManagement: React.FC = () => {
                         <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 700 }}>
                           {s.totalOrdersCount}건
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
-                          {s.totalPurchaseUsd > 0 && <div>${s.totalPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
-                          {s.totalPurchaseKrw > 0 && <div style={{ color: '#475569' }}>₩{s.totalPurchaseKrw.toLocaleString()}</div>}
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                            ${suppTotPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', marginTop: '1px' }}>
+                            ₩{suppTotPurchaseKrw.toLocaleString()}
+                          </div>
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
-                          {s.totalPaidUsd > 0 && <div>${s.totalPaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
-                          {s.totalPaidKrw > 0 && <div>₩{s.totalPaidKrw.toLocaleString()}</div>}
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#16a34a' }}>
+                            ${suppPaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#15803d', marginTop: '1px' }}>
+                            ₩{suppPaidKrw.toLocaleString()}
+                          </div>
                           <div style={{ fontSize: '10.5px', color: '#64748b' }}>({s.paymentRate}%)</div>
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>
-                          {s.unpaidUsd > 0 && <div>${s.unpaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
-                          {s.unpaidKrw > 0 && <div>₩{s.unpaidKrw.toLocaleString()}</div>}
-                          {s.unpaidUsd === 0 && s.unpaidKrw === 0 && <span style={{ color: '#10b981', fontSize: '12px' }}>결재완료</span>}
+                        <td style={{ padding: '10px 12px', textAlign: 'right', background: isOverdueAlert ? '#fff5f5' : 'inherit' }}>
+                          {suppUnpaidUsd <= 0.01 && suppUnpaidKrw <= 1 ? (
+                            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 750 }}>결재완료</span>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#dc2626' }}>
+                                ${suppUnpaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#b91c1c', marginTop: '1px' }}>
+                                ₩{suppUnpaidKrw.toLocaleString()}
+                              </div>
+                            </>
+                          )}
                         </td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                           <span
@@ -1302,9 +1392,9 @@ export const PayablesManagement: React.FC = () => {
                   <th style={{ padding: '10px 10px', width: '95px' }}>발주일자</th>
                   <th style={{ padding: '10px 12px', width: '130px' }}>관리번호(CI/PO)</th>
                   <th style={{ padding: '10px 12px' }}>공급업체명</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>매입(발주)총액</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>기지급액</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', color: '#dc2626', fontWeight: 800 }}>미지급 잔액</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>매입(발주)총액 (USD/KRW)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>기지급액 (USD/KRW)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', color: '#dc2626', fontWeight: 800 }}>미지급 잔액 (USD/KRW)</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '85px' }}>결재상태</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '80px' }}>경과일수</th>
                   <th style={{ padding: '10px 12px', width: '160px' }}>최근 결재내역</th>
@@ -1321,6 +1411,14 @@ export const PayablesManagement: React.FC = () => {
                 ) : (
                   filteredRecords.map((r, idx) => {
                     const isOverdue = r.overdueDays > 60 && r.unpaidAmount > 0;
+                    const rTotUsd = r.currency === 'USD' ? r.totalAmount : (exchangeRate > 0 ? r.totalAmount / exchangeRate : 0);
+                    const rTotKrw = Math.round(r.currency === 'KRW' ? r.totalAmount : r.totalAmount * exchangeRate);
+
+                    const rPaidUsd = r.currency === 'USD' ? r.paidAmount : (exchangeRate > 0 ? r.paidAmount / exchangeRate : 0);
+                    const rPaidKrw = Math.round(r.currency === 'KRW' ? r.paidAmount : r.paidAmount * exchangeRate);
+
+                    const rUnpaidUsd = r.currency === 'USD' ? r.unpaidAmount : (exchangeRate > 0 ? r.unpaidAmount / exchangeRate : 0);
+                    const rUnpaidKrw = Math.round(r.currency === 'KRW' ? r.unpaidAmount : r.unpaidAmount * exchangeRate);
                     return (
                       <tr
                         key={r.recordKey}
@@ -1396,17 +1494,34 @@ export const PayablesManagement: React.FC = () => {
                             {r.supplierName}
                           </button>
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
-                          {r.currency === 'USD' ? `$${r.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₩${r.totalAmount.toLocaleString()}`}
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                            ${rTotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', marginTop: '1px' }}>
+                            ₩{rTotKrw.toLocaleString()}
+                          </div>
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
-                          {r.currency === 'USD' ? `$${r.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₩${r.paidAmount.toLocaleString()}`}
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#16a34a' }}>
+                            ${rPaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#15803d', marginTop: '1px' }}>
+                            ₩{rPaidKrw.toLocaleString()}
+                          </div>
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>
-                          {r.unpaidAmount > 0 ? (
-                            r.currency === 'USD' ? `$${r.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₩${r.unpaidAmount.toLocaleString()}`
+                        <td style={{ padding: '10px 12px', textAlign: 'right', background: isOverdue ? '#fff5f5' : 'inherit' }}>
+                          {rUnpaidUsd <= 0.01 && rUnpaidKrw <= 1 ? (
+                            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 750 }}>결재완료</span>
                           ) : (
-                            <span style={{ color: '#10b981', fontSize: '12px' }}>결재완료</span>
+                            <>
+                              <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#dc2626' }}>
+                                ${rUnpaidUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#b91c1c', marginTop: '1px' }}>
+                                ₩{rUnpaidKrw.toLocaleString()}
+                              </div>
+                            </>
                           )}
                         </td>
                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>

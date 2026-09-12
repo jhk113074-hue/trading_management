@@ -87,9 +87,23 @@ export const PurchasesManagement: React.FC = () => {
   // 필터 상태
   const [companyFilter, setCompanyFilter] = useState<'ALL' | 'YS' | 'YSACC'>('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'EXPORT_ITEM' | 'DOMESTIC_ITEM' | 'IMPORT_ITEM' | 'FORWARDER_FREIGHT'>('ALL');
+  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'USD' | 'KRW'>('ALL');
+  const [exchangeRate, setExchangeRate] = useState<number>(1400);
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string>('ALL');
   const [periodFilter, setPeriodFilter] = useState<'ALL' | 'THIS_YEAR' | 'DAYS_90' | 'DAYS_365'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // 실시간 환율 조회 (기본값 1,400원)
+  useEffect(() => {
+    fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=KRW')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.rates?.KRW) {
+          setExchangeRate(Math.round(data.rates.KRW * 10) / 10);
+        }
+      })
+      .catch(err => console.warn('실시간 환율 조회 실패, 기본 1,400원 유지:', err));
+  }, []);
 
   // 공급처 상세 모달
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -366,6 +380,9 @@ export const PurchasesManagement: React.FC = () => {
       // 2. 부문 필터
       if (sourceFilter !== 'ALL' && item.sourceType !== sourceFilter) return false;
 
+      // 2-1. 통화 구분 필터
+      if (currencyFilter !== 'ALL' && item.currency !== currencyFilter) return false;
+
       // 3. 공급업체 필터
       if (selectedSupplierFilter !== 'ALL') {
         const cleanTarget = cleanCompanyName(selectedSupplierFilter).toLowerCase();
@@ -397,7 +414,7 @@ export const PurchasesManagement: React.FC = () => {
 
       return true;
     });
-  }, [allPurchaseItems, companyFilter, sourceFilter, selectedSupplierFilter, periodFilter, searchTerm]);
+  }, [allPurchaseItems, companyFilter, sourceFilter, currencyFilter, selectedSupplierFilter, periodFilter, searchTerm]);
 
   // ── 공급업체별 매입 집계 ──
   const supplierAggregates = useMemo<SupplierPurchaseAggregate[]>(() => {
@@ -467,13 +484,13 @@ export const PurchasesManagement: React.FC = () => {
 
     // 매입총액 내림차순 정렬
     result.sort((a, b) => {
-      const totA = a.totalPurchaseUsd + (a.totalPurchaseKrw / 1400);
-      const totB = b.totalPurchaseUsd + (b.totalPurchaseKrw / 1400);
+      const totA = a.totalPurchaseUsd + (exchangeRate > 0 ? a.totalPurchaseKrw / exchangeRate : 0);
+      const totB = b.totalPurchaseUsd + (exchangeRate > 0 ? b.totalPurchaseKrw / exchangeRate : 0);
       return totB - totA;
     });
 
     return result;
-  }, [filteredItems, suppliers]);
+  }, [filteredItems, suppliers, exchangeRate]);
 
   // ── 품목별 매입 집계 ──
   const productAggregates = useMemo<ProductPurchaseAggregate[]>(() => {
@@ -519,20 +536,20 @@ export const PurchasesManagement: React.FC = () => {
     const result = Array.from(map.values());
     result.forEach(agg => {
       if (agg.totalQty > 0) {
-        agg.avgUnitPriceUsd = agg.totalAmountUsd > 0 ? parseFloat((agg.totalAmountUsd / agg.totalQty).toFixed(2)) : 0;
-        agg.avgUnitPriceKrw = agg.totalAmountKrw > 0 ? Math.round(agg.totalAmountKrw / agg.totalQty) : 0;
+        agg.avgUnitPriceUsd = agg.totalAmountUsd > 0 ? parseFloat((agg.totalAmountUsd / agg.totalQty).toFixed(2)) : (exchangeRate > 0 ? parseFloat(((agg.totalAmountKrw / exchangeRate) / agg.totalQty).toFixed(2)) : 0);
+        agg.avgUnitPriceKrw = agg.totalAmountKrw > 0 ? Math.round(agg.totalAmountKrw / agg.totalQty) : Math.round((agg.totalAmountUsd * exchangeRate) / agg.totalQty);
       }
     });
 
     // 구매 총액 내림차순 정렬
     result.sort((a, b) => {
-      const totA = a.totalAmountUsd + (a.totalAmountKrw / 1400);
-      const totB = b.totalAmountUsd + (b.totalAmountKrw / 1400);
+      const totA = a.totalAmountUsd + (exchangeRate > 0 ? a.totalAmountKrw / exchangeRate : 0);
+      const totB = b.totalAmountUsd + (exchangeRate > 0 ? b.totalAmountKrw / exchangeRate : 0);
       return totB - totA;
     });
 
     return result;
-  }, [filteredItems]);
+  }, [filteredItems, exchangeRate]);
 
   // ── 상단 종합 KPI ──
   const kpis = useMemo(() => {
@@ -547,17 +564,22 @@ export const PurchasesManagement: React.FC = () => {
       }
     });
 
+    const totPurchaseCombinedKrw = totPurchaseKrw + Math.round(totPurchaseUsd * exchangeRate);
+    const totPurchaseCombinedUsd = totPurchaseUsd + (exchangeRate > 0 ? parseFloat((totPurchaseKrw / exchangeRate).toFixed(2)) : 0);
+
     const distinctSuppliers = new Set(filteredItems.map(i => cleanCompanyName(i.supplierName).toLowerCase()));
     const distinctOrders = new Set(filteredItems.map(i => i.docNumber));
 
     return {
       totPurchaseUsd,
       totPurchaseKrw,
+      totPurchaseCombinedUsd,
+      totPurchaseCombinedKrw,
       suppliersCount: distinctSuppliers.size,
       ordersCount: distinctOrders.size,
       itemsCount: filteredItems.length
     };
-  }, [filteredItems]);
+  }, [filteredItems, exchangeRate]);
 
   // 공급업체 드롭다운용 목록
   const uniqueSupplierOptions = useMemo(() => {
@@ -700,10 +722,10 @@ export const PurchasesManagement: React.FC = () => {
             총 매입 발생액 (USD / KRW)
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
-            ${kpis.totPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${kpis.totPurchaseCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#64748b' }}>
-            ₩{kpis.totPurchaseKrw.toLocaleString()}
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#059669' }}>
+            ₩{kpis.totPurchaseCombinedKrw.toLocaleString()}
           </div>
         </div>
 
@@ -749,6 +771,35 @@ export const PurchasesManagement: React.FC = () => {
 
       {/* ── FILTER & SEARCH BAR ── */}
       <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+        {/* 통화 구분 필터 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>통화 구분</label>
+          <select
+            value={currencyFilter}
+            onChange={e => setCurrencyFilter(e.target.value as any)}
+            style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, color: '#1e293b', background: currencyFilter !== 'ALL' ? '#eff6ff' : '#fff' }}
+          >
+            <option value="ALL">🌐 전체 통화 (USD / KRW)</option>
+            <option value="USD">💵 USD (달러 전용)</option>
+            <option value="KRW">🪙 KRW (원화 전용)</option>
+          </select>
+        </div>
+
+        {/* 기준 환율 컨트롤 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>기준 환율 (USD/KRW)</label>
+          <div style={{ display: 'flex', alignItems: 'center', height: '34px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', gap: '4px' }}>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>1$ =</span>
+            <input
+              type="number"
+              value={exchangeRate}
+              onChange={e => setExchangeRate(Number(e.target.value) || 1400)}
+              style={{ width: '56px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '0 4px', fontSize: '12px', fontWeight: 800, color: '#2563eb', textAlign: 'right' }}
+            />
+            <span style={{ fontSize: '11px', color: '#64748b' }}>원</span>
+          </div>
+        </div>
+
         {/* 법인 필터 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>법인 구분</label>
@@ -828,6 +879,7 @@ export const PurchasesManagement: React.FC = () => {
             onClick={() => {
               setCompanyFilter('ALL');
               setSourceFilter('ALL');
+              setCurrencyFilter('ALL');
               setSelectedSupplierFilter('ALL');
               setPeriodFilter('ALL');
               setSearchTerm('');
@@ -988,7 +1040,10 @@ export const PurchasesManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  supplierAggregates.map((s, idx) => (
+                  supplierAggregates.map((s, idx) => {
+                    const sTotUsd = s.totalPurchaseUsd + (exchangeRate > 0 ? s.totalPurchaseKrw / exchangeRate : 0);
+                    const sTotKrw = Math.round(s.totalPurchaseKrw + (s.totalPurchaseUsd * exchangeRate));
+                    return (
                     <tr
                       key={s.supplierName}
                       style={{ borderBottom: '1px solid #e2e8f0', background: '#fff' }}
@@ -1051,13 +1106,17 @@ export const PurchasesManagement: React.FC = () => {
                       <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
                         {s.totalItemsCount}개
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
-                        {s.totalPurchaseUsd > 0 ? (
-                          `$${s.totalPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        ) : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
+                        ${sTotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {s.totalPurchaseUsd === 0 && s.totalPurchaseKrw > 0 && (
+                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                        )}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#1e293b' }}>
-                        {s.totalPurchaseKrw > 0 ? `₩${s.totalPurchaseKrw.toLocaleString()}` : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#059669' }}>
+                        ₩{sTotKrw.toLocaleString()}
+                        {s.totalPurchaseKrw === 0 && s.totalPurchaseUsd > 0 && (
+                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '12px', color: '#475569' }}>
                         {s.primaryItems.length > 0 ? (
@@ -1093,7 +1152,8 @@ export const PurchasesManagement: React.FC = () => {
                         </button>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1124,8 +1184,8 @@ export const PurchasesManagement: React.FC = () => {
                   <th style={{ padding: '10px 12px' }}>구매 품목명</th>
                   <th style={{ padding: '10px 10px', width: '110px' }}>규격/사양</th>
                   <th style={{ padding: '10px 10px', textAlign: 'right', width: '75px' }}>수량</th>
-                  <th style={{ padding: '10px 10px', textAlign: 'right', width: '90px' }}>매입단가</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '110px' }}>매입총액</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'right', width: '110px' }}>매입단가 (USD/KRW)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '130px' }}>매입총액 (USD/KRW)</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '60px' }}>통화</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '80px' }}>결재상태</th>
                 </tr>
@@ -1138,7 +1198,13 @@ export const PurchasesManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredItems.map((it, idx) => (
+                  filteredItems.map((it, idx) => {
+                    const itUnitPriceUsd = it.currency === 'USD' ? it.unitPrice : (exchangeRate > 0 ? it.unitPrice / exchangeRate : 0);
+                    const itUnitPriceKrw = Math.round(it.currency === 'KRW' ? it.unitPrice : it.unitPrice * exchangeRate);
+
+                    const itTotalUsd = it.currency === 'USD' ? it.totalAmount : (exchangeRate > 0 ? it.totalAmount / exchangeRate : 0);
+                    const itTotalKrw = Math.round(it.currency === 'KRW' ? it.totalAmount : it.totalAmount * exchangeRate);
+                    return (
                     <tr
                       key={it.id}
                       style={{ borderBottom: '1px solid #e2e8f0', background: '#fff' }}
@@ -1219,11 +1285,21 @@ export const PurchasesManagement: React.FC = () => {
                       <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700 }}>
                         {it.quantity.toLocaleString()} <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>{it.unit}</span>
                       </td>
-                      <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>
-                        {it.currency === 'USD' ? `$${it.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₩${it.unitPrice.toLocaleString()}`}
+                      <td style={{ padding: '10px 10px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>
+                          ${itUnitPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          ₩{itUnitPriceKrw.toLocaleString()}
+                        </div>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
-                        {it.currency === 'USD' ? `$${it.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₩${it.totalAmount.toLocaleString()}`}
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: 800, color: '#1e293b' }}>
+                          ${itTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#059669', marginTop: '1px' }}>
+                          ₩{itTotalKrw.toLocaleString()}
+                        </div>
                       </td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}>
                         {it.currency}
@@ -1241,7 +1317,8 @@ export const PurchasesManagement: React.FC = () => {
                         </span>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1284,7 +1361,12 @@ export const PurchasesManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  productAggregates.map((p, idx) => (
+                  productAggregates.map((p, idx) => {
+                    const pTotUsd = p.totalAmountUsd + (exchangeRate > 0 ? p.totalAmountKrw / exchangeRate : 0);
+                    const pTotKrw = Math.round(p.totalAmountKrw + (p.totalAmountUsd * exchangeRate));
+                    const pAvgUsd = p.totalQty > 0 ? parseFloat((pTotUsd / p.totalQty).toFixed(2)) : 0;
+                    const pAvgKrw = p.totalQty > 0 ? Math.round(pTotKrw / p.totalQty) : 0;
+                    return (
                     <tr
                       key={p.itemKey}
                       style={{ borderBottom: '1px solid #e2e8f0', background: '#fff' }}
@@ -1301,17 +1383,23 @@ export const PurchasesManagement: React.FC = () => {
                       <td style={{ padding: '10px 10px', textAlign: 'center', color: '#64748b' }}>
                         {p.unit}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
-                        {p.totalAmountUsd > 0 ? `$${p.totalAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
+                        ${pTotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {p.totalAmountUsd === 0 && p.totalAmountKrw > 0 && (
+                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                        )}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
-                        {p.totalAmountKrw > 0 ? `₩${p.totalAmountKrw.toLocaleString()}` : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#059669' }}>
+                        ₩{pTotKrw.toLocaleString()}
+                        {p.totalAmountKrw === 0 && p.totalAmountUsd > 0 && (
+                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                        )}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 600 }}>
-                        {p.avgUnitPriceUsd > 0 ? `$${p.avgUnitPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 700 }}>
+                        ${pAvgUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 600 }}>
-                        {p.avgUnitPriceKrw > 0 ? `₩${p.avgUnitPriceKrw.toLocaleString()}` : '-'}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 700 }}>
+                        ₩{pAvgKrw.toLocaleString()}
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '12px', color: '#2563eb' }}>
                         {p.supplierNames.join(', ')}
@@ -1323,7 +1411,8 @@ export const PurchasesManagement: React.FC = () => {
                         {p.lastPurchaseDate || '-'}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
