@@ -99,7 +99,8 @@ export const FreightCalculatorSection: React.FC<Props> = ({
     containers: [{
       type: formData.freightCharges?.[0]?.type || '20GP',
       qty: formData.freightCharges?.[0]?.qty ?? 1,
-      oceanPriceRaw: formData.freightCharges?.[0]?.price || 0
+      oceanPriceRaw: formData.freightCharges?.[0]?.price || 0,
+      remarks: formData.freightCharges?.[0]?.remarks || '기본 해상운임'
     }],
     extraCharges: [],
     freightRemarks: '',
@@ -112,14 +113,20 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   };
 
   // Derive active containers (backward compatibility with legacy oceanPriceRaw)
-  const containers: Array<{ type: string; qty: number; oceanPriceRaw: number }> = useMemo(() => {
+  const containers: Array<{ type: string; qty: number; oceanPriceRaw: number; remarks: string }> = useMemo(() => {
     if (calc.containers && calc.containers.length > 0) {
-      return calc.containers;
+      return calc.containers.map((c, idx) => ({
+        type: c.type || '20GP',
+        qty: c.qty ?? 1,
+        oceanPriceRaw: c.oceanPriceRaw || 0,
+        remarks: c.remarks !== undefined ? c.remarks : (formData.freightCharges?.[idx]?.remarks || '기본 해상운임')
+      }));
     }
     const legacyType = formData.freightCharges?.[0]?.type || '20GP';
     const legacyQty = formData.freightCharges?.[0]?.qty ?? 1;
     const legacyPrice = calc.oceanPriceRaw || formData.freightCharges?.[0]?.price || 0;
-    return [{ type: legacyType, qty: legacyQty, oceanPriceRaw: legacyPrice }];
+    const legacyRemarks = formData.freightCharges?.[0]?.remarks || '기본 해상운임';
+    return [{ type: legacyType, qty: legacyQty, oceanPriceRaw: legacyPrice, remarks: legacyRemarks }];
   }, [calc.containers, calc.oceanPriceRaw, formData.freightCharges]);
 
   // Derive active extra charges
@@ -221,7 +228,8 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         containers: [{
           type: prev.freightCharges?.[0]?.type || '20GP',
           qty: prev.freightCharges?.[0]?.qty ?? 1,
-          oceanPriceRaw: prev.freightCharges?.[0]?.price || 0
+          oceanPriceRaw: prev.freightCharges?.[0]?.price || 0,
+          remarks: prev.freightCharges?.[0]?.remarks || '기본 해상운임'
         }],
         extraCharges: [],
         freightRemarks: '',
@@ -243,11 +251,12 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         : [{
             type: prev.freightCharges?.[0]?.type || '20GP',
             qty: prev.freightCharges?.[0]?.qty ?? 1,
-            oceanPriceRaw: Number(newDetails.oceanPriceRaw || prev.freightCharges?.[0]?.price || 0)
+            oceanPriceRaw: Number(newDetails.oceanPriceRaw || prev.freightCharges?.[0]?.price || 0),
+            remarks: prev.freightCharges?.[0]?.remarks || '기본 해상운임'
           }];
 
       let oceanTotalUsd = 0;
-      const containerRows = curContainers.map((c: any) => {
+      const containerRows = curContainers.map((c: any, cIdx: number) => {
         const rawPrice = Number(c.oceanPriceRaw || 0);
         const baseUnitUsd = newDetails.oceanCurrency === 'KRW'
           ? (exRate > 0 ? rawPrice / exRate : 0)
@@ -257,19 +266,28 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         const lineTotalUsd = parseFloat((lineQty * appliedUnitUsd).toFixed(2));
         oceanTotalUsd += lineTotalUsd;
 
+        const rowRemarks = (c.remarks !== undefined && c.remarks !== null)
+          ? c.remarks
+          : (prev.freightCharges?.[cIdx]?.remarks || '기본 해상운임');
+
         return {
           type: c.type || '20GP',
           qty: lineQty,
           price: appliedUnitUsd,
           amount: lineTotalUsd,
-          remarks: '기본 해상운임',
+          remarks: rowRemarks,
           name: c.type || '20GP'
         };
       });
 
       // Synchronize backward-compatible oceanPriceRaw to first container
       newDetails.oceanPriceRaw = curContainers[0]?.oceanPriceRaw || 0;
-      newDetails.containers = curContainers;
+      newDetails.containers = curContainers.map((c: any, i: number) => ({
+        type: c.type || '20GP',
+        qty: Number(c.qty || 1),
+        oceanPriceRaw: Number(c.oceanPriceRaw || 0),
+        remarks: containerRows[i]?.remarks ?? '기본 해상운임'
+      }));
 
       // 2. Incidental fees in USD
       const toUsdHelper = (fee?: { amount: number; currency: 'KRW' | 'USD' }) => {
@@ -340,8 +358,6 @@ export const FreightCalculatorSection: React.FC<Props> = ({
           remarks: newDetails.freightRemarks || '수출신고/내륙운송 등 세부 부대비용',
           name: '부대비용 (Incidental Charges)'
         });
-      } else if (newDetails.freightRemarks && finalFreightCharges.length > 0) {
-        finalFreightCharges[0].remarks = newDetails.freightRemarks;
       }
 
       // Append extra charges
@@ -360,12 +376,12 @@ export const FreightCalculatorSection: React.FC<Props> = ({
   const handleAddContainer = () => {
     const nextContainers = [
       ...containers,
-      { type: '40HQ', qty: 1, oceanPriceRaw: 0 }
+      { type: '40HQ', qty: 1, oceanPriceRaw: 0, remarks: '기본 해상운임' }
     ];
     updateFreightCalculation({ containers: nextContainers });
   };
 
-  const handleUpdateContainer = (idx: number, field: 'type' | 'qty' | 'oceanPriceRaw', value: any) => {
+  const handleUpdateContainer = (idx: number, field: 'type' | 'qty' | 'oceanPriceRaw' | 'remarks', value: any) => {
     const nextContainers = [...containers];
     nextContainers[idx] = { ...nextContainers[idx], [field]: value };
     updateFreightCalculation({ containers: nextContainers });
@@ -471,7 +487,7 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                 key={idx}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.4fr 0.7fr 1.3fr 1.2fr 34px',
+                  gridTemplateColumns: '1.2fr 0.55fr 1.05fr 0.95fr 1.6fr 32px',
                   gap: '8px',
                   alignItems: 'center',
                   background: '#ffffff',
@@ -541,6 +557,20 @@ export const FreightCalculatorSection: React.FC<Props> = ({
                   <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12.5px', fontWeight: 800, color: '#1d4ed8', boxSizing: 'border-box' }}>
                     ${lineTotalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
+                </div>
+
+                {/* Container Remarks */}
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#64748b', display: 'block', marginBottom: '2px' }}>
+                    비고 (Remarks)
+                  </label>
+                  <input
+                    type="text"
+                    value={c.remarks !== undefined ? c.remarks : '기본 해상운임'}
+                    placeholder="예: 기본 해상운임"
+                    onChange={e => handleUpdateContainer(idx, 'remarks', e.target.value)}
+                    style={{ width: '100%', height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                  />
                 </div>
 
                 {/* Remove Container Button */}
@@ -728,10 +758,10 @@ export const FreightCalculatorSection: React.FC<Props> = ({
       {/* 3. 운송 관련 비고 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', width: '90px' }}>비고 (Remarks):</span>
+          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', width: '120px', flexShrink: 0 }}>부대비용/종합 비고:</span>
           <textarea
-            placeholder="운송 관련 특약 사항이나 메모를 자유롭게 입력하세요."
-            value={calc.freightRemarks || formData.freightCharges?.[0]?.remarks || ''}
+            placeholder="부대비용(수출신고, 내륙운송 등) 및 운송 종합 특약 사항/메모를 입력하세요."
+            value={calc.freightRemarks ?? ''}
             onChange={e => updateFreightCalculation({ freightRemarks: e.target.value })}
             rows={1}
             style={{ flex: 1, minHeight: '34px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.541',
+    version: 'v2.8.541',
+    date: '2026-09-12',
+    category: '기능개선',
+    title: '운송비 산출기 내 컨테이너별 비고(Remarks) 입력란 추가 및 비고 수정 기능 정상화',
+    content: '• 운송비 산출기(FreightCalculatorSection)의 기본 해상운임 테이블 각 컨테이너 행(40HQ, 20GP 등)에 규격, 수량, 단가, 소계 옆 개별 [비고 (Remarks)] 입력란을 신설하여 각 컨테이너별 특기사항을 자유롭게 입력 및 수정할 수 있도록 개선\n• 기존에 비고(Remarks)가 항상 "기본 해상운임"으로 고정되어 개별 수정이 불가능하던 문제를 완벽 해결하고, 견적서(PI) 인쇄/PDF/Excel 양식의 FREIGHT CHARGES - REMARKS 열에 입력 내용이 1:1로 정확하게 반영되도록 데이터 동기화\n• 하단 부대비용/종합 비고란 역시 빈값이나 사용자 수정 시 기존 고정 문구로 원복되던 바인딩 결함을 개선하여 온전한 수정/저장 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.540',
     version: 'v2.8.540',
     date: '2026-09-11',

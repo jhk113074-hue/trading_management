@@ -100,6 +100,7 @@ export interface ProformaInvoice {
       type: string;
       qty: number;
       oceanPriceRaw: number;
+      remarks?: string;
     }>;
     extraCharges?: Array<{
       type: string;
