@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
@@ -138,7 +138,10 @@ export const ProformaInvoices: React.FC = () => {
     };
   }, []);
 
+  const isClosingRef = useRef(false);
+
   const handleOpenForm = (piId?: string | null) => {
+    isClosingRef.current = false;
     setSelectedPiId(piId || null);
     setIsFormOpen(true);
     if (piId) {
@@ -149,6 +152,7 @@ export const ProformaInvoices: React.FC = () => {
   };
 
   const handleCloseForm = () => {
+    isClosingRef.current = true;
     setIsFormOpen(false);
     setSelectedPiId(null);
     setSearchParams({}, { replace: true });
@@ -157,7 +161,13 @@ export const ProformaInvoices: React.FC = () => {
   // 🔗 URL Query Sync for Proforma Invoice direct linking (?id=docId or piNumber)
   useEffect(() => {
     const targetId = searchParams.get('id');
-    if (targetId && pis.length > 0 && !isFormOpen) {
+    if (!targetId) {
+      isClosingRef.current = false;
+      return;
+    }
+    if (isClosingRef.current) return;
+
+    if (pis.length > 0 && !isFormOpen) {
       if (targetId === 'new') {
         setSelectedPiId(null);
         setIsFormOpen(true);

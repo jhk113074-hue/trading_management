@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.544',
+    version: 'v2.8.544',
+    date: '2026-09-12',
+    category: '버그수정',
+    title: '견적서(PI) 모달 창 닫기(✕/취소) 시 모달이 재오픈/중복 생성되던 현상 해결',
+    content: '• 견적서(PI) 편집 모달을 닫을 때 URL 쿼리 파라미터(?id=...) 동기화 이펙트와 컴포넌트 언마운트 시점 간의 경쟁 상태(Race condition)로 인해 닫힌 직후 모달이 다시 열리던 결함 수정\n• 사용자 명시적 닫기 상태 플래그(isClosingRef)를 적용하여 닫기(✕ 버튼 또는 취소) 실행 시 URL 파라미터가 정리된 후에도 불필요하게 모달이 다시 뜨지 않고 즉시 정상 종료되도록 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.543',
     version: 'v2.8.543',
     date: '2026-09-12',
