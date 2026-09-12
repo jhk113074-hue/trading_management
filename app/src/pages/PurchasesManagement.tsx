@@ -45,6 +45,7 @@ export interface SupplierPurchaseAggregate {
   purchaseEmail?: string;
   bankKrw?: string;
   bankUsd?: string;
+  currencyType: 'USD' | 'KRW' | 'BOTH' | 'NONE';
   totalOrdersCount: number;
   totalItemsCount: number;
   totalPurchaseUsd: number;
@@ -87,11 +88,12 @@ export const PurchasesManagement: React.FC = () => {
   // 필터 상태
   const [companyFilter, setCompanyFilter] = useState<'ALL' | 'YS' | 'YSACC'>('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'EXPORT_ITEM' | 'DOMESTIC_ITEM' | 'IMPORT_ITEM' | 'FORWARDER_FREIGHT'>('ALL');
-  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'USD' | 'KRW'>('ALL');
+  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'USD' | 'KRW' | 'USD_ONLY' | 'KRW_ONLY' | 'BOTH'>('ALL');
   const [exchangeRate, setExchangeRate] = useState<number>(1400);
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string>('ALL');
   const [periodFilter, setPeriodFilter] = useState<'ALL' | 'THIS_YEAR' | 'DAYS_90' | 'DAYS_365'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [drilldownSupplier, setDrilldownSupplier] = useState<string | null>(null);
 
   // 실시간 환율 조회 (기본값 1,400원)
   useEffect(() => {
@@ -306,6 +308,7 @@ export const PurchasesManagement: React.FC = () => {
 
       if (Array.isArray(imp.piItems) && imp.piItems.length > 0) {
         imp.piItems.forEach((it: any, itemIdx: number) => {
+          const itCurr: 'USD' | 'KRW' = (it.currency || it.buyingCurrency || imp.currency || 'USD').toUpperCase() === 'KRW' ? 'KRW' : 'USD';
           const q = Number(it.qty || it.quantity || 1);
           const p = Number(it.unitPrice || (Number(it.totalAmount || 0) / q) || 0);
           const tot = Number(it.totalAmount || (q * p) || 0);
@@ -326,7 +329,7 @@ export const PurchasesManagement: React.FC = () => {
             unit: it.unit || 'EA',
             unitPrice: p,
             totalAmount: tot,
-            currency: curr,
+            currency: itCurr,
             taxType: '수입영세',
             paymentStatus: imp.supplierPaymentStatus === 'PAID' || imp.status === '완료' ? 'PAID' : 'UNPAID',
             remarks: imp.memo || '',
@@ -368,8 +371,8 @@ export const PurchasesManagement: React.FC = () => {
     return list;
   }, [orders, imports, domesticTrades]);
 
-  // ── 필터링된 건별 상세 구매 내역 ──
-  const filteredItems = useMemo<PurchaseItemRecord[]>(() => {
+  // ── 1. 기본 필터링 (회사, 부문, 공급업체, 기간, 검색어 - 통화 필터 제외) ──
+  const baseFilteredItems = useMemo<PurchaseItemRecord[]>(() => {
     const currentYear = new Date().getFullYear().toString();
     const today = new Date().getTime();
 
@@ -379,9 +382,6 @@ export const PurchasesManagement: React.FC = () => {
 
       // 2. 부문 필터
       if (sourceFilter !== 'ALL' && item.sourceType !== sourceFilter) return false;
-
-      // 2-1. 통화 구분 필터
-      if (currencyFilter !== 'ALL' && item.currency !== currencyFilter) return false;
 
       // 3. 공급업체 필터
       if (selectedSupplierFilter !== 'ALL') {
@@ -414,10 +414,10 @@ export const PurchasesManagement: React.FC = () => {
 
       return true;
     });
-  }, [allPurchaseItems, companyFilter, sourceFilter, currencyFilter, selectedSupplierFilter, periodFilter, searchTerm]);
+  }, [allPurchaseItems, companyFilter, sourceFilter, selectedSupplierFilter, periodFilter, searchTerm]);
 
-  // ── 공급업체별 매입 집계 ──
-  const supplierAggregates = useMemo<SupplierPurchaseAggregate[]>(() => {
+  // ── 2. 모든 공급업체별 매입 집계 및 통화 유형 판별 ──
+  const allSupplierAggregates = useMemo<SupplierPurchaseAggregate[]>(() => {
     const map = new Map<string, SupplierPurchaseAggregate>();
 
     // 공급업체 마스터 맵
@@ -427,7 +427,7 @@ export const PurchasesManagement: React.FC = () => {
       if (s.supplierCode) suppMasterMap.set(s.supplierCode.toLowerCase(), s);
     });
 
-    filteredItems.forEach(item => {
+    baseFilteredItems.forEach(item => {
       const supKey = cleanCompanyName(item.supplierName).trim() || item.supplierName.trim();
       const supKeyLower = supKey.toLowerCase();
       const master = suppMasterMap.get(supKeyLower);
@@ -444,6 +444,7 @@ export const PurchasesManagement: React.FC = () => {
           purchaseEmail: master?.purchaseEmail || '',
           bankKrw: master?.bankKrw || '',
           bankUsd: master?.bankUsd || '',
+          currencyType: 'NONE',
           totalOrdersCount: 0,
           totalItemsCount: 0,
           totalPurchaseUsd: 0,
@@ -475,11 +476,14 @@ export const PurchasesManagement: React.FC = () => {
       }
     });
 
-    // 고유 주문(docNumber) 건수 산출
+    // 고유 주문(docNumber) 건수 및 통화 유형 산출
     const result = Array.from(map.values());
     result.forEach(agg => {
       const distinctDocs = new Set(agg.items.map(i => i.docNumber));
       agg.totalOrdersCount = distinctDocs.size;
+      const hasUsd = agg.totalPurchaseUsd > 0;
+      const hasKrw = agg.totalPurchaseKrw > 0;
+      agg.currencyType = (hasUsd && hasKrw) ? 'BOTH' : (hasUsd ? 'USD' : (hasKrw ? 'KRW' : 'NONE'));
     });
 
     // 매입총액 내림차순 정렬
@@ -490,7 +494,52 @@ export const PurchasesManagement: React.FC = () => {
     });
 
     return result;
-  }, [filteredItems, suppliers, exchangeRate]);
+  }, [baseFilteredItems, suppliers, exchangeRate]);
+
+  // 공급업체별 통화 분류 맵
+  const supplierCurrencyTypeMap = useMemo(() => {
+    const map = new Map<string, 'USD' | 'KRW' | 'BOTH' | 'NONE'>();
+    allSupplierAggregates.forEach(s => {
+      map.set(cleanCompanyName(s.supplierName).toLowerCase(), s.currencyType);
+    });
+    return map;
+  }, [allSupplierAggregates]);
+
+  // ── 3. 통화 필터가 적용된 공급업체 집계 ──
+  const supplierAggregates = useMemo<SupplierPurchaseAggregate[]>(() => {
+    return allSupplierAggregates.filter(s => {
+      if (currencyFilter === 'ALL') return true;
+      if (currencyFilter === 'USD_ONLY') return s.currencyType === 'USD';
+      if (currencyFilter === 'KRW_ONLY') return s.currencyType === 'KRW';
+      if (currencyFilter === 'BOTH') return s.currencyType === 'BOTH';
+      if (currencyFilter === 'USD') return s.totalPurchaseUsd > 0;
+      if (currencyFilter === 'KRW') return s.totalPurchaseKrw > 0;
+      return true;
+    });
+  }, [allSupplierAggregates, currencyFilter]);
+
+  // ── 4. 통화 필터가 적용된 건별 상세 구매 내역 ──
+  const filteredItems = useMemo<PurchaseItemRecord[]>(() => {
+    return baseFilteredItems.filter(item => {
+      if (currencyFilter === 'ALL') return true;
+      if (currencyFilter === 'USD') return item.currency === 'USD';
+      if (currencyFilter === 'KRW') return item.currency === 'KRW';
+      const supType = supplierCurrencyTypeMap.get(cleanCompanyName(item.supplierName).toLowerCase());
+      if (currencyFilter === 'USD_ONLY') return supType === 'USD';
+      if (currencyFilter === 'KRW_ONLY') return supType === 'KRW';
+      if (currencyFilter === 'BOTH') return supType === 'BOTH';
+      return true;
+    });
+  }, [baseFilteredItems, currencyFilter, supplierCurrencyTypeMap]);
+
+  // ── 5. 건별 상세 내역 탭 표시용 품목 (특정 공급업체 드릴다운 필터 지원) ──
+  const displayItems = useMemo<PurchaseItemRecord[]>(() => {
+    if (drilldownSupplier) {
+      const cleanTarget = cleanCompanyName(drilldownSupplier).toLowerCase();
+      return filteredItems.filter(item => cleanCompanyName(item.supplierName).toLowerCase() === cleanTarget);
+    }
+    return filteredItems;
+  }, [filteredItems, drilldownSupplier]);
 
   // ── 품목별 매입 집계 ──
   const productAggregates = useMemo<ProductPurchaseAggregate[]>(() => {
@@ -595,6 +644,7 @@ export const PurchasesManagement: React.FC = () => {
         '업체코드': s.supplierCode,
         '공급업체명': s.supplierName,
         '구분': s.category,
+        '거래통화': s.currencyType === 'BOTH' ? 'USD+KRW' : s.currencyType === 'USD' ? 'USD 전용' : s.currencyType === 'KRW' ? 'KRW 전용' : '-',
         '대표자': s.representative || '-',
         '담당자/연락처': `${s.managerName || '-'} / ${s.managerPhone || '-'}`,
         '발주건수': s.totalOrdersCount,
@@ -718,14 +768,26 @@ export const PurchasesManagement: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
         {/* 1. 총 매입 발생액 */}
         <div style={{ background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>
-            총 매입 발생액 (USD / KRW)
+          <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between' }}>
+            <span>총 매입 발생액</span>
+            <span style={{ fontSize: '10px', color: '#2563eb', fontWeight: 700 }}>USD / KRW 실거래</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
-            ${kpis.totPurchaseCombinedUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>USD 실발생</span>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e3a8a' }}>
+                ${kpis.totPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>KRW 실발생</span>
+              <span style={{ fontSize: '15px', fontWeight: 800, color: '#059669' }}>
+                ₩{kpis.totPurchaseKrw.toLocaleString()}
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#059669' }}>
-            ₩{kpis.totPurchaseCombinedKrw.toLocaleString()}
+          <div style={{ fontSize: '11px', color: '#94a3b8', borderTop: '1px dashed #e2e8f0', paddingTop: '4px', marginTop: '2px' }}>
+            원화 환산 합산: ₩{kpis.totPurchaseCombinedKrw.toLocaleString()}
           </div>
         </div>
 
@@ -779,9 +841,12 @@ export const PurchasesManagement: React.FC = () => {
             onChange={e => setCurrencyFilter(e.target.value as any)}
             style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, color: '#1e293b', background: currencyFilter !== 'ALL' ? '#eff6ff' : '#fff' }}
           >
-            <option value="ALL">🌐 전체 통화 (USD / KRW)</option>
-            <option value="USD">💵 USD (달러 전용)</option>
-            <option value="KRW">🪙 KRW (원화 전용)</option>
+            <option value="ALL">🌐 전체 통화 (전체 업체)</option>
+            <option value="USD_ONLY">💵 USD 전용 업체</option>
+            <option value="KRW_ONLY">🪙 KRW 전용 업체</option>
+            <option value="BOTH">🔀 USD+KRW 복합 업체</option>
+            <option value="USD">💵 USD 거래 포함 (USD+복합)</option>
+            <option value="KRW">🪙 KRW 거래 포함 (KRW+복합)</option>
           </select>
         </div>
 
@@ -835,7 +900,10 @@ export const PurchasesManagement: React.FC = () => {
           <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>공급업체 선택</label>
           <select
             value={selectedSupplierFilter}
-            onChange={e => setSelectedSupplierFilter(e.target.value)}
+            onChange={e => {
+              setSelectedSupplierFilter(e.target.value);
+              setDrilldownSupplier(null);
+            }}
             style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
           >
             <option value="ALL">🏢 전체 공급업체 ({uniqueSupplierOptions.length}개사)</option>
@@ -881,6 +949,7 @@ export const PurchasesManagement: React.FC = () => {
               setSourceFilter('ALL');
               setCurrencyFilter('ALL');
               setSelectedSupplierFilter('ALL');
+              setDrilldownSupplier(null);
               setPeriodFilter('ALL');
               setSearchTerm('');
             }}
@@ -961,7 +1030,7 @@ export const PurchasesManagement: React.FC = () => {
             color: activeTab === 'items' ? '#2563eb' : '#64748b',
             fontWeight: 800
           }}>
-            {filteredItems.length}건
+            {drilldownSupplier ? `${displayItems.length}건 (선택업체)` : `${filteredItems.length}건`}
           </span>
         </button>
 
@@ -1021,28 +1090,27 @@ export const PurchasesManagement: React.FC = () => {
                   <th style={{ padding: '10px 10px', width: '45px', textAlign: 'center' }}>No</th>
                   <th style={{ padding: '10px 10px', width: '85px' }}>업체코드</th>
                   <th style={{ padding: '10px 12px' }}>공급업체명</th>
-                  <th style={{ padding: '10px 10px', width: '85px', textAlign: 'center' }}>구분</th>
+                  <th style={{ padding: '10px 10px', width: '80px', textAlign: 'center' }}>구분</th>
+                  <th style={{ padding: '10px 10px', width: '95px', textAlign: 'center' }}>거래 통화</th>
                   <th style={{ padding: '10px 12px', width: '150px' }}>담당자 / 계좌정보</th>
-                  <th style={{ padding: '10px 10px', width: '80px', textAlign: 'center' }}>발주건수</th>
-                  <th style={{ padding: '10px 10px', width: '80px', textAlign: 'center' }}>품목수</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>총 매입금액 (USD)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>총 매입금액 (KRW)</th>
+                  <th style={{ padding: '10px 10px', width: '70px', textAlign: 'center' }}>발주건수</th>
+                  <th style={{ padding: '10px 10px', width: '70px', textAlign: 'center' }}>품목수</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '135px' }}>총 매입금액 (USD)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '135px' }}>총 매입금액 (KRW)</th>
                   <th style={{ padding: '10px 12px', width: '180px' }}>주요 구매 품목</th>
-                  <th style={{ padding: '10px 10px', textAlign: 'center', width: '100px' }}>최근 발주일</th>
-                  <th style={{ padding: '10px 10px', textAlign: 'center', width: '90px' }}>관리</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center', width: '95px' }}>최근 발주일</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center', width: '85px' }}>관리</th>
                 </tr>
               </thead>
               <tbody>
                 {supplierAggregates.length === 0 ? (
                   <tr>
-                    <td colSpan={12} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                    <td colSpan={13} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
                       조회된 공급업체 구매 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
                   supplierAggregates.map((s, idx) => {
-                    const sTotUsd = s.totalPurchaseUsd + (exchangeRate > 0 ? s.totalPurchaseKrw / exchangeRate : 0);
-                    const sTotKrw = Math.round(s.totalPurchaseKrw + (s.totalPurchaseUsd * exchangeRate));
                     return (
                     <tr
                       key={s.supplierName}
@@ -1090,6 +1158,50 @@ export const PurchasesManagement: React.FC = () => {
                           {s.category}
                         </span>
                       </td>
+                      <td style={{ padding: '10px 10px', textAlign: 'center' }}>
+                        {s.currencyType === 'BOTH' ? (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            background: '#f3e8ff',
+                            color: '#7e22ce',
+                            border: '1px solid #d8b4fe',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            🔀 USD+KRW
+                          </span>
+                        ) : s.currencyType === 'USD' ? (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            💵 USD 전용
+                          </span>
+                        ) : s.currencyType === 'KRW' ? (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            background: '#ecfdf5',
+                            color: '#047857',
+                            border: '1px solid #a7f3d0',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            🪙 KRW 전용
+                          </span>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>-</span>
+                        )}
+                      </td>
                       <td style={{ padding: '10px 12px', fontSize: '12px' }}>
                         <div style={{ fontWeight: 600, color: '#1e293b' }}>
                           {s.managerName ? `${s.managerName} (${s.managerPhone || '-'})` : '-'}
@@ -1106,16 +1218,27 @@ export const PurchasesManagement: React.FC = () => {
                       <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
                         {s.totalItemsCount}개
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
-                        ${sTotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        {s.totalPurchaseUsd === 0 && s.totalPurchaseKrw > 0 && (
-                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800 }}>
+                        {s.totalPurchaseUsd > 0 ? (
+                          <span style={{ color: '#1e3a8a', fontSize: '13px' }}>
+                            ${s.totalPurchaseUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontWeight: 400 }}>-</span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#059669' }}>
-                        ₩{sTotKrw.toLocaleString()}
-                        {s.totalPurchaseKrw === 0 && s.totalPurchaseUsd > 0 && (
-                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800 }}>
+                        {s.totalPurchaseKrw > 0 ? (
+                          <span style={{ color: '#059669', fontSize: '13px' }}>
+                            ₩{s.totalPurchaseKrw.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontWeight: 400 }}>-</span>
+                        )}
+                        {s.currencyType === 'BOTH' && (
+                          <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginTop: '2px' }} title="USD를 환율 적용하여 원화로 합산한 추정 총액">
+                            (합산: ₩{Math.round(s.totalPurchaseKrw + (s.totalPurchaseUsd * exchangeRate)).toLocaleString()})
+                          </div>
                         )}
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '12px', color: '#475569' }}>
@@ -1133,7 +1256,7 @@ export const PurchasesManagement: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedSupplierFilter(s.supplierName);
+                            setDrilldownSupplier(s.supplierName);
                             setActiveTab('items');
                           }}
                           style={{
@@ -1156,6 +1279,30 @@ export const PurchasesManagement: React.FC = () => {
                   })
                 )}
               </tbody>
+              {supplierAggregates.length > 0 && (
+                <tfoot>
+                  <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
+                    <td colSpan={6} style={{ padding: '12px 14px', textAlign: 'center', color: '#334155' }}>
+                      합계 ({supplierAggregates.length}개 공급업체)
+                    </td>
+                    <td style={{ padding: '12px 10px', textAlign: 'center', color: '#1e293b' }}>
+                      {supplierAggregates.reduce((acc, s) => acc + s.totalOrdersCount, 0)}건
+                    </td>
+                    <td style={{ padding: '12px 10px', textAlign: 'center', color: '#64748b' }}>
+                      {supplierAggregates.reduce((acc, s) => acc + s.totalItemsCount, 0)}개
+                    </td>
+                    <td style={{ padding: '12px 12px', textAlign: 'right', color: '#1e3a8a', fontSize: '13.5px' }}>
+                      ${supplierAggregates.reduce((acc, s) => acc + s.totalPurchaseUsd, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '12px 12px', textAlign: 'right', color: '#059669', fontSize: '13.5px' }}>
+                      ₩{supplierAggregates.reduce((acc, s) => acc + s.totalPurchaseKrw, 0).toLocaleString()}
+                    </td>
+                    <td colSpan={3} style={{ padding: '12px 12px', fontSize: '11.5px', color: '#64748b' }}>
+                      (원화 환산 합산: ₩{supplierAggregates.reduce((acc, s) => acc + Math.round(s.totalPurchaseKrw + (s.totalPurchaseUsd * exchangeRate)), 0).toLocaleString()})
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
@@ -1164,12 +1311,49 @@ export const PurchasesManagement: React.FC = () => {
         <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ padding: '12px 18px', background: '#fafafa', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
-              📑 건별 상세 매입/구매 내역 (총 {filteredItems.length}건)
+              📑 건별 상세 매입/구매 내역 (총 {displayItems.length}건){drilldownSupplier && ` - [ ${drilldownSupplier} ]`}
             </span>
             <span style={{ fontSize: '12px', color: '#64748b' }}>
               관리번호를 클릭하면 해당 주문서(수출/국내/수입) 상세 페이지로 이동합니다.
             </span>
           </div>
+
+          {drilldownSupplier && (
+            <div style={{
+              margin: '12px 18px 0 18px',
+              padding: '10px 16px',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '4px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px' }}>🏢</span>
+                <span style={{ fontSize: '13px', fontWeight: 750, color: '#1e40af' }}>
+                  <strong>{drilldownSupplier}</strong> 공급업체의 건별 내역만 필터링되어 표시 중입니다. (총 {displayItems.length}건)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDrilldownSupplier(null)}
+                style={{
+                  height: '28px',
+                  padding: '0 12px',
+                  background: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 750,
+                  cursor: 'pointer'
+                }}
+              >
+                ↺ 전체 공급업체 건별 내역 보기
+              </button>
+            </div>
+          )}
 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
@@ -1184,27 +1368,21 @@ export const PurchasesManagement: React.FC = () => {
                   <th style={{ padding: '10px 12px' }}>구매 품목명</th>
                   <th style={{ padding: '10px 10px', width: '110px' }}>규격/사양</th>
                   <th style={{ padding: '10px 10px', textAlign: 'right', width: '75px' }}>수량</th>
-                  <th style={{ padding: '10px 10px', textAlign: 'right', width: '110px' }}>매입단가 (USD/KRW)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '130px' }}>매입총액 (USD/KRW)</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'right', width: '110px' }}>매입단가</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '130px' }}>매입총액</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '60px' }}>통화</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '80px' }}>결재상태</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.length === 0 ? (
+                {displayItems.length === 0 ? (
                   <tr>
                     <td colSpan={13} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
                       조회된 건별 상세 구매 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  filteredItems.map((it, idx) => {
-                    const itUnitPriceUsd = it.currency === 'USD' ? it.unitPrice : (exchangeRate > 0 ? it.unitPrice / exchangeRate : 0);
-                    const itUnitPriceKrw = Math.round(it.currency === 'KRW' ? it.unitPrice : it.unitPrice * exchangeRate);
-
-                    const itTotalUsd = it.currency === 'USD' ? it.totalAmount : (exchangeRate > 0 ? it.totalAmount / exchangeRate : 0);
-                    const itTotalKrw = Math.round(it.currency === 'KRW' ? it.totalAmount : it.totalAmount * exchangeRate);
-                    return (
+                  displayItems.map((it, idx) => (
                     <tr
                       key={it.id}
                       style={{ borderBottom: '1px solid #e2e8f0', background: '#fff' }}
@@ -1286,20 +1464,38 @@ export const PurchasesManagement: React.FC = () => {
                         {it.quantity.toLocaleString()} <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>{it.unit}</span>
                       </td>
                       <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, color: '#1e293b' }}>
-                          ${itUnitPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          ₩{itUnitPriceKrw.toLocaleString()}
-                        </div>
+                        {it.currency === 'USD' ? (
+                          <div style={{ fontWeight: 700, color: '#1e3a8a' }}>
+                            ${it.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        ) : (
+                          <div style={{ fontWeight: 700, color: '#059669' }}>
+                            ₩{Math.round(it.unitPrice).toLocaleString()}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                        <div style={{ fontWeight: 800, color: '#1e293b' }}>
-                          ${itTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#059669', marginTop: '1px' }}>
-                          ₩{itTotalKrw.toLocaleString()}
-                        </div>
+                        {it.currency === 'USD' ? (
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13.5px' }}>
+                              ${it.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div style={{ fontSize: '10.5px', color: '#64748b' }}>
+                              (환산: ₩{Math.round(it.totalAmount * exchangeRate).toLocaleString()})
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#059669', fontSize: '13.5px' }}>
+                              ₩{Math.round(it.totalAmount).toLocaleString()}
+                            </div>
+                            {exchangeRate > 0 && (
+                              <div style={{ fontSize: '10.5px', color: '#64748b' }}>
+                                (환산: ${(it.totalAmount / exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}>
                         {it.currency}
@@ -1317,8 +1513,7 @@ export const PurchasesManagement: React.FC = () => {
                         </span>
                       </td>
                     </tr>
-                    );
-                  })
+                  ))
                 )}
               </tbody>
             </table>
@@ -1383,23 +1578,37 @@ export const PurchasesManagement: React.FC = () => {
                       <td style={{ padding: '10px 10px', textAlign: 'center', color: '#64748b' }}>
                         {p.unit}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#1e293b' }}>
-                        ${pTotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        {p.totalAmountUsd === 0 && p.totalAmountKrw > 0 && (
-                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800 }}>
+                        {p.totalAmountUsd > 0 ? (
+                          <span style={{ color: '#1e3a8a' }}>
+                            ${p.totalAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1' }}>-</span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#059669' }}>
-                        ₩{pTotKrw.toLocaleString()}
-                        {p.totalAmountKrw === 0 && p.totalAmountUsd > 0 && (
-                          <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, marginLeft: '4px' }}>(환산)</span>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800 }}>
+                        {p.totalAmountKrw > 0 ? (
+                          <span style={{ color: '#059669' }}>
+                            ₩{p.totalAmountKrw.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1' }}>-</span>
                         )}
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 700 }}>
-                        ${pAvgUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {p.totalAmountUsd > 0 ? (
+                          <span>${p.avgUnitPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1' }}>-</span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569', fontWeight: 700 }}>
-                        ₩{pAvgKrw.toLocaleString()}
+                        {p.totalAmountKrw > 0 ? (
+                          <span>₩{p.avgUnitPriceKrw.toLocaleString()}</span>
+                        ) : (
+                          <span style={{ color: '#cbd5e1' }}>-</span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '12px', color: '#2563eb' }}>
                         {p.supplierNames.join(', ')}
