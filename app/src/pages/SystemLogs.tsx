@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.543',
+    version: 'v2.8.543',
+    date: '2026-09-12',
+    category: 'UI/UX',
+    title: '운송비 산출기 내 불필요한 [부대비용/종합 비고] 입력란 제거 및 레이아웃 간소화',
+    content: '• 운송비 산출기(FreightCharges & Logistics Calculator) 하단의 [부대비용/종합 비고] 입력란을 제거하여 화면을 더욱 간결하고 직관적으로 정리\n• 각 컨테이너 규격별 비고(Remarks) 열에서 컨테이너별 특기사항을 명확히 관리하고 하단 최종 결정 운송비 영역으로 화면 공간을 깔끔하게 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.542',
     version: 'v2.8.542',
     date: '2026-09-12',

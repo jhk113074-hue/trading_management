@@ -755,20 +755,6 @@ export const FreightCalculatorSection: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 3. 운송 관련 비고 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', width: '120px', flexShrink: 0 }}>부대비용/종합 비고:</span>
-          <textarea
-            placeholder="부대비용(수출신고, 내륙운송 등) 및 운송 종합 특약 사항/메모를 입력하세요."
-            value={calc.freightRemarks ?? ''}
-            onChange={e => updateFreightCalculation({ freightRemarks: e.target.value })}
-            rows={1}
-            style={{ flex: 1, minHeight: '34px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
-          />
-        </div>
-      </div>
-
       {/* 4. Final Decided Total Freight Badge with Round Up Feature */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: '6px', padding: '10px 14px', marginTop: '2px', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
