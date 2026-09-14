@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.556',
+    version: 'v2.8.556',
+    date: '2026-09-14',
+    category: '신규기능',
+    title: '공급업체 병합 이력 추적 및 1-클릭 원상복구(Rollback) 시스템 전면 구축',
+    content: '• 병합 이력 및 1-클릭 원상복구(Rollback) 탭 신설: 공급업체 병합 모달 내 [↩️ 병합 이력 및 원상복구] 전용 탭을 추가하여 과거 실행된 모든 병합 작업의 대표 업체, 묶인 별칭 목록, 실행 일시, 옵션 적용 여부를 직관적으로 확인하고 [↩️ 원상복구 (Rollback)] 버튼을 통해 즉시 이전 상태로 되돌릴 수 있도록 지원\n• 원장 데이터 자동 안전 백업 및 완벽 복원: 발주서(Orders), 수입(Imports), 국내매입(DomesticTrades) 문서의 상호명을 일괄 갱신하는 옵션을 사용했더라도 변경 전 원본 상태를 supplier_merge_history에 자동 스냅샷 백업하여 원상복구 시 원래 개별 공급업체명으로 완벽하게 복원\n• 흡수 삭제된 마스터 공급업체 자동 부활: 중복 마스터 공급업체 흡수 옵션으로 삭제 처리되었던 마스터 레코드(공급업체 코드, 사업자번호, 대표자, 계좌정보 등)를 원상복구 시 Firestore suppliers 컬렉션에 원본 그대로 자동 재생성 복구\n• 업체별 1-클릭 전체 원상복구 지원: [현재 병합된 업체 목록] 탭에서도 각 공급업체 카드 우측에 [↩️ 전체 원상복구] 버튼을 제공하여 등록된 모든 별칭을 한 번에 해제하고 개별 업체로 분리 가능\n• 병합 상태 실시간 추적: 병합 적용중(ACTIVE)과 원상복구 완료(ROLLED_BACK) 상태 배지를 부여하여 중복 롤백 방지 및 이력 감사(Audit) 관리 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.555',
     version: 'v2.8.555',
     date: '2026-09-14',
