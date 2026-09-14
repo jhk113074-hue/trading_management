@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { isOperationalUser } from '../utils/userUtils';
@@ -19,6 +19,8 @@ interface LeaveRequest {
   createdAt: string;
   approvedBy?: string;
   rejectReason?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export const LeaveManagement: React.FC = () => {
@@ -40,6 +42,17 @@ export const LeaveManagement: React.FC = () => {
   // Admin reject modal
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Date Change / Edit Modal State
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  const [editLeaveType, setEditLeaveType] = useState<'FULL' | 'AM_HALF' | 'PM_HALF' | 'HOURLY'>('FULL');
+  const [editStartTime, setEditStartTime] = useState('09:00');
+  const [editEndTime, setEditEndTime] = useState('10:00');
+  const [editReason, setEditReason] = useState('');
+  const [editStatus, setEditStatus] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('APPROVED');
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchLeaveData = async () => {
     setLoading(true);
@@ -274,6 +287,130 @@ export const LeaveManagement: React.FC = () => {
     } catch (e) {
       console.error(e);
       alert("반려 처리에 실패했습니다.");
+    }
+  };
+
+  // Open Edit / Date Change Modal
+  const handleOpenEditModal = (r: LeaveRequest) => {
+    setEditingRequest(r);
+    setEditStartDate(r.startDate || '');
+    setEditEndDate(r.endDate || r.startDate || '');
+    setEditLeaveType(r.leaveType || 'FULL');
+    setEditStartTime(r.startTime || '09:00');
+    setEditEndTime(r.endTime || '10:00');
+    setEditReason(r.reason || '');
+    setEditStatus(r.status || 'APPROVED');
+  };
+
+  // Helper to calculate days for the editing modal
+  const calculateEditRequestedDays = () => {
+    if (editLeaveType === 'AM_HALF' || editLeaveType === 'PM_HALF') return 0.5;
+    if (editLeaveType === 'HOURLY') {
+      const [sh, sm] = (editStartTime || '09:00').split(':').map(Number);
+      const [eh, em] = (editEndTime || '10:00').split(':').map(Number);
+      const diffHours = (eh - sh) + (em - sm) / 60;
+      if (diffHours <= 0) return 0;
+      return parseFloat((diffHours / 8).toFixed(3));
+    }
+
+    const start = new Date(editStartDate);
+    const end = new Date(editEndDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+    if (end < start) return 0;
+
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  // Save changes to leave request (supports already APPROVED leave as well)
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRequest || !userProfile) return;
+
+    const newTotalDays = calculateEditRequestedDays();
+    if (newTotalDays <= 0) {
+      alert("올바르지 않은 기간 설정입니다.");
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      const finalEndDate = editLeaveType === 'FULL' ? editEndDate : editStartDate;
+      const payload: any = {
+        startDate: editStartDate,
+        endDate: finalEndDate,
+        leaveType: editLeaveType,
+        totalDays: newTotalDays,
+        reason: editReason,
+        status: editStatus,
+        updatedAt: new Date().toISOString(),
+        updatedBy: userProfile.name
+      };
+
+      if (editLeaveType === 'HOURLY') {
+        payload.startTime = editStartTime;
+        payload.endTime = editEndTime;
+      }
+
+      await updateDoc(doc(db, 'leave_requests', editingRequest.id), payload);
+
+      // If edited by admin for another employee, notify via system mail
+      if (editingRequest.userId !== userProfile.id) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: editingRequest.userId,
+          receiverName: editingRequest.userName,
+          title: `[알림] 휴가 일정 및 정보가 변경되었습니다.`,
+          content: `${userProfile.name} 관리자에 의해 신청하신 휴가 일정이 변경되었습니다.\n\n변경 기간: ${editStartDate} ~ ${finalEndDate}\n구분: ${editLeaveType === 'FULL' ? '종일' : editLeaveType === 'AM_HALF' ? '오전반차' : editLeaveType === 'PM_HALF' ? '오후반차' : `시간차 (${editStartTime}~${editEndTime})`} (${newTotalDays}일)\n사유: ${editReason}\n상태: ${editStatus === 'APPROVED' ? '승인완료' : editStatus === 'PENDING' ? '결재대기' : '반려'}`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      alert('✅ 휴가 일정이 성공적으로 변경되었습니다.');
+      setEditingRequest(null);
+      fetchLeaveData();
+    } catch (err: any) {
+      console.error(err);
+      alert('휴가 일정 변경 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  // Cancel / Delete leave request (frees up annual leave days if already approved)
+  const handleDeleteRequest = async (r: LeaveRequest) => {
+    if (!userProfile) return;
+    const isApproved = r.status === 'APPROVED';
+    const confirmMsg = isApproved
+      ? `[${r.userName}] 님의 승인완료된 휴가(${r.startDate} ~ ${r.endDate}, ${r.totalDays}일)를 취소/삭제하시겠습니까?\n\n삭제 시 해당 직원의 사용 연차에서 차감 취소(환원)됩니다.`
+      : `[${r.userName}] 님의 휴가 신청(${r.startDate} ~ ${r.endDate})을 삭제하시겠습니까?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await deleteDoc(doc(db, 'leave_requests', r.id));
+
+      if (r.userId !== userProfile.id) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: r.userId,
+          receiverName: r.userName,
+          title: `[알림] 휴가 내역이 취소/삭제되었습니다.`,
+          content: `${userProfile.name} 관리자에 의해 휴가 신청 내역(${r.startDate} ~ ${r.endDate}, ${r.totalDays}일)이 취소/삭제되었습니다.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      alert('✅ 휴가 내역이 정상적으로 취소/삭제되었습니다.');
+      fetchLeaveData();
+    } catch (err: any) {
+      console.error(err);
+      alert('삭제 중 오류가 발생했습니다: ' + err.message);
     }
   };
 
@@ -563,47 +700,104 @@ export const LeaveManagement: React.FC = () => {
                     <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>사용 일수</th>
                     <th style={{ padding: '10px 12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>사유</th>
                     <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>관리</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(userProfile?.role === '관리자' ? requests : myRequests).length === 0 ? (
                     <tr>
-                      <td colSpan={userProfile?.role === '관리자' ? 6 : 5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
+                      <td colSpan={userProfile?.role === '관리자' ? 7 : 6} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '14.5px' }}>
                         신청 내역이 존재하지 않습니다.
                       </td>
                     </tr>
-                  ) : (userProfile?.role === '관리자' ? requests : myRequests).map(r => (
-                    <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      {userProfile?.role === '관리자' && <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{r.userName}</td>}
-                      <td style={{ padding: '10px 12px' }}>
-                        <span style={{ fontSize: '12.5px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                          {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{r.startDate} ~ {r.endDate}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 'bold' }}>{r.totalDays} 일</td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
-                        {r.reason}
-                        {r.rejectReason && (
-                          <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '2px', fontWeight: 'bold' }}>
-                            ↳ 반려 사유: {r.rejectReason}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                        <span style={{
-                          fontSize: '13px',
-                          fontWeight: 800,
-                          padding: '3px 8px',
-                          borderRadius: '20px',
-                          background: r.status === 'APPROVED' ? '#d1fae5' : r.status === 'REJECTED' ? '#fee2e2' : '#fef3c7',
-                          color: r.status === 'APPROVED' ? '#065f46' : r.status === 'REJECTED' ? '#991b1b' : '#92400e'
-                        }}>
-                          {r.status === 'APPROVED' ? '승인완료' : r.status === 'REJECTED' ? '반려됨' : '결재대기'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  ) : (userProfile?.role === '관리자' ? requests : myRequests).map(r => {
+                    const canManage = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' || r.userId === userProfile?.id;
+                    return (
+                      <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        {userProfile?.role === '관리자' && <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{r.userName}</td>}
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{ fontSize: '12.5px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                            {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: '#1e293b', fontWeight: 600 }}>{r.startDate} ~ {r.endDate}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 'bold' }}>{r.totalDays} 일</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                          {r.reason}
+                          {r.rejectReason && (
+                            <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '2px', fontWeight: 'bold' }}>
+                              ↳ 반려 사유: {r.rejectReason}
+                            </div>
+                          )}
+                          {r.updatedAt && (
+                            <div style={{ color: '#2563eb', fontSize: '11.5px', marginTop: '2px', fontWeight: 600 }}>
+                              (일정변경됨: {r.updatedBy ? `${r.updatedBy} ` : ''}{r.updatedAt.substring(0, 10)})
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '20px',
+                            background: r.status === 'APPROVED' ? '#d1fae5' : r.status === 'REJECTED' ? '#fee2e2' : '#fef3c7',
+                            color: r.status === 'APPROVED' ? '#065f46' : r.status === 'REJECTED' ? '#991b1b' : '#92400e'
+                          }}>
+                            {r.status === 'APPROVED' ? '승인완료' : r.status === 'REJECTED' ? '반려됨' : '결재대기'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                          {canManage && (
+                            <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(r)}
+                                style={{
+                                  height: '28px',
+                                  padding: '0 8px',
+                                  background: '#eff6ff',
+                                  color: '#2563eb',
+                                  border: '1px solid #bfdbfe',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}
+                                title="완료/대기 연차 날짜 및 일정 변경"
+                              >
+                                📅 날짜변경
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRequest(r)}
+                                style={{
+                                  height: '28px',
+                                  padding: '0 6px',
+                                  background: '#fef2f2',
+                                  color: '#dc2626',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                                title="휴가 내역 취소/삭제 (승인된 연차 차감 환원)"
+                              >
+                                🗑️ 취소
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -642,6 +836,310 @@ export const LeaveManagement: React.FC = () => {
                 반려 완료
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Date Change / Edit Modal */}
+      {editingRequest && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.45)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '4px',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 20px 40px rgba(15,23,42,0.2)',
+            width: '100%',
+            maxWidth: '460px',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              background: '#fafafa',
+              borderBottom: '1px solid #cbd5e1',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#1e293b' }}>
+                  📅 휴가 일정 및 정보 변경
+                </h3>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                  대상자: <strong style={{ color: '#1e293b' }}>{editingRequest.userName}</strong>
+                  <span style={{
+                    marginLeft: '8px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    background: editingRequest.status === 'APPROVED' ? '#d1fae5' : editingRequest.status === 'REJECTED' ? '#fee2e2' : '#fef3c7',
+                    color: editingRequest.status === 'APPROVED' ? '#065f46' : editingRequest.status === 'REJECTED' ? '#991b1b' : '#92400e'
+                  }}>
+                    {editingRequest.status === 'APPROVED' ? '승인완료' : editingRequest.status === 'REJECTED' ? '반려됨' : '결재대기'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingRequest(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '4px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveEdit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                  휴가 구분
+                </label>
+                <select
+                  value={editLeaveType}
+                  onChange={e => setEditLeaveType(e.target.value as any)}
+                  style={{
+                    height: '34px',
+                    padding: '0 10px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    background: '#fff',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="FULL">종일 휴가 (1.0일)</option>
+                  <option value="AM_HALF">오전 반차 (0.5일 - 09:00~13:00)</option>
+                  <option value="PM_HALF">오후 반차 (0.5일 - 14:00~18:00)</option>
+                  <option value="HOURLY">시간차 (1시간당 0.125일 차감)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: editLeaveType === 'FULL' ? '1fr 1fr' : '1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    {editLeaveType === 'FULL' ? '시작일' : '휴가 희망일'}
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editStartDate}
+                    onChange={e => setEditStartDate(e.target.value)}
+                    style={{
+                      height: '34px',
+                      padding: '0 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#1e293b',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                {editLeaveType === 'FULL' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      종료일
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editEndDate}
+                      onChange={e => setEditEndDate(e.target.value)}
+                      style={{
+                        height: '34px',
+                        padding: '0 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {editLeaveType === 'HOURLY' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      시작시간
+                    </label>
+                    <input
+                      type="time"
+                      value={editStartTime}
+                      onChange={e => setEditStartTime(e.target.value)}
+                      style={{
+                        height: '34px',
+                        padding: '0 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                      종료시간
+                    </label>
+                    <input
+                      type="time"
+                      value={editEndTime}
+                      onChange={e => setEditEndTime(e.target.value)}
+                      style={{
+                        height: '34px',
+                        padding: '0 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#1e293b',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div style={{
+                background: '#f8fafc',
+                padding: '0 12px',
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                height: '34px',
+                boxSizing: 'border-box'
+              }}>
+                <span style={{ color: '#475569', fontWeight: 700 }}>총 차감일수:</span>
+                <strong style={{ color: '#3b82f6', fontSize: '14.5px' }}>{calculateEditRequestedDays()} 일</strong>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                  사유 및 비고
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="예: 개인 사정, 일정 변경 등"
+                  value={editReason}
+                  onChange={e => setEditReason(e.target.value)}
+                  style={{
+                    height: '34px',
+                    padding: '0 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Admin status control */}
+              {userProfile?.role === '관리자' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    결재 상태 (관리자 권한)
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={e => setEditStatus(e.target.value as any)}
+                    style={{
+                      height: '34px',
+                      padding: '0 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#1e293b',
+                      background: '#fff',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="APPROVED">🟢 승인완료 (연차 대장에 차감 반영)</option>
+                    <option value="PENDING">🟡 결재대기</option>
+                    <option value="REJECTED">🔴 반려</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingRequest(null)}
+                  style={{
+                    height: '34px',
+                    padding: '0 16px',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditing}
+                  style={{
+                    height: '34px',
+                    padding: '0 18px',
+                    background: '#3b82f6',
+                    border: 'none',
+                    color: '#fff',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  {isEditing ? '저장 중...' : '💾 변경 저장'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
