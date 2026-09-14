@@ -4,6 +4,7 @@ import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 
 import { db, COMPANY_ID } from '../firebase';
 import type { Supplier } from '../types/supplier';
 import { SupplierModal } from '../components/SupplierModal';
+import { MergeSuppliersModal } from '../components/MergeSuppliersModal';
 import * as XLSX from 'xlsx';
 import { useColumnResize } from '../hooks/useColumnResize';
 import { cleanCompanyName } from '../utils/companyUtils';
@@ -105,6 +106,10 @@ export const Suppliers: React.FC = () => {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupId, setEditingSupId] = useState<string | null>(null);
+
+  // Merge Suppliers Modal
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [mergeModalTargetName, setMergeModalTargetName] = useState('');
 
   const handleOpenModal = (id?: string | null) => {
     setEditingSupId(id || null);
@@ -300,6 +305,17 @@ export const Suppliers: React.FC = () => {
             onChange={importExcel} 
           />
           <button 
+            onClick={() => {
+              setMergeModalTargetName('');
+              setIsMergeModalOpen(true);
+            }}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#1e293b', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 750, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+          >
+            <span>🔗</span> 업체 병합 / 통합 관리
+          </button>
+          <button 
             onClick={() => handleOpenModal(null)}
             style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
@@ -428,6 +444,26 @@ export const Suppliers: React.FC = () => {
                   <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                       <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setMergeModalTargetName(s.name);
+                          setIsMergeModalOpen(true);
+                        }}
+                        style={{ 
+                          background: 'none', 
+                          border: 'none', 
+                          padding: '4px', 
+                          fontSize: '15px', 
+                          cursor: 'pointer', 
+                          transition: 'transform 0.15s' 
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                        title="다른 상호명을 이 업체로 하나로 합치기 (병합)"
+                      >
+                        🔗
+                      </button>
+                      <button 
                         onClick={(e) => { e.stopPropagation(); handleOpenModal(s.id); }}
                         style={{ 
                           background: 'none', 
@@ -472,6 +508,19 @@ export const Suppliers: React.FC = () => {
         <SupplierModal 
           initialSupplier={editingSupId ? suppliers.find(s => s.id === editingSupId) : undefined}
           onClose={handleCloseModal}
+        />
+      )}
+
+      {/* 동일 공급업체 수동 병합 모달 */}
+      {isMergeModalOpen && (
+        <MergeSuppliersModal
+          isOpen={isMergeModalOpen}
+          onClose={() => setIsMergeModalOpen(false)}
+          suppliers={suppliers}
+          defaultTargetSupplierName={mergeModalTargetName}
+          onMergedSuccess={() => {
+            // onSnapshot automatically updates suppliers state
+          }}
         />
       )}
     </div>

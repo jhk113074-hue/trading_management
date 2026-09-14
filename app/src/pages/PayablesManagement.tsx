@@ -6,7 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { Supplier } from '../types/supplier';
 import { SupplierModal } from '../components/SupplierModal';
-import { cleanCompanyName, normalizeCompanyKey, isSameCompany, preferBetterCompanyName } from '../utils/companyUtils';
+import { MergeSuppliersModal } from '../components/MergeSuppliersModal';
+import { cleanCompanyName, normalizeCompanyKey, isSameCompany, preferBetterCompanyName, buildSupplierMasterIndex, matchMasterSupplier } from '../utils/companyUtils';
 
 // 단일 매입/채무 레코드 인터페이스
 export interface PayableRecord {
@@ -125,6 +126,10 @@ export const PayablesManagement: React.FC = () => {
   // 공급처 상세 모달 (기존 SupplierModal 재사용)
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [supplierForModal, setSupplierForModal] = useState<Supplier | undefined>(undefined);
+
+  // 공급업체 수동 병합 모달
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [mergeModalTargetName, setMergeModalTargetName] = useState('');
 
   // ── Firestore 데이터 실시간 구독 ──
   useEffect(() => {
@@ -489,30 +494,13 @@ export const PayablesManagement: React.FC = () => {
   const allSupplierSummaries = useMemo<SupplierPayableSummary[]>(() => {
     const map = new Map<string, SupplierPayableSummary>();
 
-    // 공급업체 마스터 맵 (id, supplierCode, normalizeCompanyKey, cleanName 인덱싱)
-    const suppMasterMap = new Map<string, Supplier>();
-    suppliers.forEach(s => {
-      if (s.id) suppMasterMap.set(s.id.toLowerCase(), s);
-      if (s.supplierCode) suppMasterMap.set(s.supplierCode.toLowerCase(), s);
-      const normName = normalizeCompanyKey(s.name);
-      if (normName) suppMasterMap.set(normName, s);
-      const cleanName = cleanCompanyName(s.name).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-      if (cleanName && cleanName !== normName) suppMasterMap.set(cleanName, s);
-    });
+    // 공급업체 마스터 맵 (id, supplierCode, normalizeCompanyKey, cleanName, aliases 인덱싱)
+    const suppMasterMap = buildSupplierMasterIndex(suppliers);
 
     baseRecords.forEach(r => {
-      let master: Supplier | undefined;
-      const sCode = (r.supplierCode || '').trim().toLowerCase();
+      const master = matchMasterSupplier(r.supplierName, r.supplierCode, suppMasterMap);
       const normItemName = normalizeCompanyKey(r.supplierName);
       const cleanItemName = cleanCompanyName(r.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-
-      if (sCode && sCode !== '-' && suppMasterMap.has(sCode)) {
-        master = suppMasterMap.get(sCode);
-      } else if (normItemName && suppMasterMap.has(normItemName)) {
-        master = suppMasterMap.get(normItemName);
-      } else if (cleanItemName && suppMasterMap.has(cleanItemName)) {
-        master = suppMasterMap.get(cleanItemName);
-      }
 
       // 동일 회사는 마스터 ID, 코드 또는 정규화된 키(normItemName)로 단일 통합
       const groupKey = master?.id 
@@ -1311,12 +1299,40 @@ export const PayablesManagement: React.FC = () => {
         /* TAB 1: 공급업체별 채무 종합 (Supplier AP & DPO Summary) */
         <div style={{ background: '#fff', borderRadius: '4px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ padding: '12px 18px', background: '#fafafa', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
-              📊 공급업체별 채무회전일(DPO) 및 채무연령(Aging) 분석 (총 {supplierSummaries.length}개사)
-            </span>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>
-              공급업체명을 클릭하면 계좌정보/연락처 조회 및 수정이 가능합니다.
-            </span>
+            <div>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                📊 공급업체별 채무회전일(DPO) 및 채무연령(Aging) 분석 (총 {supplierSummaries.length}개사)
+              </span>
+              <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '12px' }}>
+                공급업체명을 클릭하면 계좌정보/연락처 조회 및 수정이 가능합니다.
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMergeModalTargetName('');
+                  setIsMergeModalOpen(true);
+                }}
+                style={{
+                  height: '32px',
+                  padding: '0 14px',
+                  backgroundColor: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '12.5px',
+                  fontWeight: 750,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <span>🔗</span> 동일 업체 합치기(병합)
+              </button>
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -1536,28 +1552,52 @@ export const PayablesManagement: React.FC = () => {
                             </span>
                           </div>
                         </td>
-                        <td style={{ padding: '10px 10px', textAlign: 'center' }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedSuppSummary(s);
-                              setDrilldownSupplier(s.supplierName);
-                              setActiveTab('items');
-                            }}
-                            style={{
-                              height: '28px',
-                              padding: '0 8px',
-                              background: '#3b82f6',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '3px',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            건별조회
-                          </button>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSuppSummary(s);
+                                setDrilldownSupplier(s.supplierName);
+                                setActiveTab('items');
+                              }}
+                              title="이 공급업체의 개별 채무/지급 명세 확인"
+                              style={{
+                                height: '28px',
+                                padding: '0 8px',
+                                background: '#3b82f6',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '3px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              건별조회
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMergeModalTargetName(s.supplierName);
+                                setIsMergeModalOpen(true);
+                              }}
+                              title="다른 상호명이나 옛날 상호를 이 업체로 하나로 합치기"
+                              style={{
+                                height: '28px',
+                                padding: '0 6px',
+                                background: '#f1f5f9',
+                                color: '#475569',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '3px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🔗 합치기
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2092,6 +2132,20 @@ export const PayablesManagement: React.FC = () => {
           initialSupplier={supplierForModal}
           onClose={() => setIsSupplierModalOpen(false)}
           onSave={() => setIsSupplierModalOpen(false)}
+        />
+      )}
+
+      {/* ── MERGE SUPPLIERS MODAL (동일 업체 수동 병합 모달) ── */}
+      {isMergeModalOpen && (
+        <MergeSuppliersModal
+          isOpen={isMergeModalOpen}
+          onClose={() => setIsMergeModalOpen(false)}
+          suppliers={suppliers}
+          allKnownSupplierNames={allRecords.map(r => r.supplierName)}
+          defaultTargetSupplierName={mergeModalTargetName}
+          onMergedSuccess={() => {
+            // Firestore onSnapshot will automatically update state
+          }}
         />
       )}
     </div>

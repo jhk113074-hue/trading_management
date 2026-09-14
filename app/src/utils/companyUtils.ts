@@ -105,3 +105,62 @@ export const preferBetterCompanyName = (currentName: string, candidateName: stri
   return cleanCurr;
 };
 
+/**
+ * 공급업체 마스터 목록을 기반으로 id, supplierCode, normalizeCompanyKey, cleanName, aliases, mergedFromCodes를 모두 인덱싱하는 맵을 생성
+ */
+export const buildSupplierMasterIndex = (suppliers: any[]): Map<string, any> => {
+  const map = new Map<string, any>();
+  suppliers.forEach(s => {
+    if (s.id) map.set(s.id.toLowerCase(), s);
+    if (s.supplierCode) map.set(s.supplierCode.toLowerCase(), s);
+    const normName = normalizeCompanyKey(s.name);
+    if (normName) map.set(normName, s);
+    const cleanName = cleanCompanyName(s.name).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+    if (cleanName && cleanName !== normName) map.set(cleanName, s);
+
+    // 수동 등록된 별칭(aliases) 매핑
+    if (Array.isArray(s.aliases)) {
+      s.aliases.forEach((alias: string) => {
+        if (!alias) return;
+        const normAlias = normalizeCompanyKey(alias);
+        if (normAlias) map.set(normAlias, s);
+        const cleanAlias = cleanCompanyName(alias).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+        if (cleanAlias && cleanAlias !== normAlias) map.set(cleanAlias, s);
+      });
+    }
+
+    // 병합된 이전 코드(mergedFromCodes) 매핑
+    if (Array.isArray(s.mergedFromCodes)) {
+      s.mergedFromCodes.forEach((code: string) => {
+        if (code) map.set(code.toLowerCase(), s);
+      });
+    }
+  });
+  return map;
+};
+
+/**
+ * 공급업체 마스터 목록에서 이름, 코드, 또는 별칭(aliases)과 일치하는 마스터 공급업체를 검색
+ */
+export const matchMasterSupplier = (
+  name: string | undefined | null,
+  code: string | undefined | null,
+  supplierMasterMap: Map<string, any>
+): any | undefined => {
+  const sCode = (code || '').trim().toLowerCase();
+  const normName = normalizeCompanyKey(name);
+  const cleanName = cleanCompanyName(name || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+
+  if (sCode && sCode !== '-' && supplierMasterMap.has(sCode)) {
+    return supplierMasterMap.get(sCode);
+  }
+  if (normName && supplierMasterMap.has(normName)) {
+    return supplierMasterMap.get(normName);
+  }
+  if (cleanName && supplierMasterMap.has(cleanName)) {
+    return supplierMasterMap.get(cleanName);
+  }
+  return undefined;
+};
+
+

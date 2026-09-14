@@ -27,6 +27,10 @@ export interface Supplier {
   linkedCustomerId?: string; // 동일 업체의 고객사 레코드 ID
   linkedCustomerName?: string; // 표시용 (조회 편의)
 
+  // ── 동일 업체 수동 병합 및 별칭(Alias) 관리 ──
+  aliases?: string[]; // 동일 업체명 / 통합 별칭 목록 (예: ['강남KPI', 'KANGNAM KPI', '주식회사 강남'])
+  mergedFromCodes?: string[]; // 병합 흡수된 기존 공급업체 코드 목록 (예: ['S0099'])
+
   // ── 발주번호 고유 약자 및 연번 관리 ──
   shortCode?: string; // 발주번호용 영문 약자 (예: JS, 2H, LAM, IO, KM 등)
   poSequence?: number; // 현재까지 발행된 마지막 발주 연번

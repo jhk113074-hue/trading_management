@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.555',
+    version: 'v2.8.555',
+    date: '2026-09-14',
+    category: '신규기능',
+    title: '공급업체 수동 병합(Merge) 및 동일 업체 별칭(Alias) 통합 관리 시스템 신설',
+    content: '• 동일 공급업체 수동 병합 모달(MergeSuppliersModal) 신설: 상호명이 전혀 다르거나(영문 vs 한글, 사명 변경, 계열사 등) 자동 감지가 어려운 업체들을 관리자가 직접 선택하여 하나의 대표 공급업체로 묶을 수 있는 전용 병합 창 제공\n• 1단계 대표 업체 및 2단계 병합 대상 선택: 마스터 공급업체 중 기준이 될 대표 업체를 검색 지정하고, 기존 거래처 목록에서 체크하거나 직접 상호명을 입력하여 복수 업체를 손쉽게 선택\n• 영구 별칭(Alias) 보존 및 자동 집계: 대표 공급업체 레코드에 aliases 배열로 안전하게 등록되어 향후 등록되는 모든 주문, 매입, 채무에서도 항상 대표 업체로 자동 단일 집계\n• 기존 원장 데이터 일괄 정리 지원(선택): 체크박스 선택 시 기존 발주서(Orders), 수입(Imports), 국내매입(DomesticTrades) 문서들의 아이템 공급업체명과 코드를 대표 정보로 원클릭 일괄 갱신\n• 기존 병합 내역 관리 및 자유로운 해제: [현재 병합된 업체 목록] 탭에서 어떤 업체들이 묶여 있는지 확인하고, 잘못 묶인 경우 [✕] 버튼으로 언제든지 즉시 해제 가능\n• 매입관리, 채무관리, 공급업체관리 화면 상단 및 테이블 행에 원클릭 [🔗 동일 업체 합치기] 바로가기 연동',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.554',
     version: 'v2.8.554',
     date: '2026-09-14',
