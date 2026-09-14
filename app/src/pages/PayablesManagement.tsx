@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { Supplier } from '../types/supplier';
 import { SupplierModal } from '../components/SupplierModal';
-import { cleanCompanyName } from '../utils/companyUtils';
+import { cleanCompanyName, normalizeCompanyKey, isSameCompany, preferBetterCompanyName } from '../utils/companyUtils';
 
 // 단일 매입/채무 레코드 인터페이스
 export interface PayableRecord {
@@ -485,27 +485,47 @@ export const PayablesManagement: React.FC = () => {
     });
   }, [allRecords, companyFilter, sourceFilter, periodFilter, statusFilter, searchTerm]);
 
-  // ── 2. 모든 공급업체별 채무 집계 및 DPO, 통화 유형 판별 ──
+  // ── 2. 모든 공급업체별 채무 집계 및 DPO, 통화 유형 판별 (동일 회사 자동 단일 통합) ──
   const allSupplierSummaries = useMemo<SupplierPayableSummary[]>(() => {
     const map = new Map<string, SupplierPayableSummary>();
 
-    // 공급업체 마스터 맵
+    // 공급업체 마스터 맵 (id, supplierCode, normalizeCompanyKey, cleanName 인덱싱)
     const suppMasterMap = new Map<string, Supplier>();
     suppliers.forEach(s => {
-      if (s.name) suppMasterMap.set(cleanCompanyName(s.name).toLowerCase(), s);
+      if (s.id) suppMasterMap.set(s.id.toLowerCase(), s);
       if (s.supplierCode) suppMasterMap.set(s.supplierCode.toLowerCase(), s);
+      const normName = normalizeCompanyKey(s.name);
+      if (normName) suppMasterMap.set(normName, s);
+      const cleanName = cleanCompanyName(s.name).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      if (cleanName && cleanName !== normName) suppMasterMap.set(cleanName, s);
     });
 
     baseRecords.forEach(r => {
-      const supKey = cleanCompanyName(r.supplierName).trim() || r.supplierName.trim();
-      const supKeyLower = supKey.toLowerCase();
-      const master = suppMasterMap.get(supKeyLower);
+      let master: Supplier | undefined;
+      const sCode = (r.supplierCode || '').trim().toLowerCase();
+      const normItemName = normalizeCompanyKey(r.supplierName);
+      const cleanItemName = cleanCompanyName(r.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
 
-      if (!map.has(supKey)) {
-        map.set(supKey, {
+      if (sCode && sCode !== '-' && suppMasterMap.has(sCode)) {
+        master = suppMasterMap.get(sCode);
+      } else if (normItemName && suppMasterMap.has(normItemName)) {
+        master = suppMasterMap.get(normItemName);
+      } else if (cleanItemName && suppMasterMap.has(cleanItemName)) {
+        master = suppMasterMap.get(cleanItemName);
+      }
+
+      // 동일 회사는 마스터 ID, 코드 또는 정규화된 키(normItemName)로 단일 통합
+      const groupKey = master?.id 
+        || (master?.supplierCode && master.supplierCode !== '-' ? master.supplierCode.toLowerCase() : '')
+        || normItemName 
+        || cleanItemName 
+        || cleanCompanyName(r.supplierName);
+
+      if (!map.has(groupKey)) {
+        map.set(groupKey, {
           supplierId: master?.id,
-          supplierCode: master?.supplierCode || r.supplierCode || '-',
-          supplierName: master?.name || r.supplierName,
+          supplierCode: master?.supplierCode || (r.supplierCode !== '-' ? r.supplierCode : '') || '-',
+          supplierName: master?.name || cleanCompanyName(r.supplierName),
           category: master?.category || r.category || '공급사',
           representative: master?.representative,
           bizNumber: master?.bizNumber,
@@ -536,7 +556,29 @@ export const PayablesManagement: React.FC = () => {
         });
       }
 
-      const item = map.get(supKey)!;
+      const item = map.get(groupKey)!;
+
+      // 마스터 정보 또는 추가 정보 보강 (코드 '-' 대체, 더 공식적인 상호명 채택 등)
+      if (master?.supplierCode && (!item.supplierCode || item.supplierCode === '-')) {
+        item.supplierCode = master.supplierCode;
+      } else if (r.supplierCode && r.supplierCode !== '-' && (!item.supplierCode || item.supplierCode === '-')) {
+        item.supplierCode = r.supplierCode;
+      }
+
+      if (master?.name) {
+        item.supplierName = master.name;
+      } else {
+        item.supplierName = preferBetterCompanyName(item.supplierName, r.supplierName);
+      }
+
+      if (master?.representative && !item.representative) item.representative = master.representative;
+      if (master?.bizNumber && !item.bizNumber) item.bizNumber = master.bizNumber;
+      if (master?.managerName && !item.managerName) item.managerName = master.managerName;
+      if (master?.managerPhone && !item.managerPhone) item.managerPhone = master.managerPhone;
+      if (master?.purchaseEmail && !item.purchaseEmail) item.purchaseEmail = master.purchaseEmail;
+      if (master?.bankKrw && !item.bankKrw) item.bankKrw = master.bankKrw;
+      if (master?.bankUsd && !item.bankUsd) item.bankUsd = master.bankUsd;
+
       item.totalOrdersCount += 1;
       item.records.push(r);
 
@@ -568,45 +610,40 @@ export const PayablesManagement: React.FC = () => {
     // DPO, 지급률 및 통화 유형 판별
     const result = Array.from(map.values());
     result.forEach(item => {
+      const distinctDocs = new Set(item.records.map(r => r.docNumber));
+      item.totalOrdersCount = distinctDocs.size;
+
+      const totCombinedPurchase = item.totalPurchaseKrw + (item.totalPurchaseUsd * exchangeRate);
+      const totCombinedPaid = item.totalPaidKrw + (item.totalPaidUsd * exchangeRate);
+      const totCombinedUnpaid = item.unpaidKrw + (item.unpaidUsd * exchangeRate);
+
+      item.paymentRate = totCombinedPurchase > 0 ? Math.round((totCombinedPaid / totCombinedPurchase) * 100) : 0;
+      item.dpo = totCombinedPurchase > 0 ? Math.round((totCombinedUnpaid / totCombinedPurchase) * 90) : 0;
+
       const hasUsd = item.totalPurchaseUsd > 0;
       const hasKrw = item.totalPurchaseKrw > 0;
       item.currencyType = (hasUsd && hasKrw) ? 'BOTH' : (hasUsd ? 'USD' : (hasKrw ? 'KRW' : 'NONE'));
-
-      const totPurchaseApprox = item.totalPurchaseUsd + (exchangeRate > 0 ? item.totalPurchaseKrw / exchangeRate : 0);
-      const unpaidApprox = item.unpaidUsd + (exchangeRate > 0 ? item.unpaidKrw / exchangeRate : 0);
-
-      // 지급률 (%)
-      if (totPurchaseApprox > 0) {
-        const paidApprox = (item.totalPaidUsd + (exchangeRate > 0 ? item.totalPaidKrw / exchangeRate : 0));
-        item.paymentRate = Math.min(100, Math.round((paidApprox / totPurchaseApprox) * 100));
-      } else {
-        item.paymentRate = 0;
-      }
-
-      // DPO (매입채무회전일수) = (미지급채무 / 총매입액) * 기준일수
-      const periodDays = periodFilter === 'THIS_YEAR' ? 180 : periodFilter === 'DAYS_365' ? 365 : 90;
-      if (totPurchaseApprox > 0 && unpaidApprox > 0) {
-        item.dpo = Math.round((unpaidApprox / totPurchaseApprox) * periodDays);
-      } else {
-        item.dpo = 0;
-      }
     });
 
-    // 미지급액 내림차순 정렬
+    // 미지급 합산액(원화 환산 기준) 내림차순 정렬
     result.sort((a, b) => {
-      const unpA = a.unpaidUsd + (exchangeRate > 0 ? a.unpaidKrw / exchangeRate : 0);
-      const unpB = b.unpaidUsd + (exchangeRate > 0 ? b.unpaidKrw / exchangeRate : 0);
+      const unpA = a.unpaidKrw + (a.unpaidUsd * exchangeRate);
+      const unpB = b.unpaidKrw + (b.unpaidUsd * exchangeRate);
       return unpB - unpA;
     });
 
     return result;
   }, [baseRecords, suppliers, periodFilter, exchangeRate]);
 
-  // 공급업체별 통화 분류 맵
+  // 공급업체별 통화 분류 맵 (정규화 키 및 코드 매핑)
   const supplierCurrencyTypeMap = useMemo(() => {
     const map = new Map<string, 'USD' | 'KRW' | 'BOTH' | 'NONE'>();
     allSupplierSummaries.forEach(s => {
-      map.set(cleanCompanyName(s.supplierName).toLowerCase(), s.currencyType);
+      const norm = normalizeCompanyKey(s.supplierName);
+      if (norm) map.set(norm, s.currencyType);
+      const clean = cleanCompanyName(s.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      if (clean) map.set(clean, s.currencyType);
+      if (s.supplierCode && s.supplierCode !== '-') map.set(s.supplierCode.toLowerCase(), s.currencyType);
     });
     return map;
   }, [allSupplierSummaries]);
@@ -630,7 +667,12 @@ export const PayablesManagement: React.FC = () => {
       if (currencyFilter === 'ALL') return true;
       if (currencyFilter === 'USD') return r.currency === 'USD';
       if (currencyFilter === 'KRW') return r.currency === 'KRW';
-      const supType = supplierCurrencyTypeMap.get(cleanCompanyName(r.supplierName).toLowerCase());
+      const norm = normalizeCompanyKey(r.supplierName);
+      const clean = cleanCompanyName(r.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      const sCode = (r.supplierCode || '').toLowerCase();
+      const supType = (sCode && supplierCurrencyTypeMap.get(sCode)) ||
+                      (norm && supplierCurrencyTypeMap.get(norm)) ||
+                      (clean && supplierCurrencyTypeMap.get(clean));
       if (currencyFilter === 'USD_ONLY') return supType === 'USD';
       if (currencyFilter === 'KRW_ONLY') return supType === 'KRW';
       if (currencyFilter === 'BOTH') return supType === 'BOTH';
@@ -638,16 +680,14 @@ export const PayablesManagement: React.FC = () => {
     });
   }, [baseRecords, currencyFilter, supplierCurrencyTypeMap]);
 
-  // ── 5. 건별 상세 내역 탭 표시용 레코드 (특정 공급업체 드릴다운 필터 지원) ──
+  // ── 5. 건별 상세 내역 탭 표시용 레코드 (특정 공급업체 드릴다운 필터 지원 - 동일 회사 일치 판별) ──
   const displayRecords = useMemo<PayableRecord[]>(() => {
     if (drilldownSupplier) {
-      const cleanTarget = cleanCompanyName(drilldownSupplier).toLowerCase();
-      return filteredRecords.filter(r => cleanCompanyName(r.supplierName).toLowerCase() === cleanTarget);
+      return filteredRecords.filter(r => isSameCompany(r.supplierName, drilldownSupplier));
     }
     return filteredRecords;
   }, [filteredRecords, drilldownSupplier]);
 
-  // ── 상단 종합 KPI 집계 ──
   const kpis = useMemo(() => {
     let totPurchaseUsd = 0;
     let totPaidUsd = 0;
@@ -875,7 +915,7 @@ export const PayablesManagement: React.FC = () => {
 
   // 공급처 상세 모달 열기
   const handleOpenSupplierModal = (suppName: string) => {
-    const matched = suppliers.find(s => cleanCompanyName(s.name).toLowerCase() === cleanCompanyName(suppName).toLowerCase());
+    const matched = suppliers.find(s => isSameCompany(s.name, suppName) || (s.supplierCode && s.supplierCode.toLowerCase() === suppName.toLowerCase()));
     if (matched) {
       setSupplierForModal(matched);
     } else {

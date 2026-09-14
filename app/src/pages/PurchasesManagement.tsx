@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { Supplier } from '../types/supplier';
 import { SupplierModal } from '../components/SupplierModal';
-import { cleanCompanyName } from '../utils/companyUtils';
+import { cleanCompanyName, normalizeCompanyKey, isSameCompany, preferBetterCompanyName } from '../utils/companyUtils';
 
 // 단일 구매/매입 품목 상세 인터페이스
 export interface PurchaseItemRecord {
@@ -385,9 +385,7 @@ export const PurchasesManagement: React.FC = () => {
 
       // 3. 공급업체 필터
       if (selectedSupplierFilter !== 'ALL') {
-        const cleanTarget = cleanCompanyName(selectedSupplierFilter).toLowerCase();
-        const cleanSup = cleanCompanyName(item.supplierName).toLowerCase();
-        if (cleanSup !== cleanTarget) return false;
+        if (!isSameCompany(selectedSupplierFilter, item.supplierName)) return false;
       }
 
       // 4. 기간 필터
@@ -416,26 +414,46 @@ export const PurchasesManagement: React.FC = () => {
     });
   }, [allPurchaseItems, companyFilter, sourceFilter, selectedSupplierFilter, periodFilter, searchTerm]);
 
-  // ── 2. 모든 공급업체별 매입 집계 및 통화 유형 판별 ──
+  // ── 2. 모든 공급업체별 매입 집계 및 통화 유형 판별 (동일 회사 자동 단일 통합) ──
   const allSupplierAggregates = useMemo<SupplierPurchaseAggregate[]>(() => {
     const map = new Map<string, SupplierPurchaseAggregate>();
 
-    // 공급업체 마스터 맵
+    // 공급업체 마스터 맵 (id, supplierCode, normalizeCompanyKey, cleanName 인덱싱)
     const suppMasterMap = new Map<string, Supplier>();
     suppliers.forEach(s => {
-      if (s.name) suppMasterMap.set(cleanCompanyName(s.name).toLowerCase(), s);
+      if (s.id) suppMasterMap.set(s.id.toLowerCase(), s);
       if (s.supplierCode) suppMasterMap.set(s.supplierCode.toLowerCase(), s);
+      const normName = normalizeCompanyKey(s.name);
+      if (normName) suppMasterMap.set(normName, s);
+      const cleanName = cleanCompanyName(s.name).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      if (cleanName && cleanName !== normName) suppMasterMap.set(cleanName, s);
     });
 
     baseFilteredItems.forEach(item => {
-      const supKey = cleanCompanyName(item.supplierName).trim() || item.supplierName.trim();
-      const supKeyLower = supKey.toLowerCase();
-      const master = suppMasterMap.get(supKeyLower);
+      let master: Supplier | undefined;
+      const sCode = (item.supplierCode || '').trim().toLowerCase();
+      const normItemName = normalizeCompanyKey(item.supplierName);
+      const cleanItemName = cleanCompanyName(item.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
 
-      if (!map.has(supKey)) {
-        map.set(supKey, {
-          supplierCode: master?.supplierCode || '-',
-          supplierName: master?.name || item.supplierName,
+      if (sCode && sCode !== '-' && suppMasterMap.has(sCode)) {
+        master = suppMasterMap.get(sCode);
+      } else if (normItemName && suppMasterMap.has(normItemName)) {
+        master = suppMasterMap.get(normItemName);
+      } else if (cleanItemName && suppMasterMap.has(cleanItemName)) {
+        master = suppMasterMap.get(cleanItemName);
+      }
+
+      // 동일 회사는 마스터 ID, 코드 또는 정규화된 키(normItemName)로 단일 통합
+      const groupKey = master?.id 
+        || (master?.supplierCode && master.supplierCode !== '-' ? master.supplierCode.toLowerCase() : '')
+        || normItemName 
+        || cleanItemName 
+        || cleanCompanyName(item.supplierName);
+
+      if (!map.has(groupKey)) {
+        map.set(groupKey, {
+          supplierCode: master?.supplierCode || (item.supplierCode !== '-' ? item.supplierCode : '') || '-',
+          supplierName: master?.name || cleanCompanyName(item.supplierName),
           category: master?.category || item.category || '공급사',
           representative: master?.representative || '',
           bizNumber: master?.bizNumber || '',
@@ -456,7 +474,29 @@ export const PurchasesManagement: React.FC = () => {
         });
       }
 
-      const agg = map.get(supKey)!;
+      const agg = map.get(groupKey)!;
+
+      // 마스터 정보 또는 추가 정보 보강 (코드 '-' 대체, 더 공식적인 상호명 채택 등)
+      if (master?.supplierCode && (!agg.supplierCode || agg.supplierCode === '-')) {
+        agg.supplierCode = master.supplierCode;
+      } else if (item.supplierCode && item.supplierCode !== '-' && (!agg.supplierCode || agg.supplierCode === '-')) {
+        agg.supplierCode = item.supplierCode;
+      }
+
+      if (master?.name) {
+        agg.supplierName = master.name;
+      } else {
+        agg.supplierName = preferBetterCompanyName(agg.supplierName, item.supplierName);
+      }
+
+      if (master?.representative && !agg.representative) agg.representative = master.representative;
+      if (master?.bizNumber && !agg.bizNumber) agg.bizNumber = master.bizNumber;
+      if (master?.managerName && !agg.managerName) agg.managerName = master.managerName;
+      if (master?.managerPhone && !agg.managerPhone) agg.managerPhone = master.managerPhone;
+      if (master?.purchaseEmail && !agg.purchaseEmail) agg.purchaseEmail = master.purchaseEmail;
+      if (master?.bankKrw && !agg.bankKrw) agg.bankKrw = master.bankKrw;
+      if (master?.bankUsd && !agg.bankUsd) agg.bankUsd = master.bankUsd;
+
       agg.totalItemsCount += 1;
       agg.items.push(item);
 
@@ -496,11 +536,15 @@ export const PurchasesManagement: React.FC = () => {
     return result;
   }, [baseFilteredItems, suppliers, exchangeRate]);
 
-  // 공급업체별 통화 분류 맵
+  // 공급업체별 통화 분류 맵 (정규화 키 및 코드 매핑)
   const supplierCurrencyTypeMap = useMemo(() => {
     const map = new Map<string, 'USD' | 'KRW' | 'BOTH' | 'NONE'>();
     allSupplierAggregates.forEach(s => {
-      map.set(cleanCompanyName(s.supplierName).toLowerCase(), s.currencyType);
+      const norm = normalizeCompanyKey(s.supplierName);
+      if (norm) map.set(norm, s.currencyType);
+      const clean = cleanCompanyName(s.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      if (clean) map.set(clean, s.currencyType);
+      if (s.supplierCode && s.supplierCode !== '-') map.set(s.supplierCode.toLowerCase(), s.currencyType);
     });
     return map;
   }, [allSupplierAggregates]);
@@ -524,7 +568,12 @@ export const PurchasesManagement: React.FC = () => {
       if (currencyFilter === 'ALL') return true;
       if (currencyFilter === 'USD') return item.currency === 'USD';
       if (currencyFilter === 'KRW') return item.currency === 'KRW';
-      const supType = supplierCurrencyTypeMap.get(cleanCompanyName(item.supplierName).toLowerCase());
+      const norm = normalizeCompanyKey(item.supplierName);
+      const clean = cleanCompanyName(item.supplierName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      const sCode = (item.supplierCode || '').toLowerCase();
+      const supType = (sCode && supplierCurrencyTypeMap.get(sCode)) ||
+                      (norm && supplierCurrencyTypeMap.get(norm)) ||
+                      (clean && supplierCurrencyTypeMap.get(clean));
       if (currencyFilter === 'USD_ONLY') return supType === 'USD';
       if (currencyFilter === 'KRW_ONLY') return supType === 'KRW';
       if (currencyFilter === 'BOTH') return supType === 'BOTH';
@@ -532,11 +581,10 @@ export const PurchasesManagement: React.FC = () => {
     });
   }, [baseFilteredItems, currencyFilter, supplierCurrencyTypeMap]);
 
-  // ── 5. 건별 상세 내역 탭 표시용 품목 (특정 공급업체 드릴다운 필터 지원) ──
+  // ── 5. 건별 상세 내역 탭 표시용 품목 (특정 공급업체 드릴다운 필터 지원 - 동일 회사 일치 판별) ──
   const displayItems = useMemo<PurchaseItemRecord[]>(() => {
     if (drilldownSupplier) {
-      const cleanTarget = cleanCompanyName(drilldownSupplier).toLowerCase();
-      return filteredItems.filter(item => cleanCompanyName(item.supplierName).toLowerCase() === cleanTarget);
+      return filteredItems.filter(item => isSameCompany(item.supplierName, drilldownSupplier));
     }
     return filteredItems;
   }, [filteredItems, drilldownSupplier]);
@@ -616,7 +664,7 @@ export const PurchasesManagement: React.FC = () => {
     const totPurchaseCombinedKrw = totPurchaseKrw + Math.round(totPurchaseUsd * exchangeRate);
     const totPurchaseCombinedUsd = totPurchaseUsd + (exchangeRate > 0 ? parseFloat((totPurchaseKrw / exchangeRate).toFixed(2)) : 0);
 
-    const distinctSuppliers = new Set(filteredItems.map(i => cleanCompanyName(i.supplierName).toLowerCase()));
+    const distinctSuppliers = new Set(filteredItems.map(i => normalizeCompanyKey(i.supplierName) || cleanCompanyName(i.supplierName).toLowerCase()));
     const distinctOrders = new Set(filteredItems.map(i => i.docNumber));
 
     return {
@@ -630,11 +678,11 @@ export const PurchasesManagement: React.FC = () => {
     };
   }, [filteredItems, exchangeRate]);
 
-  // 공급업체 드롭다운용 목록
+  // 공급업체 드롭다운용 목록 (동일 회사 단일 통합된 공급업체명 목록)
   const uniqueSupplierOptions = useMemo(() => {
-    const list = Array.from(new Set(allPurchaseItems.map(i => cleanCompanyName(i.supplierName)).filter(Boolean))).sort();
+    const list = Array.from(new Set(allSupplierAggregates.map(s => s.supplierName).filter(Boolean))).sort();
     return list;
-  }, [allPurchaseItems]);
+  }, [allSupplierAggregates]);
 
   // ── 엑셀 내보내기 ──
   const handleExportExcel = () => {
@@ -703,7 +751,7 @@ export const PurchasesManagement: React.FC = () => {
 
   // 공급처 상세 모달 열기
   const handleOpenSupplierModal = (suppName: string) => {
-    const matched = suppliers.find(s => cleanCompanyName(s.name).toLowerCase() === cleanCompanyName(suppName).toLowerCase());
+    const matched = suppliers.find(s => isSameCompany(s.name, suppName) || (s.supplierCode && s.supplierCode.toLowerCase() === suppName.toLowerCase()));
     if (matched) {
       setSupplierForModal(matched);
     } else {

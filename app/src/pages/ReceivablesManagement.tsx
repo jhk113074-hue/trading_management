@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { Customer } from '../types/customer';
 import { CustomerModal } from '../components/CustomerModal';
-import { cleanCompanyName } from '../utils/companyUtils';
+import { cleanCompanyName, normalizeCompanyKey, isSameCompany, preferBetterCompanyName } from '../utils/companyUtils';
 
 // 단일 거래 건(청구/채권 레코드) 인터페이스
 export interface ReceivableRecord {
@@ -472,19 +472,23 @@ export const ReceivablesManagement: React.FC = () => {
     });
   }, [allRecords, companyFilter, sourceFilter, periodFilter, statusFilter, searchTerm]);
 
-  // ── 2. 모든 거래처별 채권 집계 및 통화 유형 판별 ──
+  // ── 2. 모든 거래처별 채권 집계 및 통화 유형 판별 (동일 회사 자동 단일 통합) ──
   const allCustomerSummaries = useMemo<CustomerReceivableSummary[]>(() => {
     const map = new Map<string, CustomerReceivableSummary>();
 
-    // 고객사 마스터 기반 사전 매핑
+    // 고객사 마스터 기반 사전 매핑 (id, customerCode, normalizeCompanyKey, cleanName 인덱싱)
     const customerMasterMap = new Map<string, Customer>();
     customers.forEach(c => {
       if (c.id) customerMasterMap.set(c.id.toLowerCase(), c);
       if (c.customerCode) customerMasterMap.set(c.customerCode.toLowerCase(), c);
+      const normName = normalizeCompanyKey(c.name);
+      if (normName) customerMasterMap.set(normName, c);
+      const normKo = normalizeCompanyKey(c.nameKo);
+      if (normKo) customerMasterMap.set(normKo, c);
       const cleanName = cleanCompanyName(c.name || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-      if (cleanName) customerMasterMap.set(cleanName, c);
+      if (cleanName && cleanName !== normName) customerMasterMap.set(cleanName, c);
       const cleanKo = cleanCompanyName(c.nameKo || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-      if (cleanKo) customerMasterMap.set(cleanKo, c);
+      if (cleanKo && cleanKo !== normKo) customerMasterMap.set(cleanKo, c);
     });
 
     // baseRecords를 돌며 집계
@@ -492,19 +496,26 @@ export const ReceivablesManagement: React.FC = () => {
       let matchedCust: Customer | undefined;
       const cId = (rec.customerId || '').toLowerCase();
       const cCode = (rec.customerCode || '').toLowerCase();
+      const normCustName = normalizeCompanyKey(rec.customerName);
       const cleanName = cleanCompanyName(rec.customerName || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
 
-      if (cCode && customerMasterMap.has(cCode)) matchedCust = customerMasterMap.get(cCode);
+      if (cCode && cCode !== '-' && customerMasterMap.has(cCode)) matchedCust = customerMasterMap.get(cCode);
       else if (cId && customerMasterMap.has(cId)) matchedCust = customerMasterMap.get(cId);
+      else if (normCustName && customerMasterMap.has(normCustName)) matchedCust = customerMasterMap.get(normCustName);
       else if (cleanName && customerMasterMap.has(cleanName)) matchedCust = customerMasterMap.get(cleanName);
 
-      const groupKey = matchedCust?.id || rec.customerId || rec.customerCode || rec.customerName;
+      // 동일 회사는 마스터 ID, 코드 또는 정규화 키로 단일 통합
+      const groupKey = matchedCust?.id 
+        || (matchedCust?.customerCode && matchedCust.customerCode !== '-' ? matchedCust.customerCode.toLowerCase() : '')
+        || normCustName 
+        || cleanName 
+        || rec.customerName;
 
       if (!map.has(groupKey)) {
         map.set(groupKey, {
           customerId: matchedCust?.id || rec.customerId || groupKey,
-          customerCode: matchedCust?.customerCode || rec.customerCode || '-',
-          customerName: matchedCust?.name || rec.customerName,
+          customerCode: matchedCust?.customerCode || (rec.customerCode !== '-' ? rec.customerCode : '') || '-',
+          customerName: matchedCust?.name || cleanCompanyName(rec.customerName),
           customerNameKo: matchedCust?.nameKo,
           countryName: matchedCust?.countryName || '-',
           paymentTerms: matchedCust?.paymentTerms || rec.paymentTerms || '-',
@@ -531,6 +542,22 @@ export const ReceivablesManagement: React.FC = () => {
       }
 
       const summary = map.get(groupKey)!;
+
+      // 마스터 정보 또는 더 우수한 정보로 보강
+      if (matchedCust?.customerCode && (!summary.customerCode || summary.customerCode === '-')) {
+        summary.customerCode = matchedCust.customerCode;
+      } else if (rec.customerCode && rec.customerCode !== '-' && (!summary.customerCode || summary.customerCode === '-')) {
+        summary.customerCode = rec.customerCode;
+      }
+
+      if (matchedCust?.name) {
+        summary.customerName = matchedCust.name;
+      } else {
+        summary.customerName = preferBetterCompanyName(summary.customerName, rec.customerName);
+      }
+      if (matchedCust?.nameKo && !summary.customerNameKo) summary.customerNameKo = matchedCust.nameKo;
+      if (matchedCust?.countryName && (!summary.countryName || summary.countryName === '-')) summary.countryName = matchedCust.countryName;
+      if (matchedCust?.paymentTerms && (!summary.paymentTerms || summary.paymentTerms === '-')) summary.paymentTerms = matchedCust.paymentTerms;
       summary.totalOrdersCount += 1;
       summary.records.push(rec);
 
@@ -599,12 +626,14 @@ export const ReceivablesManagement: React.FC = () => {
     return result;
   }, [baseRecords, customers, periodFilter, exchangeRate]);
 
-  // 거래처별 통화 분류 맵
+  // 거래처별 통화 분류 맵 (정규화 키 및 코드 매핑)
   const customerCurrencyTypeMap = useMemo(() => {
     const map = new Map<string, 'USD' | 'KRW' | 'BOTH' | 'NONE'>();
     allCustomerSummaries.forEach(c => {
       if (c.customerId) map.set(c.customerId.toLowerCase(), c.currencyType);
       if (c.customerCode && c.customerCode !== '-') map.set(c.customerCode.toLowerCase(), c.currencyType);
+      const normName = normalizeCompanyKey(c.customerName);
+      if (normName) map.set(normName, c.currencyType);
       const cleanName = cleanCompanyName(c.customerName || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
       if (cleanName) map.set(cleanName, c.currencyType);
     });
@@ -630,9 +659,11 @@ export const ReceivablesManagement: React.FC = () => {
       if (currencyFilter === 'ALL') return true;
       if (currencyFilter === 'USD') return r.currency === 'USD';
       if (currencyFilter === 'KRW') return r.currency === 'KRW';
+      const normName = normalizeCompanyKey(r.customerName);
       const cleanName = cleanCompanyName(r.customerName || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
       const cType = (r.customerId && customerCurrencyTypeMap.get(r.customerId.toLowerCase())) ||
                     (r.customerCode && customerCurrencyTypeMap.get(r.customerCode.toLowerCase())) ||
+                    (normName && customerCurrencyTypeMap.get(normName)) ||
                     (cleanName && customerCurrencyTypeMap.get(cleanName));
       if (currencyFilter === 'USD_ONLY') return cType === 'USD';
       if (currencyFilter === 'KRW_ONLY') return cType === 'KRW';
@@ -641,12 +672,11 @@ export const ReceivablesManagement: React.FC = () => {
     });
   }, [baseRecords, currencyFilter, customerCurrencyTypeMap]);
 
-  // ── 5. 건별 상세 탭 표시용 레코드 (특정 거래처 드릴다운 지원) ──
+  // ── 5. 건별 상세 탭 표시용 레코드 (특정 거래처 드릴다운 지원 - 동일 회사 일치 판별) ──
   const displayRecords = useMemo<ReceivableRecord[]>(() => {
     if (drilldownCustomer) {
-      const cleanTarget = cleanCompanyName(drilldownCustomer).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
       return filteredRecords.filter(r => {
-        if (r.customerName && cleanCompanyName(r.customerName).toLowerCase().replace(/[^a-z0-9가-힣]/g, '') === cleanTarget) return true;
+        if (isSameCompany(r.customerName, drilldownCustomer)) return true;
         if (r.customerId && r.customerId.toLowerCase() === drilldownCustomer.toLowerCase()) return true;
         return false;
       });
