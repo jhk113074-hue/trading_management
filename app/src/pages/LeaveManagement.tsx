@@ -23,6 +23,14 @@ interface LeaveRequest {
   updatedBy?: string;
 }
 
+const getTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const LeaveManagement: React.FC = () => {
   const { userProfile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
@@ -31,8 +39,8 @@ export const LeaveManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Form State
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(getTodayStr());
+  const [endDate, setEndDate] = useState(getTodayStr());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [leaveType, setLeaveType] = useState<'FULL' | 'AM_HALF' | 'PM_HALF' | 'HOURLY'>('FULL');
@@ -167,6 +175,12 @@ export const LeaveManagement: React.FC = () => {
       return;
     }
 
+    const todayStr = getTodayStr();
+    if (startDate < todayStr) {
+      alert("이미 지난 날짜로는 휴가를 신청할 수 없습니다.");
+      return;
+    }
+
     const myAccrual = calculateLeave(userProfile.joinDate || userProfile.createdAt?.split('T')[0], userProfile.id);
     if (totalDays > myAccrual.remaining) {
       if (!window.confirm(`잔여 연차(${myAccrual.remaining}일)보다 신청 연차(${totalDays}일)가 많습니다. 계속 신청하시겠습니까?`)) {
@@ -290,8 +304,19 @@ export const LeaveManagement: React.FC = () => {
     }
   };
 
-  // Open Edit / Date Change Modal
+  // Open Edit / Date Change Modal (Only own requests and upcoming dates)
   const handleOpenEditModal = (r: LeaveRequest) => {
+    const today = getTodayStr();
+    const isOwn = (r.userId && userProfile?.id && r.userId === userProfile.id) || (r.userName && userProfile?.name && r.userName === userProfile.name);
+    if (!isOwn) {
+      alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
+      return;
+    }
+    if (r.startDate < today) {
+      alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다. (날짜 도래 전에만 변경 가능)");
+      return;
+    }
+
     setEditingRequest(r);
     setEditStartDate(r.startDate || '');
     setEditEndDate(r.endDate || r.startDate || '');
@@ -327,6 +352,21 @@ export const LeaveManagement: React.FC = () => {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRequest || !userProfile) return;
+
+    const today = getTodayStr();
+    const isOwn = (editingRequest.userId && userProfile?.id && editingRequest.userId === userProfile.id) || (editingRequest.userName && userProfile?.name && editingRequest.userName === userProfile.name);
+    if (!isOwn) {
+      alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
+      return;
+    }
+    if (editingRequest.startDate < today) {
+      alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다.");
+      return;
+    }
+    if (editStartDate < today) {
+      alert("새로운 휴가 시작일은 오늘 이후(도래 전) 날짜로만 변경할 수 있습니다.");
+      return;
+    }
 
     const newTotalDays = calculateEditRequestedDays();
     if (newTotalDays <= 0) {
@@ -383,6 +423,13 @@ export const LeaveManagement: React.FC = () => {
   // Cancel / Delete leave request (frees up annual leave days if already approved)
   const handleDeleteRequest = async (r: LeaveRequest) => {
     if (!userProfile) return;
+
+    const today = getTodayStr();
+    if (r.startDate < today) {
+      alert("이미 날짜가 지난 휴가는 취소/삭제할 수 없습니다. (날짜 도래 전에만 취소 가능)");
+      return;
+    }
+
     const isApproved = r.status === 'APPROVED';
     const confirmMsg = isApproved
       ? `[${r.userName}] 님의 승인완료된 휴가(${r.startDate} ~ ${r.endDate}, ${r.totalDays}일)를 취소/삭제하시겠습니까?\n\n삭제 시 해당 직원의 사용 연차에서 차감 취소(환원)됩니다.`
@@ -483,6 +530,7 @@ export const LeaveManagement: React.FC = () => {
                     <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{leaveType === 'FULL' ? '시작일' : '휴가 희망일'}</label>
                     <input
                       type="date"
+                      min={getTodayStr()}
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
                       style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
@@ -493,6 +541,7 @@ export const LeaveManagement: React.FC = () => {
                       <label style={{ fontSize: '13px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
                       <input
                         type="date"
+                        min={startDate || getTodayStr()}
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
                         style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', height: '36px', outline: 'none', color: '#1e293b', boxSizing: 'border-box' }}
@@ -711,7 +760,12 @@ export const LeaveManagement: React.FC = () => {
                       </td>
                     </tr>
                   ) : (userProfile?.role === '관리자' ? requests : myRequests).map(r => {
-                    const canManage = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' || r.userId === userProfile?.id;
+                    const today = getTodayStr();
+                    const isOwn = (r.userId && userProfile?.id && r.userId === userProfile.id) || (r.userName && userProfile?.name && r.userName === userProfile.name);
+                    const isPast = r.startDate < today;
+                    const canEditDate = isOwn && !isPast;
+                    const canCancel = (userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' || isOwn) && !isPast;
+
                     return (
                       <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         {userProfile?.role === '관리자' && <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{r.userName}</td>}
@@ -748,51 +802,69 @@ export const LeaveManagement: React.FC = () => {
                           </span>
                         </td>
                         <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                          {canManage && (
+                          {canEditDate || canCancel ? (
                             <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center' }}>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditModal(r)}
-                                style={{
-                                  height: '28px',
-                                  padding: '0 8px',
-                                  background: '#eff6ff',
-                                  color: '#2563eb',
-                                  border: '1px solid #bfdbfe',
-                                  borderRadius: '4px',
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px'
-                                }}
-                                title="완료/대기 연차 날짜 및 일정 변경"
-                              >
-                                📅 날짜변경
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRequest(r)}
-                                style={{
-                                  height: '28px',
-                                  padding: '0 6px',
-                                  background: '#fef2f2',
-                                  color: '#dc2626',
-                                  border: '1px solid #fecaca',
-                                  borderRadius: '4px',
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '2px'
-                                }}
-                                title="휴가 내역 취소/삭제 (승인된 연차 차감 환원)"
-                              >
-                                🗑️ 취소
-                              </button>
+                              {canEditDate && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditModal(r)}
+                                  style={{
+                                    height: '28px',
+                                    padding: '0 8px',
+                                    background: '#eff6ff',
+                                    color: '#2563eb',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title="휴가 일정 및 사유 변경 (본인 신청 건만 가능)"
+                                >
+                                  📅 날짜변경
+                                </button>
+                              )}
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRequest(r)}
+                                  style={{
+                                    height: '28px',
+                                    padding: '0 6px',
+                                    background: '#fef2f2',
+                                    color: '#dc2626',
+                                    border: '1px solid #fecaca',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }}
+                                  title="휴가 내역 취소/삭제 (승인된 연차 차감 환원)"
+                                >
+                                  🗑️ 취소
+                                </button>
+                              )}
                             </div>
+                          ) : isPast ? (
+                            <span style={{
+                              fontSize: '11.5px',
+                              color: '#94a3b8',
+                              fontWeight: 600,
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              padding: '2px 8px',
+                              borderRadius: '4px'
+                            }}>
+                              기간 경과
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '13px', color: '#94a3b8' }}>-</span>
                           )}
                         </td>
                       </tr>
@@ -942,6 +1014,7 @@ export const LeaveManagement: React.FC = () => {
                   <input
                     type="date"
                     required
+                    min={getTodayStr()}
                     value={editStartDate}
                     onChange={e => setEditStartDate(e.target.value)}
                     style={{
@@ -965,6 +1038,7 @@ export const LeaveManagement: React.FC = () => {
                     <input
                       type="date"
                       required
+                      min={editStartDate || getTodayStr()}
                       value={editEndDate}
                       onChange={e => setEditEndDate(e.target.value)}
                       style={{
