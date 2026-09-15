@@ -304,17 +304,21 @@ export const LeaveManagement: React.FC = () => {
     }
   };
 
-  // Open Edit / Date Change Modal (Only own requests and upcoming dates)
+  // Open Edit / Date Change Modal (Admin can edit all; normal users can only edit own upcoming requests)
   const handleOpenEditModal = (r: LeaveRequest) => {
     const today = getTodayStr();
+    const isAdmin = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN';
     const isOwn = (r.userId && userProfile?.id && r.userId === userProfile.id) || (r.userName && userProfile?.name && r.userName === userProfile.name);
-    if (!isOwn) {
-      alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
-      return;
-    }
-    if (r.startDate < today) {
-      alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다. (날짜 도래 전에만 변경 가능)");
-      return;
+
+    if (!isAdmin) {
+      if (!isOwn) {
+        alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
+        return;
+      }
+      if (r.startDate < today) {
+        alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다. (날짜 도래 전에만 변경 가능)");
+        return;
+      }
     }
 
     setEditingRequest(r);
@@ -354,18 +358,22 @@ export const LeaveManagement: React.FC = () => {
     if (!editingRequest || !userProfile) return;
 
     const today = getTodayStr();
+    const isAdmin = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN';
     const isOwn = (editingRequest.userId && userProfile?.id && editingRequest.userId === userProfile.id) || (editingRequest.userName && userProfile?.name && editingRequest.userName === userProfile.name);
-    if (!isOwn) {
-      alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
-      return;
-    }
-    if (editingRequest.startDate < today) {
-      alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다.");
-      return;
-    }
-    if (editStartDate < today) {
-      alert("새로운 휴가 시작일은 오늘 이후(도래 전) 날짜로만 변경할 수 있습니다.");
-      return;
+
+    if (!isAdmin) {
+      if (!isOwn) {
+        alert("휴가 날짜 변경은 본인의 신청 내역만 가능합니다.");
+        return;
+      }
+      if (editingRequest.startDate < today) {
+        alert("이미 날짜가 지난 휴가는 일정을 변경할 수 없습니다.");
+        return;
+      }
+      if (editStartDate < today) {
+        alert("새로운 휴가 시작일은 오늘 이후(도래 전) 날짜로만 변경할 수 있습니다.");
+        return;
+      }
     }
 
     const newTotalDays = calculateEditRequestedDays();
@@ -425,9 +433,18 @@ export const LeaveManagement: React.FC = () => {
     if (!userProfile) return;
 
     const today = getTodayStr();
-    if (r.startDate < today) {
-      alert("이미 날짜가 지난 휴가는 취소/삭제할 수 없습니다. (날짜 도래 전에만 취소 가능)");
-      return;
+    const isAdmin = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN';
+    const isOwn = (r.userId && userProfile?.id && r.userId === userProfile.id) || (r.userName && userProfile?.name && r.userName === userProfile.name);
+
+    if (!isAdmin) {
+      if (!isOwn) {
+        alert("휴가 취소 권한이 없습니다.");
+        return;
+      }
+      if (r.startDate < today) {
+        alert("이미 날짜가 지난 휴가는 취소/삭제할 수 없습니다. (날짜 도래 전에만 취소 가능)");
+        return;
+      }
     }
 
     const isApproved = r.status === 'APPROVED';
@@ -761,10 +778,11 @@ export const LeaveManagement: React.FC = () => {
                     </tr>
                   ) : (userProfile?.role === '관리자' ? requests : myRequests).map(r => {
                     const today = getTodayStr();
+                    const isAdmin = userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN';
                     const isOwn = (r.userId && userProfile?.id && r.userId === userProfile.id) || (r.userName && userProfile?.name && r.userName === userProfile.name);
                     const isPast = r.startDate < today;
-                    const canEditDate = isOwn && !isPast;
-                    const canCancel = (userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' || isOwn) && !isPast;
+                    const canEditDate = isAdmin || (isOwn && !isPast);
+                    const canCancel = isAdmin || (isOwn && !isPast);
 
                     return (
                       <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -1014,7 +1032,7 @@ export const LeaveManagement: React.FC = () => {
                   <input
                     type="date"
                     required
-                    min={getTodayStr()}
+                    min={userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' ? undefined : getTodayStr()}
                     value={editStartDate}
                     onChange={e => setEditStartDate(e.target.value)}
                     style={{
@@ -1038,7 +1056,7 @@ export const LeaveManagement: React.FC = () => {
                     <input
                       type="date"
                       required
-                      min={editStartDate || getTodayStr()}
+                      min={editStartDate || (userProfile?.role === '관리자' || userProfile?.roleCode === 'ADMIN' ? undefined : getTodayStr())}
                       value={editEndDate}
                       onChange={e => setEditEndDate(e.target.value)}
                       style={{
