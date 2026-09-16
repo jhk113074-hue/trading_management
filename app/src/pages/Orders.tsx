@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Order } from '../types/order';
 import type { ProformaInvoice } from '../types/pi';
+import type { Customer } from '../types/customer';
 import { NewOrderModal } from '../components/NewOrderModal';
 
 import { useColumnResize } from '../hooks/useColumnResize';
@@ -18,6 +19,59 @@ interface NextAction {
 
 import { getOverallProgress as utilGetOverallProgress, getStageProgress as utilGetStageProgress, getEffectiveStageCompletion, STAGE_KEYS, type StageKey } from '../utils/orderProgress';
 import { cleanCompanyName } from '../utils/companyUtils';
+
+export const normalizeCountry = (raw?: string): string => {
+  if (!raw) return '';
+  let str = String(raw).trim();
+  str = str.replace(/^[,\s\-\/]+|[,\s\-\/]+$/g, '').trim();
+  const upper = str.toUpperCase();
+  if (upper.includes('TURKEY') || upper.includes('TÜRKİYE') || upper.includes('TURKIYE') || upper.includes('터키') || upper === 'TK' || upper === 'TR') return 'TURKEY';
+  if (upper.includes('SAUDI') || upper.includes('KSA') || upper.includes('사우디') || upper === 'SA') return 'SAUDI ARABIA';
+  if (upper.includes('INDIA') || upper.includes('인도') || upper === 'IN') return 'INDIA';
+  if (upper.includes('OMAN') || upper.includes('오만') || upper === 'OM') return 'OMAN';
+  if (upper.includes('EMIRATES') || upper.includes('UAE') || upper.includes('DUBAI') || upper.includes('SHARJAH') || upper.includes('ABU DHABI') || upper.includes('JEBEL ALI') || upper === 'AE') return 'UAE';
+  if (upper.includes('VIETNAM') || upper.includes('VIET NAM') || upper.includes('베트남') || upper === 'VN') return 'VIETNAM';
+  if (upper.includes('CHINA') || upper.includes('중국') || upper === 'CN') return 'CHINA';
+  if (upper.includes('MALAYSIA') || upper.includes('말레이시아') || upper === 'MY') return 'MALAYSIA';
+  if (upper.includes('SINGAPORE') || upper.includes('싱가포르') || upper === 'SG') return 'SINGAPORE';
+  if (upper.includes('TANZANIA') || upper.includes('탄자니아') || upper === 'TZ') return 'TANZANIA';
+  if (upper.includes('QATAR') || upper.includes('카타르') || upper === 'QA') return 'QATAR';
+  if (upper.includes('KUWAIT') || upper.includes('쿠웨이트') || upper === 'KW') return 'KUWAIT';
+  if (upper.includes('AUSTRALIA') || upper.includes('호주') || upper === 'AU') return 'AUSTRALIA';
+  if (upper.includes('KENYA') || upper.includes('케냐') || upper === 'KE') return 'KENYA';
+  if (upper.includes('JORDAN') || upper.includes('요르단') || upper === 'JO') return 'JORDAN';
+  if (upper.includes('EGYPT') || upper.includes('이집트') || upper === 'EG') return 'EGYPT';
+  if (upper.includes('INDONESIA') || upper.includes('인도네시아') || upper === 'ID') return 'INDONESIA';
+  if (upper.includes('THAILAND') || upper.includes('태국') || upper === 'TH') return 'THAILAND';
+  if (upper.includes('KOREA') || upper.includes('한국') || upper === 'KR') return 'SOUTH KOREA';
+  return upper;
+};
+
+export const getCountryFlag = (country?: string): string => {
+  if (!country) return '';
+  switch (country.toUpperCase()) {
+    case 'TURKEY': case 'TÜRKİYE': return '🇹🇷';
+    case 'SAUDI ARABIA': return '🇸🇦';
+    case 'INDIA': return '🇮🇳';
+    case 'OMAN': return '🇴🇲';
+    case 'UAE': return '🇦🇪';
+    case 'VIETNAM': return '🇻🇳';
+    case 'CHINA': return '🇨🇳';
+    case 'MALAYSIA': return '🇲🇾';
+    case 'SINGAPORE': return '🇸🇬';
+    case 'TANZANIA': return '🇹🇿';
+    case 'QATAR': return '🇶🇦';
+    case 'KUWAIT': return '🇰🇼';
+    case 'AUSTRALIA': return '🇦🇺';
+    case 'KENYA': return '🇰🇪';
+    case 'JORDAN': return '🇯🇴';
+    case 'EGYPT': return '🇪🇬';
+    case 'INDONESIA': return '🇮🇩';
+    case 'THAILAND': return '🇹🇭';
+    case 'SOUTH KOREA': return '🇰🇷';
+    default: return '🌍';
+  }
+};
 
 const getOverallProgress = (order: Order) => utilGetOverallProgress(order);
 const getStageProgress = (order: Order, stageKey: StageKey) => utilGetStageProgress(order, undefined, stageKey);
@@ -122,15 +176,16 @@ export const Orders: React.FC = () => {
   const currentUser = userProfile?.name || '담당자';
   const [orders, setOrders] = useState<Order[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
+  const [customersDb, setCustomersDb] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const processedPiRef = useRef<string | null>(null);
 
-  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 품목, 발주액, 매출액, 운송사, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 145, 85, 190, 180, 105, 125, 85, 75, 75, 270, 85, 45]);
+  // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 국가, 품목, 발주액, 매출액, 운송사, ETD, ETA, 단계, 다음단계, 복사]
+  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 140, 80, 175, 95, 165, 105, 120, 85, 75, 75, 260, 85, 45]);
 
   // 오름차순/내림차순 정렬 상태
-  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
+  const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '국가' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   // 뷰 모드: 'list' | 'kanban' | 'todo'
@@ -152,6 +207,7 @@ export const Orders: React.FC = () => {
   const [issuingCompanyFilter, setIssuingCompanyFilter] = useState(() => getSavedFilter('issuingCompany', 'All'));
   const [managerFilter, setManagerFilter] = useState(() => getSavedFilter('manager', 'All'));
   const [customerFilter, setCustomerFilter] = useState(() => getSavedFilter('customer', 'All'));
+  const [countryFilter, setCountryFilter] = useState(() => getSavedFilter('country', 'All'));
   const [stepFilter, setStepFilter] = useState(() => getSavedFilter('step', 'All'));
   const [viewFilter, setViewFilter] = useState(() => getSavedFilter('view', 'All'));
   const [completedFilter, setCompletedFilter] = useState(() => getSavedFilter('completed', 'Hide')); // 'All' | 'Hide'
@@ -187,6 +243,7 @@ export const Orders: React.FC = () => {
       localStorage.setItem(`${prefix}issuingCompany`, issuingCompanyFilter);
       localStorage.setItem(`${prefix}manager`, managerFilter);
       localStorage.setItem(`${prefix}customer`, customerFilter);
+      localStorage.setItem(`${prefix}country`, countryFilter);
       localStorage.setItem(`${prefix}step`, stepFilter);
       localStorage.setItem(`${prefix}view`, viewFilter);
       localStorage.setItem(`${prefix}completed`, completedFilter);
@@ -202,7 +259,7 @@ export const Orders: React.FC = () => {
     } catch (e) {
       console.error('Failed to save orders filter state', e);
     }
-  }, [userKeyPrefix, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
+  }, [userKeyPrefix, issuingCompanyFilter, managerFilter, customerFilter, countryFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
 
   useEffect(() => {
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
@@ -220,6 +277,15 @@ export const Orders: React.FC = () => {
     const unsubscribe = onSnapshot(pisRef, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ProformaInvoice));
       setQuotations(list);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const custRef = collection(doc(db, 'companies', COMPANY_ID), 'customers');
+    const unsubscribe = onSnapshot(custRef, (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Customer));
+      setCustomersDb(list);
     });
     return () => unsubscribe();
   }, []);
@@ -479,6 +545,49 @@ export const Orders: React.FC = () => {
     return { text: todoText, level, step: currentStep };
   };
 
+  const getOrderCountry = useCallback((order: Order): string => {
+    if ((order as any).destinationCountry) return normalizeCountry((order as any).destinationCountry);
+    const pi = quotations.find(q => q.id === order.quotationId);
+    if ((pi as any)?.destinationCountry) return normalizeCountry((pi as any).destinationCountry);
+    
+    // 바이어 정보와 매칭하여 국가 확인
+    const cleanOrderCustomer = cleanCompanyName(order.customer).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchedCustomer = customersDb.find(c => {
+      const cName = cleanCompanyName(c.name || c.nameKo || (c as any).companyName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cCode = (c.customerCode || (c as any).buyerCode || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (cName && (cName.includes(cleanOrderCustomer) || cleanOrderCustomer.includes(cName))) ||
+             (cCode && cleanOrderCustomer.includes(cCode));
+    });
+    if (matchedCustomer?.countryName || (matchedCustomer as any)?.country) {
+      return normalizeCountry(matchedCustomer?.countryName || (matchedCustomer as any)?.country);
+    }
+    if (matchedCustomer?.countryCode) {
+      return normalizeCountry(matchedCustomer.countryCode);
+    }
+
+    // 도착항 / 주소 기반 fallback
+    const port = (order as any).destinationPort || (order as any).portOfDischarge || (pi as any)?.destinationPort || '';
+    if (port) {
+      const norm = normalizeCountry(port);
+      if (norm && norm !== port.toUpperCase()) return norm;
+    }
+    const addr = (order as any).customerAddress || matchedCustomer?.addressEn || (matchedCustomer as any)?.address || '';
+    if (addr) {
+      const norm = normalizeCountry(addr);
+      if (norm && norm !== addr.toUpperCase()) return norm;
+    }
+    return '';
+  }, [customersDb, quotations]);
+
+  const allCountries = useMemo(() => {
+    const list = new Set<string>();
+    orders.forEach(o => {
+      const c = getOrderCountry(o);
+      if (c) list.add(c);
+    });
+    return Array.from(list).sort();
+  }, [orders, getOrderCountry]);
+
   const customers = useMemo(() => {
     const list = new Set<string>();
     orders.forEach(o => { if (o.customer) list.add(o.customer); });
@@ -495,6 +604,7 @@ export const Orders: React.FC = () => {
     let result = orders.map(o => ({ ...o, nextAction: getNextAction(o) }));
     if (issuingCompanyFilter !== 'All') result = result.filter(o => o.issuingCompany === issuingCompanyFilter);
     if (managerFilter !== 'All') result = result.filter(o => o.manager === managerFilter);
+    if (countryFilter !== 'All') result = result.filter(o => getOrderCountry(o) === countryFilter);
     if (customerFilter !== 'All') {
       const cleanFilter = customerFilter.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
       result = result.filter(o => {
@@ -592,6 +702,9 @@ export const Orders: React.FC = () => {
         } else if (sortKey === '발주사') {
           valA = cleanCompanyName(a.customer) || '';
           valB = cleanCompanyName(b.customer) || '';
+        } else if (sortKey === '국가') {
+          valA = getOrderCountry(a) || '';
+          valB = getOrderCountry(b) || '';
         } else if (sortKey === '품목') {
           valA = (a.items && a.items.length > 0) ? (a.items.map(i => i.name).filter(Boolean).join(', ')) : '';
           valB = (b.items && b.items.length > 0) ? (b.items.map(i => i.name).filter(Boolean).join(', ')) : '';
@@ -651,7 +764,7 @@ export const Orders: React.FC = () => {
       });
     }
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
+  }, [orders, quotations, customersDb, getOrderCountry, issuingCompanyFilter, managerFilter, countryFilter, customerFilter, stepFilter, viewFilter, completedFilter, etdStatusFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
 
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
@@ -741,9 +854,10 @@ export const Orders: React.FC = () => {
           {/* 구분선 */}
           <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
 
-          {/* 기본 노출 필터: 발주사, 보기, 완료건, ETD */}
+          {/* 기본 노출 필터: 발주사, 국가, 보기, 완료건, ETD */}
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, cleanCompanyName(c)])] },
+            { label: '국가', value: countryFilter, set: setCountryFilter, opts: [['All', '전체 국가'], ...allCountries.map(c => [c, `${getCountryFlag(c)} ${c}`])], highlight: countryFilter !== 'All' },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
             { label: '완료건', value: completedFilter, set: setCompletedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
             { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
@@ -933,9 +1047,16 @@ export const Orders: React.FC = () => {
                 📋 복사
               </button>
             </div>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={order.customer}>
-              {cleanCompanyName(order.customer)}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={order.customer}>
+                {cleanCompanyName(order.customer)}
+              </span>
+              {getOrderCountry(order) && (
+                <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {getCountryFlag(getOrderCountry(order))} {getOrderCountry(order)}
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f766e' }}>
@@ -1096,9 +1217,16 @@ export const Orders: React.FC = () => {
                     {o.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
                   </span>
                 </div>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={o.customer}>
-                  {cleanCompanyName(o.customer)}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={o.customer}>
+                    {cleanCompanyName(o.customer)}
+                  </span>
+                  {getOrderCountry(o) && (
+                    <span style={{ fontSize: '10px', fontWeight: 750, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {getCountryFlag(getOrderCountry(o))} {getOrderCountry(o)}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 처리 필요 액션 */}
@@ -1175,7 +1303,7 @@ export const Orders: React.FC = () => {
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
                 <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
-                    {['No.','날짜','주문번호','수주사','발주사','품목','발주액','매출액','운송사','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
+                    {['No.','날짜','주문번호','수주사','발주사','국가','품목','발주액','매출액','운송사','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
                         key={h} 
                         onClick={() => h !== '복사' && handleSort(h)}
@@ -1289,18 +1417,50 @@ export const Orders: React.FC = () => {
                       <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>
                         {cleanCompanyName(order.customer)}
                       </td>
-                      <td style={getTdStyle(5, { color: '#334155', fontWeight: 600, fontSize: '12.5px' })} title={itemNames}>{itemNames}</td>
-                      <td style={getTdStyle(6, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
+                      {/* 5: 국가 */}
+                      <td style={getTdStyle(5, { textAlign: 'center', whiteSpace: 'nowrap' })}>
+                        {(() => {
+                          const country = getOrderCountry(order);
+                          if (!country) return <span style={{ color: '#94a3b8' }}>-</span>;
+                          const flag = getCountryFlag(country);
+                          return (
+                            <span 
+                              title={country} 
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '4px',
+                                padding: '2px 6px', 
+                                background: '#f8fafc', 
+                                border: '1px solid #cbd5e1', 
+                                borderRadius: '4px', 
+                                fontSize: '11px', 
+                                fontWeight: 750, 
+                                color: '#334155',
+                                maxWidth: '100%',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              <span>{flag}</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{country}</span>
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td style={getTdStyle(6, { color: '#334155', fontWeight: 600, fontSize: '12.5px' })} title={itemNames}>{itemNames}</td>
+                      <td style={getTdStyle(7, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(7, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(8, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
                         {(() => {
                           const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
-                      {/* 8: 운송사 (ETD 앞) */}
-                      <td style={getTdStyle(8, { color: '#334155', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap', textAlign: 'center' })} title={getForwarderName(order)}>
+                      {/* 9: 운송사 (ETD 앞) */}
+                      <td style={getTdStyle(9, { color: '#334155', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap', textAlign: 'center' })} title={getForwarderName(order)}>
                         {(() => {
                           const fwd = getForwarderName(order);
                           if (fwd === '-') return <span style={{ color: '#94a3b8' }}>-</span>;
@@ -1311,8 +1471,8 @@ export const Orders: React.FC = () => {
                           );
                         })()}
                       </td>
-                      {/* 9: ETD */}
-                      <td style={getTdStyle(9, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
+                      {/* 10: ETD */}
+                      <td style={getTdStyle(10, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
                         {order.isSplitShipment && (order.shipmentRounds?.length || 0) > 1 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {order.shipmentRounds?.map((r, rIdx) => (
@@ -1325,8 +1485,8 @@ export const Orders: React.FC = () => {
                           formatDateShort(order.etd)
                         )}
                       </td>
-                      {/* 10: ETA */}
-                      <td style={getTdStyle(10, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
+                      {/* 11: ETA */}
+                      <td style={getTdStyle(11, { color: '#475569', fontWeight: 600, fontSize: '12px', textAlign: 'center' })}>
                         {order.isSplitShipment && (order.shipmentRounds?.length || 0) > 1 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {order.shipmentRounds?.map((r, rIdx) => (
@@ -1339,8 +1499,8 @@ export const Orders: React.FC = () => {
                           formatDateShort(order.eta)
                         )}
                       </td>
-                      {/* 11: 단계 */}
-                      <td style={getTdStyle(11)}>
+                      {/* 12: 단계 */}
+                      <td style={getTdStyle(12)}>
                         {(() => {
                           const { done: overallDone, total: overallTotal, pct: overallPct } = getOverallProgress(order);
                           return (
@@ -1412,7 +1572,7 @@ export const Orders: React.FC = () => {
                                         flex: 1, 
                                         textAlign: 'center', 
                                         color, 
-                                        whiteSpace: 'nowrap',
+                                        whiteSpace: 'nowrap', 
                                         letterSpacing: '-0.02em'
                                       }}
                                     >
@@ -1425,8 +1585,8 @@ export const Orders: React.FC = () => {
                           );
                         })()}
                       </td>
-                       {/* 12: 다음단계 (최소화) */}
-                      <td style={getTdStyle(12, { textAlign: 'center' })}>
+                       {/* 13: 다음단계 (최소화) */}
+                      <td style={getTdStyle(13, { textAlign: 'center' })}>
                         {(() => {
                            const todoText = getNextTodoItem(order);
                            const isAllDone = todoText === "모든 업무 완료";
@@ -1448,8 +1608,8 @@ export const Orders: React.FC = () => {
                            );
                         })()}
                       </td>
-                      {/* 13: 복사 */}
-                      <td style={getTdStyle(13, { textAlign: 'center' })}>
+                      {/* 14: 복사 */}
+                      <td style={getTdStyle(14, { textAlign: 'center' })}>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1525,12 +1685,14 @@ export const Orders: React.FC = () => {
                       <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }} />
-                      {/* 품목 열에 '합계' 텍스트 배치 */}
-                      <td style={{ padding: '10px 12px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '15px', fontWeight: 800, width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
+                      {/* 5: 국가 열 빈 셀 */}
+                      <td style={{ width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }} />
+                      {/* 6: 품목 열에 '합계' 텍스트 배치 */}
+                      <td style={{ padding: '10px 12px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '15px', fontWeight: 800, width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }}>
                         합계
                       </td>
-                      {/* 발주액 (USD) 열 */}
-                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }}>
+                      {/* 7: 발주액 (USD) 열 */}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }}>
                         <div style={{ color: '#0f766e', fontSize: '15px', fontWeight: 800 }}>
                           ${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
@@ -1541,8 +1703,8 @@ export const Orders: React.FC = () => {
                           </div>
                         )}
                       </td>
-                      {/* 매출액 (KRW) 열 */}
-                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }}>
+                      {/* 8: 매출액 (KRW) 열 */}
+                      <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }}>
                         <div style={{ color: '#2563eb', fontSize: '15px', fontWeight: 800 }}>
                           ₩{totalKrw.toLocaleString()}
                         </div>
@@ -1553,12 +1715,12 @@ export const Orders: React.FC = () => {
                           </div>
                         )}
                       </td>
-                      <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[9], minWidth: colWidths[9], maxWidth: colWidths[9], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[10], minWidth: colWidths[10], maxWidth: colWidths[10], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[11], minWidth: colWidths[11], maxWidth: colWidths[11], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[12], minWidth: colWidths[12], maxWidth: colWidths[12], boxSizing: 'border-box' }} />
                       <td style={{ width: colWidths[13], minWidth: colWidths[13], maxWidth: colWidths[13], boxSizing: 'border-box' }} />
+                      <td style={{ width: colWidths[14], minWidth: colWidths[14], maxWidth: colWidths[14], boxSizing: 'border-box' }} />
                     </tr>
                   );
                 })()}
@@ -1591,6 +1753,7 @@ export const Orders: React.FC = () => {
         '주문번호': order.id || '-',
         '수주사': order.issuingCompany === 'YSACC' ? 'YSACC' : '영성ACC',
         '발주사(바이어)': cleanCompanyName(order.customer) || '-',
+        '국가': getOrderCountry(order) || '-',
         '수주금액(USD)': amountUsd,
         '매출액(KRW)': salesKrw,
         '운송사': getForwarderName(order),

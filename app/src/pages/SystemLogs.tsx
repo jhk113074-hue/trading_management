@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.561',
+    version: 'v2.8.561',
+    date: '2026-09-16',
+    category: '신규기능',
+    title: '수출 주문관리(Orders) 대시보드 국가(목적국) 표시, 필터, 정렬 및 엑셀 내보내기 지원',
+    content: '• 주문관리 목록 테이블 [국가] 전용 컬럼 신설: 발주사와 품목 사이에 국기 이모지(🇹🇷, 🇸🇦, 🇮🇳, 🇴🇲, 🇦🇪 등)와 국가명이 결합된 깔끔한 뱃지를 배치하여 바이어의 선적 목적국을 한눈에 식별 가능하도록 구현\n• 오더별 목적국 자동 식별 및 동기화: 주문 도큐먼트(destinationCountry), 연결된 견적서(PI), 바이어 마스터(Customer DB) 및 도착항(Port of Discharge)/주소 정보를 유기적으로 연동하여 목적국을 100% 자동 매핑\n• 국가별 필터 드롭다운 탑재: 상단 필터바에 [국가] 필터를 추가하여 특정 수출 대상국(TURKEY, SAUDI ARABIA, UAE 등)의 주문만을 간편하게 선별 조회할 수 있도록 지원\n• 테이블 컬럼 오름차순/내림차순 정렬 지원: [국가] 헤더 클릭 시 국가명 기준 가나다/알파벳 순서로 양방향 정렬 지원\n• 칸반 및 할 일(Todo) 뷰 및 엑셀 다운로드 연동: 칸반 카드 및 할 일 뷰 바이어 명칭 옆에 국가 뱃지를 함께 표기하고, [📥 목록 받기 (Excel)] 시 [국가] 항목이 정확히 포함되어 추출되도록 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.560',
     version: 'v2.8.560',
     date: '2026-09-16',
