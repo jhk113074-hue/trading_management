@@ -985,6 +985,156 @@ export const OrderDetail: React.FC = () => {
     }
     setIsSupplierModalOpen(true);
   };
+
+  const [isSyncingFromPi, setIsSyncingFromPi] = useState(false);
+
+  const handleSyncItemsFromPi = async () => {
+    const targetPiId = order?.quotationId || basicForm.quotationId;
+    const targetPiNum = order?.piNumber || basicForm.piNumber;
+    if (!targetPiId && !targetPiNum) {
+      alert("연결된 견적서(PI) 정보가 없습니다.");
+      return;
+    }
+    if (!window.confirm("연결된 견적서(PI)의 최신 품목 목록 및 단가를 현재 발주서 품목으로 동기화하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      setIsSyncingFromPi(true);
+      let piDocId = targetPiId;
+      if (!piDocId && targetPiNum) {
+        const qSnap = await getDocs(query(collection(db, 'companies', COMPANY_ID, 'proforma_invoices'), where('piNumber', '==', targetPiNum)));
+        if (!qSnap.empty) {
+          piDocId = qSnap.docs[0].id;
+        }
+      }
+      if (!piDocId) {
+        alert("해당 견적서 문서를 찾을 수 없습니다.");
+        return;
+      }
+
+      const revSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID, 'proforma_invoices', piDocId), 'revisions'));
+      let quoteItems: any[] = [];
+      let latestRevData: any = null;
+      if (!revSnap.empty) {
+        const sortedRevs = revSnap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+          .sort((a, b) => (Number(b.version) || 0) - (Number(a.version) || 0));
+        latestRevData = sortedRevs[0];
+        const latestRevDoc = revSnap.docs.find(d => d.id === latestRevData.id);
+        if (latestRevDoc) {
+          const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
+          const liItems = liSnap.docs.map(d => d.data() as any);
+          const arrayItems = Array.isArray(latestRevData.items) ? latestRevData.items : [];
+          quoteItems = liItems.length >= arrayItems.length ? liItems : arrayItems;
+        }
+      }
+
+      if (quoteItems.length === 0) {
+        const piDocSnap = await getDoc(doc(db, 'companies', COMPANY_ID, 'proforma_invoices', piDocId));
+        if (piDocSnap.exists() && Array.isArray(piDocSnap.data().items)) {
+          quoteItems = piDocSnap.data().items;
+        }
+      }
+
+      if (quoteItems.length === 0) {
+        alert("동기화할 견적서 품목을 찾을 수 없습니다.");
+        return;
+      }
+
+      quoteItems.sort((a, b) => (Number(a.lineNumber || a.itemId) || 0) - (Number(b.lineNumber || b.itemId) || 0));
+
+      const updatedItems = quoteItems.map((qi: any, idx: number) => {
+        let rawCode = qi.productCode || '';
+        if (rawCode.startsWith('[') && rawCode.includes(']')) {
+          rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+        }
+        const cleanRaw = rawCode.trim().toUpperCase();
+        const existing = (orderItems || []).find(it => {
+          const itCode = getRawProductCode(it.productCode || it.name || '').toUpperCase();
+          return itCode === cleanRaw;
+        });
+
+        const matchedProd = products.find(p => (p.productCode || '').trim().toUpperCase() === cleanRaw || p.id.trim().toUpperCase() === cleanRaw);
+        const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
+
+        const orderPrice = qi.salePriceUsd || qi.unitPrice || 0;
+        const qty = Number(qi.quantity || qi.qty) || 0;
+        const amt = parseFloat((qty * orderPrice).toFixed(2));
+
+        let purchasePrice = 0;
+        let purchaseCurrency = 'USD';
+        if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+          purchasePrice = qi.purchasePriceKrw;
+          purchaseCurrency = 'KRW';
+        } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+          purchasePrice = qi.purchasePriceUsd;
+          purchaseCurrency = 'USD';
+        } else if (existing?.purchaseUnitPrice) {
+          purchasePrice = existing.purchaseUnitPrice;
+          purchaseCurrency = existing.purchaseUnitCurrency || 'KRW';
+        } else if (matchedProd?.purchasePrice) {
+          purchasePrice = matchedProd.purchasePrice;
+          purchaseCurrency = matchedProd.currency === 'KRW' ? 'KRW' : 'USD';
+        }
+
+        const cleanCode = getRawProductCode(qi.productCode);
+        const desc = (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '').trim();
+        const formattedName = cleanCode ? (desc ? `[${cleanCode}] ${desc}` : `[${cleanCode}]`) : desc;
+
+        return {
+          itemId: String(qi.lineNumber || (idx + 1)),
+          lineNumber: String(qi.lineNumber || (idx + 1)),
+          productCode: cleanCode || qi.productCode || '',
+          name: existing?.name || formattedName,
+          supplier: existing?.supplier || matchedProd?.supplierName || qi.supplierName || '',
+          supplierContact: existing?.supplierContact || contactInfo || '',
+          grade: existing?.grade || qi.spec || qi.grade || matchedProd?.spec || '',
+          spec: existing?.spec || qi.spec || qi.grade || matchedProd?.spec || '',
+          qty,
+          unit: qi.unit || 'kg',
+          unitPrice: orderPrice,
+          salePriceUsd: orderPrice,
+          purchaseUnitPrice: purchasePrice,
+          purchaseUnitCurrency: purchaseCurrency as any,
+          purchasePriceCurrency: purchaseCurrency,
+          purchasePriceKrw: qi.purchasePriceKrw || (purchaseCurrency === 'KRW' ? purchasePrice : 0),
+          purchasePriceUsd: qi.purchasePriceUsd || (purchaseCurrency === 'USD' ? purchasePrice : 0),
+          exchangeRate: qi.exchangeRate || latestRevData?.exchangeRate || 1400,
+          originalPurchasePrice: purchasePrice,
+          originalPurchaseCurrency: purchaseCurrency,
+          amount: amt,
+          currency: 'USD',
+          palletQty: qi.palletQty || existing?.palletQty || 0,
+          selectedPackingMethodId: qi.selectedPackingMethodId || existing?.selectedPackingMethodId || '',
+          packingSpecOverride: qi.packingSpecOverride || existing?.packingSpecOverride || null,
+          remarks: qi.remarks || existing?.remarks || ''
+        };
+      });
+
+      const itemsSum = updatedItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+      const freight = (forwardersList || []).reduce((acc, f) => acc + (Number(f.amountUsd || f.budgetAmountUsd) || 0), 0);
+      const newTotal = parseFloat((itemsSum + freight).toFixed(2));
+
+      if (order?.id) {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        await updateDoc(orderRef, {
+          items: updatedItems,
+          totalAmount: newTotal,
+          currency: 'USD',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      setOrderItems(updatedItems);
+      setBasicForm(prev => ({ ...prev, items: updatedItems }));
+      alert(`✅ 견적서(${targetPiNum || piDocId})의 품목 ${updatedItems.length}개 및 총 금액($${newTotal.toLocaleString()})이 성공적으로 동기화되었습니다!`);
+    } catch (err: any) {
+      console.error("PI 동기화 오류:", err);
+      alert("품목 동기화 실패: " + err.message);
+    } finally {
+      setIsSyncingFromPi(false);
+    }
+  };
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
   const [isSourcingSearch, setIsSourcingSearch] = useState(false);
@@ -3839,10 +3989,15 @@ export const OrderDetail: React.FC = () => {
         return;
       }
 
-      const totalAmount = curOrderItems.reduce((sum, item) => sum + (item.amount || 0), 0)
-        + curForwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
-      const hasUsd = curOrderItems.some(it => it.currency === 'USD');
-      const hasKrw = curOrderItems.some(it => it.currency === 'KRW');
+      const totalAmount = curOrderItems.reduce((sum, item) => {
+        const salePrice = (item.salePriceUsd != null && item.salePriceUsd > 0)
+          ? item.salePriceUsd
+          : (item.currency === 'USD' ? (item.unitPrice || 0) : 0);
+        return sum + parseFloat((salePrice * (item.qty || 0)).toFixed(2));
+      }, 0) + curForwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || parseFloat(fw.amountUsd as any) || 0), 0);
+      
+      const hasUsd = curOrderItems.some(it => it.currency === 'USD' || (it.salePriceUsd != null && it.salePriceUsd > 0));
+      const hasKrw = curOrderItems.some(it => it.currency === 'KRW' && (!it.salePriceUsd || it.salePriceUsd === 0));
       let orderCurrency: 'USD' | 'KRW' | 'mixed' = 'USD';
       if (hasUsd && hasKrw) {
         orderCurrency = 'mixed';
@@ -4034,39 +4189,48 @@ export const OrderDetail: React.FC = () => {
           const buyPrice = buyCurr === 'KRW'
             ? (it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : 0))
             : (it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : 0));
+          const activeSalePrice = (it.salePriceUsd != null && it.salePriceUsd > 0)
+            ? it.salePriceUsd
+            : (it.currency === 'USD' ? (parseFloat(it.unitPrice as any) || 0) : 0);
+          const isUsdTrade = activeSalePrice > 0 || (it.currency !== 'KRW' && (basicForm.type as string) !== 'domestic');
+          const itemCurrency = isUsdTrade ? 'USD' : (it.currency || 'USD');
+          const itemAmt = isUsdTrade
+            ? parseFloat((activeSalePrice * (parseFloat(it.qty as any) || 0)).toFixed(2))
+            : (parseFloat(it.amount as any) || parseFloat(((parseFloat(it.unitPrice as any) || 0) * (parseFloat(it.qty as any) || 0)).toFixed(2)));
+
           return {
-            itemId: it.itemId || (idx + 1).toString(),
-            lineNumber: it.lineNumber || (idx + 1).toString(),
-            productCode: rawCode || it.productCode || '',
-            name: formatItemDisplayName(it.name || '', rawCode),
-            supplier: activeSupplier,
-            supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
-            grade: it.grade || it.spec || '',
-            spec: it.spec || it.grade || '',
-            qty: parseFloat(it.qty as any) || 0,
-            unit: (it.unit || 'kg') as any,
-            unitPrice: parseFloat(it.unitPrice as any) || 0,
-            salePriceUsd: it.salePriceUsd != null ? (parseFloat(it.salePriceUsd as any) || 0) : (parseFloat(it.unitPrice as any) || 0),
-            purchaseUnitPrice: buyPrice,
-            purchaseUnitCurrency: buyCurr as any,
-            purchasePriceCurrency: buyCurr,
-            purchasePriceKrw: buyCurr === 'KRW' ? buyPrice : (parseFloat(it.purchasePriceKrw as any) || 0),
-            purchasePriceUsd: buyCurr === 'USD' ? buyPrice : (parseFloat(it.purchasePriceUsd as any) || 0),
-            exchangeRate: parseFloat(it.exchangeRate as any) || (basicForm.exchangeRate || order?.exchangeRate || 1350),
-            marginRate: it.marginRate != null ? (parseFloat(it.marginRate as any) || 0) : 10,
-            roundDigits: it.roundDigits !== undefined ? it.roundDigits : 1,
-            palletQty: parseFloat(it.palletQty as any) || 0,
-            selectedPackingMethodId: it.selectedPackingMethodId || '',
-            packingSpecOverride: it.packingSpecOverride || null,
-            remarks: it.remarks || it.remark || matchingSourcing?.remark || matchingSourcing?.supplierRemark || '',
-            remark: it.remark !== undefined ? it.remark : (it.remarks || matchingSourcing?.remark || matchingSourcing?.supplierRemark || ''),
-            supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (matchingSourcing?.supplierRemark || matchingSourcing?.remark || ''),
-            originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : buyPrice,
-            originalPurchaseCurrency: (it.originalPurchaseCurrency || buyCurr) as any,
-            amount: it.amount || 0,
-            currency: (it.currency || 'USD') as any,
-            hsCode: (it as any).hsCode || ''
-          };
+              itemId: it.itemId || (idx + 1).toString(),
+              lineNumber: it.lineNumber || (idx + 1).toString(),
+              productCode: rawCode || it.productCode || '',
+              name: formatItemDisplayName(it.name || '', rawCode),
+              supplier: activeSupplier,
+              supplierContact: it.supplierContact || matchingSourcing?.supplierContact || '',
+              grade: it.grade || it.spec || '',
+              spec: it.spec || it.grade || '',
+              qty: parseFloat(it.qty as any) || 0,
+              unit: (it.unit || 'kg') as any,
+              unitPrice: activeSalePrice || parseFloat(it.unitPrice as any) || 0,
+              salePriceUsd: activeSalePrice,
+              purchaseUnitPrice: buyPrice,
+              purchaseUnitCurrency: buyCurr as any,
+              purchasePriceCurrency: buyCurr,
+              purchasePriceKrw: buyCurr === 'KRW' ? buyPrice : (parseFloat(it.purchasePriceKrw as any) || 0),
+              purchasePriceUsd: buyCurr === 'USD' ? buyPrice : (parseFloat(it.purchasePriceUsd as any) || 0),
+              exchangeRate: parseFloat(it.exchangeRate as any) || (basicForm.exchangeRate || order?.exchangeRate || 1350),
+              marginRate: it.marginRate != null ? (parseFloat(it.marginRate as any) || 0) : 10,
+              roundDigits: it.roundDigits !== undefined ? it.roundDigits : 1,
+              palletQty: parseFloat(it.palletQty as any) || 0,
+              selectedPackingMethodId: it.selectedPackingMethodId || '',
+              packingSpecOverride: it.packingSpecOverride || null,
+              remarks: it.remarks || it.remark || matchingSourcing?.remark || matchingSourcing?.supplierRemark || '',
+              remark: it.remark !== undefined ? it.remark : (it.remarks || matchingSourcing?.remark || matchingSourcing?.supplierRemark || ''),
+              supplierRemark: it.supplierRemark !== undefined ? it.supplierRemark : (matchingSourcing?.supplierRemark || matchingSourcing?.remark || ''),
+              originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : buyPrice,
+              originalPurchaseCurrency: (it.originalPurchaseCurrency || buyCurr) as any,
+              amount: itemAmt,
+              currency: itemCurrency as any,
+              hsCode: (it as any).hsCode || ''
+            };
         }),
         sourcingItems: curSourcingItems.map((it, idx) => {
           const matchingOrderItem = (it.itemId && curOrderItems.find(r => r.itemId && r.itemId === it.itemId)) || curOrderItems[idx];
@@ -9642,28 +9806,55 @@ ${downloadLink}`;
                       🔒 견적 기준 조회 전용 (수정 불가)
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenSupplierModal('')}
-                    style={{
-                      height: '30px',
-                      padding: '0 10px',
-                      borderRadius: '4px',
-                      border: '1px solid #3b82f6',
-                      background: '#eff6ff',
-                      color: '#2563eb',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.15s ease'
-                    }}
-                    title="신규 공급업체 마스터 등록"
-                  >
-                    🏢 + 신규 공급업체 등록
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {(order?.quotationId || basicForm.quotationId || order?.piNumber || basicForm.piNumber) && (
+                      <button
+                        type="button"
+                        onClick={handleSyncItemsFromPi}
+                        disabled={isSyncingFromPi}
+                        style={{
+                          height: '30px',
+                          padding: '0 10px',
+                          borderRadius: '4px',
+                          border: '1px solid #10b981',
+                          background: '#ecfdf5',
+                          color: '#059669',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: isSyncingFromPi ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title="연결된 견적서(PI)의 최신 품목 목록 및 단가로 재동기화"
+                      >
+                        {isSyncingFromPi ? '🔄 동기화 중...' : '🔄 견적서(PI) 품목 동기화'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSupplierModal('')}
+                      style={{
+                        height: '30px',
+                        padding: '0 10px',
+                        borderRadius: '4px',
+                        border: '1px solid #3b82f6',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="신규 공급업체 마스터 등록"
+                    >
+                      🏢 + 신규 공급업체 등록
+                    </button>
+                  </div>
                 </div>
                 
                 <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }}>
@@ -9845,18 +10036,31 @@ ${downloadLink}`;
 
                             {/* 단가(USD) */}
                             <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '13.5px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
-                              ${(item.salePriceUsd ?? item.unitPrice ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                              ${(() => {
+                                const salePrice = (item.salePriceUsd != null && item.salePriceUsd > 0)
+                                  ? item.salePriceUsd
+                                  : (item.currency === 'USD' ? (item.unitPrice || 0) : 0);
+                                return salePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+                              })()}
                             </td>
 
                             {/* 총액($) */}
                             <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '14px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
-                              ${((item.unitPrice || item.salePriceUsd || 0) * (item.qty || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              ${(() => {
+                                const salePrice = (item.salePriceUsd != null && item.salePriceUsd > 0)
+                                  ? item.salePriceUsd
+                                  : (item.currency === 'USD' ? (item.unitPrice || 0) : 0);
+                                const lineTotal = salePrice * (item.qty || 0);
+                                return lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              })()}
                             </td>
 
                             {/* 이익($) */}
                             <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800, fontSize: '14px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                               ${(() => {
-                                const salePrice = item.salePriceUsd ?? item.unitPrice ?? 0;
+                                const salePrice = (item.salePriceUsd != null && item.salePriceUsd > 0)
+                                  ? item.salePriceUsd
+                                  : (item.currency === 'USD' ? (item.unitPrice || 0) : 0);
                                 const buyUsd = (curCurrency === 'USD')
                                   ? unitPriceUsd
                                   : (unitPriceKrw / (item.exchangeRate || exRate || 1400));
@@ -9877,7 +10081,12 @@ ${downloadLink}`;
                     {(() => {
                       const validItems = orderItems.filter(it => !it.isSourcingOnly);
                       const totalQty = validItems.reduce((sum, it) => sum + (it.qty || 0), 0);
-                      const totalAmount = validItems.reduce((sum, it) => sum + ((it.unitPrice || it.salePriceUsd || 0) * (it.qty || 0)), 0);
+                      const totalAmount = validItems.reduce((sum, it) => {
+                        const salePrice = (it.salePriceUsd != null && it.salePriceUsd > 0)
+                          ? it.salePriceUsd
+                          : (it.currency === 'USD' ? (it.unitPrice || 0) : 0);
+                        return sum + (salePrice * (it.qty || 0));
+                      }, 0);
                       
                       let totalPurchaseKrw = 0;
                       let totalPurchaseUsd = 0;
@@ -9904,7 +10113,9 @@ ${downloadLink}`;
                       const totalProfit = validItems.reduce((sum, it) => {
                         const qty = it.qty || 0;
                         const curCurr = getEffectiveItemPurchaseCurrency(it);
-                        const salePrice = it.salePriceUsd ?? it.unitPrice ?? 0;
+                        const salePrice = (it.salePriceUsd != null && it.salePriceUsd > 0)
+                          ? it.salePriceUsd
+                          : (it.currency === 'USD' ? (it.unitPrice || 0) : 0);
                         const exRate = it.exchangeRate || basicForm.exchangeRate || order?.exchangeRate || 1400;
                         const uKrw = it.purchasePriceKrw || (it.purchaseUnitPrice && it.purchaseUnitPrice > 500 ? it.purchaseUnitPrice : 0);
                         const uUsd = it.purchasePriceUsd || (it.purchaseUnitPrice && it.purchaseUnitPrice <= 500 ? it.purchaseUnitPrice : 0);

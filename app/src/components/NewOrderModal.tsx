@@ -287,9 +287,16 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           }));
 
           const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
-          const quoteItems = liSnap.docs
-            .map(d => d.data() as any)
-            .sort((a, b) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
+          const liItems = liSnap.docs.map(d => d.data() as any);
+          const arrayItems = Array.isArray(latestRevData.items) ? latestRevData.items : [];
+          const quoteDoc = quotations.find(q => q.id === quoteId);
+          let rawItems = liItems.length >= arrayItems.length ? liItems : arrayItems;
+          if (rawItems.length === 0 && Array.isArray((quoteDoc as any)?.items)) {
+            rawItems = (quoteDoc as any).items;
+          }
+          const quoteItems: any[] = rawItems
+            .slice()
+            .sort((a: any, b: any) => (Number(a.lineNumber) || 0) - (Number(b.lineNumber) || 0));
           
           if (quoteItems.length > 0) {
             // Always fetch the fresh products list directly from Firestore to avoid stale React closure state
@@ -297,7 +304,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             const currentProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
             setProducts(currentProducts);
 
-            setItems(quoteItems.map((qi, idx) => {
+            setItems(quoteItems.map((qi: any, idx: number) => {
               let rawCode = qi.productCode || '';
               if (rawCode.startsWith('[') && rawCode.includes(']')) {
                 rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
@@ -390,20 +397,33 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           const displayName = prod.nameEn || prod.nameKo || '';
           
           let buyPrice = prod.purchasePrice || 0;
-          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          let buyCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
           const qty = it.qty || 0;
-          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+          // 매출단가(unitPrice) 및 매출통화(currency)는 기존 견적/사용자 입력값을 보존하며,
+          // 상품 마스터의 매입가/매입통화로 덮어씌우지 않음!
+          const currentSellPrice = (it.salePriceUsd != null && it.salePriceUsd > 0)
+            ? it.salePriceUsd
+            : ((it.unitPrice != null && it.unitPrice > 0) ? it.unitPrice : 0);
+          const sellCurrency = it.currency || 'USD';
+          const amt = sellCurrency === 'KRW' ? Math.round(qty * currentSellPrice) : parseFloat((qty * currentSellPrice).toFixed(2));
 
           it = {
             ...it,
             name: `[${prod.productCode}] ${displayName}`,
-            supplier: prod.supplierName || '',
-            supplierContact: contactInfo || '',
-            grade: prod.spec || '',
-            unit: (prod.unit || 'kg') as any,
-            unitPrice: buyPrice,
+            productCode: prod.productCode || it.productCode || '',
+            supplier: prod.supplierName || it.supplier || '',
+            supplierContact: contactInfo || it.supplierContact || '',
+            grade: prod.spec || it.grade || '',
+            unit: (prod.unit || it.unit || 'kg') as any,
+            unitPrice: currentSellPrice,
+            salePriceUsd: it.salePriceUsd || (sellCurrency === 'USD' ? currentSellPrice : undefined),
             purchaseUnitPrice: buyPrice,
-            currency: itemCurrency,
+            purchaseUnitCurrency: buyCurrency,
+            purchasePriceCurrency: buyCurrency,
+            purchasePriceKrw: buyCurrency === 'KRW' ? buyPrice : 0,
+            purchasePriceUsd: buyCurrency === 'USD' ? buyPrice : 0,
+            currency: sellCurrency,
             amount: amt
           };
         }
@@ -435,25 +455,36 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const handleSelectProduct = (idx: number, prod: Product) => {
     setItems(prev => {
       const updated = [...prev];
+      const target = updated[idx];
       const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
       
       let buyPrice = prod.purchasePrice || 0;
-      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
-      const qty = updated[idx].qty || 0;
-      const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+      let buyCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      const qty = target?.qty || 0;
+      const currentSellPrice = (target?.salePriceUsd != null && target?.salePriceUsd > 0)
+        ? target.salePriceUsd
+        : ((target?.unitPrice != null && target?.unitPrice > 0) ? target.unitPrice : 0);
+      const sellCurrency = target?.currency || 'USD';
+      const amt = sellCurrency === 'KRW' ? Math.round(qty * currentSellPrice) : parseFloat((qty * currentSellPrice).toFixed(2));
 
       const displayName = prod.nameEn || prod.nameKo || '';
 
       updated[idx] = {
-        ...updated[idx],
+        ...target,
         name: `[${prod.productCode}] ${displayName}`,
-        supplier: prod.supplierName || '',
-        supplierContact: contactInfo || '',
-        grade: prod.spec || '',
-        unit: (prod.unit || 'kg') as any,
-        unitPrice: buyPrice,
+        productCode: prod.productCode || target?.productCode || '',
+        supplier: prod.supplierName || target?.supplier || '',
+        supplierContact: contactInfo || target?.supplierContact || '',
+        grade: prod.spec || target?.grade || '',
+        unit: (prod.unit || target?.unit || 'kg') as any,
+        unitPrice: currentSellPrice,
+        salePriceUsd: target?.salePriceUsd || (sellCurrency === 'USD' ? currentSellPrice : undefined),
         purchaseUnitPrice: buyPrice,
-        currency: itemCurrency,
+        purchaseUnitCurrency: buyCurrency,
+        purchasePriceCurrency: buyCurrency,
+        purchasePriceKrw: buyCurrency === 'KRW' ? buyPrice : 0,
+        purchasePriceUsd: buyCurrency === 'USD' ? buyPrice : 0,
+        currency: sellCurrency,
         amount: amt
       };
       return updated;

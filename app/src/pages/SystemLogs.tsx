@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.560',
+    version: 'v2.8.560',
+    date: '2026-09-16',
+    category: '버그수정',
+    title: '견적(PI) -> 주문 전환 시 통화 혼용 및 합계 금액 불일치 오류 근본 원인 해결 및 재발 방지',
+    content: '• 견적(PI) 주문 전환 품목 매핑 로직 강화: PI 품목을 발주 품목으로 전환 시 수출 판매단가(salePriceUsd)가 국내 매입가(purchasePrice)나 타 통화로 덮어씌워지지 않도록 unitPrice 및 salePriceUsd를 수출 통화(USD) 기준으로 견고하게 고정\n• 신규 주문 모달(NewOrderModal) 단가 자동 덮어쓰기 방지: 품목명 검색 및 품목 선택 시 수출 주문(USD)인 경우 이미 입력/연동된 외화 판매단가 및 USD 통화가 품목 마스터의 원화(KRW) 매입가로 덮어써져 수백만 원 단위가 달러로 둔갑하던 현상 원천 차단\n• 주문 상세(OrderDetail) 금액 계산 및 테이블 표시 식 일원화: 주문 상세 화면에서 단가(USD)와 총액($) 산출 시 KRW 매입가가 혼용되어 비정상적인 천문학적 금액($9,578,739)으로 표기되던 테이블 총액 수식을 salePriceUsd 기준으로 통일하여 정확한 외화 금액 산출 확립\n• 기존 오류 데이터 원상 복구: 기 전환된 주문(YSACC(ALHL)-2026-01) 내 Fibre Glass Cloth 및 Metallized Film 품목의 비정상 원화 단가/총액을 USD 수출 단가 및 총액($40,234.73 USD)으로 정상 복구 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.559',
     version: 'v2.8.559',
     date: '2026-09-16',
