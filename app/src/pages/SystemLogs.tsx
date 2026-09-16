@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.559',
+    version: 'v2.8.559',
+    date: '2026-09-16',
+    category: '기능개선',
+    title: '매출 및 채권 발생 기준 표준화: 수출은 ETD일 기준, 일반 거래는 세금계산서 발행일자 기준 적용',
+    content: '• 수출 주문 채권 발생 기준 ETD 적용: 수출(Orders)의 경우 실제 선적이 이루어지는 ETD(선적 예정일/출항일)를 기준으로 매출 및 채권이 발생하도록 확립하고, ETD가 지정되지 않은 미선적/단순 발주 상태의 주문은 채권 집계 및 연체 분석 대상에서 안전하게 제외\n• 일반 거래(수입/국내) 채권 발생 기준 세금계산서 적용: 수입(Imports) 및 국내거래(DomesticTrades)는 세금계산서 발행일자를 기준으로 매출 및 채권이 발생하도록 표준화하고, 세금계산서가 발행되지 않은 미도래 건은 채권 집계에서 제외하여 허수 채권 및 왜곡 방지\n• 경과일수 및 채권연령(Aging), DSO 산출 정밀화: 수출은 ETD일, 일반 거래는 세금계산서 발행일자를 기점으로 경과일수(Overdue Days)와 Aging(30일/60일/90일 초과), 채권회전일(DSO)을 정밀 산출하여 실제 기업 회계 및 무역 실무와 완벽 동기화\n• UI 및 엑셀 다운로드 명칭 직관화: 발생일자(기준일) 컬럼 명칭 및 툴팁을 보강하고 상단 안내 문구에 채권 발생 기준을 명시하여 혼선 방지',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.558',
     version: 'v2.8.558',
     date: '2026-09-15',

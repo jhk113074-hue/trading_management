@@ -175,8 +175,17 @@ export const ReceivablesManagement: React.FC = () => {
       return '';
     };
 
-    // A. 수출 주문(Orders)
+    // A. 수출 주문(Orders) - 매출 및 채권 발생 기준: ETD (선적 예정일/출항일)
     orders.forEach(o => {
+      if (o.status === '취소' || o.status === 'CANCELLED') return;
+
+      // 수출은 ETD일 기준으로 매출/채권 발생 (ETD가 미정이거나 없는 주문은 채권 미발생으로 집계 제외)
+      const rawEtd = o.etd || o.actualEtd || o.departureDate;
+      const dateStr = parseDateStr(rawEtd);
+      if (!dateStr || dateStr === '-') {
+        return; // ETD 미지정/미선적 주문은 채권 미발생
+      }
+
       const orderCurrency: 'USD' | 'KRW' = o.currency === 'KRW' ? 'KRW' : 'USD';
       let totAmt = 0;
       if (Array.isArray(o.items) && o.items.length > 0) {
@@ -207,7 +216,6 @@ export const ReceivablesManagement: React.FC = () => {
         paidAmt = Math.max(sumCollected, rootPaid);
       }
 
-      const dateStr = parseDateStr(o.orderDate || o.piDate || o.poDate || o.createdAt);
       const isFull = paidAmt >= totAmt - (orderCurrency === 'KRW' ? 1 : 0.01) && totAmt > 0;
       const isPartial = !isFull && paidAmt > 0;
       const rawComp = String(o.issuingCompany || o.companyType || o.seller || o.myCompany || '').trim();
@@ -253,11 +261,22 @@ export const ReceivablesManagement: React.FC = () => {
       });
     });
 
-    // B. 수입 주문(Imports) - 국내 고객 납품 및 세금계산서/고객견적/거래명세서 매출 채권
+    // B. 수입 주문(Imports) - 일반 거래: 세금계산서 발행일자 기준으로 매출 및 채권 발생
     imports.forEach(imp => {
+      if (imp.status === '취소' || imp.status === 'CANCELLED') return;
+
+      // 일반 거래는 세금계산서 발행일자 기준으로 매출/채권 발생 (미발행 건은 채권 미발생으로 집계 제외)
+      const taxRows = Array.isArray(imp.taxDocumentRows) ? imp.taxDocumentRows : [];
+      const rowTaxDate = taxRows.find((r: any) => r.type === '세금계산서' && r.issueDate)?.issueDate ||
+                         taxRows.find((r: any) => r.issueDate)?.issueDate || '';
+      const rawTaxDate = imp.taxInvoiceIssuedDate || rowTaxDate || imp.taxInvoiceDate || '';
+      const dateStr = parseDateStr(rawTaxDate);
+      if (!dateStr || dateStr === '-') {
+        return; // 세금계산서 미발행 건은 채권 미발생
+      }
+
       // 1) 매출 총액 (고객 청구액) 산출
       // A. 세금계산서 증빙 행 합계
-      const taxRows = Array.isArray(imp.taxDocumentRows) ? imp.taxDocumentRows : [];
       const taxDocGrand = taxRows.reduce((sum: number, r: any) => sum + (Number(r.grandTotal) || (Number(r.supplyAmount) || 0) + (Number(r.vatAmount) || 0)), 0);
       const taxDocSupply = taxRows.reduce((sum: number, r: any) => sum + (Number(r.supplyAmount) || 0), 0);
       const taxDocTotal = taxDocGrand > 0 ? taxDocGrand : taxDocSupply;
@@ -270,10 +289,10 @@ export const ReceivablesManagement: React.FC = () => {
       const quoteAmt = Number(imp.customerQuoteAmount || imp.dealStatementTotal || imp.dealStatementAmount || imp.amount || 0);
 
       let totAmt = 0;
-      if (imp.settlementBasis === 'DEAL_STATEMENT' && dealStmtTotal > 0) {
-        totAmt = dealStmtTotal;
-      } else if (taxDocTotal > 0) {
+      if (taxDocTotal > 0) {
         totAmt = taxDocTotal;
+      } else if (imp.settlementBasis === 'DEAL_STATEMENT' && dealStmtTotal > 0) {
+        totAmt = dealStmtTotal;
       } else if (dealStmtTotal > 0) {
         totAmt = dealStmtTotal;
       } else {
@@ -316,7 +335,6 @@ export const ReceivablesManagement: React.FC = () => {
         }
       }
 
-      const dateStr = parseDateStr(imp.taxInvoiceIssuedDate || imp.dealStatementSentDate || imp.importDate || imp.eta || imp.requestDate || imp.blDate || imp.createdAt);
       const isFull = paidAmt >= totAmt - (recCurrency === 'KRW' ? 1 : 0.01) && totAmt > 0;
       const isPartial = !isFull && paidAmt > 0;
       const rawComp = String(imp.importCompany || imp.companyType || imp.issuingCompany || '').trim();
@@ -363,8 +381,17 @@ export const ReceivablesManagement: React.FC = () => {
       });
     });
 
-    // C. 국내 주문(Domestic Trades)
+    // C. 국내 주문(Domestic Trades) - 일반 거래: 세금계산서 발행일자 기준으로 매출 및 채권 발생
     domesticTrades.forEach(dom => {
+      if (dom.status === 'CANCELLED' || dom.status === '취소') return;
+
+      // 일반 거래는 세금계산서 발행일자 기준으로 매출/채권 발생 (미발행 건은 채권 미발생으로 집계 제외)
+      const rawTaxDate = dom.taxInvoiceDate || dom.taxInvoiceIssuedDate || (dom.taxInvoiceIssued ? dom.tradeDate : '') || '';
+      const dateStr = parseDateStr(rawTaxDate);
+      if (!dateStr || dateStr === '-') {
+        return; // 세금계산서 미발행 건은 채권 미발생
+      }
+
       let totAmt = Number(dom.salesAmount || 0);
       if (totAmt === 0 && Array.isArray(dom.items) && dom.items.length > 0) {
         totAmt = dom.items.reduce((sum: number, it: any) => sum + (Number(it.salesAmount) || ((Number(it.quantity) || 0) * (Number(it.salesUnitPrice) || 0))), 0);
@@ -385,7 +412,6 @@ export const ReceivablesManagement: React.FC = () => {
         paidAmt = Math.max(sumCollected, rootPaid);
       }
 
-      const dateStr = parseDateStr(dom.tradeDate || dom.invoiceDate || dom.createdAt);
       const isFull = paidAmt >= totAmt - 1 && totAmt > 0;
       const isPartial = !isFull && paidAmt > 0;
       const rawComp = String(dom.companyType || dom.issuingCompany || '').trim();
@@ -786,7 +812,7 @@ export const ReceivablesManagement: React.FC = () => {
         'No': i + 1,
         '부문': r.sourceType === 'EXPORT' ? '수출' : r.sourceType === 'IMPORT' ? '수입' : '국내',
         '법인': r.companyName,
-        '거래일자': r.date,
+        '발생일자(ETD/계산서)': r.date,
         '관리번호(CI/PO)': r.docNumber,
         '거래처명': r.customerName,
         '청구총액': r.totalAmount,
@@ -902,6 +928,9 @@ export const ReceivablesManagement: React.FC = () => {
           </div>
           <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>
             바이어별 미수 채권 현황, 연령(Aging 30/60/90일) 분석, 회전일수(DSO : Days Sales Outstanding) 모니터링 및 실시간 수금 정산
+            <span style={{ marginLeft: '10px', color: '#2563eb', fontWeight: 700 }}>
+              (※ 채권 발생 기준: 수출은 ETD일, 일반 거래는 세금계산서 발행일자)
+            </span>
           </p>
         </div>
 
@@ -1618,7 +1647,7 @@ export const ReceivablesManagement: React.FC = () => {
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '45px', color: '#475569', fontWeight: 750 }}>No</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '65px', color: '#475569', fontWeight: 750 }}>구분</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '85px', color: '#475569', fontWeight: 750 }}>발행법인</th>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '90px', color: '#475569', fontWeight: 750 }}>거래일자</th>
+                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '105px', color: '#475569', fontWeight: 750 }} title="수출: ETD일 / 일반: 세금계산서 발행일자">발생일자(기준일)</th>
                   <th style={{ padding: '10px 10px', textAlign: 'left', minWidth: '130px', color: '#475569', fontWeight: 750 }}>관리번호(CI/PO)</th>
                   <th style={{ padding: '10px 10px', textAlign: 'left', minWidth: '150px', color: '#475569', fontWeight: 750 }}>거래처명</th>
                   <th style={{ padding: '10px 8px', textAlign: 'center', width: '60px', color: '#475569', fontWeight: 750 }}>통화</th>
@@ -2009,7 +2038,7 @@ export const ReceivablesManagement: React.FC = () => {
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                     <th style={{ padding: '8px', textAlign: 'center', width: '40px' }}>No</th>
                     <th style={{ padding: '8px', textAlign: 'center', width: '65px' }}>구분</th>
-                    <th style={{ padding: '8px', textAlign: 'center', width: '85px' }}>일자</th>
+                    <th style={{ padding: '8px', textAlign: 'center', width: '95px' }} title="수출: ETD일 / 일반: 세금계산서 발행일자">발생일자(기준일)</th>
                     <th style={{ padding: '8px', textAlign: 'left' }}>관리번호(CI/PO)</th>
                     <th style={{ padding: '8px', textAlign: 'center', width: '55px' }}>통화</th>
                     <th style={{ padding: '8px', textAlign: 'right', width: '110px' }}>청구액</th>
