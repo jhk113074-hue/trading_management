@@ -182,7 +182,7 @@ export const Orders: React.FC = () => {
   const processedPiRef = useRef<string | null>(null);
 
   // Column resize: [No., 날짜, 주문번호, 수주사, 발주사, 국가, 품목, 발주액, 매출액, 운송사, ETD, ETA, 단계, 다음단계, 복사]
-  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 140, 80, 175, 95, 165, 105, 120, 85, 75, 75, 260, 85, 45]);
+  const { thStyle, resizerProps, colWidths } = useColumnResize([45, 75, 140, 80, 175, 115, 160, 105, 120, 85, 75, 75, 260, 85, 45]);
 
   // 오름차순/내림차순 정렬 상태
   const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '국가' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
@@ -857,7 +857,7 @@ export const Orders: React.FC = () => {
           {/* 기본 노출 필터: 발주사, 국가, 보기, 완료건, ETD */}
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, cleanCompanyName(c)])] },
-            { label: '국가', value: countryFilter, set: setCountryFilter, opts: [['All', '전체 국가'], ...allCountries.map(c => [c, `${getCountryFlag(c)} ${c}`])], highlight: countryFilter !== 'All' },
+            { label: '국가', value: countryFilter, set: setCountryFilter, opts: [['All', '전체 국가'], ...allCountries.map(c => [c, c])], highlight: countryFilter !== 'All' },
             { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
             { label: '완료건', value: completedFilter, set: setCompletedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
             { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
@@ -1053,7 +1053,7 @@ export const Orders: React.FC = () => {
               </span>
               {getOrderCountry(order) && (
                 <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  {getCountryFlag(getOrderCountry(order))} {getOrderCountry(order)}
+                  {getOrderCountry(order)}
                 </span>
               )}
             </div>
@@ -1223,7 +1223,7 @@ export const Orders: React.FC = () => {
                   </span>
                   {getOrderCountry(o) && (
                     <span style={{ fontSize: '10px', fontWeight: 750, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      {getCountryFlag(getOrderCountry(o))} {getOrderCountry(o)}
+                      {getOrderCountry(o)}
                     </span>
                   )}
                 </div>
@@ -1422,29 +1422,26 @@ export const Orders: React.FC = () => {
                         {(() => {
                           const country = getOrderCountry(order);
                           if (!country) return <span style={{ color: '#94a3b8' }}>-</span>;
-                          const flag = getCountryFlag(country);
                           return (
                             <span 
                               title={country} 
                               style={{ 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: '4px',
-                                padding: '2px 6px', 
+                                display: 'inline-block', 
+                                padding: '3px 8px', 
                                 background: '#f8fafc', 
                                 border: '1px solid #cbd5e1', 
                                 borderRadius: '4px', 
                                 fontSize: '11px', 
                                 fontWeight: 750, 
-                                color: '#334155',
+                                color: '#334155', 
                                 maxWidth: '100%',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                letterSpacing: '0.01em'
                               }}
                             >
-                              <span>{flag}</span>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{country}</span>
+                              {country}
                             </span>
                           );
                         })()}
