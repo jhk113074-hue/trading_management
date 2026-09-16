@@ -188,8 +188,6 @@ export const Orders: React.FC = () => {
   const [sortKey, setSortKey] = useState<'No.' | '날짜' | '주문번호' | '수주사' | '발주사' | '국가' | '품목' | '발주액' | '매출액' | '운송사' | 'ETD' | 'ETA' | '단계' | '다음단계' | '복사' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
-  // 뷰 모드: 'list' | 'kanban' | 'todo'
-  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'todo'>('list');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Filters: 개별 사용자(userProfile.id)별로 영구 저장(localStorage)하여 브라우저 재접속 후에도 개인 설정 유지
@@ -818,42 +816,9 @@ export const Orders: React.FC = () => {
     ].filter(Boolean).length;
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        {/* 상단 기본 필터 노출 라인 */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* 뷰 전환 탭 */}
-          <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '4px', padding: '2px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
-            {([
-              { mode: 'list',   label: '📋 목록 보기' },
-              { mode: 'kanban', label: '🗂 칸반 보기' },
-              { mode: 'todo',   label: '✅ 할 일 보기' },
-            ] as const).map(({ mode, label }) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                style={{
-                  padding: '6px 14px', border: 'none', borderRadius: '4px',
-                  background: viewMode === mode ? '#fff' : 'transparent',
-                  color: viewMode === mode ? '#1e293b' : '#64748b',
-                  fontWeight: viewMode === mode ? 700 : 500,
-                  fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s',
-                  boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {label}
-                {mode === 'todo' && stats.urgentCount > 0 && (
-                  <span style={{ marginLeft: '4px', background: '#ef4444', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '1px 4px', borderRadius: '8px' }}>
-                    {stats.urgentCount}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* 구분선 */}
-          <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
-
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+        {/* 상단 기본 필터 노출 라인 (한 줄 고정) */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', flexWrap: 'nowrap', width: '100%', minWidth: 'max-content' }}>
           {/* 기본 노출 필터: 발주사, 국가, 보기, 완료건, ETD */}
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, cleanCompanyName(c)])] },
@@ -863,20 +828,20 @@ export const Orders: React.FC = () => {
             { label: 'ETD', value: etdStatusFilter, set: setEtdStatusFilter, opts: [['All', '전체 ETD'], ['UnsetOrFuture', '⏳ ETD 미정/출항 전'], ['Unset', '📅 ETD 미정만'], ['Future', '🚢 출항 전(미래)'], ['Past', '⚓ 출항 완료(경과)']], highlight: etdStatusFilter !== 'All' },
           ].map(({ label, value, set, opts, highlight }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: highlight ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
-              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: highlight ? '1.5px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: highlight ? '#eff6ff' : '#fff', color: highlight ? '#1d4ed8' : '#1e293b', fontWeight: highlight ? 700 : 600, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: highlight ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</label>
+              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '0 8px', border: highlight ? '1.5px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: highlight ? '#eff6ff' : '#fff', color: highlight ? '#1d4ed8' : '#1e293b', fontWeight: highlight ? 700 : 600, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
                 {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
           ))}
 
           {/* 구분선 */}
-          <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '26px', background: '#cbd5e1', margin: '0 2px 4px 2px', flexShrink: 0 }} />
 
           {/* 기본 노출 필터: 조회 기간 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-            <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</label>
-            <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>조회 기간</label>
+            <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '0 8px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
               <option value="Last3Months">최근 3개월</option>
               <option value="All">전체 기간</option>
               <option value="Monthly">월별</option>
@@ -888,32 +853,32 @@ export const Orders: React.FC = () => {
           </div>
           {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>년도</label>
-              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>년도</label>
+              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                 {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
               </select>
             </div>
           )}
           {dateFilterType === 'Monthly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>월</label>
-              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>월</label>
+              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
               </select>
             </div>
           )}
           {dateFilterType === 'Quarterly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>분기</label>
-              <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>분기</label>
+              <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                 {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q}분기</option>)}
               </select>
             </div>
           )}
           {dateFilterType === 'HalfYearly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반기</label>
-              <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>반기</label>
+              <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                 <option value={1}>상반기</option><option value={2}>하반기</option>
               </select>
             </div>
@@ -921,13 +886,13 @@ export const Orders: React.FC = () => {
           {dateFilterType === 'Range' && (
             <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작일</label>
-                <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>시작일</label>
+                <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
-              <span style={{ paddingBottom: '8px', color: '#94a3b8', fontWeight: 700, fontSize: '14px' }}>~</span>
+              <span style={{ paddingBottom: '7px', color: '#94a3b8', fontWeight: 700, fontSize: '14px' }}>~</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>종료일</label>
-                <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>종료일</label>
+                <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             </div>
           )}
@@ -939,11 +904,11 @@ export const Orders: React.FC = () => {
             style={{
               alignSelf: 'flex-end',
               height: '34px',
-              padding: '0 12px',
+              padding: '0 10px',
               background: showAdvancedFilters ? '#e2e8f0' : '#f1f5f9',
               border: '1px solid #cbd5e1',
               borderRadius: '4px',
-              fontSize: '12.5px',
+              fontSize: '12px',
               fontWeight: 700,
               color: '#475569',
               cursor: 'pointer',
@@ -951,12 +916,13 @@ export const Orders: React.FC = () => {
               alignItems: 'center',
               gap: '4px',
               marginLeft: 'auto',
-              flexShrink: 0
+              flexShrink: 0,
+              whiteSpace: 'nowrap'
             }}
           >
             ⚙ 상세 필터
             {advancedFilterCount > 0 && (
-              <span style={{ background: '#3b82f6', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '10px', marginLeft: '2px' }}>
+              <span style={{ background: '#3b82f6', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '1px 5px', borderRadius: '10px' }}>
                 {advancedFilterCount}
               </span>
             )}
@@ -994,282 +960,7 @@ export const Orders: React.FC = () => {
     );
   };
 
-  // ── 오더 카드 (칸반/목록 공통 사용) ──────────────────────────────────────
-  const OrderCard = ({ order, compact = false }: { order: Order & { nextAction: NextAction }; compact?: boolean }) => {
-    const pi = quotations.find(q => q.id === order.quotationId);
-    const amount = getOrderAmountUsd(order, pi);
-    const { pct } = getOverallProgress(order);
-    const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : 'var(--text-secondary)';
-    const lvlBg   = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
-    const lvlBdr  = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : 'var(--border-color)';
-    const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
-    const currentStepKey = stepToStageKey[mapStatusToStep(order.status || '')] as StageKey;
 
-    return (
-      <div
-        onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-        style={{
-          background: '#fff', border: `1px solid ${order.nextAction.level === 'RED' ? '#fecaca' : 'var(--border-color)'}`,
-          borderRadius: '10px', padding: compact ? '10px 12px' : '14px 16px',
-          cursor: 'pointer', transition: 'all 0.15s',
-          boxShadow: order.nextAction.level === 'RED' ? '0 0 0 1px #fecaca' : '0 1px 3px rgba(0,0,0,0.05)',
-          display: 'flex', flexDirection: 'column', gap: '8px',
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = order.nextAction.level === 'RED' ? '0 0 0 1px #fecaca' : '0 1px 3px rgba(0,0,0,0.05)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; }}
-      >
-        {/* 카드 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {order.ciNumber || order.id}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyOrder(order);
-                }}
-                style={{
-                  background: '#f1f5f9',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '4px',
-                  padding: '1px 5px',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: '#475569',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-                title="PO 복사"
-              >
-                📋 복사
-              </button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={order.customer}>
-                {cleanCompanyName(order.customer)}
-              </span>
-              {getOrderCountry(order) && (
-                <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  {getOrderCountry(order)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f766e' }}>
-              ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </span>
-            <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '8px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
-              {order.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
-            </span>
-          </div>
-        </div>
-
-        {/* 전체 진행바 */}
-        {sc && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 500 }}>전체 진행률</span>
-              <span style={{ fontSize: '9.5px', fontWeight: 700, color: pct === 100 ? '#10b981' : '#2563eb' }}>{pct}%</span>
-            </div>
-            <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '2px', transition: 'width 0.3s' }} />
-            </div>
-          </div>
-        )}
-
-        {/* 단계별 미니 진행바 */}
-        {sc && (
-          <div style={{ display: 'flex', gap: '2px' }}>
-            {STAGE_KEYS.map(sk => {
-              const { done, total } = getStageProgress(order, sk);
-              const isCurrent = sk === currentStepKey;
-              const isDone = total > 0 && done === total;
-              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : 'var(--border-color)';
-              const stageLabels: Record<StageKey, string> = { 수주정보: 'PO', 소싱발주: '소싱', 물류선적: '선적', 서류관리: '서류', 정산결제: '정산' };
-              return (
-                <div key={sk} title={`${stageLabels[sk]}: ${done}/${total}`} style={{ flex: 1, height: '5px', borderRadius: '3px', background: color, transition: 'background 0.2s' }} />
-              );
-            })}
-          </div>
-        )}
-
-        {/* 다음 액션 */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 8px', borderRadius: '16px', background: lvlBg, border: `1px solid ${lvlBdr}`, color: lvlColor, fontSize: '10.5px', fontWeight: 600 }}>
-          <span>{order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '→'}</span>
-          <span>{order.nextAction.text}</span>
-        </div>
-
-        {/* 날짜 */}
-        {order.poDate && (
-          <span style={{ fontSize: '9.5px', color: 'var(--border-default)', fontWeight: 500 }}>PO접수 {order.poDate}</span>
-        )}
-      </div>
-    );
-  };
-
-  // ── 칸반 뷰 ───────────────────────────────────────────────────────────────
-  const KANBAN_COLS: { step: string; key: string; icon: string; color: string; bg: string }[] = [
-    { step: '수주정보', key: '수주정보', icon: '📋', color: '#1e40af', bg: '#eff6ff' },
-    { step: '소싱/발주', key: '소싱/발주', icon: '🏭', color: '#0f766e', bg: '#f0fdfa' },
-    { step: '물류/선적', key: '물류/선적', icon: '🚢', color: '#7c3aed', bg: '#f5f3ff' },
-    { step: '서류관리', key: '서류관리', icon: '📄', color: '#b45309', bg: '#fffbeb' },
-    { step: '정산/결제', key: '정산/결제', icon: '💰', color: '#065f46', bg: '#f0fdf4' },
-    { step: '완료', key: '완료', icon: '✅', color: 'var(--text-secondary)', bg: '#f1f5f9' },
-  ];
-
-  const KanbanView = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', alignItems: 'flex-start' }}>
-      {KANBAN_COLS.map(col => {
-        const colOrders = processedOrders.filter(o => getFirstIncompleteStage(o) === col.step);
-        const colAmount = colOrders.reduce((sum, o) => {
-          const pi = quotations.find(q => q.id === o.quotationId);
-          return sum + getOrderAmountUsd(o, pi);
-        }, 0);
-        return (
-          <div key={col.key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* 컬럼 헤더 */}
-            <div style={{ background: col.bg, border: `1px solid ${col.color}22`, borderRadius: '10px', padding: '10px 14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: col.color }}>{col.icon} {col.step}</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: col.color, color: '#fff', borderRadius: '10px', padding: '1px 7px' }}>{colOrders.length}</span>
-              </div>
-              {colAmount > 0 && (
-                <div style={{ fontSize: '10.5px', color: col.color, fontWeight: 600, marginTop: '4px', opacity: 0.8 }}>
-                  ${colAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-              )}
-              {/* 긴급 건수 */}
-              {colOrders.filter(o => o.nextAction.level === 'RED').length > 0 && (
-                <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: 700, marginTop: '2px' }}>
-                  ⚠️ 긴급 {colOrders.filter(o => o.nextAction.level === 'RED').length}건
-                </div>
-              )}
-            </div>
-            {/* 카드 목록 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {colOrders.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--border-default)', fontSize: '11.5px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                  오더 없음
-                </div>
-              ) : (
-                colOrders.map(o => <OrderCard key={o.id} order={o} compact />)
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // ── 할 일 뷰 ──────────────────────────────────────────────────────────────
-  const TodoView = () => {
-    const redOrders    = processedOrders.filter(o => o.nextAction.level === 'RED');
-    const orangeOrders = processedOrders.filter(o => o.nextAction.level === 'ORANGE');
-    const whiteOrders  = processedOrders.filter(o => o.nextAction.level === 'WHITE');
-
-    const TodoSection = ({ title, icon, orders, color, bg, border }: {
-      title: string; icon: string;
-      orders: (Order & { nextAction: NextAction })[];
-      color: string; bg: string; border: string;
-    }) => (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {/* 섹션 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: bg, border: `1px solid ${border}`, borderRadius: '10px' }}>
-          <span style={{ fontSize: '14px' }}>{icon}</span>
-          <span style={{ fontSize: '13px', fontWeight: 800, color }}>{title}</span>
-          <span style={{ fontSize: '11px', fontWeight: 700, background: color, color: '#fff', borderRadius: '10px', padding: '1px 8px', marginLeft: 'auto' }}>{orders.length}건</span>
-        </div>
-        {/* 할 일 행 */}
-        {orders.length === 0 ? (
-          <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-            해당 없음
-          </div>
-        ) : orders.map(o => {
-          const pi = quotations.find(q => q.id === o.quotationId);
-          const amount = getOrderAmountUsd(o, pi);
-          const { pct } = getOverallProgress(o);
-          const currentStep = mapStatusToStep(o.status || '');
-          return (
-            <div
-              key={o.id}
-              onClick={() => navigate(`/orders/${o.id}?step=${currentStep}`)}
-              style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr auto auto',
-                alignItems: 'center', gap: '16px',
-                background: '#fff', border: `1px solid ${border}`,
-                borderRadius: '10px', padding: '14px 18px',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; }}
-            >
-              {/* 오더 정보 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {o.ciNumber || o.id}
-                  </span>
-                  <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '8px', background: o.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: o.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
-                    {o.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={o.customer}>
-                    {cleanCompanyName(o.customer)}
-                  </span>
-                  {getOrderCountry(o) && (
-                    <span style={{ fontSize: '10px', fontWeight: 750, padding: '1px 5px', borderRadius: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      {getOrderCountry(o)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 처리 필요 액션 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '16px', background: bg, border: `1px solid ${border}`, color, fontSize: '11.5px', fontWeight: 700, width: 'fit-content' }}>
-                  <span>{icon}</span>
-                  <span>{o.nextAction.text}</span>
-                </div>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', paddingLeft: '2px' }}>
-                  현재 단계: <strong style={{ color: 'var(--text-secondary)' }}>{currentStep}</strong>
-                  {o.poDate && <span> · PO {o.poDate}</span>}
-                </span>
-              </div>
-
-                {/* 진행률 */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '80px' }}>
-                <div style={{ width: '80px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px' }} />
-                </div>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{pct}% 완료</span>
-              </div>
-
-              {/* 금액 + 이동 버튼 */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f766e', whiteSpace: 'nowrap' }}>
-                  ${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </span>
-                <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 600 }}>바로가기 →</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <TodoSection title="🔴 오늘 즉시 처리" icon="⚠️" orders={redOrders}    color="#dc2626" bg="#fef2f2" border="#fecaca" />
-        <TodoSection title="🟡 이번 주 처리 필요" icon="⏰" orders={orangeOrders} color="#d97706" bg="#fffbeb" border="#fef3c7" />
-        <TodoSection title="✅ 진행 중 (정상)" icon="→"  orders={whiteOrders}  color="var(--text-secondary)" bg="#f8fafc" border="var(--border-color)" />
-      </div>
-    );
-  };
 
   // ── 목록 뷰 (기존) ────────────────────────────────────────────────────────
   const ListView = () => {
@@ -1848,10 +1539,6 @@ export const Orders: React.FC = () => {
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
           등록된 주문이 없습니다.
         </div>
-      ) : viewMode === 'kanban' ? (
-        <KanbanView />
-      ) : viewMode === 'todo' ? (
-        <TodoView />
       ) : (
         <ListView />
       )}

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.563',
+    version: 'v2.8.563',
+    date: '2026-09-16',
+    category: 'UI/UX',
+    title: '주문관리 필터바 단일 라인(한 줄) 고정 및 불필요한 뷰 모드(칸반/할 일) 제거',
+    content: '• 불필요한 뷰 전환(칸반 보기 / 할 일 보기) 탭 완전 제거: 실무에서 사용하지 않는 칸반 및 할 일 뷰를 정리하고 핵심적인 목록 보기(ListView) 단일 모드로 집중\n• 상단 기본 필터바 한 줄(단일 행) 정렬 완성: 뷰 모드 탭이 제거되면서 충분해진 가로 공간과 함께 flexWrap nowrap 고정을 적용하여 발주사, 국가, 보기, 완료건, ETD, 조회 기간(연도/월/직접입력), 상세필터 버튼까지 모든 제어 도구가 줄바꿈 없이 한 줄로 단정하게 배치되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.562',
     version: 'v2.8.562',
     date: '2026-09-16',
