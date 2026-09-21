@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.571',
+    version: 'v2.8.571',
+    date: '2026-09-21',
+    category: '버그수정',
+    title: '패킹 및 컨테이너로딩플랜 ↔ 도착보고서 데이터 1:1 일치 보장, 패킹번호/쉬핑마크 오류 해결 및 규격 이상 데이터 완전 차단·재발 방지',
+    content: '• 패킹리스트 ↔ 도착보고서 1:1 동기화 자가 치유(Self-Healing) 및 재발 방지: 공급사 품목명 접두사 일치로 인해 동일 공급사의 다수 파렛트(예: 주식회사 정도 Pallet 1~6)가 1번 파렛트 단일 행으로 강제 병합·축소되던 결함을 근본 차단하고, 컨테이너 인덱스 1:1 순차 매핑 및 손상 데이터 자동 복원(Self-Healing) 적용\n• 쉬핑마크(PALLET NO. : X / Y) 및 중량(Net/Gross) 완벽 정합: 컨테이너에 적재된 파렛트 번호(1~6 등)와 수식 계산된 중량을 도착보고서에 정확히 1:1 연동\n• 규격(W×L×H) 이상 데이터("[p0233", "1m,roof", "H", "m10", "50bolts" 등) 근본 원인 차단: 엑셀 일괄 업로드 시 품목 사양/스펙(Spec) 열이 포장 규격(Dimensions)으로 잘못 유입되던 문제를 차단하여 규격 열에는 3차원 숫자 치수(W*L*H)만 수용하고 제품 스펙은 품명/사양으로 안전하게 통합\n• 규격 인풋 자동 살균(Sanitization) 및 마스터 치수 자동 복원: 기저장된 규격 데이터에 영문/특수문자가 포함된 경우 화면에 깨진 글자가 표시되지 않도록 숫자만 필터링하고, 품목 마스터의 파렛트 규격(palletWidth/Length/Height)으로 자동 복구\n• [🔄 패킹리스트 동기화] 및 혼적 행 일괄 반영 강화: 동기화 클릭 시 최신 컨테이너 패킹 정보를 즉시 재구성하여 Firestore에 저장하며, 도착보고서 테이블 편집 시 혼적 파렛트의 모든 품목 행이 동일한 규격·마크·중량을 유지하도록 일괄 업데이트(Batch Update) 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.570',
     version: 'v2.8.570',
     date: '2026-09-21',

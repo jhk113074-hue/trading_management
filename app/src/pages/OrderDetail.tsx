@@ -2137,13 +2137,25 @@ export const OrderDetail: React.FC = () => {
               containerChanged = true;
               updatedIt.supplier = supName;
             }
-            // Auto fill dimensions if missing on row but exists on product master
-            if (!updatedIt.dimensions || updatedIt.dimensions === '0x0x0' || updatedIt.dimensions === '0*0*0') {
+            // Auto fill dimensions if missing or corrupted on row but exists on product master
+            const dimParts = (updatedIt.dimensions || '').toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '').split('x');
+            const isInvalidDim = !updatedIt.dimensions || 
+                                 updatedIt.dimensions === '0x0x0' || 
+                                 updatedIt.dimensions === '0*0*0' ||
+                                 /[a-z\[\]#_]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×x]/g, '')) ||
+                                 dimParts.length < 3 ||
+                                 !dimParts.slice(0, 3).every((p: string) => /^\d+(\.\d+)?$/.test(p.trim()) && parseFloat(p) > 0);
+
+            if (isInvalidDim) {
               const pW = prod.palletWidth || prod.specWidth || 0;
               const pL = prod.palletLength || prod.specLength || 0;
               const pH = prod.palletHeight || prod.specHeight || 0;
               if (pW > 0 && pL > 0 && pH > 0) {
                 updatedIt.dimensions = `${pW}x${pL}x${pH}`;
+                containerChanged = true;
+              } else if (updatedIt.dimensions && /[a-z\[\]#_]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×x]/g, ''))) {
+                // Clear corrupted non-dimension strings like "[p0233..." so they don't pollute UI
+                updatedIt.dimensions = '';
                 containerChanged = true;
               }
             }
@@ -5579,17 +5591,38 @@ export const OrderDetail: React.FC = () => {
             return '';
           };
 
+          const parseExcelRowDimensionsAndSpec = (rawDims: string, rawDesc: string) => {
+            let dimStr = (rawDims || '').trim();
+            let descStr = (rawDesc || '').trim();
+            if (dimStr) {
+              const norm = dimStr.toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '');
+              const parts = norm.split('x');
+              const isStrictDimension = parts.length >= 3 && parts.slice(0, 3).every(p => /^\d+(\.\d+)?$/.test(p) && parseFloat(p) > 0);
+              if (isStrictDimension) {
+                dimStr = parts.slice(0, 3).join('x');
+              } else {
+                // Not a 3D dimension: It is likely a product specification or name (e.g. "1x1m, Roof, 1.0T" or "M10X50 BOLT SET")
+                if (descStr && !descStr.toLowerCase().includes(dimStr.toLowerCase())) {
+                  descStr = `${descStr} (${dimStr})`;
+                }
+                dimStr = '';
+              }
+            }
+            return { dimStr, descStr };
+          };
+
           const newItems: any[] = [];
           let sealFromRow = '';
           let cNoFromRow = '';
 
           rawRows.forEach((row, rowIdx) => {
             const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
-            const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+            const rawDesc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
             const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
             const qty = findVal(row, ['수량', 'qty', 'quantity']);
             const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
-            const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+            const rawDims = findVal(row, ['dimensions', 'dimension', 'wxlxh', '사이즈', '규격']);
+            const { dimStr: dims, descStr: desc } = parseExcelRowDimensionsAndSpec(rawDims, rawDesc);
             const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
             const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
             const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
@@ -5651,6 +5684,25 @@ export const OrderDetail: React.FC = () => {
             return '';
           };
 
+          const parseExcelRowDimensionsAndSpec = (rawDims: string, rawDesc: string) => {
+            let dimStr = (rawDims || '').trim();
+            let descStr = (rawDesc || '').trim();
+            if (dimStr) {
+              const norm = dimStr.toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '');
+              const parts = norm.split('x');
+              const isStrictDimension = parts.length >= 3 && parts.slice(0, 3).every(p => /^\d+(\.\d+)?$/.test(p) && parseFloat(p) > 0);
+              if (isStrictDimension) {
+                dimStr = parts.slice(0, 3).join('x');
+              } else {
+                if (descStr && !descStr.toLowerCase().includes(dimStr.toLowerCase())) {
+                  descStr = `${descStr} (${dimStr})`;
+                }
+                dimStr = '';
+              }
+            }
+            return { dimStr, descStr };
+          };
+
           // 시트별 또는 단일 시트 내 컨테이너 분기
           const parsedContainers: any[] = [];
 
@@ -5676,11 +5728,12 @@ export const OrderDetail: React.FC = () => {
                 let sNo = '';
                 cRows.forEach((row, rIdx) => {
                   const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
-                  const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+                  const rawDesc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
                   const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
                   const qty = findVal(row, ['수량', 'qty', 'quantity']);
                   const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
-                  const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+                  const rawDims = findVal(row, ['dimensions', 'dimension', 'wxlxh', '사이즈', '규격']);
+                  const { dimStr: dims, descStr: desc } = parseExcelRowDimensionsAndSpec(rawDims, rawDesc);
                   const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
                   const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
                   const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
@@ -5724,11 +5777,12 @@ export const OrderDetail: React.FC = () => {
 
               rawRows.forEach((row, rIdx) => {
                 const palletNo = findVal(row, ['palletno', 'pallet', 'pkgno', '팔레트', '팔레트번호', 'no']);
-                const desc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
+                const rawDesc = findVal(row, ['description', 'descriptionofgoods', '품명', '사양', '품명및규격', '품명및사양', 'goods']);
                 const supplier = findVal(row, ['supplier', '유통사', '공급사', '제조사', '업체']);
                 const qty = findVal(row, ['수량', 'qty', 'quantity']);
                 const pkg = findVal(row, ['pkg수', 'pkg', 'packages', '박스수', '포장수']);
-                const dims = findVal(row, ['규격', 'dimensions', 'dimension', 'wxlxh', '사이즈']);
+                const rawDims = findVal(row, ['dimensions', 'dimension', 'wxlxh', '사이즈', '규격']);
+                const { dimStr: dims, descStr: desc } = parseExcelRowDimensionsAndSpec(rawDims, rawDesc);
                 const stack = findVal(row, ['다단적재', 'stackable', 'stack']);
                 const rot = findVal(row, ['회전허용', 'rotation', 'rotate']);
                 const netW = findVal(row, ['netwt', 'netweight', '순중량', 'net']);
@@ -8448,7 +8502,7 @@ ${downloadLink}`;
     if (grandTotalPlt === 0) grandTotalPlt = (order.items || []).length || 1;
 
     let packingItemsList = repData.packingItems || [];
-    if (packingItemsList.length === 0 && basicForm.packingList?.containers) {
+    if (basicForm.packingList?.containers) {
       let matchingItems: any[] = [];
       basicForm.packingList.containers.forEach((container: any) => {
         const itemsForSupplier = (container.items || []).filter((it: any) => 
@@ -8456,50 +8510,59 @@ ${downloadLink}`;
         );
         matchingItems = [...matchingItems, ...itemsForSupplier];
       });
-      matchingItems.forEach((it: any, idx: number) => {
-        let desc = (it.description || '').replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
-        const matchedPO = (orderItems || []).find((oi: any) => 
-          (it.itemCode && oi.productCode === it.itemCode) ||
-          (oi.name && desc.includes(oi.name)) ||
-          (oi.productCode && desc.includes(oi.productCode))
-        );
-        const itemUnit = it.unit || matchedPO?.unit || 'EA';
-        desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
-        if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
-        const pNo = it.pkgNo || String(idx + 1);
-        const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
-        const itemQtyVal = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
 
-        packingItemsList.push({
-          pkgNo: pNo,
-          pkg: it.pkg,
-          _sharedWithPrev: it._sharedWithPrev,
-          _sharedGroupHead: it._sharedGroupHead,
-          _isMergedGroup: it._isMergedGroup,
-          _isMergedMember: it._isMergedMember,
-          marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
-          descOfGoods: desc,
-          qty: itemQtyVal,
-          packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
-          netWeight: evaluateFormulaGlobal(it.netWeight),
-          grossWeight: evaluateFormulaGlobal(it.grossWeight),
-          measurement: (() => {
-            let dimStr = it.dimensions || '';
-            if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
-              const match = (it.description || '').match(/^\[(.*?)\]/);
-              const itemCode = match ? match[1] : (it.itemCode || '');
-              const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
-              const pW = prod?.palletWidth || prod?.specWidth || 0;
-              const pL = prod?.palletLength || prod?.specLength || 0;
-              const pH = prod?.palletHeight || prod?.specHeight || 0;
-              if (pW > 0 && pL > 0 && pH > 0) {
-                dimStr = `${pW}*${pL}*${pH}`;
+      const matchingPkgNos = Array.from(new Set(matchingItems.map(m => m.pkgNo).filter(Boolean)));
+      const currentPkgNos = Array.from(new Set(packingItemsList.map((p: any) => p.pkgNo).filter(Boolean)));
+      const isCorrupted = (matchingPkgNos.length > 1 && currentPkgNos.length <= 1) || 
+                          (packingItemsList.length > 0 && matchingItems.length > 0 && packingItemsList.length !== matchingItems.length);
+
+      if (matchingItems.length > 0 && (packingItemsList.length === 0 || isCorrupted)) {
+        packingItemsList = [];
+        matchingItems.forEach((it: any, idx: number) => {
+          let desc = (it.description || '').replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          const matchedPO = (orderItems || []).find((oi: any) => 
+            (it.itemCode && oi.productCode === it.itemCode) ||
+            (oi.name && desc.includes(oi.name)) ||
+            (oi.productCode && desc.includes(oi.productCode))
+          );
+          const itemUnit = it.unit || matchedPO?.unit || 'EA';
+          desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
+          if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
+          const pNo = it.pkgNo || String(idx + 1);
+          const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
+          const itemQtyVal = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
+
+          packingItemsList.push({
+            pkgNo: pNo,
+            pkg: it.pkg,
+            _sharedWithPrev: it._sharedWithPrev,
+            _sharedGroupHead: it._sharedGroupHead,
+            _isMergedGroup: it._isMergedGroup,
+            _isMergedMember: it._isMergedMember,
+            marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
+            descOfGoods: desc,
+            qty: itemQtyVal,
+            packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
+            netWeight: evaluateFormulaGlobal(it.netWeight),
+            grossWeight: evaluateFormulaGlobal(it.grossWeight),
+            measurement: (() => {
+              let dimStr = it.dimensions || '';
+              if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
+                const match = (it.description || '').match(/^\[(.*?)\]/);
+                const itemCode = match ? match[1] : (it.itemCode || '');
+                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                const pW = prod?.palletWidth || prod?.specWidth || 0;
+                const pL = prod?.palletLength || prod?.specLength || 0;
+                const pH = prod?.palletHeight || prod?.specHeight || 0;
+                if (pW > 0 && pL > 0 && pH > 0) {
+                  dimStr = `${pW}*${pL}*${pH}`;
+                }
               }
-            }
-            return formatMeasurementWithDims(dimStr, it.cbm);
-          })()
+              return formatMeasurementWithDims(dimStr, it.cbm);
+            })()
+          });
         });
-      });
+      }
     }
 
     // Company, Shipper, Consignee, CFS Info
@@ -13005,11 +13068,26 @@ ${downloadLink}`;
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
                                             {(() => {
-                                              const rawDims = (it.dimensions || '').toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '');
-                                              const dims = rawDims ? rawDims.split('x') : ['', '', ''];
-                                              const widthVal = dims[0] ?? '';
-                                              const lengthVal = dims[1] ?? '';
-                                              const heightVal = dims[2] ?? '';
+                                               const rawDims = (it.dimensions || '').toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '');
+                                               const dims = rawDims ? rawDims.split('x') : ['', '', ''];
+                                               const isNumDim = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+                                               let widthVal = isNumDim(dims[0]) ? dims[0] : '';
+                                               let lengthVal = isNumDim(dims[1]) ? dims[1] : '';
+                                               let heightVal = isNumDim(dims[2]) ? dims[2] : '';
+
+                                               if (!widthVal || !lengthVal || !heightVal) {
+                                                 const match = (it.description || '').match(/^\[(.*?)\]/);
+                                                 const itemCode = match ? match[1] : (it.itemCode || '');
+                                                 const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                                 const pW = prod?.palletWidth || prod?.specWidth || 0;
+                                                 const pL = prod?.palletLength || prod?.specLength || 0;
+                                                 const pH = prod?.palletHeight || prod?.specHeight || 0;
+                                                 if (pW > 0 && pL > 0 && pH > 0) {
+                                                   if (!widthVal) widthVal = String(pW);
+                                                   if (!lengthVal) lengthVal = String(pL);
+                                                   if (!heightVal) heightVal = String(pH);
+                                                 }
+                                               }
 
                                               const sanitizeDimInput = (val: string) => {
                                                 let cleaned = val.replace(/[^0-9.]/g, '');
@@ -13543,200 +13621,56 @@ ${downloadLink}`;
                       }
                       if (grandTotalPlt === 0) grandTotalPlt = items.length || 1;
 
-                      // Auto-pull items from the master packing list if not edited yet
-                      let packingItemsList = repData.packingItems || [];
-
-                      // Clean up existing/loaded packing items
-                      if (packingItemsList.length > 0) {
-                        let mutated = false;
-                        const nextList = packingItemsList.map((it: any, idx: number) => {
-                          let desc = it.descOfGoods || '';
-                          let marks = it.marks || '';
-                          
-                          const matchedPO = (orderItems || []).find((oi: any) => 
-                            (it.itemCode && oi.productCode === it.itemCode) ||
-                            (oi.name && desc.includes(oi.name)) ||
-                            (oi.productCode && desc.includes(oi.productCode))
+                      // Extract all matching container items for this supplier in exact container order
+                      const matchingContainerItems: any[] = [];
+                      if (basicForm.packingList?.containers) {
+                        basicForm.packingList.containers.forEach((container: any) => {
+                          const itemsForSupplier = (container.items || []).filter((cIt: any) => 
+                            isSameSupplier(cIt.supplier, supplierName)
                           );
-                          const itemUnit = it.unit || matchedPO?.unit || 'EA';
-
-                          // Fix any old hardcoded "kg" in item quantity description to the actual unit (EA)
-                          const fixedDesc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
-                          if (fixedDesc !== desc) {
-                            desc = fixedDesc;
-                            mutated = true;
-                          }
-
-                          if (marks.includes('PKG NO.')) {
-                            marks = marks.replace(/PKG NO\./gi, 'PALLET NO.');
-                            mutated = true;
-                          }
-
-                          // Synchronize with packing list container item to guarantee exact pallet number and weights
-                          let containerPkgNo = '';
-                          let containerNet: any = null;
-                          let containerGross: any = null;
-                          if (basicForm.packingList?.containers) {
-                            for (const container of basicForm.packingList.containers) {
-                              const found = (container.items || []).find((cIt: any) => 
-                                isSameSupplier(cIt.supplier, supplierName) &&
-                                ((it.itemCode && cIt.itemCode === it.itemCode) ||
-                                 (it.descOfGoods && cIt.description && it.descOfGoods.includes(cIt.description.split('(')[0].trim())) ||
-                                 (cIt.description && it.descOfGoods && cIt.description.includes(it.descOfGoods.split('(')[0].trim())))
-                              );
-                              if (found) {
-                                if (found.pkgNo) containerPkgNo = found.pkgNo;
-                                if (found.netWeight) containerNet = evaluateFormulaGlobal(found.netWeight);
-                                if (found.grossWeight) containerGross = evaluateFormulaGlobal(found.grossWeight);
-                                break;
-                              }
-                            }
-                          }
-
-                          const pNo = containerPkgNo || it.pkgNo || (marks.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
-                          if (it.pkgNo !== pNo) {
-                            it.pkgNo = pNo;
-                            mutated = true;
-                          }
-                          if (!it.qty || it.qty === 0) {
-                            it.qty = 1;
-                            mutated = true;
-                          }
-                          if ((!it.netWeight || it.netWeight === 0) && containerNet != null && containerNet > 0) {
-                            it.netWeight = containerNet;
-                            mutated = true;
-                          }
-                          if ((!it.grossWeight || it.grossWeight === 0) && containerGross != null && containerGross > 0) {
-                            it.grossWeight = containerGross;
-                            mutated = true;
-                          }
-
-                          if (marks.includes('PALLET NO.')) {
-                            const expectedLine = `PALLET NO. : ${pNo} / ${grandTotalPlt}`;
-                            if (!marks.includes(expectedLine)) {
-                              marks = marks.replace(/PALLET NO\.\s*:\s*[^\n]+/i, expectedLine);
-                              mutated = true;
-                            }
-                          } else {
-                            marks = getDefaultShippingMark(pNo, String(grandTotalPlt));
-                            mutated = true;
-                          }
-                          if (/\((완제|자투리|혼적|독립|단품)[^)]*\)/.test(desc) || (it.qty && !desc.includes(String(it.qty)))) {
-                            desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
-                            
-                            let matchedQty = '';
-                            if (basicForm.packingList?.containers) {
-                              for (const container of basicForm.packingList.containers) {
-                                const found = (container.items || []).find((cIt: any) => 
-                                  desc.includes(cIt.itemCode || '') || (cIt.itemName && desc.includes(cIt.itemName))
-                                );
-                                if (found && found.qty) {
-                                  matchedQty = found.qty;
-                                  break;
-                                }
-                              }
-                            }
-                            
-                            const actualQty = matchedQty || '';
-                            if (actualQty && !desc.includes(String(actualQty))) {
-                              desc = `${desc} ${actualQty} ${itemUnit}`.replace(/\s+/g, ' ');
-                            }
-
-                            // 파렛트 가로*세로*높이 (WxLxH) 동기화 보정
-                            if (!it.measurement || (!it.measurement.includes('*') && !it.measurement.includes('x'))) {
-                              let matchedDims = '';
-                              if (basicForm.packingList?.containers) {
-                                for (const container of basicForm.packingList.containers) {
-                                  const found = (container.items || []).find((cIt: any) => 
-                                    (cIt.pkgNo && it.pkgNo && cIt.pkgNo === it.pkgNo) ||
-                                    (cIt.itemCode && desc.includes(cIt.itemCode)) ||
-                                    (cIt.description && desc.includes(cIt.description))
-                                  );
-                                  if (found && found.dimensions && found.dimensions !== '0x0x0' && found.dimensions !== '0*0*0') {
-                                    matchedDims = found.dimensions;
-                                    break;
-                                  }
-                                }
-                              }
-                              if (!matchedDims) {
-                                const match = desc.match(/^\[(.*?)\]/);
-                                const itemCode = match ? match[1] : '';
-                                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                const pW = prod?.palletWidth || prod?.specWidth || 0;
-                                const pL = prod?.palletLength || prod?.specLength || 0;
-                                const pH = prod?.palletHeight || prod?.specHeight || 0;
-                                if (pW > 0 && pL > 0 && pH > 0) {
-                                  matchedDims = `${pW}*${pL}*${pH}`;
-                                }
-                              }
-                              if (matchedDims) {
-                                const newMeas = formatMeasurementWithDims(matchedDims, it.measurement);
-                                if (newMeas && newMeas !== it.measurement) {
-                                  it.measurement = newMeas;
-                                  mutated = true;
-                                }
-                              }
-                            }
-                            
-                            if (desc !== it.descOfGoods) {
-                              mutated = true;
-                              return { ...it, descOfGoods: desc, marks, pkgNo: pNo, measurement: it.measurement };
-                            }
-                          }
-                          return mutated ? { ...it, descOfGoods: desc, marks, pkgNo: pNo, measurement: it.measurement } : it;
+                          matchingContainerItems.push(...itemsForSupplier);
                         });
-                        if (mutated) {
-                          packingItemsList = nextList;
-                        }
                       }
 
-                      if (packingItemsList.length === 0 && basicForm.packingList?.containers) {
-                        let matchingItems: any[] = [];
-                        basicForm.packingList.containers.forEach((container: any) => {
-                          const itemsForSupplier = (container.items || []).filter((it: any) => 
-                            isSameSupplier(it.supplier, supplierName)
-                          );
-                          matchingItems = [...matchingItems, ...itemsForSupplier];
-                        });
-
-                        matchingItems.forEach((it: any, idx: number) => {
-                          let desc = it.description || '';
+                      // Helper to build pristine arrival report items directly from container items
+                      const buildItemsFromContainer = (cItems: any[], totalPlts: number) => {
+                        const result: any[] = [];
+                        cItems.forEach((cIt: any, idx: number) => {
+                          let desc = cIt.description || '';
                           desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
-                          
                           const matchedPO = (orderItems || []).find((oi: any) => 
-                            (it.itemCode && oi.productCode === it.itemCode) ||
+                            (cIt.itemCode && oi.productCode === cIt.itemCode) ||
                             (oi.name && desc.includes(oi.name)) ||
                             (oi.productCode && desc.includes(oi.productCode))
                           );
-                          const itemUnit = it.unit || matchedPO?.unit || 'EA';
+                          const itemUnit = cIt.unit || matchedPO?.unit || 'EA';
                           desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
-
-                          if (it.qty && !desc.includes(String(it.qty))) {
-                            desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
+                          if (cIt.qty && !desc.includes(String(cIt.qty))) {
+                            desc = `${desc} ${cIt.qty} ${itemUnit}`.replace(/\s+/g, ' ');
                           }
 
-                          const pNo = it.pkgNo || String(idx + 1);
-                          const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
-                          const itemQtyVal = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
+                          const pNo = cIt.pkgNo || String(idx + 1);
+                          const isFirstOfThisSupplierOnPallet = idx === 0 || cItems[idx - 1]?.pkgNo !== pNo;
+                          const itemPkgCount = (Number(cIt.pkg) > 0) ? Number(cIt.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
 
-                          packingItemsList.push({
+                          result.push({
                             pkgNo: pNo,
-                            pkg: it.pkg,
-                            _sharedWithPrev: it._sharedWithPrev,
-                            _sharedGroupHead: it._sharedGroupHead,
-                            _isMergedGroup: it._isMergedGroup,
-                            _isMergedMember: it._isMergedMember,
-                            marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
+                            pkg: cIt.pkg,
+                            _sharedWithPrev: cIt._sharedWithPrev,
+                            _sharedGroupHead: cIt._sharedGroupHead,
+                            _isMergedGroup: cIt._isMergedGroup,
+                            _isMergedMember: cIt._isMergedMember,
+                            marks: getDefaultShippingMark(pNo, String(totalPlts)),
                             descOfGoods: desc,
-                            qty: itemQtyVal,
-                            packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
-                            netWeight: evaluateFormulaGlobal(it.netWeight),
-                            grossWeight: evaluateFormulaGlobal(it.grossWeight),
+                            qty: itemPkgCount,
+                            packageType: cIt.packageType && cIt.packageType !== '단품' ? cIt.packageType : 'PL',
+                            netWeight: evaluateFormulaGlobal(cIt.netWeight),
+                            grossWeight: evaluateFormulaGlobal(cIt.grossWeight),
                             measurement: (() => {
-                              let dimStr = it.dimensions || '';
+                              let dimStr = cIt.dimensions || '';
                               if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
-                                const match = (it.description || '').match(/^\[(.*?)\]/);
-                                const itemCode = match ? match[1] : (it.itemCode || '');
+                                const match = (cIt.description || '').match(/^\[(.*?)\]/);
+                                const itemCode = match ? match[1] : (cIt.itemCode || '');
                                 const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
                                 const pW = prod?.palletWidth || prod?.specWidth || 0;
                                 const pL = prod?.palletLength || prod?.specLength || 0;
@@ -13745,33 +13679,118 @@ ${downloadLink}`;
                                   dimStr = `${pW}*${pL}*${pH}`;
                                 }
                               }
-                              return formatMeasurementWithDims(dimStr, it.cbm);
+                              return formatMeasurementWithDims(dimStr, cIt.cbm);
                             })()
                           });
                         });
+                        return result;
+                      };
+
+                      let packingItemsList = repData.packingItems || [];
+
+                      // Recurrence Prevention & Self-Healing:
+                      // Check if saved arrival report data was corrupted (e.g. multiple distinct pallets in container collapsed into single pallet No in report)
+                      // or if container item count changed
+                      const matchingPkgNos = Array.from(new Set(matchingContainerItems.map(m => m.pkgNo).filter(Boolean)));
+                      const currentPkgNos = Array.from(new Set(packingItemsList.map((p: any) => p.pkgNo).filter(Boolean)));
+                      const isCorrupted = (matchingPkgNos.length > 1 && currentPkgNos.length <= 1) ||
+                                          (packingItemsList.length > 0 && matchingContainerItems.length > 0 && packingItemsList.length !== matchingContainerItems.length);
+
+                      if (matchingContainerItems.length > 0 && (packingItemsList.length === 0 || isCorrupted)) {
+                        packingItemsList = buildItemsFromContainer(matchingContainerItems, grandTotalPlt);
+                      } else if (matchingContainerItems.length > 0 && packingItemsList.length === matchingContainerItems.length) {
+                        // 1:1 synchronization with container items by exact index (PREVENTS loose substring mis-matching)
+                        packingItemsList = packingItemsList.map((it: any, idx: number) => {
+                          const cIt = matchingContainerItems[idx];
+                          const pNo = cIt?.pkgNo || it.pkgNo || String(idx + 1);
+                          const isFirstOfThisSupplierOnPallet = idx === 0 || matchingContainerItems[idx - 1]?.pkgNo !== pNo;
+                          const itemPkgCount = (Number(cIt?.pkg) > 0) ? Number(cIt.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
+
+                          let marks = it.marks || '';
+                          const expectedMark = getDefaultShippingMark(pNo, String(grandTotalPlt));
+                          if (!marks || marks.includes('PALLET NO.') || marks.includes('PKG NO.')) {
+                            marks = expectedMark;
+                          }
+
+                          let desc = it.descOfGoods || '';
+                          if (!desc) {
+                            desc = cIt?.description || '';
+                          }
+                          desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+
+                          const matchedPO = (orderItems || []).find((oi: any) => 
+                            (cIt?.itemCode && oi.productCode === cIt.itemCode) ||
+                            (oi.name && desc.includes(oi.name)) ||
+                            (oi.productCode && desc.includes(oi.productCode))
+                          );
+                          const itemUnit = cIt?.unit || it.unit || matchedPO?.unit || 'EA';
+                          desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
+                          if (cIt?.qty && !desc.includes(String(cIt.qty))) {
+                            desc = `${desc} ${cIt.qty} ${itemUnit}`.replace(/\s+/g, ' ');
+                          }
+
+                          const netWt = (cIt?.netWeight !== undefined && cIt?.netWeight !== '') 
+                            ? evaluateFormulaGlobal(cIt.netWeight) 
+                            : evaluateFormulaGlobal(it.netWeight);
+                          const grossWt = (cIt?.grossWeight !== undefined && cIt?.grossWeight !== '') 
+                            ? evaluateFormulaGlobal(cIt.grossWeight) 
+                            : evaluateFormulaGlobal(it.grossWeight);
+                          const measurement = cIt ? formatMeasurementWithDims(cIt.dimensions, cIt.cbm) : (it.measurement || '');
+
+                          return {
+                            ...it,
+                            pkgNo: pNo,
+                            pkg: cIt?.pkg !== undefined ? cIt.pkg : it.pkg,
+                            _sharedWithPrev: cIt?._sharedWithPrev,
+                            _sharedGroupHead: cIt?._sharedGroupHead,
+                            _isMergedGroup: cIt?._isMergedGroup,
+                            _isMergedMember: cIt?._isMergedMember,
+                            marks,
+                            descOfGoods: desc,
+                            qty: itemPkgCount,
+                            packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
+                            netWeight: netWt,
+                            grossWeight: grossWt,
+                            measurement: measurement || it.measurement
+                          };
+                        });
                       }
 
-                                  // If still empty, default to item descriptions
-                                  if (packingItemsList.length === 0) {
-                                    const itemDesc = items.map(it => `P#${order.custPo || '1'}. ${it.name}`).join(' / ');
-                                    const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
-                                    packingItemsList = [{
-                                      marks: getDefaultShippingMark(),
-                                      descOfGoods: itemDesc || '',
-                                      qty: totalQty || 1,
-                                      packageType: 'PL',
-                                      netWeight: 0,
-                                      grossWeight: 0,
-                                      measurement: ''
-                                    }];
-                                  }
-
+                      // If still empty, default to item descriptions
+                      if (packingItemsList.length === 0) {
+                        const itemDesc = items.map(it => `P#${order.custPo || '1'}. ${it.name}`).join(' / ');
+                        const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
+                        packingItemsList = [{
+                          marks: getDefaultShippingMark('1', String(grandTotalPlt)),
+                          descOfGoods: itemDesc || '',
+                          qty: totalQty || 1,
+                          packageType: 'PL',
+                          netWeight: 0,
+                          grossWeight: 0,
+                          measurement: ''
+                        }];
+                      }
 
                       const updateArrivalReportItem = (itemIdx: number, field: string, val: any) => {
                         const nextItems = [...packingItemsList];
                         nextItems[itemIdx] = { ...nextItems[itemIdx], [field]: val };
-                        
-                        // Update order.supplierArrivalReports state
+                        const updatedReports = {
+                          ...(order.supplierArrivalReports || {}),
+                          [supplierName]: {
+                            ...repData,
+                            packingItems: nextItems
+                          }
+                        };
+                        setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                      };
+
+                      const updateArrivalReportItemBatch = (startIdx: number, count: number, field: string, val: any) => {
+                        const nextItems = [...packingItemsList];
+                        for (let g = 0; g < count; g++) {
+                          if (startIdx + g < nextItems.length) {
+                            nextItems[startIdx + g] = { ...nextItems[startIdx + g], [field]: val };
+                          }
+                        }
                         const updatedReports = {
                           ...(order.supplierArrivalReports || {}),
                           [supplierName]: {
@@ -14325,54 +14344,7 @@ ${downloadLink}`;
                                       matchingItems = [...matchingItems, ...itemsForSupplier];
                                     });
                                   }
-                                  const refreshedList: any[] = [];
-                                  matchingItems.forEach((it: any, idx: number) => {
-                                    let desc = it.description || '';
-                                    desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
-                                    const matchedPO = (orderItems || []).find((oi: any) => 
-                                      (it.itemCode && oi.productCode === it.itemCode) ||
-                                      (oi.name && desc.includes(oi.name)) ||
-                                      (oi.productCode && desc.includes(oi.productCode))
-                                    );
-                                    const itemUnit = it.unit || matchedPO?.unit || 'EA';
-                                    desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
-                                    if (it.qty && !desc.includes(String(it.qty))) {
-                                      desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
-                                    }
-                                    const pNo = it.pkgNo || String(idx + 1);
-                                    const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
-                                    const itemPkgCount = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
-
-                                    refreshedList.push({
-                                      pkgNo: pNo,
-                                      pkg: it.pkg,
-                                      _sharedWithPrev: it._sharedWithPrev,
-                                      _sharedGroupHead: it._sharedGroupHead,
-                                      _isMergedGroup: it._isMergedGroup,
-                                      _isMergedMember: it._isMergedMember,
-                                      marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
-                                      descOfGoods: desc,
-                                      qty: itemPkgCount,
-                                      packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
-                                      netWeight: evaluateFormulaGlobal(it.netWeight),
-                                      grossWeight: evaluateFormulaGlobal(it.grossWeight),
-                                      measurement: (() => {
-                                        let dimStr = it.dimensions || '';
-                                        if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
-                                          const match = (it.description || '').match(/^\[(.*?)\]/);
-                                          const itemCode = match ? match[1] : (it.itemCode || '');
-                                          const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                          const pW = prod?.palletWidth || prod?.specWidth || 0;
-                                          const pL = prod?.palletLength || prod?.specLength || 0;
-                                          const pH = prod?.palletHeight || prod?.specHeight || 0;
-                                          if (pW > 0 && pL > 0 && pH > 0) {
-                                            dimStr = `${pW}*${pL}*${pH}`;
-                                          }
-                                        }
-                                        return formatMeasurementWithDims(dimStr, it.cbm);
-                                      })()
-                                    });
-                                  });
+                                  const refreshedList = buildItemsFromContainer(matchingItems, grandTotalPlt);
 
                                   const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, supplierName));
                                   const targetKey = canonicalMatch?.name || supplierName;
@@ -14527,11 +14499,7 @@ ${downloadLink}`;
                                               rows={spanCount > 1 ? spanCount * 2 + 1 : 3}
                                               disabled={!isEditing}
                                               value={it.marks || ''}
-                                              onChange={e => {
-                                                for (let g = 0; g < spanCount; g++) {
-                                                  updateArrivalReportItem(itemIdx + g, 'marks', e.target.value);
-                                                }
-                                              }}
+                                              onChange={e => updateArrivalReportItemBatch(itemIdx, spanCount, 'marks', e.target.value)}
                                               style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
                                             />
                                           </td>
@@ -14555,7 +14523,7 @@ ${downloadLink}`;
                                               type="number"
                                               disabled={!isEditing}
                                               value={it.qty || 0}
-                                              onChange={e => updateArrivalReportItem(itemIdx, 'qty', parseInt(e.target.value, 10) || 0)}
+                                              onChange={e => updateArrivalReportItemBatch(itemIdx, spanCount, 'qty', parseInt(e.target.value, 10) || 0)}
                                               style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
                                             />
                                           </td>
@@ -14568,7 +14536,7 @@ ${downloadLink}`;
                                               type="text"
                                               disabled={!isEditing}
                                               value={it.packageType || 'PL'}
-                                              onChange={e => updateArrivalReportItem(itemIdx, 'packageType', e.target.value)}
+                                              onChange={e => updateArrivalReportItemBatch(itemIdx, spanCount, 'packageType', e.target.value)}
                                               style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
                                             />
                                           </td>
@@ -14581,7 +14549,7 @@ ${downloadLink}`;
                                               placeholder="Net Wt"
                                               disabled={!isEditing}
                                               value={it.netWeight || ''}
-                                              onChange={val => updateArrivalReportItem(itemIdx, 'netWeight', val)}
+                                              onChange={val => updateArrivalReportItemBatch(itemIdx, spanCount, 'netWeight', val)}
                                             />
                                           </td>
                                         )}
@@ -14593,7 +14561,7 @@ ${downloadLink}`;
                                               placeholder="Gross Wt"
                                               disabled={!isEditing}
                                               value={it.grossWeight || ''}
-                                              onChange={val => updateArrivalReportItem(itemIdx, 'grossWeight', val)}
+                                              onChange={val => updateArrivalReportItemBatch(itemIdx, spanCount, 'grossWeight', val)}
                                             />
                                           </td>
                                         )}
@@ -14606,7 +14574,7 @@ ${downloadLink}`;
                                               disabled={!isEditing}
                                               value={it.measurement || ''}
                                               placeholder="예: 1100*1100*750 (0.910 CBM)"
-                                              onChange={e => updateArrivalReportItem(itemIdx, 'measurement', e.target.value)}
+                                              onChange={e => updateArrivalReportItemBatch(itemIdx, spanCount, 'measurement', e.target.value)}
                                               style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
                                             />
                                           </td>
