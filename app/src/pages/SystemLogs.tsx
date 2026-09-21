@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.566',
+    version: 'v2.8.566',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '스케줄러 우측 잔여 빈 공간(Black Box) 제거 및 타이트한 컨테이너 패킹',
+    content: '• 우측 데드스페이스(빈 공간) 전면 제거: 스케줄러 카드 내 고정 상한선으로 인해 우측에 남던 빈 여백을 없애기 위해 금주의 일정 및 전체 일정을 1fr 1fr 균등 완전 패킹 구조로 개편\n• 카드 최대 너비(maxWidth 945px) 밀착 최적화: 달력(272px)과 두 일정 목록(각 ~310px)이 불필요한 공백 없이 카드 우측 테두리까지 타이트하게 밀착되도록 컨테이너 크기 최적화\n• 정갈한 레이아웃 완성: 세계 시각 바 및 일정 목록이 우측 끝까지 끊김이나 남는 공간 없이 정갈하고 균형 잡힌 형태로 렌더링되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.565',
     version: 'v2.8.565',
     date: '2026-09-21',

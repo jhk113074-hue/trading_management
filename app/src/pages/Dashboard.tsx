@@ -1868,7 +1868,7 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-top-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px minmax(0, 1fr)', gap: '6px', alignItems: 'stretch', order: 2, minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px minmax(0, 1fr)', gap: '6px', alignItems: 'stretch', order: 2, minWidth: 0, maxWidth: '945px', width: '100%', overflow: 'hidden' }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '3px' }}>
@@ -1923,11 +1923,11 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) - 폭 과다 확장 방지 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 310px))', gap: '14px', borderLeft: '1px solid var(--border-default)', paddingLeft: '14px', minWidth: 0 }}>
+              {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) - 여백 없이 타이트하게 1fr 1fr 배분 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderLeft: '1px solid var(--border-default)', paddingLeft: '12px', minWidth: 0, width: '100%' }}>
                 
                 {/* 1. 금주의 일정 */}
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '310px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📌 <span>금주의 일정 ({
@@ -2086,7 +2086,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* 2. 이번달 전체 일정 */}
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '310px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📋 <span>{currentMonth + 1}월 전체 일정 ({
