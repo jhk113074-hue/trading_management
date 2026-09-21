@@ -1868,7 +1868,7 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-top-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px 1fr', gap: '6px', alignItems: 'stretch', order: 2 }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px minmax(0, 1fr)', gap: '6px', alignItems: 'stretch', order: 2, minWidth: 0, overflow: 'hidden' }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '3px' }}>
@@ -1923,11 +1923,11 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
+              {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) - 폭 과다 확장 방지 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 310px))', gap: '14px', borderLeft: '1px solid var(--border-default)', paddingLeft: '14px', minWidth: 0 }}>
                 
                 {/* 1. 금주의 일정 */}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '310px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📌 <span>금주의 일정 ({
@@ -1965,7 +1965,7 @@ export const Dashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px', minWidth: 0 }}>
                     {derivedEvents.filter(e => {
                       const { start, end } = getWeekRange(0);
                       const wStart = toLocalDateStr(start);
@@ -2024,7 +2024,12 @@ export const Dashboard: React.FC = () => {
                               gap: '6px',
                               whiteSpace: 'nowrap',
                               transition: 'all 0.1s ease',
-                              minHeight: '26px'
+                              minHeight: '26px',
+                              width: '100%',
+                              maxWidth: '100%',
+                              boxSizing: 'border-box',
+                              overflow: 'hidden',
+                              minWidth: 0
                             }}
                             onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
@@ -2081,7 +2086,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* 2. 이번달 전체 일정 */}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '310px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📋 <span>{currentMonth + 1}월 전체 일정 ({
@@ -2093,7 +2098,7 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px', minWidth: 0 }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
@@ -2144,7 +2149,12 @@ export const Dashboard: React.FC = () => {
                               gap: '6px',
                               whiteSpace: 'nowrap',
                               transition: 'all 0.1s ease',
-                              minHeight: '26px'
+                              minHeight: '26px',
+                              width: '100%',
+                              maxWidth: '100%',
+                              boxSizing: 'border-box',
+                              overflow: 'hidden',
+                              minWidth: 0
                             }}
                             onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}

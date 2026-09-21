@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.565',
+    version: 'v2.8.565',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '스케줄러 일정 목록 너비(폭) 제한 및 화면 초과(Blowout) 방지 최적화',
+    content: '• 스케줄러 일정 컬럼 최대 폭(maxWidth 310px) 제한: 단일 행으로 개편된 일정이 가로로 과도하게 늘어나거나 빈 공간이 길게 늘어지는 현상을 방지하도록 컬럼별 최대 너비를 310px로 규격화\n• 화면 이탈 및 잘림 방지: 긴 품목/회사명 일정이 우측 구분 뱃지([출장], [기타] 등)를 화면 밖으로 밀어내던 현상을 minWidth: 0 및 overflow: hidden으로 원천 차단하여 구분 뱃지가 항상 우측 끝에 안정적으로 노출되도록 개선\n• 반응형 레이아웃 안정화: 대화면 및 분할 화면에서도 달력과 일정 목록이 균형 잡힌 비율을 유지하도록 컨테이너 그리드 트랙 최적화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.564',
     version: 'v2.8.564',
     date: '2026-09-21',
