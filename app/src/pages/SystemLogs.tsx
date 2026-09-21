@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.564',
+    version: 'v2.8.564',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '메인 대시보드 스케줄러 일정 목록 1줄(단일 행) 간소화 개편',
+    content: '• 일정 카드 다단 구조 1줄(단일 행) 간소화: 기존 제목, 태그, 일시, 등록자 등이 2~3행으로 분할 노출되어 세로 공간을 많이 차지하던 카드 형태를 한 줄(Row) 배치로 전면 개편\n• 정보 계층 및 가독성 최적화: [날짜 배지] - [일정명(말줄임표 및 마우스 오버 툴팁)] - [구분 태그] 순으로 간결하게 정렬\n• 조회 효율성 대폭 향상: 높이 축소(26px) 및 간격 최적화를 통해 스크롤 없이 한눈에 확인할 수 있는 일정 개수를 2~3건에서 5~6건 이상으로 2배 이상 확대',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.563',
     version: 'v2.8.563',
     date: '2026-09-16',

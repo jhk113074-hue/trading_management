@@ -1965,7 +1965,7 @@ export const Dashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '170px', paddingRight: '4px' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const { start, end } = getWeekRange(0);
                       const wStart = toLocalDateStr(start);
@@ -1989,6 +1989,11 @@ export const Dashboard: React.FC = () => {
                       .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
                       .map(e => {
                         const colors = getEventBadgeColor(e.type);
+                        const dateLabel = e.startDate === e.endDate || !e.endDate
+                          ? e.startDate.slice(5)
+                          : `${e.startDate.slice(5)}~${e.endDate.slice(5)}`;
+                        const tooltipText = `${e.title}\n일시: ${e.startDate}${e.endDate && e.endDate !== e.startDate ? ` ~ ${e.endDate}` : ''} (${e.startTime || '09:00'}~${e.endTime || '18:00'})\n작성자: ${e.creatorName || 'System'}${e.description ? `\n내용: ${e.description}` : ''}`;
+
                         return (
                           <div
                             key={e.id}
@@ -2007,37 +2012,67 @@ export const Dashboard: React.FC = () => {
                                 attachments: e.attachments || []
                               });
                             }}
+                            title={tooltipText}
                             style={{
-                              padding: '3px 6px',
+                              padding: '4px 8px',
                               background: colors.bg,
-                              color: colors.text,
                               border: `1px solid ${colors.border}`,
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: 700,
+                              borderRadius: '4px',
                               cursor: 'pointer',
                               display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px',
-                              transition: 'all 0.1s'
+                              alignItems: 'center',
+                              gap: '6px',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.1s ease',
+                              minHeight: '26px'
                             }}
-                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
+                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
                           >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', color: '#0f172a' }}>
-                                {!e.isPublic && <span>🔒</span>}
-                                <strong>{e.title}</strong>
-                              </span>
-                              <span style={{ fontSize: '10px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
-                                {e.type}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
-                              <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
-                              <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
-                              <span>👤 {e.creatorName}</span>
-                            </div>
+                            {/* 날짜 배지 */}
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 750,
+                              color: colors.text,
+                              background: '#fff',
+                              border: `1px solid ${colors.border}`,
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              flexShrink: 0,
+                              lineHeight: '14px'
+                            }}>
+                              {dateLabel}
+                            </span>
+
+                            {/* 일정 제목 (말줄임) */}
+                            <span style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: '#0f172a',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {!e.isPublic && <span style={{ marginRight: '3px' }}>🔒</span>}
+                              {e.title}
+                            </span>
+
+                            {/* 구분 배지 */}
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              color: colors.text,
+                              background: '#fff',
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              border: `1px solid ${colors.border}`,
+                              flexShrink: 0,
+                              lineHeight: '14px'
+                            }}>
+                              {e.type}
+                            </span>
                           </div>
                         );
                       })
@@ -2058,7 +2093,7 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '170px', paddingRight: '4px' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
@@ -2074,6 +2109,11 @@ export const Dashboard: React.FC = () => {
                       .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
                       .map(e => {
                         const colors = getEventBadgeColor(e.type);
+                        const dateLabel = e.startDate === e.endDate || !e.endDate
+                          ? e.startDate.slice(5)
+                          : `${e.startDate.slice(5)}~${e.endDate.slice(5)}`;
+                        const tooltipText = `${e.title}\n일시: ${e.startDate}${e.endDate && e.endDate !== e.startDate ? ` ~ ${e.endDate}` : ''} (${e.startTime || '09:00'}~${e.endTime || '18:00'})\n작성자: ${e.creatorName || 'System'}${e.description ? `\n내용: ${e.description}` : ''}`;
+
                         return (
                           <div
                             key={e.id}
@@ -2092,36 +2132,67 @@ export const Dashboard: React.FC = () => {
                                 attachments: e.attachments || []
                               });
                             }}
+                            title={tooltipText}
                             style={{
-                              padding: '3px 6px',
+                              padding: '4px 8px',
                               background: colors.bg,
-                              color: colors.text,
                               border: `1px solid ${colors.border}`,
-                              borderRadius: '6px',
-                              fontSize: '10.5px',
-                              fontWeight: 700,
+                              borderRadius: '4px',
                               cursor: 'pointer',
                               display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px',
-                              transition: 'all 0.1s'
+                              alignItems: 'center',
+                              gap: '6px',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.1s ease',
+                              minHeight: '26px'
                             }}
-                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
+                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
                             onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
                           >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#0f172a' }}>
-                                {!e.isPublic && <span>🔒</span>}
-                                <strong>{e.title}</strong>
-                              </span>
-                              <span style={{ fontSize: '9.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
-                                {e.type}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
-                              <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
-                              <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
-                            </div>
+                            {/* 날짜 배지 */}
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 750,
+                              color: colors.text,
+                              background: '#fff',
+                              border: `1px solid ${colors.border}`,
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              flexShrink: 0,
+                              lineHeight: '14px'
+                            }}>
+                              {dateLabel}
+                            </span>
+
+                            {/* 일정 제목 (말줄임) */}
+                            <span style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: '#0f172a',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {!e.isPublic && <span style={{ marginRight: '3px' }}>🔒</span>}
+                              {e.title}
+                            </span>
+
+                            {/* 구분 배지 */}
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              color: colors.text,
+                              background: '#fff',
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              border: `1px solid ${colors.border}`,
+                              flexShrink: 0,
+                              lineHeight: '14px'
+                            }}>
+                              {e.type}
+                            </span>
                           </div>
                         );
                       })
