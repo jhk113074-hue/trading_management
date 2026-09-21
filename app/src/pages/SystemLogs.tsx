@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.570',
+    version: 'v2.8.570',
+    date: '2026-09-21',
+    category: '기능개선',
+    title: '패킹리스트 규격(W×L×H) 입력 편의성 개선 및 CBM 자동수식(=ROUNDUP) 기본값 적용 & 수동 수식/직접입력 완벽 지원',
+    content: '• 규격(W×L×H) 입력 버그 및 타이핑 불편 완벽 해소: 0이 앞에 붙어 지워지지 않거나("01150"), 백스페이스 시 0으로 강제 리셋되던 결함을 제거하고 순수 숫자/소수점 자동 살균 및 포커스 시 전체 자동 선택(Auto-select) 적용\n• 규격 구분자 유연성 확장: x, *, × 등 다양한 구분자 형식 및 4~5자리 규격 치수(48px 최적 너비)를 안정적으로 지원\n• CBM 계산 기본값 =ROUNDUP(가로*세로*높이,1) 공식 표준화: 규격 치수 입력 시 미터(m) 단위로 자동 환산하여 기본 CBM 수식을 =ROUNDUP(가로*세로*높이*수량,1) 형태로 자동 생성 (예: 1150×1150×1100 -> =ROUNDUP(1.15*1.15*1.1,1) -> 1.500 CBM)\n• CBM 수동 수식 및 수치 직접 입력/수정 지원: 사용자가 CBM 셀을 클릭하여 직접 원하는 수식(예: =ROUNDUP(1.15*1.25*1.3,2))이나 수치를 입력하면 기존처럼 기본값으로 덮어씌워지지 않고 영구 보존 및 실시간 계산 반영\n• 혼적 파렛트(Merged Rows) 동기화 보장: 혼적 파렛트에서 규격, 중량(NET/GROSS), CBM 수정 시 해당 파렛트에 묶인 모든 품목 행에 일괄 동기화 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.569',
     version: 'v2.8.569',
     date: '2026-09-21',

@@ -239,9 +239,11 @@ const evaluateFormulaGlobal = (val: any): number => {
   if (val === undefined || val === null || val === '') return 0;
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
   const str = String(val).trim();
-  if (str.startsWith('=')) {
+  const hasFormulaPrefix = str.startsWith('=');
+  const looksLikeFormula = hasFormulaPrefix || /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(str);
+  if (looksLikeFormula) {
     try {
-      let expr = str.slice(1).trim();
+      let expr = hasFormulaPrefix ? str.slice(1).trim() : str.trim();
       if (!expr) return 0;
 
       // Remove thousand separators like 1,450 inside digits while keeping argument commas intact
@@ -350,7 +352,7 @@ interface FormulaWeightInputProps {
 const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange, placeholder, disabled, decimals, unit = 'kg' }) => {
   const [isFocused, setIsFocused] = useState(false);
   const rawStr = value !== undefined && value !== null ? String(value) : '';
-  const isFormula = rawStr.trim().startsWith('=');
+  const isFormula = rawStr.trim().startsWith('=') || /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(rawStr.trim());
   const evaluatedNum = evaluateFormulaGlobal(rawStr);
 
   const displayVal = isFocused
@@ -359,17 +361,28 @@ const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange
       ? (decimals !== undefined
           ? evaluatedNum.toFixed(decimals)
           : (evaluatedNum ? evaluatedNum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) : '0'))
-      : rawStr;
+      : (decimals !== undefined && rawStr !== '' && !isNaN(Number(rawStr))
+          ? Number(rawStr).toFixed(decimals)
+          : rawStr);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: '95%', margin: '0 auto' }}>
       <input
         type="text"
-        placeholder={placeholder || (decimals === 3 ? "CBM 또는 =1.1*1.1*1.6" : "숫자 또는 =ROUNDUP(...)")}
+        placeholder={placeholder || (decimals === 3 ? "CBM 또는 =ROUNDUP(...)" : "숫자 또는 =ROUNDUP(...)")}
         disabled={disabled}
         value={displayVal}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={e => {
+          setIsFocused(true);
+          e.target.select();
+        }}
+        onBlur={e => {
+          setIsFocused(false);
+          const v = e.target.value.trim();
+          if (v && !v.startsWith('=') && /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR)\b/i.test(v)) {
+            onChange('=' + v);
+          }
+        }}
         onChange={e => onChange(e.target.value)}
         title={isFormula ? `수식: ${rawStr} (계산결과: ${decimals !== undefined ? evaluatedNum.toFixed(decimals) : evaluatedNum.toLocaleString()} ${unit})` : `숫자 또는 엑셀 수식 (예: ${decimals === 3 ? '=1.1*1.1*1.6, =ROUNDUP(1.936, 2)' : '=ROUNDUP(1200*1.15, 0), =1437+15'}) 입력 가능`}
         style={{
@@ -2137,20 +2150,23 @@ export const OrderDetail: React.FC = () => {
           }
         }
 
-        // Auto-calculate CBM from dimensions if dimensions exist
-        const cleanDims = (updatedIt.dimensions || '').toLowerCase().replace(/\s+/g, '');
+        // Auto-calculate CBM from dimensions if dimensions exist (Default: =ROUNDUP(가로*세로*높이,1))
+        const cleanDims = (updatedIt.dimensions || '').toLowerCase().replace(/\s+/g, '').replace(/[*×]/g, 'x');
         const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
         if (dims[0] > 0 && dims[1] > 0 && dims[2] > 0) {
           let count = parseInt(updatedIt.pkg, 10);
           if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(updatedIt.pkgNo) || '1', 10);
           if (count <= 0) count = 1;
-          const expectedCbm = String((((dims[0] * dims[1] * dims[2]) / 1000000000) * count).toFixed(3));
-          const currentCbmStr = String(updatedIt.cbm || '').trim();
-          if (!currentCbmStr.startsWith('=')) {
-            if (!updatedIt.cbm || Math.abs(parseFloat(updatedIt.cbm) - parseFloat(expectedCbm)) > 0.001) {
-              containerChanged = true;
-              updatedIt.cbm = expectedCbm;
-            }
+
+          const mW = dims[0] >= 10 ? parseFloat((dims[0] / 1000).toFixed(4)).toString() : dims[0].toString();
+          const mL = dims[1] >= 10 ? parseFloat((dims[1] / 1000).toFixed(4)).toString() : dims[1].toString();
+          const mH = dims[2] >= 10 ? parseFloat((dims[2] / 1000).toFixed(4)).toString() : dims[2].toString();
+          const defaultCbmFormula = `=ROUNDUP(${mW}*${mL}*${mH}${count > 1 ? `*${count}` : ''},1)`;
+
+          // Only set default formula if CBM is not yet entered or empty/0 (preserves all manual user formulas/edits)
+          if (!updatedIt.cbm || updatedIt.cbm === '' || updatedIt.cbm === '0' || updatedIt.cbm === 0) {
+            containerChanged = true;
+            updatedIt.cbm = defaultCbmFormula;
           }
         }
 
@@ -12989,13 +13005,22 @@ ${downloadLink}`;
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderLeft: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
                                             {(() => {
-                                              const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
-                                              const dims = cleanDims.split('x');
-                                              const widthVal = dims[0] || '0';
-                                              const lengthVal = dims[1] || '0';
-                                              const heightVal = dims[2] || '0';
+                                              const rawDims = (it.dimensions || '').toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '');
+                                              const dims = rawDims ? rawDims.split('x') : ['', '', ''];
+                                              const widthVal = dims[0] ?? '';
+                                              const lengthVal = dims[1] ?? '';
+                                              const heightVal = dims[2] ?? '';
 
-                                              const handleItemDimChange = (dimKey: 'w' | 'l' | 'h', inputVal: string) => {
+                                              const sanitizeDimInput = (val: string) => {
+                                                let cleaned = val.replace(/[^0-9.]/g, '');
+                                                if (/^0\d+/.test(cleaned)) {
+                                                  cleaned = cleaned.replace(/^0+/, '');
+                                                }
+                                                return cleaned;
+                                              };
+
+                                              const handleItemDimChange = (dimKey: 'w' | 'l' | 'h', rawVal: string) => {
+                                                const inputVal = sanitizeDimInput(rawVal);
                                                 const nextContainers = [...basicForm.packingList.containers];
                                                 let w = widthVal;
                                                 let l = lengthVal;
@@ -13003,16 +13028,29 @@ ${downloadLink}`;
                                                 if (dimKey === 'w') w = inputVal;
                                                 if (dimKey === 'l') l = inputVal;
                                                 if (dimKey === 'h') h = inputVal;
-                                                nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
-                                                
+                                                const cleanDimStr = `${w}x${l}x${h}`;
+
                                                 const numW = parseFloat(w) || 0;
                                                 const numL = parseFloat(l) || 0;
                                                 const numH = parseFloat(h) || 0;
+
+                                                let newCbmFormula = '';
                                                 if (numW > 0 && numL > 0 && numH > 0) {
-                                                  const calcCbm = ((numW * numL * numH) / 1000000000);
+                                                  const mW = numW >= 10 ? parseFloat((numW / 1000).toFixed(4)).toString() : numW.toString();
+                                                  const mL = numL >= 10 ? parseFloat((numL / 1000).toFixed(4)).toString() : numL.toString();
+                                                  const mH = numH >= 10 ? parseFloat((numH / 1000).toFixed(4)).toString() : numH.toString();
                                                   let count = parseInt(it.pkg, 10);
                                                   if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(it.pkgNo) || '1', 10);
-                                                  nextContainers[cIdx].items[itIdx].cbm = String((calcCbm * count).toFixed(3));
+                                                  if (!count || count <= 0) count = 1;
+
+                                                  newCbmFormula = `=ROUNDUP(${mW}*${mL}*${mH}${count > 1 ? `*${count}` : ''},1)`;
+                                                }
+
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].dimensions = cleanDimStr;
+                                                  if (newCbmFormula) {
+                                                    nextContainers[cIdx].items[itIdx + g].cbm = newCbmFormula;
+                                                  }
                                                 }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               };
@@ -13020,29 +13058,35 @@ ${downloadLink}`;
                                               return (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
                                                   <input 
-                                                    type="number" 
+                                                    type="text" 
+                                                    inputMode="numeric"
                                                     placeholder="W" 
                                                     disabled={!isEditing} 
                                                     value={widthVal} 
-                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onFocus={e => e.target.select()}
+                                                    style={{ width: '48px', padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
                                                     onChange={e => handleItemDimChange('w', e.target.value)} 
                                                   />
                                                   <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
                                                   <input 
-                                                    type="number" 
+                                                    type="text" 
+                                                    inputMode="numeric"
                                                     placeholder="L" 
                                                     disabled={!isEditing} 
                                                     value={lengthVal} 
-                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onFocus={e => e.target.select()}
+                                                    style={{ width: '48px', padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
                                                     onChange={e => handleItemDimChange('l', e.target.value)} 
                                                   />
                                                   <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
                                                   <input 
-                                                    type="number" 
+                                                    type="text" 
+                                                    inputMode="numeric"
                                                     placeholder="H" 
                                                     disabled={!isEditing} 
                                                     value={heightVal} 
-                                                    style={{ width: '42px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
+                                                    onFocus={e => e.target.select()}
+                                                    style={{ width: '48px', padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }} 
                                                     onChange={e => handleItemDimChange('h', e.target.value)} 
                                                   />
                                                 </div>
@@ -13144,7 +13188,9 @@ ${downloadLink}`;
                                               value={it.netWeight || ''}
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].netWeight = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].netWeight = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
@@ -13160,7 +13206,9 @@ ${downloadLink}`;
                                               value={it.grossWeight || ''}
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].grossWeight = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
@@ -13178,7 +13226,9 @@ ${downloadLink}`;
                                               unit="CBM"
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].cbm = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].cbm = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
@@ -16274,7 +16324,9 @@ ${downloadLink}`;
                                               value={it.netWeight || ''}
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].netWeight = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].netWeight = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
@@ -16289,7 +16341,9 @@ ${downloadLink}`;
                                               value={it.grossWeight || ''}
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].grossWeight = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
@@ -16306,7 +16360,9 @@ ${downloadLink}`;
                                               unit="CBM"
                                               onChange={val => {
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].cbm = val;
+                                                for (let g = 0; g < spanCount; g++) {
+                                                  nextContainers[cIdx].items[itIdx + g].cbm = val;
+                                                }
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
