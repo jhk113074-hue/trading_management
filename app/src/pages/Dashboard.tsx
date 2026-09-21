@@ -223,21 +223,21 @@ const WorldClocks: React.FC = () => {
           gap: '8px', 
           alignItems: 'center', 
           background: '#f8fafc', 
-          padding: '3px 8px', 
+          padding: '4px 10px', 
           borderRadius: '6px', 
           border: '1px solid #e2e8f0', 
           whiteSpace: 'nowrap', 
           overflowX: 'auto', 
           width: '100%', 
-          justifyContent: 'center', 
+          justifyContent: 'flex-start', 
           position: 'relative',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}
       >
-        <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginRight: '2px', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
-          🌐 세계 시각
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '1px 6px', flexShrink: 0, marginRight: '2px' }}>
+          <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>🌐 세계 시각</span>
+        </div>
         {clocks.map((c, idx) => (
           <React.Fragment key={c.zone + '_' + idx}>
             {idx > 0 && <span style={{ color: '#cbd5e1', fontSize: '9px' }}>•</span>}
@@ -1993,23 +1993,28 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) - 여백 없이 타이트하게 1fr 1fr 배분 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderLeft: '1px solid var(--border-default)', paddingLeft: '12px', minWidth: 0, width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderLeft: '1px solid #e2e8f0', paddingLeft: '12px', minWidth: 0, width: '100%' }}>
                 
                 {/* 1. 금주의 일정 */}
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                      📌 <span>금주의 일정 ({
-                        derivedEvents.filter(e => {
-                          const { start, end } = getWeekRange(0);
-                          const wStart = toLocalDateStr(start);
-                          const wEnd = toLocalDateStr(end);
-                          const eStart = e.startDate;
-                          const eEnd = e.endDate || eStart;
-                          return eStart <= wEnd && eEnd >= wStart;
-                        }).length
-                      }건)</span>
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        📌 금주의 일정
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '1px 6px' }}>
+                        {
+                          derivedEvents.filter(e => {
+                            const { start, end } = getWeekRange(0);
+                            const wStart = toLocalDateStr(start);
+                            const wEnd = toLocalDateStr(end);
+                            const eStart = e.startDate;
+                            const eEnd = e.endDate || eStart;
+                            return eStart <= wEnd && eEnd >= wStart;
+                          }).length
+                        }건
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -2028,13 +2033,15 @@ export const Dashboard: React.FC = () => {
                           attachments: []
                         });
                       }}
-                      style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
+                      style={{ height: '24px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '2px', transition: 'all 0.15s ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}
                     >
                       ＋ 등록
                     </button>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px', minWidth: 0 }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto', maxHeight: '195px', paddingRight: '4px', minWidth: 0 }}>
                     {derivedEvents.filter(e => {
                       const { start, end } = getWeekRange(0);
                       const wStart = toLocalDateStr(start);
@@ -2043,7 +2050,7 @@ export const Dashboard: React.FC = () => {
                       const eEnd = e.endDate || eStart;
                       return eStart <= wEnd && eEnd >= wStart;
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '10px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', fontWeight: 600, padding: '16px 0', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         이번 주에 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -2083,37 +2090,52 @@ export const Dashboard: React.FC = () => {
                             }}
                             title={tooltipText}
                             style={{
-                              padding: '4px 8px',
-                              background: colors.bg,
-                              border: `1px solid ${colors.border}`,
-                              borderRadius: '4px',
+                              padding: '5px 8px',
+                              background: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderLeft: `3.5px solid ${colors.dot || '#3b82f6'}`,
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '7px',
                               whiteSpace: 'nowrap',
-                              transition: 'all 0.1s ease',
-                              minHeight: '26px',
+                              transition: 'all 0.15s ease',
+                              minHeight: '28px',
                               width: '100%',
                               maxWidth: '100%',
                               boxSizing: 'border-box',
                               overflow: 'hidden',
-                              minWidth: 0
+                              minWidth: 0,
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                             }}
-                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
-                            onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
+                            onMouseEnter={ev => {
+                              ev.currentTarget.style.background = '#f8fafc';
+                              ev.currentTarget.style.borderColor = '#cbd5e1';
+                              ev.currentTarget.style.borderLeftColor = colors.dot || '#3b82f6';
+                              ev.currentTarget.style.transform = 'translateY(-1px)';
+                              ev.currentTarget.style.boxShadow = '0 3px 6px rgba(0,0,0,0.05)';
+                            }}
+                            onMouseLeave={ev => {
+                              ev.currentTarget.style.background = '#ffffff';
+                              ev.currentTarget.style.borderColor = '#e2e8f0';
+                              ev.currentTarget.style.borderLeftColor = colors.dot || '#3b82f6';
+                              ev.currentTarget.style.transform = 'none';
+                              ev.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
+                            }}
                           >
                             {/* 날짜 배지 */}
                             <span style={{
                               fontSize: '11px',
-                              fontWeight: 750,
-                              color: colors.text,
-                              background: '#fff',
-                              border: `1px solid ${colors.border}`,
-                              padding: '1px 5px',
-                              borderRadius: '3px',
+                              fontWeight: 700,
+                              color: '#475569',
+                              background: '#f1f5f9',
+                              border: '1px solid #e2e8f0',
+                              padding: '1.5px 6px',
+                              borderRadius: '4px',
                               flexShrink: 0,
-                              lineHeight: '14px'
+                              lineHeight: '14px',
+                              letterSpacing: '-0.01em'
                             }}>
                               {dateLabel}
                             </span>
@@ -2124,7 +2146,7 @@ export const Dashboard: React.FC = () => {
                               minWidth: 0,
                               fontSize: '12px',
                               fontWeight: 700,
-                              color: '#0f172a',
+                              color: '#1e293b',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
@@ -2136,14 +2158,14 @@ export const Dashboard: React.FC = () => {
                             {/* 구분 배지 */}
                             <span style={{
                               fontSize: '10px',
-                              fontWeight: 700,
+                              fontWeight: 750,
                               color: colors.text,
-                              background: '#fff',
-                              padding: '1px 5px',
-                              borderRadius: '3px',
+                              background: colors.bg,
+                              padding: '1.5px 6px',
+                              borderRadius: '10px',
                               border: `1px solid ${colors.border}`,
                               flexShrink: 0,
-                              lineHeight: '14px'
+                              lineHeight: '13px'
                             }}>
                               {e.type}
                             </span>
@@ -2156,23 +2178,28 @@ export const Dashboard: React.FC = () => {
 
                 {/* 2. 이번달 전체 일정 */}
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                      📋 <span>{currentMonth + 1}월 전체 일정 ({
-                        derivedEvents.filter(e => {
-                          const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-                          return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
-                        }).length
-                      }건)</span>
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        📋 {currentMonth + 1}월 전체 일정
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1px 6px' }}>
+                        {
+                          derivedEvents.filter(e => {
+                            const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                            return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                          }).length
+                        }건
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '180px', paddingRight: '4px', minWidth: 0 }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto', maxHeight: '195px', paddingRight: '4px', minWidth: 0 }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '10px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', fontWeight: 600, padding: '16px 0', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         이번 달에 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -2208,37 +2235,52 @@ export const Dashboard: React.FC = () => {
                             }}
                             title={tooltipText}
                             style={{
-                              padding: '4px 8px',
-                              background: colors.bg,
-                              border: `1px solid ${colors.border}`,
-                              borderRadius: '4px',
+                              padding: '5px 8px',
+                              background: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                              borderLeft: `3.5px solid ${colors.dot || '#3b82f6'}`,
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '7px',
                               whiteSpace: 'nowrap',
-                              transition: 'all 0.1s ease',
-                              minHeight: '26px',
+                              transition: 'all 0.15s ease',
+                              minHeight: '28px',
                               width: '100%',
                               maxWidth: '100%',
                               boxSizing: 'border-box',
                               overflow: 'hidden',
-                              minWidth: 0
+                              minWidth: 0,
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                             }}
-                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)'; }}
-                            onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
+                            onMouseEnter={ev => {
+                              ev.currentTarget.style.background = '#f8fafc';
+                              ev.currentTarget.style.borderColor = '#cbd5e1';
+                              ev.currentTarget.style.borderLeftColor = colors.dot || '#3b82f6';
+                              ev.currentTarget.style.transform = 'translateY(-1px)';
+                              ev.currentTarget.style.boxShadow = '0 3px 6px rgba(0,0,0,0.05)';
+                            }}
+                            onMouseLeave={ev => {
+                              ev.currentTarget.style.background = '#ffffff';
+                              ev.currentTarget.style.borderColor = '#e2e8f0';
+                              ev.currentTarget.style.borderLeftColor = colors.dot || '#3b82f6';
+                              ev.currentTarget.style.transform = 'none';
+                              ev.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
+                            }}
                           >
                             {/* 날짜 배지 */}
                             <span style={{
                               fontSize: '11px',
-                              fontWeight: 750,
-                              color: colors.text,
-                              background: '#fff',
-                              border: `1px solid ${colors.border}`,
-                              padding: '1px 5px',
-                              borderRadius: '3px',
+                              fontWeight: 700,
+                              color: '#475569',
+                              background: '#f1f5f9',
+                              border: '1px solid #e2e8f0',
+                              padding: '1.5px 6px',
+                              borderRadius: '4px',
                               flexShrink: 0,
-                              lineHeight: '14px'
+                              lineHeight: '14px',
+                              letterSpacing: '-0.01em'
                             }}>
                               {dateLabel}
                             </span>
@@ -2249,7 +2291,7 @@ export const Dashboard: React.FC = () => {
                               minWidth: 0,
                               fontSize: '12px',
                               fontWeight: 700,
-                              color: '#0f172a',
+                              color: '#1e293b',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
@@ -2261,14 +2303,14 @@ export const Dashboard: React.FC = () => {
                             {/* 구분 배지 */}
                             <span style={{
                               fontSize: '10px',
-                              fontWeight: 700,
+                              fontWeight: 750,
                               color: colors.text,
-                              background: '#fff',
-                              padding: '1px 5px',
-                              borderRadius: '3px',
+                              background: colors.bg,
+                              padding: '1.5px 6px',
+                              borderRadius: '10px',
                               border: `1px solid ${colors.border}`,
                               flexShrink: 0,
-                              lineHeight: '14px'
+                              lineHeight: '13px'
                             }}>
                               {e.type}
                             </span>
