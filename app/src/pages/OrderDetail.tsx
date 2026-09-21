@@ -63,6 +63,17 @@ const getRawProductCode = (code: string | undefined): string => {
   return val;
 };
 
+const isSameSupplier = (a?: string, b?: string): boolean => {
+  if (!a || !b) return false;
+  const cleanA = a.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '').toLowerCase();
+  const cleanB = b.replace(/[\(（]\s*주\s*[\)）]|주식회사|㈜/g, '').replace(/\s+/g, '').toLowerCase();
+  if (cleanA === cleanB) return true;
+  // Normalize '내' vs '네' in Korean (e.g. 메디치인터내셔널 vs 메디치인터네셔널)
+  const normA = cleanA.replace(/네/g, '내');
+  const normB = cleanB.replace(/네/g, '내');
+  return normA === normB;
+};
+
 const formatItemDisplayName = (name: string | undefined, productCode?: string): string => {
   if (!name) return productCode ? `[${productCode}]` : '-';
   let s = name.trim();
@@ -3421,7 +3432,11 @@ export const OrderDetail: React.FC = () => {
         });
 
         const alignedSourcing = rawSourcing.map((sIt: any, idx: number) => {
-          const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId)) || restoredOrderItems[idx];
+          const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId))
+            || ((sIt.productCode || sIt.itemCode) && restoredOrderItems.find((r: any) => (r.productCode || r.itemCode) === (sIt.productCode || sIt.itemCode)))
+            || (sIt.name && restoredOrderItems.find((r: any) => r.name === sIt.name))
+            || restoredOrderItems[idx];
+
           const activeSupplier = (sIt.supplier != null && sIt.supplier.trim() !== '') ? sIt.supplier.trim() : (rIt?.supplier?.trim() || '');
           const activeContact = (sIt.supplierContact != null && sIt.supplierContact.trim() !== '') ? sIt.supplierContact.trim() : (rIt?.supplierContact?.trim() || '');
 
@@ -3448,6 +3463,8 @@ export const OrderDetail: React.FC = () => {
 
           return {
             ...sIt,
+            name: sIt.name || rIt?.name || '',
+            productCode: sIt.productCode || rIt?.productCode || '',
             supplier: activeSupplier,
             supplierContact: activeContact,
             remark: sIt.remark !== undefined ? sIt.remark : (sIt.supplierRemark || rIt?.remark || rIt?.supplierRemark || ''),
@@ -3460,6 +3477,27 @@ export const OrderDetail: React.FC = () => {
             purchaseUnitPrice: sIt.purchaseUnitPrice != null ? sIt.purchaseUnitPrice : finalQuotePrice,
             purchaseUnitCurrency: sIt.purchaseUnitCurrency || quoteCurr
           };
+        });
+
+        // Defensive healing: Any item present in restoredOrderItems that is missing from alignedSourcing MUST be appended
+        restoredOrderItems.forEach((rIt: any) => {
+          const exists = alignedSourcing.some((s: any) => 
+            (rIt.itemId && s.itemId && rIt.itemId === s.itemId) ||
+            (rIt.productCode && (s.productCode || s.itemCode) && rIt.productCode === (s.productCode || s.itemCode)) ||
+            (rIt.name && s.name && rIt.name === s.name)
+          );
+          if (!exists) {
+            alignedSourcing.push({
+              ...rIt,
+              itemId: rIt.itemId || String(alignedSourcing.length + 1),
+              supplier: rIt.supplier || '',
+              supplierContact: rIt.supplierContact || '',
+              originalPurchasePrice: rIt.originalPurchasePrice || rIt.purchasePriceKrw || rIt.purchaseUnitPrice || 0,
+              originalPurchaseCurrency: rIt.originalPurchaseCurrency || rIt.purchasePriceCurrency || 'KRW',
+              purchaseUnitPrice: rIt.purchaseUnitPrice || rIt.purchasePriceKrw || 0,
+              purchaseUnitCurrency: rIt.purchaseUnitCurrency || rIt.purchasePriceCurrency || 'KRW'
+            });
+          }
         });
 
         // On initial load or remote external update, set order items
@@ -3875,23 +3913,97 @@ export const OrderDetail: React.FC = () => {
 
   // Group items by supplier for Purchase Orders preview
   const groupedSupplierItems = useMemo(() => {
-    if (!sourcingItems) return {};
     const groups: Record<string, OrderItem[]> = {};
-    (sourcingItems as OrderItem[]).forEach(item => {
-      const supplierName = item.supplier?.trim() || 'General Supplier';
+
+    const addItemToGroup = (item: any) => {
+      if (!item) return;
+      const rawSup = item.supplier?.trim() || 'General Supplier';
+      const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, rawSup));
+      const targetSup = canonicalMatch?.name || rawSup;
+      const existingKey = Object.keys(groups).find(k => isSameSupplier(k, targetSup));
+      const supplierName = existingKey || targetSup;
       if (!groups[supplierName]) {
         groups[supplierName] = [];
       }
-      groups[supplierName].push(item);
-    });
+      const isDuplicate = groups[supplierName].some((existing: any) => {
+        if (item.itemId && existing.itemId && item.itemId === existing.itemId) return true;
+        const codeA = item.productCode || item.itemCode;
+        const codeB = existing.productCode || existing.itemCode;
+        if (codeA && codeB && codeA === codeB && (item.name === existing.name || !item.name)) return true;
+        if (item.name && existing.name && item.name === existing.name && item.qty === existing.qty) return true;
+        return false;
+      });
+      if (!isDuplicate) {
+        groups[supplierName].push(item as OrderItem);
+      }
+    };
+
+    if (sourcingItems && sourcingItems.length > 0) {
+      (sourcingItems as OrderItem[]).forEach(addItemToGroup);
+    }
+    // Defensive merge: check orderItems and order.items to guarantee no supplier/item is ever dropped
+    if (orderItems && orderItems.length > 0) {
+      (orderItems as OrderItem[]).forEach(addItemToGroup);
+    } else if (order?.items && order.items.length > 0) {
+      (order.items as OrderItem[]).forEach(addItemToGroup);
+    }
+
     return groups;
-  }, [sourcingItems]);
+  }, [sourcingItems, orderItems, order?.items, suppliersList]);
 
   const allOrderSuppliers = useMemo(() => {
     if (!order) return [];
     const itemSuppliers = Object.keys(groupedSupplierItems).filter(s => s !== 'General Supplier');
+
+    // Defensive check: extract suppliers directly from orderItems, order.items, sourcingItems, and packingList
+    const directSuppliers: string[] = [];
+    (orderItems || []).forEach((it: any) => {
+      if (it.supplier && it.supplier.trim()) directSuppliers.push(it.supplier.trim());
+    });
+    (order.items || []).forEach((it: any) => {
+      if (it.supplier && it.supplier.trim()) directSuppliers.push(it.supplier.trim());
+    });
+    (sourcingItems || []).forEach((it: any) => {
+      if (it.supplier && it.supplier.trim()) directSuppliers.push(it.supplier.trim());
+    });
+    if (order.packingList?.containers) {
+      order.packingList.containers.forEach((c: any) => {
+        (c.items || []).forEach((it: any) => {
+          if (it.supplier && it.supplier.trim()) directSuppliers.push(it.supplier.trim());
+        });
+      });
+    }
+    if (basicForm?.packingList?.containers) {
+      basicForm.packingList.containers.forEach((c: any) => {
+        (c.items || []).forEach((it: any) => {
+          if (it.supplier && it.supplier.trim()) directSuppliers.push(it.supplier.trim());
+        });
+      });
+    }
+    if (order.supplierArrivalReports) {
+      Object.keys(order.supplierArrivalReports).forEach(s => {
+        if (s && s.trim()) directSuppliers.push(s.trim());
+      });
+    }
+    if (order.supplierPoDetails) {
+      Object.keys(order.supplierPoDetails).forEach(s => {
+        if (s && s.trim()) directSuppliers.push(s.trim());
+      });
+    }
+
     const additional = order.additionalSuppliers || [];
-    const list = Array.from(new Set([...itemSuppliers, ...additional]));
+    const rawList = Array.from(new Set([...itemSuppliers, ...directSuppliers, ...additional]))
+      .filter(s => s && s.trim() && s !== 'General Supplier');
+
+    const list: string[] = [];
+    rawList.forEach(sup => {
+      const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, sup));
+      const chosenSup = canonicalMatch?.name || sup;
+      const existing = list.find(l => isSameSupplier(l, chosenSup));
+      if (!existing) {
+        list.push(chosenSup);
+      }
+    });
 
     const SUPPLIER_SORT_ORDER = [
       '주식회사 켐베이스',
@@ -3910,7 +4022,7 @@ export const OrderDetail: React.FC = () => {
       if (idxB !== -1) return 1;
       return a.localeCompare(b);
     });
-  }, [groupedSupplierItems, order]);
+  }, [groupedSupplierItems, order, orderItems, sourcingItems, basicForm?.packingList, suppliersList]);
 
   // Direct volume update handler to prevent onSnapshot overwrite race-conditions
   const handleUpdateVolumeDataDirectly = async (shipmentType: 'LCL' | 'FCL', fclSpecs: any[]) => {
@@ -4512,7 +4624,20 @@ export const OrderDetail: React.FC = () => {
     // 동기화: 소싱/발주 탭(sourcingItems)에도 즉시 정확히 반영
     setSourcingItems(sourcingPrev => {
       const sourcingUpdated = [...sourcingPrev];
-      if (sourcingUpdated[index]) {
+      const targetItemId = finalUpdatedItem?.itemId || (orderItems[index] as any)?.itemId;
+      const targetCode = finalUpdatedItem?.productCode || (orderItems[index] as any)?.productCode;
+      let sIdx = -1;
+      if (targetItemId) {
+        sIdx = sourcingUpdated.findIndex(s => s.itemId === targetItemId);
+      }
+      if (sIdx === -1 && targetCode) {
+        sIdx = sourcingUpdated.findIndex(s => (s.productCode || (s as any).itemCode) === targetCode);
+      }
+      if (sIdx === -1 && sourcingUpdated[index]) {
+        sIdx = index;
+      }
+
+      if (sIdx !== -1 && sourcingUpdated[sIdx]) {
         if (finalUpdatedItem) {
           const buyPrice = (finalUpdatedItem.purchasePriceKrw != null && finalUpdatedItem.purchasePriceKrw > 0)
             ? finalUpdatedItem.purchasePriceKrw 
@@ -4520,8 +4645,8 @@ export const OrderDetail: React.FC = () => {
           const buyCurr = finalUpdatedItem.purchasePriceCurrency 
             || (finalUpdatedItem.purchasePriceKrw && finalUpdatedItem.purchasePriceKrw > 0 ? 'KRW' : (finalUpdatedItem.purchasePriceUsd && finalUpdatedItem.purchasePriceUsd > 0 ? 'USD' : 'KRW'));
 
-          sourcingUpdated[index] = {
-            ...sourcingUpdated[index],
+          sourcingUpdated[sIdx] = {
+            ...sourcingUpdated[sIdx],
             name: finalUpdatedItem.name,
             productCode: finalUpdatedItem.productCode,
             qty: finalUpdatedItem.qty,
@@ -4535,14 +4660,14 @@ export const OrderDetail: React.FC = () => {
             purchasePriceCurrency: buyCurr,
             originalPurchasePrice: buyPrice,
             originalPurchaseCurrency: buyCurr,
-            purchaseUnitPrice: sourcingUpdated[index].purchaseUnitPrice != null ? sourcingUpdated[index].purchaseUnitPrice : buyPrice,
-            purchaseUnitCurrency: sourcingUpdated[index].purchaseUnitCurrency || buyCurr,
+            purchaseUnitPrice: sourcingUpdated[sIdx].purchaseUnitPrice != null ? sourcingUpdated[sIdx].purchaseUnitPrice : buyPrice,
+            purchaseUnitCurrency: sourcingUpdated[sIdx].purchaseUnitCurrency || buyCurr,
             amount: finalUpdatedItem.amount,
             currency: finalUpdatedItem.currency
           };
         } else if (typeof fieldOrUpdates === 'string') {
-          sourcingUpdated[index] = {
-            ...sourcingUpdated[index],
+          sourcingUpdated[sIdx] = {
+            ...sourcingUpdated[sIdx],
             [fieldOrUpdates]: value
           };
         }
@@ -4620,9 +4745,26 @@ export const OrderDetail: React.FC = () => {
       const newItem = JSON.parse(JSON.stringify(target));
       const newItems = [...prev];
       newItems.splice(index + 1, 0, newItem);
-      cleanedItems = newItems.map((x, idx) => ({ ...x, lineNumber: idx + 1 }));
+      cleanedItems = newItems.map((x, idx) => ({ ...x, lineNumber: idx + 1, itemId: (idx + 1).toString() }));
       return cleanedItems;
     });
+
+    setSourcingItems(prev => {
+      const target = prev[index] || orderItems[index];
+      if (!target) return prev;
+      const newItem = JSON.parse(JSON.stringify(target));
+      const newItems = [...prev];
+      newItems.splice(index + 1, 0, newItem);
+      const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      latestOrderStateRef.current.sourcingItems = cleaned;
+      if (order) {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
+          .catch(e => console.error("Failed to save sourcingItems copy:", e));
+      }
+      return cleaned;
+    });
+
     if (order && cleanedItems.length > 0) {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       setDoc(orderRef, { items: cleanedItems, updatedAt: serverTimestamp() }, { merge: true })
@@ -4668,8 +4810,26 @@ export const OrderDetail: React.FC = () => {
       const newItems = [...prev];
       const [movedItem] = newItems.splice(sourceIndex, 1);
       newItems.splice(targetIndex, 0, movedItem);
-      cleanedItems = newItems.map((it, idx) => ({ ...it, lineNumber: idx + 1 }));
+      cleanedItems = newItems.map((it, idx) => ({ ...it, lineNumber: idx + 1, itemId: (idx + 1).toString() }));
       return cleanedItems;
+    });
+
+    setSourcingItems(prev => {
+      if (!prev || prev.length === 0) return prev;
+      const newItems = [...prev];
+      if (sourceIndex < newItems.length && targetIndex < newItems.length) {
+        const [movedItem] = newItems.splice(sourceIndex, 1);
+        newItems.splice(targetIndex, 0, movedItem);
+        const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+        latestOrderStateRef.current.sourcingItems = cleaned;
+        if (order) {
+          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+          setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
+            .catch(e => console.error("Failed to save sourcingItems order:", e));
+        }
+        return cleaned;
+      }
+      return prev;
     });
 
     if (order && cleanedItems.length > 0) {
@@ -4742,11 +4902,22 @@ export const OrderDetail: React.FC = () => {
 
     const updatedReports: any = { ...(currentReports || {}) };
 
-    allOrderSuppliers.forEach((supplierName: string) => {
+    const containerSuppliers: string[] = [];
+    containers.forEach((container: any) => {
+      (container.items || []).forEach((it: any) => {
+        if (it.supplier && it.supplier.trim()) {
+          containerSuppliers.push(it.supplier.trim());
+        }
+      });
+    });
+    const targetSuppliers = Array.from(new Set([...allOrderSuppliers, ...containerSuppliers]))
+      .filter(s => s && s.trim() && s !== 'General Supplier');
+
+    targetSuppliers.forEach((supplierName: string) => {
       let matchingItems: any[] = [];
       containers.forEach((container: any) => {
         const itemsForSupplier = (container.items || []).filter((it: any) => 
-          (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+          isSameSupplier(it.supplier, supplierName)
         );
         matchingItems = [...matchingItems, ...itemsForSupplier];
       });
@@ -4771,6 +4942,8 @@ export const OrderDetail: React.FC = () => {
             desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
           }
           const pNo = it.pkgNo || String(idx + 1);
+          const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
+          const itemPkgCount = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
 
           newPackingItems.push({
             pkgNo: pNo || String(idx + 1),
@@ -4781,8 +4954,8 @@ export const OrderDetail: React.FC = () => {
             _isMergedMember: !!it._isMergedMember,
             marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
             descOfGoods: desc,
-            qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
-            packageType: 'PL',
+            qty: itemPkgCount,
+            packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
             netWeight: evaluateFormulaGlobal(it.netWeight),
             grossWeight: evaluateFormulaGlobal(it.grossWeight),
             measurement: (() => {
@@ -4803,10 +4976,19 @@ export const OrderDetail: React.FC = () => {
           });
         });
 
-        updatedReports[supplierName] = {
-          ...repData,
+        const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, supplierName));
+        const existingKey = Object.keys(updatedReports).find(k => isSameSupplier(k, supplierName));
+        const targetKey = canonicalMatch?.name || existingKey || supplierName;
+        updatedReports[targetKey] = {
+          ...(updatedReports[targetKey] || updatedReports[supplierName] || repData),
           packingItems: newPackingItems
         };
+        // Clean up any alternate spelling keys for this supplier
+        Object.keys(updatedReports).forEach(k => {
+          if (k !== targetKey && isSameSupplier(k, targetKey)) {
+            delete updatedReports[k];
+          }
+        });
       }
     });
 
@@ -8186,13 +8368,13 @@ ${downloadLink}`;
 
   const getArrivalReportTotals = (list: any[]) => {
     const visibleList = (list || []).filter((it: any, idx: number) => {
-      return !(it._sharedWithPrev || it._isMergedMember || (idx > 0 && it.pkgNo && it.pkgNo === list[idx - 1]?.pkgNo));
+      return !(idx > 0 && it.pkgNo && it.pkgNo === list[idx - 1]?.pkgNo);
     });
     const targetList = visibleList.length > 0 ? visibleList : (list || []);
 
     const totalQty = targetList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
-    const totalNetWeight = targetList.reduce((sum, it) => sum + evaluateFormula(it.netWeight), 0);
-    const totalGrossWeight = targetList.reduce((sum, it) => sum + evaluateFormula(it.grossWeight), 0);
+    const totalNetWeight = targetList.reduce((sum, it) => sum + evaluateFormulaGlobal(it.netWeight), 0);
+    const totalGrossWeight = targetList.reduce((sum, it) => sum + evaluateFormulaGlobal(it.grossWeight), 0);
     const totalCbm = targetList.reduce((sum, it) => sum + parseCbm(it.measurement), 0);
 
     return { totalQty, totalNetWeight, totalGrossWeight, totalCbm };
@@ -8234,7 +8416,9 @@ ${downloadLink}`;
       console.warn("Auto save before doc ensure:", e);
     }
 
-    const repData = (order.supplierArrivalReports || (basicForm as any)?.supplierArrivalReports || {})[supplierName] || {};
+    const repData = (order.supplierArrivalReports || (basicForm as any)?.supplierArrivalReports || {})[supplierName] 
+      || Object.entries(order.supplierArrivalReports || (basicForm as any)?.supplierArrivalReports || {}).find(([k]) => isSameSupplier(k, supplierName))?.[1]
+      || {};
     
     // Calculate grandTotalPlt
     let grandTotalPlt = 0;
@@ -8252,7 +8436,7 @@ ${downloadLink}`;
       let matchingItems: any[] = [];
       basicForm.packingList.containers.forEach((container: any) => {
         const itemsForSupplier = (container.items || []).filter((it: any) => 
-          (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+          isSameSupplier(it.supplier, supplierName)
         );
         matchingItems = [...matchingItems, ...itemsForSupplier];
       });
@@ -8267,6 +8451,9 @@ ${downloadLink}`;
         desc = desc.replace(new RegExp(`(\\b\\d+(?:\\.\\d+)?)\\s*kg\\b`, 'gi'), `$1 ${itemUnit}`);
         if (it.qty && !desc.includes(String(it.qty))) desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
         const pNo = it.pkgNo || String(idx + 1);
+        const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
+        const itemQtyVal = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
+
         packingItemsList.push({
           pkgNo: pNo,
           pkg: it.pkg,
@@ -8276,10 +8463,10 @@ ${downloadLink}`;
           _isMergedMember: it._isMergedMember,
           marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
           descOfGoods: desc,
-          qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
-          packageType: 'PL',
-          netWeight: evaluateFormula(it.netWeight),
-          grossWeight: evaluateFormula(it.grossWeight),
+          qty: itemQtyVal,
+          packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
+          netWeight: evaluateFormulaGlobal(it.netWeight),
+          grossWeight: evaluateFormulaGlobal(it.grossWeight),
           measurement: (() => {
             let dimStr = it.dimensions || '';
             if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
@@ -8484,12 +8671,12 @@ ${downloadLink}`;
                 </thead>
                 <tbody>
                   ${packingItemsList.map((it: any, itemIdx: number) => {
-                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                    const isSecondary = itemIdx > 0 && !!it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo;
                     let spanCount = 1;
                     if (!isSecondary) {
                       for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
                         const nextIt = packingItemsList[k];
-                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                        if (it.pkgNo && nextIt.pkgNo === it.pkgNo) {
                           spanCount++;
                         } else {
                           break;
@@ -13291,7 +13478,9 @@ ${downloadLink}`;
                   );
 
                       // Fetch/Initialize arrival report state for this supplier in the order doc
-                      const repData = (order.supplierArrivalReports || {})[supplierName] || {};
+                      const repData = (order.supplierArrivalReports || {})[supplierName] 
+                        || Object.entries(order.supplierArrivalReports || {}).find(([k]) => isSameSupplier(k, supplierName))?.[1]
+                        || {};
                       
                       // Calculate total order PKG count
                       let grandTotalPlt = 0;
@@ -13332,7 +13521,46 @@ ${downloadLink}`;
                             marks = marks.replace(/PKG NO\./gi, 'PALLET NO.');
                             mutated = true;
                           }
-                          const pNo = it.pkgNo || (marks.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+
+                          // Synchronize with packing list container item to guarantee exact pallet number and weights
+                          let containerPkgNo = '';
+                          let containerNet: any = null;
+                          let containerGross: any = null;
+                          if (basicForm.packingList?.containers) {
+                            for (const container of basicForm.packingList.containers) {
+                              const found = (container.items || []).find((cIt: any) => 
+                                isSameSupplier(cIt.supplier, supplierName) &&
+                                ((it.itemCode && cIt.itemCode === it.itemCode) ||
+                                 (it.descOfGoods && cIt.description && it.descOfGoods.includes(cIt.description.split('(')[0].trim())) ||
+                                 (cIt.description && it.descOfGoods && cIt.description.includes(it.descOfGoods.split('(')[0].trim())))
+                              );
+                              if (found) {
+                                if (found.pkgNo) containerPkgNo = found.pkgNo;
+                                if (found.netWeight) containerNet = evaluateFormulaGlobal(found.netWeight);
+                                if (found.grossWeight) containerGross = evaluateFormulaGlobal(found.grossWeight);
+                                break;
+                              }
+                            }
+                          }
+
+                          const pNo = containerPkgNo || it.pkgNo || (marks.match(/PALLET NO\.\s*:\s*([^\/\n]+)/i)?.[1]?.trim()) || String(idx + 1);
+                          if (it.pkgNo !== pNo) {
+                            it.pkgNo = pNo;
+                            mutated = true;
+                          }
+                          if (!it.qty || it.qty === 0) {
+                            it.qty = 1;
+                            mutated = true;
+                          }
+                          if ((!it.netWeight || it.netWeight === 0) && containerNet != null && containerNet > 0) {
+                            it.netWeight = containerNet;
+                            mutated = true;
+                          }
+                          if ((!it.grossWeight || it.grossWeight === 0) && containerGross != null && containerGross > 0) {
+                            it.grossWeight = containerGross;
+                            mutated = true;
+                          }
+
                           if (marks.includes('PALLET NO.')) {
                             const expectedLine = `PALLET NO. : ${pNo} / ${grandTotalPlt}`;
                             if (!marks.includes(expectedLine)) {
@@ -13416,7 +13644,7 @@ ${downloadLink}`;
                         let matchingItems: any[] = [];
                         basicForm.packingList.containers.forEach((container: any) => {
                           const itemsForSupplier = (container.items || []).filter((it: any) => 
-                            (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+                            isSameSupplier(it.supplier, supplierName)
                           );
                           matchingItems = [...matchingItems, ...itemsForSupplier];
                         });
@@ -13438,6 +13666,8 @@ ${downloadLink}`;
                           }
 
                           const pNo = it.pkgNo || String(idx + 1);
+                          const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
+                          const itemQtyVal = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
 
                           packingItemsList.push({
                             pkgNo: pNo,
@@ -13448,10 +13678,10 @@ ${downloadLink}`;
                             _isMergedMember: it._isMergedMember,
                             marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
                             descOfGoods: desc,
-                            qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
-                            packageType: 'PL',
-                            netWeight: evaluateFormula(it.netWeight),
-                            grossWeight: evaluateFormula(it.grossWeight),
+                            qty: itemQtyVal,
+                            packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
+                            netWeight: evaluateFormulaGlobal(it.netWeight),
+                            grossWeight: evaluateFormulaGlobal(it.grossWeight),
                             measurement: (() => {
                               let dimStr = it.dimensions || '';
                               if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
@@ -13782,12 +14012,12 @@ ${downloadLink}`;
                                 </thead>
                                 <tbody>
                                   ${packingItemsList.map((it: any, itemIdx: number) => {
-                                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                                    const isSecondary = itemIdx > 0 && !!it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo;
                                     let spanCount = 1;
                                     if (!isSecondary) {
                                       for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
                                         const nextIt = packingItemsList[k];
-                                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                                        if (it.pkgNo && nextIt.pkgNo === it.pkgNo) {
                                           spanCount++;
                                         } else {
                                           break;
@@ -14035,12 +14265,12 @@ ${downloadLink}`;
                             </div>
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <button 
-                                onClick={() => {
+                                onClick={async () => {
                                   let matchingItems: any[] = [];
                                   if (basicForm.packingList?.containers) {
                                     basicForm.packingList.containers.forEach((container: any) => {
                                       const itemsForSupplier = (container.items || []).filter((it: any) => 
-                                        (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+                                        isSameSupplier(it.supplier, supplierName)
                                       );
                                       matchingItems = [...matchingItems, ...itemsForSupplier];
                                     });
@@ -14060,6 +14290,9 @@ ${downloadLink}`;
                                       desc = `${desc} ${it.qty} ${itemUnit}`.replace(/\s+/g, ' ');
                                     }
                                     const pNo = it.pkgNo || String(idx + 1);
+                                    const isFirstOfThisSupplierOnPallet = idx === 0 || matchingItems[idx - 1]?.pkgNo !== pNo;
+                                    const itemPkgCount = (Number(it.pkg) > 0) ? Number(it.pkg) : (isFirstOfThisSupplierOnPallet ? 1 : 0);
+
                                     refreshedList.push({
                                       pkgNo: pNo,
                                       pkg: it.pkg,
@@ -14069,10 +14302,10 @@ ${downloadLink}`;
                                       _isMergedMember: it._isMergedMember,
                                       marks: getDefaultShippingMark(pNo, String(grandTotalPlt)),
                                       descOfGoods: desc,
-                                      qty: Number(it.pkg) || (it._sharedWithPrev ? 0 : 1),
-                                      packageType: 'PL',
-                                      netWeight: evaluateFormula(it.netWeight),
-                                      grossWeight: evaluateFormula(it.grossWeight),
+                                      qty: itemPkgCount,
+                                      packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
+                                      netWeight: evaluateFormulaGlobal(it.netWeight),
+                                      grossWeight: evaluateFormulaGlobal(it.grossWeight),
                                       measurement: (() => {
                                         let dimStr = it.dimensions || '';
                                         if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
@@ -14091,14 +14324,31 @@ ${downloadLink}`;
                                     });
                                   });
 
+                                  const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, supplierName));
+                                  const targetKey = canonicalMatch?.name || supplierName;
+
                                   const updatedReports = {
                                     ...(order.supplierArrivalReports || {}),
-                                    [supplierName]: {
+                                    [targetKey]: {
                                       ...repData,
                                       packingItems: refreshedList
                                     }
                                   };
+                                  Object.keys(updatedReports).forEach(k => {
+                                    if (k !== targetKey && isSameSupplier(k, targetKey)) {
+                                      delete updatedReports[k];
+                                    }
+                                  });
+
                                   setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                                  if (order?.id) {
+                                    try {
+                                      const oRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+                                      await setDoc(oRef, { supplierArrivalReports: updatedReports, updatedAt: serverTimestamp() }, { merge: true });
+                                    } catch (err) {
+                                      console.error('Failed to save synchronized arrival reports to Firestore:', err);
+                                    }
+                                  }
                                   alert('🔄 패킹리스트의 최신 혼적/패키지 및 쉬핑마크 데이터가 도착보고서에 동기화되었습니다.');
                                 }}
                                 style={{ padding: '5px 10px', background: '#0284c7', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
@@ -14204,13 +14454,13 @@ ${downloadLink}`;
                               <tbody>
                                 {(() => {
                                   return packingItemsList.map((it: any, itemIdx: number) => {
-                                    const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                                    const isSecondary = itemIdx > 0 && !!it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo;
                                     
                                     let spanCount = 1;
                                     if (!isSecondary) {
                                       for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
                                         const nextIt = packingItemsList[k];
-                                        if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                                        if (it.pkgNo && nextIt.pkgNo === it.pkgNo) {
                                           spanCount++;
                                         } else {
                                           break;
@@ -14219,7 +14469,7 @@ ${downloadLink}`;
                                     }
 
                                     return (
-                                      <tr key={itemIdx} style={{ borderBottom: (isSecondary && itemIdx < packingItemsList.length - 1 && (packingItemsList[itemIdx + 1]._sharedWithPrev || packingItemsList[itemIdx + 1]._isMergedMember || packingItemsList[itemIdx + 1].pkgNo === it.pkgNo)) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)' }}>
+                                      <tr key={itemIdx} style={{ borderBottom: (isSecondary && itemIdx < packingItemsList.length - 1 && packingItemsList[itemIdx + 1]?.pkgNo === it.pkgNo) ? '1px dashed #cbd5e1' : '1px solid var(--border-color)' }}>
                                         {/* Marks (쉬핑마크) - rowSpan */}
                                         {!isSecondary && (
                                           <td rowSpan={spanCount} style={{ padding: '5px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
@@ -18446,12 +18696,12 @@ ${downloadLink}`;
                       </thead>
                       <tbody>
                         ${packingItemsList.map((it: any, itemIdx: number) => {
-                          const isSecondary = it._sharedWithPrev || it._isMergedMember || (itemIdx > 0 && it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo);
+                          const isSecondary = itemIdx > 0 && !!it.pkgNo && it.pkgNo === packingItemsList[itemIdx - 1]?.pkgNo;
                           let spanCount = 1;
                           if (!isSecondary) {
                             for (let k = itemIdx + 1; k < packingItemsList.length; k++) {
                               const nextIt = packingItemsList[k];
-                              if (nextIt._sharedWithPrev || nextIt._isMergedMember || (it.pkgNo && nextIt.pkgNo === it.pkgNo)) {
+                              if (it.pkgNo && nextIt.pkgNo === it.pkgNo) {
                                 spanCount++;
                               } else {
                                 break;

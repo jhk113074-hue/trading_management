@@ -1,4 +1,4 @@
-export const APP_VERSION = 'v2.8.568';
+export const APP_VERSION = 'v2.8.569';
 export const BUILD_DATE = '2026.09.21';
-export const BUILD_TIME = '10:11';
+export const BUILD_TIME = '11:35';
 export const BUILD_FULL_TEXT = `${APP_VERSION} (Build ${BUILD_DATE} ${BUILD_TIME})`;

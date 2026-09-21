@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.569',
+    version: 'v2.8.569',
+    date: '2026-09-21',
+    category: '버그수정',
+    title: 'AI HILA 도착보고 탭 메디치인터내셔널/케이켐 쉬핑마크·패킹번호·중량 오류 수정 및 공급사 동기화 재발 방지',
+    content: '• 메디치인터내셔널 패킹번호 및 중량 오류 원인 해결: 공급사명 한글 표기 변이("메디치인터내셔널" vs "메디치인터네셔널")로 인해 패킹리스트 컨테이너 매칭이 실패하여 임의 요약행(PALLET NO. 1/1, 합산수량, 중량 0)으로 폴백되던 문제를 해결하고, 공급사명 정규화(isSameSupplier) 및 마스터 공급사 기준(S0025) 표준화 적용\n• 메디치인터내셔널 도착보고 데이터 복구 및 완벽 동기화: Pallet 10 ([P0306] Metallized Film, 4 RL, 순중량 647kg, 총중량 662kg, 1.700 CBM) 및 Pallet 11 ([P0043] Fibre Glass Cloth, 20박스, 순중량 860kg, 총중량 880kg, 1.870 CBM) 데이터 복구 및 쉬핑마크(PALLET NO. : 10 / 13, 11 / 13) 정상 표시\n• 케이켐 혼적 파렛트 도착보고 테이블 열 밀림(Column Shift) 버그 수정: 마스터 패킹리스트의 혼적 플래그(_isMergedMember)가 공급사별 단독 도착보고 테이블 1행에 전파되어 쉬핑마크·수량·단위·중량 열이 통째로 숨겨지고 품명이 쉬핑마크 자리에 밀려 출력되던 결함을 수정 (개별 공급사 테이블 1행은 항상 온전하게 렌더링되도록 개선)\n• 케이켐 도착보고 쉬핑마크 및 중량 복구: Pallet 5 ([P0004] K-972 1드럼, 190kg, 순중량 190kg, 총중량 212kg, 0.298 CBM, PALLET NO. : 5 / 13) 정상 표시\n• [🔄 패킹리스트 동기화] 핸들러 및 자동 문서 발행기 전면 강화: 패킹리스트 동기화 클릭 시 공급사명 정규화, 정확한 수식 계산(evaluateFormulaGlobal), 파렛트 번호 및 중량 자동 산출 후 Firestore 실시간 반영으로 재발 방지 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.568',
     version: 'v2.8.568',
     date: '2026-09-21',
