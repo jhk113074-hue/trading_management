@@ -2371,6 +2371,63 @@ export const OrderDetail: React.FC = () => {
     });
   };
 
+  // ── [차수별 배정 품목 기반 패킹리스트 자동 구성 헬퍼] ─────────────────
+  const buildPackingListFromAllocatedItems = (
+    allocated: ShipmentRoundAllocatedItem[],
+    orderItemsList: any[],
+    productsList: any[],
+    basePackingList?: any,
+    containerNo?: string
+  ) => {
+    const roundAllocated = (allocated || []).filter(ai => Number(ai.shippedQty) > 0);
+    const itemsToUse = roundAllocated.length > 0 ? roundAllocated : (allocated || []);
+
+    const containerItems = itemsToUse.map((it, idx) => {
+      const matchedOrderItem = orderItemsList.find(oi => (oi.itemId && oi.itemId === it.itemId) || (oi.productCode && oi.productCode === it.productCode));
+      const matchedProd = productsList.find(p => p.productCode === it.productCode || p.id === it.productCode);
+
+      const netWeight = Math.round(Number(it.shippedQty ?? (it as any).qty) || 0);
+      const grossWeight = Math.round(netWeight * 1.02);
+      const cbm = Number(((netWeight / 1000) * 1.5).toFixed(3));
+
+      let dimStr = '';
+      const pW = matchedProd?.palletWidth || matchedProd?.specWidth || 0;
+      const pL = matchedProd?.palletLength || matchedProd?.specLength || 0;
+      const pH = matchedProd?.palletHeight || matchedProd?.specHeight || 0;
+      if (pW > 0 && pL > 0 && pH > 0) {
+        dimStr = `${pW}*${pL}*${pH}`;
+      }
+
+      return {
+        shippingMark: '',
+        description: it.name || matchedOrderItem?.name || '',
+        itemCode: it.productCode || matchedOrderItem?.productCode || '',
+        qty: String(it.shippedQty ?? (it as any).qty ?? 0),
+        unit: it.unit || matchedOrderItem?.unit || 'EA',
+        supplier: matchedOrderItem?.supplier || (it as any).supplier || 'General Supplier',
+        pkgNo: String(idx + 1),
+        pkg: '1',
+        dimensions: dimStr,
+        netWeight: String(netWeight),
+        grossWeight: String(grossWeight),
+        cbm: String(cbm),
+        stackable: 'Y',
+        rotation: 'Y'
+      };
+    });
+
+    return {
+      ...(basePackingList || {}),
+      containers: [
+        {
+          containerNo: containerNo || 'CONTAINER-01',
+          sealNo: '',
+          items: containerItems
+        }
+      ]
+    };
+  };
+
   const handleAddShipmentRound = () => {
     const nextRoundNum = (shipmentRounds.length || 0) + 1;
     const baseCi = (basicForm.ciNumber || shipmentRounds[0]?.ciNumber || (order?.piNumber ? `CI-${order.piNumber}` : `CI-${order?.id || 'PO'}`)).replace(/-[0-9]+$/, '');
@@ -2398,6 +2455,14 @@ export const OrderDetail: React.FC = () => {
     });
 
     const newRoundId = `round-${Date.now()}`;
+    const newRoundPackingList = buildPackingListFromAllocatedItems(
+      newAllocated,
+      currentOrderItems,
+      products || [],
+      basicForm.packingList,
+      `CONTAINER-01`
+    );
+
     const newRound: ShipmentRound = {
       id: newRoundId,
       roundNumber: nextRoundNum,
@@ -2428,17 +2493,29 @@ export const OrderDetail: React.FC = () => {
       plFiles: [],
       exportDeclarationFiles: [],
       cooFiles: [],
+      packingList: newRoundPackingList,
+      supplierArrivalReports: {},
       allocatedItems: newAllocated
     };
 
-    // 1차 선적 CI 번호가 접미사가 없었을 경우 자동으로 -1 추천
+    // 현재 편집 중이던 차수의 패킹리스트 및 도착보고 데이터를 안전하게 보존 후 신규 차수 추가
     setShipmentRounds(prev => {
-      let updatedPrev = [...prev];
+      let updatedPrev = prev.map(r => {
+        if (r.id === activeRoundId) {
+          return {
+            ...r,
+            packingList: basicForm.packingList,
+            supplierArrivalReports: order?.supplierArrivalReports || {}
+          };
+        }
+        return r;
+      });
       if (updatedPrev[0] && (!updatedPrev[0].ciNumber || !/-[0-9]+$/.test(updatedPrev[0].ciNumber))) {
         updatedPrev[0] = {
           ...updatedPrev[0],
           title: '1차 선적',
-          ciNumber: `${baseCi}-1`
+          ciNumber: `${baseCi}-1`,
+          packingList: updatedPrev[0].packingList || basicForm.packingList
         };
       }
       const updated = [...updatedPrev, newRound];
@@ -2448,6 +2525,151 @@ export const OrderDetail: React.FC = () => {
 
     setIsSplitShipment(true);
     setActiveRoundId(newRoundId);
+
+    // 신규 차수 작업 공간으로 패킹리스트 및 도착보고 상태 전환
+    setBasicForm(prev => ({
+      ...prev,
+      ciNumber: `${baseCi}-${nextRoundNum}`,
+      bookingNo: '',
+      vesselBooking: '',
+      etd: '',
+      eta: '',
+      docCutoffDate: '',
+      cargoCutoffDate: '',
+      cfsEntryDate: '',
+      packingList: newRoundPackingList
+    }));
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: {} } : prev);
+  };
+
+  // ── [선적 차수 전환 핸들러: 패킹리스트 & 도착보고서 1:1 완벽 독립 분리] ────
+  const handleSwitchShipmentRound = (targetRoundId: string) => {
+    if (targetRoundId === activeRoundId) return;
+
+    let currentRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+    const currentIdx = currentRounds.findIndex(r => r.id === activeRoundId);
+    
+    // 1. 현재 작업 중이던 차수의 패킹리스트/도착보고/물류정보 보존
+    if (currentIdx !== -1) {
+      currentRounds = currentRounds.map((r, i) => {
+        if (i === currentIdx) {
+          return {
+            ...r,
+            packingList: basicForm.packingList,
+            supplierArrivalReports: order?.supplierArrivalReports || {},
+            bookingNo: basicForm.bookingNo,
+            vesselBooking: basicForm.vesselBooking,
+            forwarderConfirmed: basicForm.forwarderConfirmed,
+            etd: basicForm.etd,
+            eta: basicForm.eta,
+            docCutoffDate: basicForm.docCutoffDate,
+            cargoCutoffDate: basicForm.cargoCutoffDate,
+            cfsEntryDate: basicForm.cfsEntryDate,
+            cfsEntryTime: basicForm.cfsEntryTime,
+            cfsContactInfo: basicForm.cfsContactInfo,
+            cfsAddress: basicForm.cfsAddress,
+            shipmentType: basicForm.shipmentType,
+            fclSpecs: basicForm.fclSpecs,
+            containerWorkspaceType: basicForm.containerWorkspaceType,
+            shipmentCompleted: basicForm.shipmentCompleted,
+            ciNumber: basicForm.ciNumber,
+            blNumber: basicForm.blNumber,
+            blNumbers: basicForm.blNumbers,
+            exportDeclarationNo: basicForm.exportDeclarationNo,
+            customsExchangeRate: basicForm.customsExchangeRate
+          };
+        }
+        return r;
+      });
+    }
+
+    const targetRound = currentRounds.find(r => r.id === targetRoundId);
+    if (!targetRound) return;
+
+    // 2. 대상 차수의 독립 패킹리스트 준비 (없을 경우 배정 품목 기준으로 자동 초기화)
+    let targetPackingList = targetRound.packingList;
+    if (!targetPackingList || !targetPackingList.containers || targetPackingList.containers.length === 0) {
+      if (targetRound.roundNumber > 1) {
+        targetPackingList = buildPackingListFromAllocatedItems(
+          targetRound.allocatedItems || [],
+          orderItems || [],
+          products || [],
+          basicForm.packingList,
+          'CONTAINER-01'
+        );
+      } else {
+        targetPackingList = basicForm.packingList;
+      }
+      currentRounds = currentRounds.map(r => r.id === targetRoundId ? { ...r, packingList: targetPackingList } : r);
+    }
+
+    // 3. 대상 차수의 독립 도착보고서 준비
+    const targetArrivalReports = targetRound.supplierArrivalReports || {};
+
+    // 4. 상태 갱신
+    setShipmentRounds(currentRounds);
+    latestOrderStateRef.current.shipmentRounds = currentRounds;
+    setActiveRoundId(targetRoundId);
+
+    setBasicForm(prev => ({
+      ...prev,
+      packingList: targetPackingList,
+      bookingNo: targetRound.bookingNo !== undefined ? targetRound.bookingNo : prev.bookingNo,
+      vesselBooking: targetRound.vesselBooking !== undefined ? targetRound.vesselBooking : prev.vesselBooking,
+      forwarderConfirmed: targetRound.forwarderConfirmed !== undefined ? targetRound.forwarderConfirmed : prev.forwarderConfirmed,
+      etd: targetRound.etd !== undefined ? targetRound.etd : prev.etd,
+      eta: targetRound.eta !== undefined ? targetRound.eta : prev.eta,
+      docCutoffDate: targetRound.docCutoffDate !== undefined ? targetRound.docCutoffDate : prev.docCutoffDate,
+      cargoCutoffDate: targetRound.cargoCutoffDate !== undefined ? targetRound.cargoCutoffDate : prev.cargoCutoffDate,
+      cfsEntryDate: targetRound.cfsEntryDate !== undefined ? targetRound.cfsEntryDate : prev.cfsEntryDate,
+      cfsEntryTime: targetRound.cfsEntryTime !== undefined ? targetRound.cfsEntryTime : prev.cfsEntryTime,
+      cfsContactInfo: targetRound.cfsContactInfo !== undefined ? targetRound.cfsContactInfo : prev.cfsContactInfo,
+      cfsAddress: targetRound.cfsAddress !== undefined ? targetRound.cfsAddress : prev.cfsAddress,
+      shipmentType: targetRound.shipmentType !== undefined ? targetRound.shipmentType : prev.shipmentType,
+      fclSpecs: targetRound.fclSpecs !== undefined ? targetRound.fclSpecs : prev.fclSpecs,
+      containerWorkspaceType: targetRound.containerWorkspaceType !== undefined ? targetRound.containerWorkspaceType : prev.containerWorkspaceType,
+      shipmentCompleted: targetRound.shipmentCompleted !== undefined ? targetRound.shipmentCompleted : prev.shipmentCompleted,
+      ciNumber: targetRound.ciNumber !== undefined ? targetRound.ciNumber : prev.ciNumber,
+      blNumber: targetRound.blNumber !== undefined ? targetRound.blNumber : prev.blNumber,
+      blNumbers: targetRound.blNumbers !== undefined ? targetRound.blNumbers : prev.blNumbers,
+      exportDeclarationNo: targetRound.exportDeclarationNo !== undefined ? targetRound.exportDeclarationNo : prev.exportDeclarationNo,
+      customsExchangeRate: targetRound.customsExchangeRate !== undefined ? targetRound.customsExchangeRate : prev.customsExchangeRate
+    }));
+
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: targetArrivalReports } : prev);
+  };
+
+  // ── [차수 배정 품목 기반 패킹리스트 재구성/불러오기 버튼 핸들러] ─────────
+  const handlePopulatePackingFromAllocated = (targetRound?: ShipmentRound) => {
+    const round = targetRound || activeRound;
+    if (!round) return;
+
+    const roundTitle = round.title || `${round.roundNumber}차 선적`;
+    const allocatedCount = (round.allocatedItems || []).filter(ai => Number(ai.shippedQty) > 0).length;
+    if (!window.confirm(`[${roundTitle}]에 배정된 품목(${allocatedCount}개) 및 수량을 바탕으로 패킹리스트 컨테이너를 새로 구성하시겠습니까?\n기존 컨테이너 적재 데이터는 배정 품목 기준으로 새로 설정됩니다.`)) {
+      return;
+    }
+
+    const newPL = buildPackingListFromAllocatedItems(
+      round.allocatedItems || [],
+      orderItems || [],
+      products || [],
+      basicForm.packingList,
+      'CONTAINER-01'
+    );
+
+    setBasicForm(prev => ({
+      ...prev,
+      packingList: newPL
+    }));
+
+    setShipmentRounds(prev => {
+      const updated = prev.map(r => r.id === round.id ? { ...r, packingList: newPL } : r);
+      latestOrderStateRef.current.shipmentRounds = updated;
+      return updated;
+    });
+
+    alert(`✅ [${roundTitle}] 배정 품목(${allocatedCount}개) 기준으로 패킹리스트가 성공적으로 재구성되었습니다.\n아래 컨테이너 로딩플랜에서 팔레트 규격과 중량을 확인 및 편집하세요.`);
   };
 
   const handleDeleteShipmentRound = (roundId: string) => {
@@ -2463,7 +2685,15 @@ export const OrderDetail: React.FC = () => {
         setIsSplitShipment(false);
       }
       if (activeRoundId === roundId) {
-        setActiveRoundId(filtered[0]?.id || 'round-1');
+        const nextTargetId = filtered[0]?.id || 'round-1';
+        setActiveRoundId(nextTargetId);
+        const nextRound = filtered[0];
+        if (nextRound?.packingList) {
+          setBasicForm(bf => ({ ...bf, packingList: nextRound.packingList }));
+        }
+        if (nextRound?.supplierArrivalReports) {
+          setOrder(o => o ? { ...o, supplierArrivalReports: nextRound.supplierArrivalReports } : o);
+        }
       }
       return filtered;
     });
@@ -3585,9 +3815,46 @@ export const OrderDetail: React.FC = () => {
           // 로컬 편집 중인 차수 상태 유지
           setShipmentRounds(currentLocalRounds);
         } else if (rawRounds.length > 0) {
-          setShipmentRounds(rawRounds);
-          if ((data as any).activeShipmentRoundId) {
-            setActiveRoundId((data as any).activeShipmentRoundId);
+          // 1차 선적 및 차수별 패킹리스트/도착보고 보강
+          const enrichedRounds = rawRounds.map((r, idx) => {
+            if (idx === 0) {
+              return {
+                ...r,
+                packingList: r.packingList || data.packingList || null,
+                supplierArrivalReports: r.supplierArrivalReports || (data as any).supplierArrivalReports || {}
+              };
+            }
+            return r;
+          });
+          setShipmentRounds(enrichedRounds);
+          latestOrderStateRef.current.shipmentRounds = enrichedRounds;
+          const targetRoundId = (data as any).activeShipmentRoundId || enrichedRounds[0]?.id || 'round-1';
+          setActiveRoundId(targetRoundId);
+
+          const activeR = enrichedRounds.find(r => r.id === targetRoundId) || enrichedRounds[0];
+          if (activeR && activeR.roundNumber > 1) {
+            let activePL = activeR.packingList;
+            if (!activePL || !activePL.containers || activePL.containers.length === 0) {
+              activePL = buildPackingListFromAllocatedItems(
+                activeR.allocatedItems || [],
+                restoredOrderItems || [],
+                products || [],
+                data.packingList,
+                'CONTAINER-01'
+              );
+            }
+            setBasicForm(prev => ({
+              ...prev,
+              packingList: activePL,
+              bookingNo: activeR.bookingNo !== undefined ? activeR.bookingNo : prev.bookingNo,
+              vesselBooking: activeR.vesselBooking !== undefined ? activeR.vesselBooking : prev.vesselBooking,
+              etd: activeR.etd !== undefined ? activeR.etd : prev.etd,
+              eta: activeR.eta !== undefined ? activeR.eta : prev.eta,
+              ciNumber: activeR.ciNumber !== undefined ? activeR.ciNumber : prev.ciNumber
+            }));
+            if (activeR.supplierArrivalReports) {
+              setOrder(prev => prev ? { ...prev, supplierArrivalReports: activeR.supplierArrivalReports } : prev);
+            }
           }
         } else {
           // 1차 선적 기본값 초기화
@@ -4217,7 +4484,9 @@ export const OrderDetail: React.FC = () => {
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate || '',
         cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
-        supplierArrivalReports: curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {},
+        supplierArrivalReports: (!isSplitShipment || activeRound?.roundNumber === 1)
+          ? (curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {})
+          : ((latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).find(r => r.roundNumber === 1)?.supplierArrivalReports || curOrder?.supplierArrivalReports || {}),
         cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
@@ -4280,7 +4549,9 @@ export const OrderDetail: React.FC = () => {
         shipmentType: basicForm.shipmentType || 'FCL',
         fclSpecs: (basicForm.fclSpecs || []).map(c => ({ type: c.type, qty: c.qty, containerNo: c.containerNo || '', sealNo: c.sealNo || '' })),
 
-        packingList: basicForm.packingList || null,
+        packingList: (!isSplitShipment || activeRound?.roundNumber === 1)
+          ? (basicForm.packingList || null)
+          : ((latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).find(r => r.roundNumber === 1)?.packingList || curOrder?.packingList || basicForm.packingList || null),
         customCiItems: customCiItems || [],
         customCiExtra: customCiExtra || {},
         customPlRemarks: customPlRemarks || '',
@@ -4292,7 +4563,7 @@ export const OrderDetail: React.FC = () => {
         blNumber: basicForm.blNumber || '',
         isSplitShipment: isSplitShipment,
         shipmentRounds: (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r => {
-          if (r.roundNumber === 1) {
+          if (r.id === activeRoundId) {
             return {
               ...r,
               bookingNo: basicForm.bookingNo,
@@ -4314,7 +4585,9 @@ export const OrderDetail: React.FC = () => {
               blNumber: basicForm.blNumber,
               blNumbers: basicForm.blNumbers,
               exportDeclarationNo: basicForm.exportDeclarationNo,
-              customsExchangeRate: basicForm.customsExchangeRate
+              customsExchangeRate: basicForm.customsExchangeRate,
+              packingList: basicForm.packingList,
+              supplierArrivalReports: curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {}
             };
           }
           return r;
@@ -6491,25 +6764,28 @@ export const OrderDetail: React.FC = () => {
           </span>
           {shipmentRounds.map((r, idx) => {
             const isSelected = activeRoundId === r.id;
+            const isRound1 = r.roundNumber === 1;
+            const activeBg = isRound1 ? '#3b82f6' : '#10b981';
+            const activeBorder = isRound1 ? '#2563eb' : '#059669';
             return (
               <button
                 key={r.id || idx}
                 type="button"
-                onClick={() => setActiveRoundId(r.id)}
+                onClick={() => handleSwitchShipmentRound(r.id)}
                 style={{
                   height: '34px',
                   padding: '0 14px',
                   borderRadius: '4px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  background: isSelected ? '#3b82f6' : '#f1f5f9',
+                  background: isSelected ? activeBg : '#f1f5f9',
                   color: isSelected ? '#ffffff' : '#475569',
-                  border: isSelected ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                  border: isSelected ? `1px solid ${activeBorder}` : '1px solid #cbd5e1',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: isSelected ? '0 2px 4px rgba(59, 130, 246, 0.25)' : 'none',
+                  boxShadow: isSelected ? (isRound1 ? '0 2px 4px rgba(59, 130, 246, 0.25)' : '0 2px 4px rgba(16, 185, 129, 0.25)') : 'none',
                   transition: 'all 0.15s'
                 }}
               >
@@ -12599,6 +12875,109 @@ ${downloadLink}`;
                     <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📦 패킹리스트 작성 및 검토 (자동/수동 편집 지원)</h4>
                   </div>
 
+                  {/* 🚢 분할 선적 차수 활성 배너 & 배정 품목 연동 */}
+                  {shipmentRounds.length > 1 && activeRound && (
+                    <div style={{
+                      background: activeRound.roundNumber === 1 ? '#eff6ff' : '#ecfdf5',
+                      border: `1.5px solid ${activeRound.roundNumber === 1 ? '#3b82f6' : '#10b981'}`,
+                      borderRadius: '6px',
+                      padding: '12px 16px',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{
+                            background: activeRound.roundNumber === 1 ? '#2563eb' : '#059669',
+                            color: '#fff',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                          }}>
+                            🚢 {activeRound.title || `${activeRound.roundNumber}차 선적`} {activeRound.roundNumber > 1 ? '(분할 선적)' : ''}
+                          </span>
+                          <span style={{ fontSize: '13.5px', fontWeight: 750, color: '#1e293b' }}>
+                            현재 <strong>[{activeRound.title}]</strong> 전용 컨테이너 로딩 플랜 및 패킹리스트를 편집/열람 중입니다.
+                          </span>
+                        </div>
+
+                        {/* 차수 전환 퀵 버튼 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>차수 전환:</span>
+                          {shipmentRounds.map((r, rIdx) => {
+                            const isCurr = activeRoundId === r.id;
+                            const isR1 = r.roundNumber === 1;
+                            return (
+                              <button
+                                key={r.id || rIdx}
+                                type="button"
+                                onClick={() => handleSwitchShipmentRound(r.id)}
+                                style={{
+                                  height: '28px',
+                                  padding: '0 10px',
+                                  fontSize: '12px',
+                                  fontWeight: 750,
+                                  borderRadius: '4px',
+                                  border: isCurr ? (isR1 ? '1px solid #1d4ed8' : '1px solid #047857') : '1px solid #cbd5e1',
+                                  background: isCurr ? (isR1 ? '#2563eb' : '#059669') : '#fff',
+                                  color: isCurr ? '#fff' : '#475569',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                              >
+                                {r.title || `${rIdx + 1}차`}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 차수 정보 요약 및 배정 품목 불러오기 버튼 */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderTop: `1px dashed ${activeRound.roundNumber === 1 ? '#bfdbfe' : '#a7f3d0'}`, paddingTop: '8px', fontSize: '12px', color: '#475569' }}>
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span><strong>CI NO:</strong> {activeRound.ciNumber || basicForm.ciNumber || '미지정'}</span>
+                          <span><strong>ETD:</strong> {activeRound.etd || basicForm.etd || '미정'}</span>
+                          <span><strong>선박/부킹:</strong> {activeRound.vesselBooking || basicForm.vesselBooking || '미지정'}</span>
+                          <span><strong>차수 배정 품목:</strong> <span style={{ color: activeRound.roundNumber === 1 ? '#2563eb' : '#059669', fontWeight: 800 }}>{(activeRound.allocatedItems || []).filter(ai => Number(ai.shippedQty) > 0).length}개</span> 품목</span>
+                          <span><strong>컨테이너:</strong> <span style={{ fontWeight: 800 }}>{basicForm.packingList?.containers?.length || 0}개</span></span>
+                        </div>
+
+                        {isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => handlePopulatePackingFromAllocated(activeRound)}
+                            style={{
+                              height: '30px',
+                              padding: '0 12px',
+                              fontSize: '12px',
+                              fontWeight: 750,
+                              borderRadius: '4px',
+                              background: activeRound.roundNumber === 1 ? '#3b82f6' : '#10b981',
+                              color: '#fff',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                            }}
+                            title="본 차수에 배정된 수량을 바탕으로 컨테이너 및 패킹리스트를 초기화/재생성합니다"
+                          >
+                            <span>📦</span> [{activeRound.title}] 배정 품목으로 패킹리스트 불러오기
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 3D 적재 시뮬레이션 계획 대조 (Planned vs Actual) */}
                   
 
@@ -13589,6 +13968,79 @@ ${downloadLink}`;
                     </div>
                   </div>
 
+                  {/* 🚚 분할 선적 차수 활성 배너 & 안내 */}
+                  {shipmentRounds.length > 1 && activeRound && (
+                    <div style={{
+                      background: activeRound.roundNumber === 1 ? '#eff6ff' : '#ecfdf5',
+                      border: `1.5px solid ${activeRound.roundNumber === 1 ? '#3b82f6' : '#10b981'}`,
+                      borderRadius: '6px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{
+                            background: activeRound.roundNumber === 1 ? '#2563eb' : '#059669',
+                            color: '#fff',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                          }}>
+                            🚚 {activeRound.title || `${activeRound.roundNumber}차 선적`} 도착보고 {activeRound.roundNumber > 1 ? '(분할 선적)' : ''}
+                          </span>
+                          <span style={{ fontSize: '13.5px', fontWeight: 750, color: '#1e293b' }}>
+                            현재 <strong>[{activeRound.title}]</strong> 컨테이너 로딩 플랜에 적재된 화물 기준으로 공급사별 도착보고서가 분리 표시됩니다.
+                          </span>
+                        </div>
+
+                        {/* 차수 전환 퀵 버튼 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>차수 전환:</span>
+                          {shipmentRounds.map((r, rIdx) => {
+                            const isCurr = activeRoundId === r.id;
+                            const isR1 = r.roundNumber === 1;
+                            return (
+                              <button
+                                key={r.id || rIdx}
+                                type="button"
+                                onClick={() => handleSwitchShipmentRound(r.id)}
+                                style={{
+                                  height: '28px',
+                                  padding: '0 10px',
+                                  fontSize: '12px',
+                                  fontWeight: 750,
+                                  borderRadius: '4px',
+                                  border: isCurr ? (isR1 ? '1px solid #1d4ed8' : '1px solid #047857') : '1px solid #cbd5e1',
+                                  background: isCurr ? (isR1 ? '#2563eb' : '#059669') : '#fff',
+                                  color: isCurr ? '#fff' : '#475569',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                              >
+                                {r.title || `${rIdx + 1}차`}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', borderTop: `1px dashed ${activeRound.roundNumber === 1 ? '#bfdbfe' : '#a7f3d0'}`, paddingTop: '8px', fontSize: '12px', color: '#475569' }}>
+                        <span><strong>CI NO:</strong> {activeRound.ciNumber || basicForm.ciNumber || '미지정'}</span>
+                        <span><strong>ETD:</strong> {activeRound.etd || basicForm.etd || '미정'}</span>
+                        <span><strong>선박/부킹:</strong> {activeRound.vesselBooking || basicForm.vesselBooking || '미지정'}</span>
+                        <span><strong>적재 컨테이너:</strong> <span style={{ fontWeight: 800 }}>{basicForm.packingList?.containers?.length || 0}개</span></span>
+                      </div>
+                    </div>
+                  )}
+
                   {allOrderSuppliers.length === 0 ? (
                     <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14.5px' }}>
                       등록된 제조사(공급업체) 정보가 없습니다.
@@ -13782,6 +14234,11 @@ ${downloadLink}`;
                           }
                         };
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                        setShipmentRounds(prev => {
+                          const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
+                          latestOrderStateRef.current.shipmentRounds = updated;
+                          return updated;
+                        });
                       };
 
                       const updateArrivalReportItemBatch = (startIdx: number, count: number, field: string, val: any) => {
@@ -13799,6 +14256,11 @@ ${downloadLink}`;
                           }
                         };
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                        setShipmentRounds(prev => {
+                          const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
+                          latestOrderStateRef.current.shipmentRounds = updated;
+                          return updated;
+                        });
                       };
 
                       const addArrivalReportItemRow = () => {
@@ -13819,6 +14281,11 @@ ${downloadLink}`;
                           }
                         };
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                        setShipmentRounds(prev => {
+                          const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
+                          latestOrderStateRef.current.shipmentRounds = updated;
+                          return updated;
+                        });
                       };
 
                       const removeArrivalReportItemRow = (itemIdx: number) => {
@@ -13832,6 +14299,11 @@ ${downloadLink}`;
                           }
                         };
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                        setShipmentRounds(prev => {
+                          const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
+                          latestOrderStateRef.current.shipmentRounds = updated;
+                          return updated;
+                        });
                       };
 
                       const handlePrintArrivalReportInline = async () => {
@@ -14324,10 +14796,23 @@ ${downloadLink}`;
                         <div key={supplierName} style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '16px' }}>
                           {/* Card Header */}
                           <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              {activeRound && (
+                                <span style={{
+                                  background: activeRound.roundNumber === 1 ? '#eff6ff' : '#ecfdf5',
+                                  color: activeRound.roundNumber === 1 ? '#2563eb' : '#059669',
+                                  border: `1px solid ${activeRound.roundNumber === 1 ? '#bfdbfe' : '#a7f3d0'}`,
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: 800
+                                }}>
+                                  {activeRound.title || `${activeRound.roundNumber}차 선적`}
+                                </span>
+                              )}
                               <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '14.5px' }}>🚚 {supplierName} 도착보고서 ({poNum})</span>
                               {order.supplierArrivalReports && order.supplierArrivalReports[supplierName] && (
-                                <span style={{ marginLeft: '10px', padding: '2px 8px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '15.5px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ marginLeft: '6px', padding: '2px 8px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                   ✓ 저장 완료 (클라우드)
                                 </span>
                               )}
@@ -14363,10 +14848,22 @@ ${downloadLink}`;
                                   });
 
                                   setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
+                                  const updatedRounds = (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r => 
+                                    r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r
+                                  );
+                                  setShipmentRounds(updatedRounds);
+                                  latestOrderStateRef.current.shipmentRounds = updatedRounds;
                                   if (order?.id) {
                                     try {
                                       const oRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-                                      await setDoc(oRef, { supplierArrivalReports: updatedReports, updatedAt: serverTimestamp() }, { merge: true });
+                                      const saveObj: any = {
+                                        updatedAt: serverTimestamp(),
+                                        shipmentRounds: updatedRounds
+                                      };
+                                      if (!isSplitShipment || activeRound?.roundNumber === 1) {
+                                        saveObj.supplierArrivalReports = updatedReports;
+                                      }
+                                      await setDoc(oRef, saveObj, { merge: true });
                                     } catch (err) {
                                       console.error('Failed to save synchronized arrival reports to Firestore:', err);
                                     }
@@ -18578,7 +19075,20 @@ ${downloadLink}`;
                 extraUpdates.bookingNo = reportData.bookingNo;
                 setBasicForm(p => ({ ...p, bookingNo: reportData.bookingNo }));
               }
-              await setDoc(orderRef, { supplierArrivalReports: updatedReports, ...extraUpdates, updatedAt: serverTimestamp() }, { merge: true });
+              const updatedRounds = (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r =>
+                r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r
+              );
+              setShipmentRounds(updatedRounds);
+              latestOrderStateRef.current.shipmentRounds = updatedRounds;
+              const savePayload: any = {
+                shipmentRounds: updatedRounds,
+                ...extraUpdates,
+                updatedAt: serverTimestamp()
+              };
+              if (!isSplitShipment || activeRound?.roundNumber === 1) {
+                savePayload.supplierArrivalReports = updatedReports;
+              }
+              await setDoc(orderRef, savePayload, { merge: true });
               setActiveArrivalReport(null);
               // Print immediately using the saved updated reports in local memory or data
               const rep = reportData;
