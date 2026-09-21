@@ -816,9 +816,9 @@ export const Orders: React.FC = () => {
     ].filter(Boolean).length;
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', overflowX: 'auto' }}>
         {/* 상단 기본 필터 노출 라인 (한 줄 고정) */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', flexWrap: 'nowrap', width: '100%', minWidth: 'max-content' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'nowrap', width: '100%', minWidth: 'max-content' }}>
           {/* 기본 노출 필터: 발주사, 국가, 보기, 완료건, ETD */}
           {[
             { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, cleanCompanyName(c)])] },
@@ -829,19 +829,19 @@ export const Orders: React.FC = () => {
           ].map(({ label, value, set, opts, highlight }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: highlight ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</label>
-              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '0 8px', border: highlight ? '1.5px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: highlight ? '#eff6ff' : '#fff', color: highlight ? '#1d4ed8' : '#1e293b', fontWeight: highlight ? 700 : 600, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+              <select value={value} onChange={e => set(e.target.value)} style={{ padding: '0 8px', border: highlight ? '1.5px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: highlight ? '#eff6ff' : '#fff', color: highlight ? '#1d4ed8' : '#1e293b', fontWeight: highlight ? 700 : 600, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
                 {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
           ))}
 
           {/* 구분선 */}
-          <div style={{ width: '1px', height: '26px', background: '#cbd5e1', margin: '0 2px 4px 2px', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '26px', background: '#e2e8f0', margin: '0 2px 4px 2px', flexShrink: 0 }} />
 
           {/* 기본 노출 필터: 조회 기간 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
             <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>조회 기간</label>
-            <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '0 8px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '0 8px', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
               <option value="Last3Months">최근 3개월</option>
               <option value="All">전체 기간</option>
               <option value="Monthly">월별</option>
@@ -854,7 +854,7 @@ export const Orders: React.FC = () => {
           {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>년도</label>
-              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer', fontWeight: 600 }}>
                 {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
               </select>
             </div>
@@ -862,7 +862,7 @@ export const Orders: React.FC = () => {
           {dateFilterType === 'Monthly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>월</label>
-              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer', fontWeight: 600 }}>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
               </select>
             </div>
@@ -870,7 +870,7 @@ export const Orders: React.FC = () => {
           {dateFilterType === 'Quarterly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>분기</label>
-              <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer', fontWeight: 600 }}>
                 {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q}분기</option>)}
               </select>
             </div>
@@ -878,7 +878,7 @@ export const Orders: React.FC = () => {
           {dateFilterType === 'HalfYearly' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>반기</label>
-              <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer', fontWeight: 600 }}>
                 <option value={1}>상반기</option><option value={2}>하반기</option>
               </select>
             </div>
@@ -887,12 +887,12 @@ export const Orders: React.FC = () => {
             <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>시작일</label>
-                <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <span style={{ paddingBottom: '7px', color: '#94a3b8', fontWeight: 700, fontSize: '14px' }}>~</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>종료일</label>
-                <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', height: '34px', width: '125px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             </div>
           )}
@@ -904,21 +904,24 @@ export const Orders: React.FC = () => {
             style={{
               alignSelf: 'flex-end',
               height: '34px',
-              padding: '0 10px',
-              background: showAdvancedFilters ? '#e2e8f0' : '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              borderRadius: '4px',
+              padding: '0 12px',
+              background: showAdvancedFilters ? '#eff6ff' : '#f8fafc',
+              border: `1px solid ${showAdvancedFilters ? '#93c5fd' : '#cbd5e1'}`,
+              borderRadius: '6px',
               fontSize: '12px',
-              fontWeight: 700,
-              color: '#475569',
+              fontWeight: 750,
+              color: showAdvancedFilters ? '#2563eb' : '#475569',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '5px',
               marginLeft: 'auto',
               flexShrink: 0,
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s ease'
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#93c5fd'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = showAdvancedFilters ? '#eff6ff' : '#f8fafc'; e.currentTarget.style.borderColor = showAdvancedFilters ? '#93c5fd' : '#cbd5e1'; }}
           >
             ⚙ 상세 필터
             {advancedFilterCount > 0 && (
@@ -983,7 +986,7 @@ export const Orders: React.FC = () => {
     };
 
     return (
-      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
         {loading ? (
           <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>주문 정보를 로딩 중입니다...</div>
         ) : processedOrders.length === 0 ? (
@@ -992,7 +995,7 @@ export const Orders: React.FC = () => {
           <>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
-                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #cbd5e1' }}>
                   <tr>
                     {['No.','날짜','주문번호','수주사','발주사','국가','품목','발주액','매출액','운송사','ETD','ETA','단계','다음단계','복사'].map((h, hIdx) => (
                       <th 
@@ -1088,11 +1091,11 @@ export const Orders: React.FC = () => {
                     <tr
                       key={order.id}
                       onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-                      style={{ borderBottom: '1px solid #cbd5e1', minHeight: '62px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                      style={{ borderBottom: '1px solid #f1f5f9', minHeight: '56px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '12.5px', fontWeight: 700, textAlign: 'center' })}>{orderIndex + 1}</td>
+                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '12px', fontWeight: 700, textAlign: 'center' })}>{orderIndex + 1}</td>
                       <td style={getTdStyle(1, { color: '#64748b', fontSize: '12px', fontWeight: 600, textAlign: 'center' })}>{formatDateShort(order.etd || order.poDate)}</td>
                       <td style={getTdStyle(2, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden' }}>
@@ -1105,7 +1108,7 @@ export const Orders: React.FC = () => {
                         </div>
                       </td>
                       <td style={getTdStyle(3, { textAlign: 'center' })}>{issuerBadge}</td>
-                      <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>
+                      <td style={getTdStyle(4, { color: '#1e293b', fontWeight: 600, fontSize: '12.5px' })} title={order.customer}>
                         {cleanCompanyName(order.customer)}
                       </td>
                       {/* 5: 국가 */}
@@ -1118,18 +1121,18 @@ export const Orders: React.FC = () => {
                               title={country} 
                               style={{ 
                                 display: 'inline-block', 
-                                padding: '3px 8px', 
+                                padding: '2.5px 7px', 
                                 background: '#f8fafc', 
-                                border: '1px solid #cbd5e1', 
+                                border: '1px solid #e2e8f0', 
                                 borderRadius: '4px', 
                                 fontSize: '11px', 
                                 fontWeight: 750, 
                                 color: '#334155', 
-                                maxWidth: '100%',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                letterSpacing: '0.01em'
+                                maxWidth: '100%', 
+                                overflow: 'hidden', 
+                                textOverflow: 'ellipsis', 
+                                whiteSpace: 'nowrap', 
+                                letterSpacing: '0.01em' 
                               }}
                             >
                               {country}
@@ -1138,10 +1141,10 @@ export const Orders: React.FC = () => {
                         })()}
                       </td>
                       <td style={getTdStyle(6, { color: '#334155', fontWeight: 600, fontSize: '12.5px' })} title={itemNames}>{itemNames}</td>
-                      <td style={getTdStyle(7, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(7, { fontWeight: 750, color: '#059669', textAlign: 'right', fontSize: '13.5px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(8, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
+                      <td style={getTdStyle(8, { fontWeight: 750, color: '#2563eb', textAlign: 'right', fontSize: '13.5px' })}>
                         {(() => {
                           const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
                           return `₩${Math.round(amount * rate).toLocaleString()}`;
@@ -1198,21 +1201,21 @@ export const Orders: React.FC = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                   <span style={{ 
                                     background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
-                                    color: isAllFinished ? '#10b981' : '#2563eb', 
+                                    color: isAllFinished ? '#047857' : '#1d4ed8', 
                                     border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                                    fontSize: '11px', 
+                                    fontSize: '10.5px', 
                                     fontWeight: 750, 
-                                    padding: '2px 6px', 
+                                    padding: '1.5px 6px', 
                                     borderRadius: '4px', 
                                     whiteSpace: 'nowrap' 
                                   }}>
                                     {displayStage}
                                   </span>
-                                  <span style={{ fontSize: '11.5px', color: '#1e293b', fontWeight: 800 }}>
+                                  <span style={{ fontSize: '11.5px', color: '#0f172a', fontWeight: 800 }}>
                                     {overallPct}%
                                   </span>
                                 </div>
-                                <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700, background: '#eff6ff', padding: '1px 6px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                                <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 750, background: '#eff6ff', padding: '1px 6px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
                                   전체 {overallDone}/{overallTotal}
                                 </span>
                               </div>
@@ -1223,7 +1226,7 @@ export const Orders: React.FC = () => {
                                   const { done, total } = getStageProgress(order, sk);
                                   const isDone = total > 0 && done === total;
                                   const isWorking = done > 0 && done < total;
-                                  const color = isDone ? '#10b981' : isWorking ? '#2563eb' : 'var(--border-default)';
+                                  const color = isDone ? '#10b981' : isWorking ? '#3b82f6' : '#e2e8f0';
                                   return (
                                     <div 
                                       key={sk} 
@@ -1251,7 +1254,7 @@ export const Orders: React.FC = () => {
                                     '서류관리': '서류',
                                     '정산결제': '정산'
                                   };
-                                  const color = isDone ? '#15803d' : isWorking ? '#1d4ed8' : '#94a3b8';
+                                  const color = isDone ? '#059669' : isWorking ? '#2563eb' : '#94a3b8';
                                   return (
                                     <span 
                                       key={sk} 
@@ -1288,7 +1291,7 @@ export const Orders: React.FC = () => {
                            return (
                              <div 
                                title={todoText}
-                               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px', padding: '3px 6px', borderRadius: '12px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'help', maxWidth: '100%', boxSizing: 'border-box' }}
+                               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px', padding: '3px 7px', borderRadius: '12px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'help', maxWidth: '100%', boxSizing: 'border-box' }}
                              >
                                <span>{icon}</span>
                                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{badgeText}</span>
@@ -1305,25 +1308,26 @@ export const Orders: React.FC = () => {
                             handleCopyOrder(order);
                           }}
                           style={{
-                            background: '#f1f5f9',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
+                            background: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '6px',
                             width: '28px',
                             height: '28px',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '13.5px',
+                            fontSize: '13px',
                             cursor: 'pointer',
-                            transition: 'all 0.15s'
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                            transition: 'all 0.15s ease'
                           }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = '#dbeafe';
+                            e.currentTarget.style.backgroundColor = '#eff6ff';
                             e.currentTarget.style.borderColor = '#93c5fd';
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = '#f1f5f9';
-                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.backgroundColor = '#ffffff';
+                            e.currentTarget.style.borderColor = '#e2e8f0';
                           }}
                           title="📋 PO 복사 (동일 내용으로 신규 PO 등록)"
                         >
@@ -1463,15 +1467,15 @@ export const Orders: React.FC = () => {
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>수출 주문관리 대시보드</h1>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 850, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>수출 주문관리 대시보드</h1>
           <select 
             value={issuingCompanyFilter} 
             onChange={e => setIssuingCompanyFilter(e.target.value)} 
             style={{ 
-              padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', 
-              fontSize: '13px', fontWeight: 700, color: '#475569', 
+              padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '6px', 
+              fontSize: '12.5px', fontWeight: 700, color: '#334155', 
               outline: 'none', background: '#fff', cursor: 'pointer',
               height: '34px', boxSizing: 'border-box'
             }}
@@ -1484,15 +1488,15 @@ export const Orders: React.FC = () => {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '34px' }}>
           <button
             onClick={handleExportExcel}
-            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
-            onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+            style={{ background: '#ffffff', border: '1px solid #cbd5e1', color: '#475569', padding: '0 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
           >
             📥 목록 받기 (Excel)
           </button>
           <button
             onClick={handleOpenNewOrder}
-            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
+            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 750, fontSize: '12.5px', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(59,130,246,0.3)' }}
             onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
             onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
           >
@@ -1502,28 +1506,113 @@ export const Orders: React.FC = () => {
       </div>
 
       {/* 스탯 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '10px' }}>
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>진행 중 오더</span>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{stats.activeCount} 건</div>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>진행 수주금액</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '10px' }}>
+        <div 
+          style={{ 
+            background: '#fff', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: '8px', 
+            padding: '14px 18px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)'; }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', fontSize: '13px' }}>📦</span>
+            <span style={{ fontSize: '12.5px', fontWeight: 750, color: '#64748b' }}>진행 중 오더</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>매출액 (ETD 기준)</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{Math.round(stats.salesYsaccKrw).toLocaleString()} / 영성: ₩{Math.round(stats.salesYsKrw).toLocaleString()})</span>
+          <div style={{ fontSize: '22px', fontWeight: 850, color: '#0f172a', letterSpacing: '-0.02em' }}>
+            {stats.activeCount} <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>건</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#d97706' }}>₩{Math.round(stats.salesTotalKrw).toLocaleString()}</div>
         </div>
-        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : '#475569' }}>오늘 처리 필요 (긴급)</span>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: stats.urgentCount > 0 ? '#dc2626' : '#1e293b' }}>{stats.urgentCount} 건</div>
+
+        <div 
+          style={{ 
+            background: '#fff', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: '8px', 
+            padding: '14px 18px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)'; }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontSize: '13px' }}>💵</span>
+              <span style={{ fontSize: '12.5px', fontWeight: 750, color: '#64748b' }}>진행 수주금액</span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+              (YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} · 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})
+            </span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 850, color: '#059669', letterSpacing: '-0.02em', textAlign: 'right' }}>
+            ${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+
+        <div 
+          style={{ 
+            background: '#fff', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: '8px', 
+            padding: '14px 18px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)'; }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: '#fffbeb', color: '#d97706', fontSize: '13px' }}>📈</span>
+              <span style={{ fontSize: '12.5px', fontWeight: 750, color: '#64748b' }}>매출액 (ETD 기준)</span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+              (YSACC: ₩{Math.round(stats.salesYsaccKrw).toLocaleString()} · 영성: ₩{Math.round(stats.salesYsKrw).toLocaleString()})
+            </span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 850, color: '#d97706', letterSpacing: '-0.02em', textAlign: 'right' }}>
+            ₩{Math.round(stats.salesTotalKrw).toLocaleString()}
+          </div>
+        </div>
+
+        <div 
+          style={{ 
+            background: stats.urgentCount > 0 ? '#fff1f2' : '#fff', 
+            border: `1px solid ${stats.urgentCount > 0 ? '#fecdd3' : '#e2e8f0'}`, 
+            borderRadius: '8px', 
+            padding: '14px 18px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)'; }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '6px', background: stats.urgentCount > 0 ? '#ffe4e6' : '#f1f5f9', color: stats.urgentCount > 0 ? '#e11d48' : '#64748b', fontSize: '13px' }}>
+              {stats.urgentCount > 0 ? '🚨' : '⚡'}
+            </span>
+            <span style={{ fontSize: '12.5px', fontWeight: 750, color: stats.urgentCount > 0 ? '#e11d48' : '#64748b' }}>오늘 처리 필요 (긴급)</span>
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 850, color: stats.urgentCount > 0 ? '#e11d48' : '#0f172a', letterSpacing: '-0.02em' }}>
+            {stats.urgentCount} <span style={{ fontSize: '13px', fontWeight: 700, color: stats.urgentCount > 0 ? '#e11d48' : '#64748b' }}>건</span>
+          </div>
         </div>
       </div>
 

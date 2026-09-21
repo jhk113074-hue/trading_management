@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.581',
+    version: 'v2.8.581',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '수출 주문관리 대시보드(Orders) KPI 요약 카드·필터바 및 주문 목록 테이블 모던 전면 고도화',
+    content: '• 상단 4대 핵심 KPI 카드 디자인 전면 개편: 투박하던 기본 사각 박스를 최신 SaaS 스타일(둥근 8px 모서리, 소프트 섀도우, 호버 translateY 애니메이션)로 리뉴얼하고 오더/수주/매출/긴급 상태별 아이콘 배지와 22px 볼드 수치, YSACC/영성 서브 브레이크다운을 시각적으로 정돈\n• 상단 필터 바(FilterBar) 및 상세 필터 모던화: 필터 바 컨테이너를 깔끔한 화이트 카드 형태로 통일하고, 드롭다운 셀렉트 박스들을 YSACC 디자인 시스템 규격(높이 34px, 테두리 6px) 및 활성화 하이라이트 스타일로 정제\n• 주문 데이터 그리드 테이블 가독성 및 UI/UX 개선: 테이블 컨테이너 테두리 및 헤더(th) 정렬 정비, 행(tr) 패딩 및 부드러운 호버 배경 효과 적용, 국가 태그를 슬레이트 라운드 배지로 깔끔화\n• 5단계 진행률(Progress Bar) 색상 대비 및 시인성 강화: 진행 상태별 색상(완료-에메랄드, 진행중-블루, 미진행-슬레이트)의 대비를 높이고 전체 및 단계별 완료율 수치를 또렷하게 표시\n• 다음단계 배지 및 복사 버튼 미려화: 알약형(Pill) 다음단계 배지와 둥근 테두리의 독립 복사(📋) 버튼을 적용해 전반적인 화면 완성도 향상',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.580',
     version: 'v2.8.580',
     date: '2026-09-21',
