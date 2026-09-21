@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.568',
+    version: 'v2.8.568',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '무역 실시간 매출 및 PI 현황 카드 컴팩트화 및 화면 좌측(Left) 정렬',
+    content: '• 화면 좌측 밀착 정렬(justifySelf: start, marginRight: auto): 대시보드 상단 왼쪽 영역에 안정적으로 안착되도록 좌측 정렬 배치\n• 컴팩트 카드 규격화(maxWidth 730px): 긴 가로 폭으로 인해 발생하던 라벨과 수치 간의 불필요한 공백을 좁히고 컨테이너 너비를 730px로 최적화\n• 내부 열(Column) 정렬 타이트 패킹: 영성ACC 및 (주)YSACC 지표 컬럼을 487px 규격으로 긴밀하게 정렬하여 한눈에 들어오는 가독성 및 대시보드 균형감 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.567',
     version: 'v2.8.567',
     date: '2026-09-21',
