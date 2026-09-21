@@ -360,6 +360,11 @@ body {
   }
 }
 
+/* 세계 시각 스크롤바 숨김 */
+.world-clock-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
 /* 상단 헤더 기준환율 반응형 겹침 방지 */
 @media (max-width: 1450px) {
   .header-exchange-ma {

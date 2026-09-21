@@ -216,31 +216,49 @@ const WorldClocks: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center', position: 'relative' }}>
-        <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          🌐 세계 시각:
+      <div 
+        className="world-clock-bar"
+        style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          alignItems: 'center', 
+          background: '#f8fafc', 
+          padding: '3px 8px', 
+          borderRadius: '6px', 
+          border: '1px solid #e2e8f0', 
+          whiteSpace: 'nowrap', 
+          overflowX: 'auto', 
+          width: '100%', 
+          justifyContent: 'center', 
+          position: 'relative',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginRight: '2px', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+          🌐 세계 시각
         </span>
         {clocks.map((c, idx) => (
           <React.Fragment key={c.zone + '_' + idx}>
-            {idx > 0 && <span style={{ color: 'var(--border-color)', fontSize: '10px' }}>|</span>}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+            {idx > 0 && <span style={{ color: '#cbd5e1', fontSize: '9px' }}>•</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 600, color: '#334155', flexShrink: 0 }}>
               <img 
                 src={`https://flagcdn.com/w20/${c.code}.png`}
                 srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
-                width="15" 
-                height="11" 
+                width="14" 
+                height="10" 
                 alt={c.label} 
-                style={{ borderRadius: '1.5px', border: '1px solid var(--border-default)', objectFit: 'cover', display: 'inline-block' }} 
+                style={{ borderRadius: '2px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
               />
-              <span style={{ color: 'var(--text-secondary)', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
-              <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
+              <span style={{ color: '#64748b', fontSize: '10px', fontWeight: 600 }}>{c.label}</span>
+              <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, letterSpacing: '-0.02em' }}>{formatTime(c.zone)}</span>
             </div>
           </React.Fragment>
         ))}
         <button
           type="button"
           onClick={() => setShowSettings(!showSettings)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px', marginLeft: '8px', color: 'var(--text-secondary)' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: '1px 3px', marginLeft: '4px', color: '#64748b', flexShrink: 0 }}
           title="세계 시각 국가 추가/관리"
         >
           ⚙️
@@ -673,11 +691,11 @@ export const Dashboard: React.FC = () => {
 
   const getEventBadgeColor = (type: string) => {
     switch (type) {
-      case '개인일정': return { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' };
-      case '미팅': return { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0' };
-      case '출장': return { bg: '#faf5ff', text: '#5b21b6', border: '#e9d5ff' };
-      case '휴가': return { bg: '#fff1f2', text: '#be123c', border: '#fecdd3' };
-      default: return { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' };
+      case '개인일정': return { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe', dot: '#3b82f6' };
+      case '미팅': return { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0', dot: '#10b981' };
+      case '출장': return { bg: '#faf5ff', text: '#5b21b6', border: '#e9d5ff', dot: '#8b5cf6' };
+      case '휴가': return { bg: '#fff1f2', text: '#be123c', border: '#fecdd3', dot: '#f43f5e' };
+      default: return { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f59e0b' };
     }
   };
 
@@ -718,6 +736,7 @@ export const Dashboard: React.FC = () => {
 
   const renderDayCell = (dayNum: number, dateStr: string, isCurrentMonth: boolean) => {
     const isToday = new Date().toISOString().split('T')[0] === dateStr;
+    const isSelected = dateStr === activeDateEventsList;
     const dayOfWeek = new Date(dateStr).getDay();
     const holiday = getHoliday(dateStr);
     const isKrHoliday = holiday?.country === 'KR';
@@ -735,68 +754,105 @@ export const Dashboard: React.FC = () => {
           setActiveDateEventsList(dateStr);
         }}
         style={{
-          minHeight: '24px',
-          background: dateStr === activeDateEventsList ? '#f0fdf4' : (isCurrentMonth ? '#fff' : '#f8fafc'),
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0 2px',
+          minHeight: '36px',
+          background: isSelected 
+            ? '#eff6ff' 
+            : (isToday ? '#f0f7ff' : (isCurrentMonth ? '#ffffff' : '#f8fafc')),
+          border: isSelected 
+            ? '1.5px solid #3b82f6' 
+            : (isToday ? '1.5px solid #93c5fd' : '1px solid #f1f5f9'),
+          borderRadius: '7px',
+          padding: '2px 1px 3px 1px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
-          transition: 'all 0.1s',
-          boxShadow: dateStr === activeDateEventsList ? 'inset 0 0 0 2px #10b981' : (isToday ? 'inset 0 0 0 1.5px #3b82f6' : 'none')
+          transition: 'all 0.15s ease',
+          boxShadow: isSelected 
+            ? '0 1px 4px rgba(59, 130, 246, 0.15)' 
+            : 'none',
+          position: 'relative'
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-muted)'; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+        onMouseEnter={e => {
+          if (!isSelected) {
+            e.currentTarget.style.background = '#f1f5f9';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!isSelected) {
+            e.currentTarget.style.background = isToday ? '#f0f7ff' : (isCurrentMonth ? '#ffffff' : '#f8fafc');
+            e.currentTarget.style.borderColor = isToday ? '#93c5fd' : '#f1f5f9';
+          }
+        }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1px' }}>
           <span style={{
-            fontSize: '12.5px',
-            fontWeight: 800,
-            color: isToday ? '#fff' : (!isCurrentMonth ? 'var(--border-default)' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : 'var(--text-secondary)'),
-            background: isToday ? '#3b82f6' : 'transparent',
-            borderRadius: isToday ? '50%' : 'none',
-            width: isToday ? '24px' : 'auto',
-            height: isToday ? '24px' : 'auto',
+            fontSize: '12px',
+            fontWeight: isToday ? 800 : (isCurrentMonth ? 700 : 500),
+            color: isToday 
+              ? '#ffffff' 
+              : (!isCurrentMonth 
+                  ? '#cbd5e1' 
+                  : (dayOfWeek === 0 || isKrHoliday) 
+                    ? '#ef4444' 
+                    : (dayOfWeek === 6 ? '#2563eb' : '#1e293b')),
+            background: isToday ? '#2563eb' : 'transparent',
+            borderRadius: isToday ? '50%' : '0',
+            width: isToday ? '20px' : 'auto',
+            height: isToday ? '20px' : 'auto',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            lineHeight: 1,
+            boxShadow: isToday ? '0 1px 3px rgba(37,99,235,0.3)' : 'none'
           }}>
             {dayNum}
           </span>
           {holiday && (
             <span
               className="holiday-badge"
-              style={{ color: holiday.country === 'KR' ? '#ef4444' : 'var(--focus-ring)' }}
-              title={holiday.name}
+              style={{
+                fontSize: '8.5px',
+                fontWeight: 700,
+                color: holiday.country === 'KR' ? '#ef4444' : '#0284c7',
+                lineHeight: 1.1,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+                padding: '0 1px',
+                letterSpacing: '-0.02em'
+              }}
+              title={`${holiday.country === 'KR' ? '대한민국' : 'UAE'} 공휴일: ${holiday.name}`}
             >
-              {holiday.country === 'KR' ? `🇰🇷 ${holiday.name}` : `🇦🇪 ${holiday.name}`}
+              {holiday.name}
             </span>
           )}
         </div>
 
         {/* Dot indicators */}
-        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', minHeight: '8px', marginBottom: '2px' }}>
+        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', width: '100%', minHeight: '6px', marginTop: '2px' }}>
           {dayEvents.slice(0, 4).map(e => {
             const colors = getEventBadgeColor(e.type);
             return (
               <span
                 key={e.id}
                 style={{
-                  width: '7px',
-                  height: '7px',
+                  width: '5px',
+                  height: '5px',
                   borderRadius: '50%',
-                  background: colors.text,
-                  display: 'inline-block'
+                  background: colors.dot || colors.text,
+                  display: 'inline-block',
+                  boxShadow: '0 0.5px 1px rgba(0,0,0,0.1)'
                 }}
-                title={`${e.title} (${e.creatorName})`}
+                title={`${e.title} (${e.creatorName || ''})`}
               />
             );
           })}
           {dayEvents.length > 4 && (
-            <span style={{ fontSize: '7px', fontWeight: 900, color: 'var(--text-secondary)', lineHeight: 1 }}>+</span>
+            <span style={{ fontSize: '7.5px', fontWeight: 800, color: '#64748b', lineHeight: 1 }}>+</span>
           )}
         </div>
       </div>
@@ -1823,9 +1879,9 @@ export const Dashboard: React.FC = () => {
       <style>{`
         .holiday-badge {
           display: inline-block;
-          font-size: 9.5px !important;
-          font-weight: 850 !important;
-          line-height: 1;
+          font-size: 8.5px !important;
+          font-weight: 700 !important;
+          line-height: 1.1;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1834,17 +1890,20 @@ export const Dashboard: React.FC = () => {
           cursor: help;
         }
         .holiday-badge:hover {
-          transform: scale(1.6) !important;
+          transform: scale(1.4) !important;
           z-index: 100 !important;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          text-shadow: 0 1px 2px rgba(0,0,0,0.15);
           position: relative;
           background-color: #fff !important;
           padding: 2px 4px !important;
           border-radius: 4px !important;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
           overflow: visible !important;
           text-overflow: clip !important;
           max-width: none !important;
+        }
+        .world-clock-bar::-webkit-scrollbar {
+          display: none;
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 5px;
@@ -1868,32 +1927,34 @@ export const Dashboard: React.FC = () => {
           <div className="dashboard-top-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px minmax(0, 1fr)', gap: '6px', alignItems: 'stretch', order: 2, minWidth: 0, maxWidth: '945px', width: '100%', overflow: 'hidden', justifySelf: 'end', marginLeft: 'auto' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px minmax(0, 1fr)', gap: '10px', alignItems: 'stretch', order: 2, minWidth: 0, maxWidth: '945px', width: '100%', overflow: 'hidden', justifySelf: 'end', marginLeft: 'auto' }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
-              <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '3px' }}>
-                <span style={{ fontSize: '17.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '5px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '-0.01em' }}>
                   📅 YSACC 스케줄러
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <button
                     onClick={handlePrevMonth}
-                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700, color: '#475569', transition: 'all 0.15s ease' }}
+                    title="이전 달"
                   >
-                    ◀
+                    ‹
                   </button>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', minWidth: '78px', textAlign: 'center', letterSpacing: '-0.01em' }}>
                     {currentYear}년 {currentMonth + 1}월
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700, color: '#475569', transition: 'all 0.15s ease' }}
+                    title="다음 달"
                   >
-                    ▶
+                    ›
                   </button>
                   <button
                     onClick={handleGoToToday}
-                    style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ height: '24px', padding: '0 8px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, transition: 'all 0.15s ease' }}
                   >
                     오늘
                   </button>
@@ -1901,24 +1962,24 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 제목 바로 밑에 배치되는 세계 시각 영역 (양쪽 컬럼 통합) */}
-              <div style={{ gridColumn: '1 / span 2', marginTop: '-4px', marginBottom: '4px' }}>
+              <div style={{ gridColumn: '1 / span 2', marginTop: '-2px', marginBottom: '4px' }}>
                 <WorldClocks />
               </div>
 
-              {/* 달력 영역 (왼쪽 300px) */}
+              {/* 달력 영역 (왼쪽 272px) */}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
 
                 {/* 요일 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '2px', marginBottom: '2px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '3px', textAlign: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px', marginBottom: '3px' }}>
                   {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                    <span key={day} style={{ fontSize: '13.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : 'var(--text-secondary)' }}>
+                    <span key={day} style={{ fontSize: '11.5px', fontWeight: 700, color: idx === 0 ? '#ef4444' : idx === 6 ? '#2563eb' : '#64748b' }}>
                       {day}
                     </span>
                   ))}
                 </div>
 
                 {/* 그리드 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridAutoRows: 'minmax(28px, auto)', gap: '2px', flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridAutoRows: 'minmax(36px, auto)', gap: '3px', flex: 1 }}>
                   {renderCalendarDays()}
                 </div>
               </div>
