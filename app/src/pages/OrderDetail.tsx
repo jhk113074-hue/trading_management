@@ -2319,6 +2319,8 @@ export const OrderDetail: React.FC = () => {
   const [isSplitShipment, setIsSplitShipment] = useState<boolean>(false);
   const [shipmentRounds, setShipmentRounds] = useState<ShipmentRound[]>([]);
   const [activeRoundId, setActiveRoundId] = useState<string>('round-1');
+  const activeRoundIdRef = useRef<string>('round-1');
+  activeRoundIdRef.current = activeRoundId;
 
   const activeRound = useMemo(() => {
     if (!shipmentRounds || shipmentRounds.length === 0) return null;
@@ -2369,6 +2371,45 @@ export const OrderDetail: React.FC = () => {
       }
       return updatedRounds;
     });
+  };
+
+  // ── [차수별 패킹리스트 오염 감지: 타 차수 품목이 유입되었는지 검증] ─────────
+  const isPackingListContaminatedForRound = (
+    packingList: any,
+    round: ShipmentRound
+  ) => {
+    if (!packingList || !packingList.containers || packingList.containers.length === 0) return true;
+    if (!round || round.roundNumber <= 1) return false;
+    if (!round.allocatedItems || round.allocatedItems.length === 0) return false;
+
+    const roundAllocated = round.allocatedItems.filter(ai => Number(ai.shippedQty) > 0);
+    if (roundAllocated.length === 0) return false;
+
+    const allocatedCodes = new Set(
+      roundAllocated.map(ai => (ai.productCode || '').trim().toLowerCase()).filter(Boolean)
+    );
+    const allocatedNames = roundAllocated.map(ai => (ai.name || '').trim().toLowerCase()).filter(Boolean);
+
+    let foreignItemCount = 0;
+    let validItemCount = 0;
+
+    for (const c of (packingList.containers || [])) {
+      for (const it of (c.items || [])) {
+        const itCode = (it.itemCode || '').trim().toLowerCase();
+        const itDesc = (it.description || '').trim().toLowerCase();
+        const matchesCode = (itCode && allocatedCodes.has(itCode)) || Array.from(allocatedCodes).some(code => code && itDesc.includes(code));
+        const matchesName = allocatedNames.some(name => (name && itDesc.includes(name)) || (itDesc && name.includes(itDesc)));
+        if (matchesCode || matchesName) {
+          validItemCount++;
+        } else {
+          foreignItemCount++;
+        }
+      }
+    }
+
+    const totalContainerItems = (packingList.containers || []).reduce((acc: number, c: any) => acc + (c.items || []).length, 0);
+    // 본 차수 배정 품목이 아닌 타 차수 품목이 섞여있거나 유효 품목보다 많거나 컨테이너 품목 수가 배정 품목 수를 크게 초과할 경우 오염된 것으로 판정
+    return foreignItemCount > 0 && (foreignItemCount >= validItemCount || totalContainerItems > roundAllocated.length * 1.5);
   };
 
   // ── [차수별 배정 품목 기반 패킹리스트 자동 구성 헬퍼] ─────────────────
@@ -2524,7 +2565,9 @@ export const OrderDetail: React.FC = () => {
     });
 
     setIsSplitShipment(true);
+    activeRoundIdRef.current = newRoundId;
     setActiveRoundId(newRoundId);
+    latestOrderStateRef.current.activeRoundId = newRoundId;
 
     // 신규 차수 작업 공간으로 패킹리스트 및 도착보고 상태 전환
     setBasicForm(prev => ({
@@ -2543,11 +2586,12 @@ export const OrderDetail: React.FC = () => {
   };
 
   // ── [선적 차수 전환 핸들러: 패킹리스트 & 도착보고서 1:1 완벽 독립 분리] ────
-  const handleSwitchShipmentRound = (targetRoundId: string) => {
-    if (targetRoundId === activeRoundId) return;
+  const handleSwitchShipmentRound = async (targetRoundId: string) => {
+    const currentActiveId = activeRoundIdRef.current || activeRoundId;
+    if (targetRoundId === currentActiveId) return;
 
     let currentRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
-    const currentIdx = currentRounds.findIndex(r => r.id === activeRoundId);
+    const currentIdx = currentRounds.findIndex(r => r.id === currentActiveId);
     
     // 1. 현재 작업 중이던 차수의 패킹리스트/도착보고/물류정보 보존
     if (currentIdx !== -1) {
@@ -2586,9 +2630,10 @@ export const OrderDetail: React.FC = () => {
     const targetRound = currentRounds.find(r => r.id === targetRoundId);
     if (!targetRound) return;
 
-    // 2. 대상 차수의 독립 패킹리스트 준비 (없을 경우 배정 품목 기준으로 자동 초기화)
+    // 2. 대상 차수의 독립 패킹리스트 준비 (없거나 타 차수 품목으로 오염된 경우 배정 품목 기준으로 자동 복구/초기화)
     let targetPackingList = targetRound.packingList;
-    if (!targetPackingList || !targetPackingList.containers || targetPackingList.containers.length === 0) {
+    const isContaminated = isPackingListContaminatedForRound(targetPackingList, targetRound);
+    if (!targetPackingList || !targetPackingList.containers || targetPackingList.containers.length === 0 || isContaminated) {
       if (targetRound.roundNumber > 1) {
         targetPackingList = buildPackingListFromAllocatedItems(
           targetRound.allocatedItems || [],
@@ -2598,7 +2643,7 @@ export const OrderDetail: React.FC = () => {
           'CONTAINER-01'
         );
       } else {
-        targetPackingList = basicForm.packingList;
+        targetPackingList = currentRounds[0]?.packingList || order?.packingList || basicForm.packingList;
       }
       currentRounds = currentRounds.map(r => r.id === targetRoundId ? { ...r, packingList: targetPackingList } : r);
     }
@@ -2607,9 +2652,11 @@ export const OrderDetail: React.FC = () => {
     const targetArrivalReports = targetRound.supplierArrivalReports || {};
 
     // 4. 상태 갱신
+    activeRoundIdRef.current = targetRoundId;
+    setActiveRoundId(targetRoundId);
     setShipmentRounds(currentRounds);
     latestOrderStateRef.current.shipmentRounds = currentRounds;
-    setActiveRoundId(targetRoundId);
+    latestOrderStateRef.current.activeRoundId = targetRoundId;
 
     setBasicForm(prev => ({
       ...prev,
@@ -2637,10 +2684,32 @@ export const OrderDetail: React.FC = () => {
     }));
 
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: targetArrivalReports } : prev);
+
+    // 5. Firestore에 즉시 저장하여 onSnapshot이나 화면 새로고침 시에도 100% 분리 유지
+    if (order?.id) {
+      try {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        const round1 = currentRounds.find(r => r.roundNumber === 1);
+        const savePayload: any = {
+          shipmentRounds: currentRounds,
+          activeShipmentRoundId: targetRoundId,
+          updatedAt: serverTimestamp()
+        };
+        if (round1?.packingList) {
+          savePayload.packingList = round1.packingList;
+        }
+        if (round1?.supplierArrivalReports) {
+          savePayload.supplierArrivalReports = round1.supplierArrivalReports;
+        }
+        await setDoc(orderRef, savePayload, { merge: true });
+      } catch (err) {
+        console.error('Failed to persist switched round to Firestore:', err);
+      }
+    }
   };
 
   // ── [차수 배정 품목 기반 패킹리스트 재구성/불러오기 버튼 핸들러] ─────────
-  const handlePopulatePackingFromAllocated = (targetRound?: ShipmentRound) => {
+  const handlePopulatePackingFromAllocated = async (targetRound?: ShipmentRound) => {
     const round = targetRound || activeRound;
     if (!round) return;
 
@@ -2663,11 +2732,31 @@ export const OrderDetail: React.FC = () => {
       packingList: newPL
     }));
 
-    setShipmentRounds(prev => {
-      const updated = prev.map(r => r.id === round.id ? { ...r, packingList: newPL } : r);
-      latestOrderStateRef.current.shipmentRounds = updated;
-      return updated;
-    });
+    const updatedRounds = (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r => 
+      r.id === round.id ? { ...r, packingList: newPL } : r
+    );
+    setShipmentRounds(updatedRounds);
+    latestOrderStateRef.current.shipmentRounds = updatedRounds;
+
+    // 즉시 Firestore 저장
+    if (order?.id) {
+      try {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        const round1 = updatedRounds.find(r => r.roundNumber === 1);
+        const savePayload: any = {
+          shipmentRounds: updatedRounds,
+          updatedAt: serverTimestamp()
+        };
+        if (round.roundNumber === 1) {
+          savePayload.packingList = newPL;
+        } else if (round1?.packingList) {
+          savePayload.packingList = round1.packingList;
+        }
+        await setDoc(orderRef, savePayload, { merge: true });
+      } catch (err) {
+        console.error('Failed to persist regenerated packing list to Firestore:', err);
+      }
+    }
 
     alert(`✅ [${roundTitle}] 배정 품목(${allocatedCount}개) 기준으로 패킹리스트가 성공적으로 재구성되었습니다.\n아래 컨테이너 로딩플랜에서 팔레트 규격과 중량을 확인 및 편집하세요.`);
   };
@@ -2684,9 +2773,12 @@ export const OrderDetail: React.FC = () => {
       if (filtered.length <= 1) {
         setIsSplitShipment(false);
       }
-      if (activeRoundId === roundId) {
+      const currentActiveId = activeRoundIdRef.current || activeRoundId;
+      if (currentActiveId === roundId) {
         const nextTargetId = filtered[0]?.id || 'round-1';
+        activeRoundIdRef.current = nextTargetId;
         setActiveRoundId(nextTargetId);
+        latestOrderStateRef.current.activeRoundId = nextTargetId;
         const nextRound = filtered[0];
         if (nextRound?.packingList) {
           setBasicForm(bf => ({ ...bf, packingList: nextRound.packingList }));
@@ -3398,7 +3490,98 @@ export const OrderDetail: React.FC = () => {
           }).catch(err => console.error("Auto-migration of transportation files failed:", err));
         }
         skipNextDirtyCheck.current = true;
-        setOrder(data);
+
+        // 분할 선적 (Split Shipment) 차수 로드 및 독립성 보장
+        const rawRounds: ShipmentRound[] = (data as any).shipmentRounds || [];
+        const isSplit = (data as any).isSplitShipment ?? (rawRounds.length > 1);
+        setIsSplitShipment(isSplit);
+
+        const curActiveRoundId = activeRoundIdRef.current || (data as any).activeShipmentRoundId || (rawRounds.length > 0 ? rawRounds[0].id : 'round-1');
+
+        const initialRound1: ShipmentRound = {
+          id: 'round-1',
+          roundNumber: 1,
+          title: '1차 선적',
+          status: (data.shipmentCompleted === 'Y' ? '선적완료' : '준비중') as any,
+          bookingNo: data.bookingNo || '',
+          vesselBooking: data.vesselBooking || '',
+          forwarderConfirmed: data.forwarderConfirmed || '',
+          shipmentType: data.shipmentType || 'FCL',
+          fclSpecs: data.fclSpecs || [],
+          docCutoffDate: data.docCutoffDate || '',
+          cargoCutoffDate: data.cargoCutoffDate || '',
+          etd: data.etd || '',
+          eta: data.eta || '',
+          cfsEntryDate: data.cfsEntryDate || '',
+          cfsEntryTime: data.cfsEntryTime || '오전 10시까지',
+          cfsContactInfo: data.cfsContactInfo || '',
+          cfsAddress: data.cfsAddress || '',
+          containerWorkspaceType: data.containerWorkspaceType || '',
+          shipmentCompleted: data.shipmentCompleted || '',
+          ciNumber: data.ciNumber || '',
+          blNumber: data.blNumber || '',
+          blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
+          exportDeclarationNo: data.exportDeclarationNo || '',
+          customsExchangeRate: data.customsExchangeRate || 0,
+          blFiles: data.blFiles || [],
+          ciFiles: data.ciFiles || [],
+          plFiles: data.plFiles || [],
+          exportDeclarationFiles: data.exportDeclarationFiles || [],
+          cooFiles: data.cooFiles || [],
+          packingList: data.packingList || null,
+          supplierArrivalReports: (data as any).supplierArrivalReports || {},
+          allocatedItems: (data.items || []).map((it: any) => ({
+            itemId: it.itemId || '',
+            productCode: it.productCode || '',
+            name: it.name || '',
+            grade: it.grade || it.spec || '',
+            unit: it.unit || 'kg',
+            orderQty: Number(it.qty) || 0,
+            shippedQty: Number(it.qty) || 0,
+            unitPrice: Number(it.unitPrice) || 0,
+            amount: (Number(it.unitPrice) || 0) * (Number(it.qty) || 0),
+            currency: it.currency || 'USD'
+          }))
+        };
+
+        const roundsToEnrich = rawRounds.length > 0 ? rawRounds : [initialRound1];
+        const enrichedRounds = roundsToEnrich.map((r, idx) => {
+          if (idx === 0) {
+            return {
+              ...r,
+              packingList: r.packingList || data.packingList || null,
+              supplierArrivalReports: r.supplierArrivalReports || (data as any).supplierArrivalReports || {}
+            };
+          }
+          // Round 2+ auto-heal if empty or contaminated
+          let roundPL = r.packingList;
+          if (!roundPL || !roundPL.containers || roundPL.containers.length === 0 || isPackingListContaminatedForRound(roundPL, r)) {
+            roundPL = buildPackingListFromAllocatedItems(
+              r.allocatedItems || [],
+              data.items || [],
+              products || [],
+              data.packingList,
+              'CONTAINER-01'
+            );
+          }
+          return {
+            ...r,
+            packingList: roundPL,
+            supplierArrivalReports: r.supplierArrivalReports || {}
+          };
+        });
+
+        const activeR = enrichedRounds.find(r => r.id === curActiveRoundId) || enrichedRounds[0];
+
+        // order 객체에 현재 활성화된 차수의 도착보고서 적용 (1차면 root, 2차 이상이면 해당 차수)
+        let mergedOrder = data;
+        if (activeR && activeR.roundNumber > 1 && activeR.supplierArrivalReports) {
+          mergedOrder = {
+            ...data,
+            supplierArrivalReports: activeR.supplierArrivalReports
+          };
+        }
+        setOrder(mergedOrder);
         if ((data as any).customCiItems && (data as any).customCiItems.length > 0) {
           const rawCi = (data as any).customCiItems;
           const orderItemsList = data.items || [];
@@ -3467,25 +3650,25 @@ export const OrderDetail: React.FC = () => {
           externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : '',
           issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS',
           
-          ciNumber: data.ciNumber || '',
-          bookingNo: data.bookingNo || '',
-          vesselBooking: data.vesselBooking || '',
-          forwarderConfirmed: data.forwarderConfirmed || '',
-          cargoReadyDate: data.cargoReadyDate || '',
-          cfsEntryDate: data.cfsEntryDate || '',
-          cfsEntryTime: data.cfsEntryTime || '오전 10시까지',
-          cfsContactInfo: data.cfsContactInfo || '',
-          docCutoffDate: data.docsDeadlineDate || data.docCutoffDate || '',
-          cargoCutoffDate: data.cargoCutoffDate || '',
-          etd: data.etd || '',
-          eta: data.eta || '',
-          containerVolumeQuantities: data.containerVolumeQuantities || '',
-          exportDeclarationNo: data.exportDeclarationNo || '',
+          ciNumber: (activeR && activeR.roundNumber > 1 && activeR.ciNumber !== undefined) ? activeR.ciNumber : (data.ciNumber || ''),
+          bookingNo: (activeR && activeR.roundNumber > 1 && activeR.bookingNo !== undefined) ? activeR.bookingNo : (data.bookingNo || ''),
+          vesselBooking: (activeR && activeR.roundNumber > 1 && activeR.vesselBooking !== undefined) ? activeR.vesselBooking : (data.vesselBooking || ''),
+          forwarderConfirmed: (activeR && activeR.roundNumber > 1 && activeR.forwarderConfirmed !== undefined) ? activeR.forwarderConfirmed : (data.forwarderConfirmed || ''),
+          cargoReadyDate: (activeR && (activeR as any).cargoReadyDate !== undefined) ? (activeR as any).cargoReadyDate : (data.cargoReadyDate || ''),
+          cfsEntryDate: (activeR && activeR.roundNumber > 1 && activeR.cfsEntryDate !== undefined) ? activeR.cfsEntryDate : (data.cfsEntryDate || ''),
+          cfsEntryTime: (activeR && activeR.roundNumber > 1 && activeR.cfsEntryTime !== undefined) ? activeR.cfsEntryTime : (data.cfsEntryTime || '오전 10시까지'),
+          cfsContactInfo: (activeR && activeR.roundNumber > 1 && activeR.cfsContactInfo !== undefined) ? activeR.cfsContactInfo : (data.cfsContactInfo || ''),
+          docCutoffDate: (activeR && activeR.roundNumber > 1 && activeR.docCutoffDate !== undefined) ? activeR.docCutoffDate : (data.docsDeadlineDate || data.docCutoffDate || ''),
+          cargoCutoffDate: (activeR && activeR.roundNumber > 1 && activeR.cargoCutoffDate !== undefined) ? activeR.cargoCutoffDate : (data.cargoCutoffDate || ''),
+          etd: (activeR && activeR.roundNumber > 1 && activeR.etd !== undefined) ? activeR.etd : (data.etd || ''),
+          eta: (activeR && activeR.roundNumber > 1 && activeR.eta !== undefined) ? activeR.eta : (data.eta || ''),
+          containerVolumeQuantities: (activeR && (activeR as any).containerVolumeQuantities !== undefined) ? (activeR as any).containerVolumeQuantities : (data.containerVolumeQuantities || ''),
+          exportDeclarationNo: (activeR && activeR.roundNumber > 1 && activeR.exportDeclarationNo !== undefined) ? activeR.exportDeclarationNo : (data.exportDeclarationNo || ''),
           lcNo: data.lcNo || '',
-          customsExchangeRate: data.customsExchangeRate || 0,
+          customsExchangeRate: (activeR && activeR.roundNumber > 1 && activeR.customsExchangeRate !== undefined) ? activeR.customsExchangeRate : (data.customsExchangeRate || 0),
           dispatchStatusByVendor: data.dispatchStatusByVendor || '',
-          containerWorkspaceType: data.containerWorkspaceType || '',
-          shipmentCompleted: data.shipmentCompleted || '',
+          containerWorkspaceType: (activeR && activeR.roundNumber > 1 && activeR.containerWorkspaceType !== undefined) ? activeR.containerWorkspaceType : (data.containerWorkspaceType || ''),
+          shipmentCompleted: (activeR && activeR.roundNumber > 1 && activeR.shipmentCompleted !== undefined) ? activeR.shipmentCompleted : (data.shipmentCompleted || ''),
           docsSentOrBankSubmitted: data.docsSentOrBankSubmitted || '',
           purchaseCertificateByVendor: data.purchaseCertificateByVendor || '',
           paymentStatusByVendor: data.paymentStatusByVendor || '',
@@ -3498,7 +3681,7 @@ export const OrderDetail: React.FC = () => {
           supplierProductionDates: data.supplierProductionDates || {},
           forwarderQuotationAmount: data.forwarderQuotationAmount || 0,
           finalFreight: data.finalFreight || 0,
-          cfsAddress: data.cfsAddress || '',
+          cfsAddress: (activeR && activeR.roundNumber > 1 && activeR.cfsAddress !== undefined) ? activeR.cfsAddress : (data.cfsAddress || ''),
           cfsContact: data.cfsContact || '',
           ciPlStatus: data.ciPlStatus || '',
           containerWorkStatus: data.containerWorkStatus || '',
@@ -3511,7 +3694,11 @@ export const OrderDetail: React.FC = () => {
           
           supplierTaxInvoice: data.supplierTaxInvoice || {},
           packingList: (() => {
-            const rawPacking = data.packingList;
+            if (activeR && activeR.roundNumber > 1) {
+              return activeR.packingList;
+            }
+
+            const rawPacking = activeR?.packingList || data.packingList;
             const orderItems = data.items || [];
 
             if (rawPacking && rawPacking.containers && rawPacking.containers.length > 0) {
@@ -3644,11 +3831,11 @@ export const OrderDetail: React.FC = () => {
           lcRemark: data.lcRemark || '',
           actualContainerSimulation: data.actualContainerSimulation || null,
           quotationId: data.quotationId || '',
-          shipmentType: data.shipmentType || 'FCL',
-          fclSpecs: data.fclSpecs || [],
+          shipmentType: (activeR && activeR.roundNumber > 1 && activeR.shipmentType !== undefined) ? activeR.shipmentType : (data.shipmentType || 'FCL'),
+          fclSpecs: (activeR && activeR.roundNumber > 1 && activeR.fclSpecs !== undefined) ? activeR.fclSpecs : (data.fclSpecs || []),
           type: data.type || 'trade',
-          blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
-          blNumber: data.blNumber || '',
+          blNumbers: (activeR && activeR.roundNumber > 1 && activeR.blNumbers !== undefined) ? activeR.blNumbers : (data.blNumbers || (data.blNumber ? [data.blNumber] : [])),
+          blNumber: (activeR && activeR.roundNumber > 1 && activeR.blNumber !== undefined) ? activeR.blNumber : (data.blNumber || ''),
           exchangeRate: data.exchangeRate || 1400
         });
         const itemsWithHs = (data.items || []).map((it, idx) => {
@@ -3805,109 +3992,12 @@ export const OrderDetail: React.FC = () => {
           });
         }
 
-        // 분할 선적 (Split Shipment) 차수 로드 및 동기화
-        const rawRounds: ShipmentRound[] = (data as any).shipmentRounds || [];
-        const isSplit = (data as any).isSplitShipment ?? (rawRounds.length > 1);
-        setIsSplitShipment(isSplit);
-
-        const currentLocalRounds = latestOrderStateRef.current.shipmentRounds || [];
-        if (currentLocalRounds.length > 0 && isInitialOrderLoadRef.current) {
-          // 로컬 편집 중인 차수 상태 유지
-          setShipmentRounds(currentLocalRounds);
-        } else if (rawRounds.length > 0) {
-          // 1차 선적 및 차수별 패킹리스트/도착보고 보강
-          const enrichedRounds = rawRounds.map((r, idx) => {
-            if (idx === 0) {
-              return {
-                ...r,
-                packingList: r.packingList || data.packingList || null,
-                supplierArrivalReports: r.supplierArrivalReports || (data as any).supplierArrivalReports || {}
-              };
-            }
-            return r;
-          });
-          setShipmentRounds(enrichedRounds);
-          latestOrderStateRef.current.shipmentRounds = enrichedRounds;
-          const targetRoundId = (data as any).activeShipmentRoundId || enrichedRounds[0]?.id || 'round-1';
-          setActiveRoundId(targetRoundId);
-
-          const activeR = enrichedRounds.find(r => r.id === targetRoundId) || enrichedRounds[0];
-          if (activeR && activeR.roundNumber > 1) {
-            let activePL = activeR.packingList;
-            if (!activePL || !activePL.containers || activePL.containers.length === 0) {
-              activePL = buildPackingListFromAllocatedItems(
-                activeR.allocatedItems || [],
-                restoredOrderItems || [],
-                products || [],
-                data.packingList,
-                'CONTAINER-01'
-              );
-            }
-            setBasicForm(prev => ({
-              ...prev,
-              packingList: activePL,
-              bookingNo: activeR.bookingNo !== undefined ? activeR.bookingNo : prev.bookingNo,
-              vesselBooking: activeR.vesselBooking !== undefined ? activeR.vesselBooking : prev.vesselBooking,
-              etd: activeR.etd !== undefined ? activeR.etd : prev.etd,
-              eta: activeR.eta !== undefined ? activeR.eta : prev.eta,
-              ciNumber: activeR.ciNumber !== undefined ? activeR.ciNumber : prev.ciNumber
-            }));
-            if (activeR.supplierArrivalReports) {
-              setOrder(prev => prev ? { ...prev, supplierArrivalReports: activeR.supplierArrivalReports } : prev);
-            }
-          }
-        } else {
-          // 1차 선적 기본값 초기화
-          const initialRound: ShipmentRound = {
-            id: 'round-1',
-            roundNumber: 1,
-            title: '1차 선적',
-            status: data.shipmentCompleted === 'Y' ? '선적완료' : '준비중',
-            bookingNo: data.bookingNo || '',
-            vesselBooking: data.vesselBooking || '',
-            forwarderConfirmed: data.forwarderConfirmed || '',
-            shipmentType: data.shipmentType || 'FCL',
-            fclSpecs: data.fclSpecs || [],
-            docCutoffDate: data.docCutoffDate || '',
-            cargoCutoffDate: data.cargoCutoffDate || '',
-            etd: data.etd || '',
-            eta: data.eta || '',
-            cfsEntryDate: data.cfsEntryDate || '',
-            cfsEntryTime: data.cfsEntryTime || '오전 10시까지',
-            cfsContactInfo: data.cfsContactInfo || '',
-            cfsAddress: data.cfsAddress || '',
-            containerWorkspaceType: data.containerWorkspaceType || '',
-            shipmentCompleted: data.shipmentCompleted || '',
-            ciNumber: data.ciNumber || '',
-            blNumber: data.blNumber || '',
-            blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
-            exportDeclarationNo: data.exportDeclarationNo || '',
-            customsExchangeRate: data.customsExchangeRate || 0,
-            blFiles: data.blFiles || [],
-            ciFiles: data.ciFiles || [],
-            plFiles: data.plFiles || [],
-            exportDeclarationFiles: data.exportDeclarationFiles || [],
-            cooFiles: data.cooFiles || [],
-            packingList: data.packingList || null,
-            customCiItems: (data as any).customCiItems || [],
-            customCiExtra: (data as any).customCiExtra || {},
-            customPlRemarks: (data as any).customPlRemarks || '',
-            allocatedItems: restoredOrderItems.map((it: any) => ({
-              itemId: it.itemId || '',
-              productCode: it.productCode || '',
-              name: it.name || '',
-              grade: it.grade || it.spec || '',
-              unit: it.unit || 'kg',
-              orderQty: Number(it.qty) || 0,
-              shippedQty: Number(it.qty) || 0,
-              unitPrice: Number(it.unitPrice) || 0,
-              amount: (Number(it.unitPrice) || 0) * (Number(it.qty) || 0),
-              currency: it.currency || 'USD'
-            }))
-          };
-          setShipmentRounds([initialRound]);
-          setActiveRoundId('round-1');
-        }
+        // 차수 상태 및 활성 차수 동기화
+        setShipmentRounds(enrichedRounds);
+        latestOrderStateRef.current.shipmentRounds = enrichedRounds;
+        setActiveRoundId(curActiveRoundId);
+        activeRoundIdRef.current = curActiveRoundId;
+        latestOrderStateRef.current.activeRoundId = curActiveRoundId;
 
         // stageCompletion 로드 — 없으면 기본값 유지
         if ((data as any).stageCompletion) {
@@ -4383,6 +4473,11 @@ export const OrderDetail: React.FC = () => {
     const curForwardersList = curState.forwardersList;
 
     if (!curOrder) return;
+    const curActiveRoundId = activeRoundIdRef.current || activeRoundId || 'round-1';
+    const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+    const curRound = curRounds.find(r => r.id === curActiveRoundId);
+    const isCurRound1 = !isSplitShipment || !curRound || curRound.roundNumber <= 1;
+
     try {
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', curOrder.id);
       const links = (curBasicForm.externalLinksStr || '')
@@ -4484,9 +4579,9 @@ export const OrderDetail: React.FC = () => {
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate || '',
         cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
-        supplierArrivalReports: (!isSplitShipment || activeRound?.roundNumber === 1)
+        supplierArrivalReports: isCurRound1
           ? (curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {})
-          : ((latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).find(r => r.roundNumber === 1)?.supplierArrivalReports || curOrder?.supplierArrivalReports || {}),
+          : (curRounds.find(r => r.roundNumber === 1)?.supplierArrivalReports || curOrder?.supplierArrivalReports || {}),
         cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
@@ -4549,9 +4644,9 @@ export const OrderDetail: React.FC = () => {
         shipmentType: basicForm.shipmentType || 'FCL',
         fclSpecs: (basicForm.fclSpecs || []).map(c => ({ type: c.type, qty: c.qty, containerNo: c.containerNo || '', sealNo: c.sealNo || '' })),
 
-        packingList: (!isSplitShipment || activeRound?.roundNumber === 1)
+        packingList: isCurRound1
           ? (basicForm.packingList || null)
-          : ((latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).find(r => r.roundNumber === 1)?.packingList || curOrder?.packingList || basicForm.packingList || null),
+          : (curRounds.find(r => r.roundNumber === 1)?.packingList || curOrder?.packingList || null),
         customCiItems: customCiItems || [],
         customCiExtra: customCiExtra || {},
         customPlRemarks: customPlRemarks || '',
@@ -4562,8 +4657,8 @@ export const OrderDetail: React.FC = () => {
         blNumbers: basicForm.blNumbers || [],
         blNumber: basicForm.blNumber || '',
         isSplitShipment: isSplitShipment,
-        shipmentRounds: (latestOrderStateRef.current.shipmentRounds || shipmentRounds || []).map(r => {
-          if (r.id === activeRoundId) {
+        shipmentRounds: curRounds.map(r => {
+          if (r.id === curActiveRoundId) {
             return {
               ...r,
               bookingNo: basicForm.bookingNo,
@@ -4592,7 +4687,7 @@ export const OrderDetail: React.FC = () => {
           }
           return r;
         }),
-        activeShipmentRoundId: activeRoundId,
+        activeShipmentRoundId: curActiveRoundId,
         
         items: curOrderItems.map((it, idx) => {
           const matchingSourcing = (it.itemId && curSourcingItems.find(s => s.itemId && s.itemId === it.itemId)) || curSourcingItems[idx];
@@ -5318,15 +5413,49 @@ export const OrderDetail: React.FC = () => {
         containers: cleanContainers
       }));
 
+      const curRoundId = activeRoundIdRef.current || activeRoundId || 'round-1';
+      const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+      const curRound = curRounds.find(r => r.id === curRoundId);
+
+      let updatedRounds = curRounds;
+      if (curRounds.length > 0) {
+        updatedRounds = curRounds.map(r => {
+          if (r.id === curRoundId) {
+            return {
+              ...r,
+              packingList: cleanPackingList,
+              ...(nextReports ? { supplierArrivalReports: JSON.parse(JSON.stringify(nextReports)) } : {})
+            };
+          }
+          return r;
+        });
+        setShipmentRounds(updatedRounds);
+        latestOrderStateRef.current.shipmentRounds = updatedRounds;
+      }
+
       const updatePayload: any = {
         customCiItems: customCiItems,
         customCiExtra: customCiExtra,
         customPlRemarks: customPlRemarks,
-        packingList: cleanPackingList,
+        shipmentRounds: updatedRounds,
+        activeShipmentRoundId: curRoundId,
         updatedAt: serverTimestamp()
       };
-      if (nextReports) {
-        updatePayload.supplierArrivalReports = JSON.parse(JSON.stringify(nextReports));
+
+      if (!curRound || curRound.roundNumber <= 1) {
+        updatePayload.packingList = cleanPackingList;
+        if (nextReports) {
+          updatePayload.supplierArrivalReports = JSON.parse(JSON.stringify(nextReports));
+        }
+      } else {
+        // Round 2+ active: preserve Round 1 in root fields!
+        const r1 = updatedRounds.find(r => r.roundNumber === 1);
+        if (r1?.packingList) {
+          updatePayload.packingList = r1.packingList;
+        }
+        if (r1?.supplierArrivalReports) {
+          updatePayload.supplierArrivalReports = r1.supplierArrivalReports;
+        }
       }
 
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);

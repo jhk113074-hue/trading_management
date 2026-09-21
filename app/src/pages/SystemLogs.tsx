@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.573',
+    version: 'v2.8.573',
+    date: '2026-09-21',
+    category: '버그수정',
+    title: '분할 선적(1차 선적 ↔ 2차 선적) 전환 시 패킹리스트/도착보고 오염 및 리셋 결함 근본 해결 & 실시간 지속적 분리 유지',
+    content: '• onSnapshot 실시간 동기화 오염 근본 차단: Firestore 리스너(onSnapshot)가 트리거될 때 1차 선적 루트 데이터(data.packingList 17파렛트, data.supplierArrivalReports)가 활성화된 2차 선적 화면에 덮어씌워지던 문제를 완벽 차단\n• 1차 선적 ↔ 2차 선적 지속적 왕복 전환 보장: 1차 선적과 2차 선적을 몇 번을 오가더라도 2차 선적은 배정된 5개 품목만의 독립 컨테이너를 유지하고, 1차 선적은 기존 17파렛트 전체 구성을 영구히 유지하도록 차수 격리 완성\n• 차수별 패킹리스트 오염 자동 감지 및 자가 치유(Self-Healing): 과거 1차 선적 데이터가 유입되어 오염되었던 2차 선적의 경우, 타 차수 품목 혼입 여부(isPackingListContaminatedForRound)를 즉시 감지하여 배정된 5개 품목 기준으로 깨끗하게 자동 복구\n• 패킹리스트 저장 및 동기화 격리 보장: 컨테이너 수정, 파렛트 재배치 시 savePackingListToFirestore가 현재 활성 차수(2차 이상)의 shipmentRounds 도큐먼트에만 분리 저장하고 루트 1차 선적 데이터를 절대 오염시키지 않도록 개선\n• 주문 저장(handleSaveBasic) 차수별 독립 보존: 전체 저장 실행 시 활성 차수의 최신 입력값(패킹리스트, 부킹번호, 선박명, CI번호, 도착보고 등)을 해당 차수 배열에 정확히 기록하고 1차 선적 루트 데이터와 완벽 분리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.572',
     version: 'v2.8.572',
     date: '2026-09-21',
