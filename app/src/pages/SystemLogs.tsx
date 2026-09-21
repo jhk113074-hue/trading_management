@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.567',
+    version: 'v2.8.567',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '스케줄러 카드 화면 우측(Right) 정렬 배치',
+    content: '• 스케줄러 카드 우측 정렬(justifySelf: end, marginLeft: auto) 적용: 타이트하게 규격화된 스케줄러 카드를 화면/그리드 영역 우측 끝으로 밀착 정렬\n• 대시보드 화면 균형 최적화: 좌측 및 상단 컨텐츠와의 조화를 고려하여 스케줄러 카드가 우측 정렬되도록 배치 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.566',
     version: 'v2.8.566',
     date: '2026-09-21',
