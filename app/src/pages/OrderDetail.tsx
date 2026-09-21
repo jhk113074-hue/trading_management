@@ -2328,48 +2328,47 @@ export const OrderDetail: React.FC = () => {
   }, [shipmentRounds, activeRoundId]);
 
   const handleUpdateActiveRound = (fieldOrUpdates: keyof ShipmentRound | Partial<ShipmentRound>, value?: any) => {
-    setShipmentRounds(prev => {
-      const targetId = activeRoundId || prev[0]?.id;
-      const idx = prev.findIndex(r => r.id === targetId);
-      if (idx === -1) return prev;
-      const updatedRounds = [...prev];
-      let current = { ...updatedRounds[idx] };
-      if (typeof fieldOrUpdates === 'string') {
-        current = { ...current, [fieldOrUpdates]: value };
-      } else {
-        current = { ...current, ...fieldOrUpdates };
-      }
-      updatedRounds[idx] = current;
-      latestOrderStateRef.current.shipmentRounds = updatedRounds;
+    const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+    const targetId = activeRoundIdRef.current || activeRoundId || curRounds[0]?.id;
+    const idx = curRounds.findIndex(r => r.id === targetId);
+    if (idx === -1) return;
 
-      // 1차 선적이 수정될 경우, 기존 최상위 basicForm에도 동기화하여 하위 호환성 100% 보장
-      if (current.roundNumber === 1) {
-        setBasicForm(bf => {
-          const nextBf = { ...bf };
-          if (current.bookingNo !== undefined) nextBf.bookingNo = current.bookingNo;
-          if (current.vesselBooking !== undefined) nextBf.vesselBooking = current.vesselBooking;
-          if (current.forwarderConfirmed !== undefined) nextBf.forwarderConfirmed = current.forwarderConfirmed;
-          if (current.etd !== undefined) nextBf.etd = current.etd;
-          if (current.eta !== undefined) nextBf.eta = current.eta;
-          if (current.docCutoffDate !== undefined) nextBf.docCutoffDate = current.docCutoffDate;
-          if (current.cargoCutoffDate !== undefined) nextBf.cargoCutoffDate = current.cargoCutoffDate;
-          if (current.cfsEntryDate !== undefined) nextBf.cfsEntryDate = current.cfsEntryDate;
-          if (current.cfsEntryTime !== undefined) nextBf.cfsEntryTime = current.cfsEntryTime;
-          if (current.cfsContactInfo !== undefined) nextBf.cfsContactInfo = current.cfsContactInfo;
-          if (current.cfsAddress !== undefined) nextBf.cfsAddress = current.cfsAddress;
-          if (current.shipmentType !== undefined) nextBf.shipmentType = current.shipmentType;
-          if (current.fclSpecs !== undefined) nextBf.fclSpecs = current.fclSpecs;
-          if (current.containerWorkspaceType !== undefined) nextBf.containerWorkspaceType = current.containerWorkspaceType;
-          if (current.shipmentCompleted !== undefined) nextBf.shipmentCompleted = current.shipmentCompleted;
-          if (current.ciNumber !== undefined) nextBf.ciNumber = current.ciNumber;
-          if (current.blNumber !== undefined) nextBf.blNumber = current.blNumber;
-          if (current.blNumbers !== undefined) nextBf.blNumbers = current.blNumbers;
-          if (current.exportDeclarationNo !== undefined) nextBf.exportDeclarationNo = current.exportDeclarationNo;
-          if (current.customsExchangeRate !== undefined) nextBf.customsExchangeRate = current.customsExchangeRate;
-          return nextBf;
-        });
-      }
-      return updatedRounds;
+    const updatedRounds = [...curRounds];
+    let current = { ...updatedRounds[idx] };
+    if (typeof fieldOrUpdates === 'string') {
+      current = { ...current, [fieldOrUpdates]: value };
+    } else {
+      current = { ...current, ...fieldOrUpdates };
+    }
+    updatedRounds[idx] = current;
+    latestOrderStateRef.current.shipmentRounds = updatedRounds;
+    setShipmentRounds(updatedRounds);
+
+    // 활성 차수의 변경사항을 화면 입력 상태(basicForm) 및 최신 ref에 즉시 동기화
+    setBasicForm(bf => {
+      const nextBf = { ...bf };
+      if (current.bookingNo !== undefined) nextBf.bookingNo = current.bookingNo;
+      if (current.vesselBooking !== undefined) nextBf.vesselBooking = current.vesselBooking;
+      if (current.forwarderConfirmed !== undefined) nextBf.forwarderConfirmed = current.forwarderConfirmed;
+      if (current.etd !== undefined) nextBf.etd = current.etd;
+      if (current.eta !== undefined) nextBf.eta = current.eta;
+      if (current.docCutoffDate !== undefined) nextBf.docCutoffDate = current.docCutoffDate;
+      if (current.cargoCutoffDate !== undefined) nextBf.cargoCutoffDate = current.cargoCutoffDate;
+      if (current.cfsEntryDate !== undefined) nextBf.cfsEntryDate = current.cfsEntryDate;
+      if (current.cfsEntryTime !== undefined) nextBf.cfsEntryTime = current.cfsEntryTime;
+      if (current.cfsContactInfo !== undefined) nextBf.cfsContactInfo = current.cfsContactInfo;
+      if (current.cfsAddress !== undefined) nextBf.cfsAddress = current.cfsAddress;
+      if (current.shipmentType !== undefined) nextBf.shipmentType = current.shipmentType;
+      if (current.fclSpecs !== undefined) nextBf.fclSpecs = current.fclSpecs;
+      if (current.containerWorkspaceType !== undefined) nextBf.containerWorkspaceType = current.containerWorkspaceType;
+      if (current.shipmentCompleted !== undefined) nextBf.shipmentCompleted = current.shipmentCompleted;
+      if (current.ciNumber !== undefined) nextBf.ciNumber = current.ciNumber;
+      if (current.blNumber !== undefined) nextBf.blNumber = current.blNumber;
+      if (current.blNumbers !== undefined) nextBf.blNumbers = current.blNumbers;
+      if (current.exportDeclarationNo !== undefined) nextBf.exportDeclarationNo = current.exportDeclarationNo;
+      if (current.customsExchangeRate !== undefined) nextBf.customsExchangeRate = current.customsExchangeRate;
+      latestOrderStateRef.current.basicForm = nextBf;
+      return nextBf;
     });
   };
 
@@ -2675,30 +2674,32 @@ export const OrderDetail: React.FC = () => {
     latestOrderStateRef.current.shipmentRounds = currentRounds;
     latestOrderStateRef.current.activeRoundId = targetRoundId;
 
-    setBasicForm(prev => ({
-      ...prev,
+    const updatedBf: any = {
+      ...basicForm,
       packingList: targetPackingList,
-      bookingNo: targetRound.bookingNo !== undefined ? targetRound.bookingNo : prev.bookingNo,
-      vesselBooking: targetRound.vesselBooking !== undefined ? targetRound.vesselBooking : prev.vesselBooking,
-      forwarderConfirmed: targetRound.forwarderConfirmed !== undefined ? targetRound.forwarderConfirmed : prev.forwarderConfirmed,
-      etd: targetRound.etd !== undefined ? targetRound.etd : prev.etd,
-      eta: targetRound.eta !== undefined ? targetRound.eta : prev.eta,
-      docCutoffDate: targetRound.docCutoffDate !== undefined ? targetRound.docCutoffDate : prev.docCutoffDate,
-      cargoCutoffDate: targetRound.cargoCutoffDate !== undefined ? targetRound.cargoCutoffDate : prev.cargoCutoffDate,
-      cfsEntryDate: targetRound.cfsEntryDate !== undefined ? targetRound.cfsEntryDate : prev.cfsEntryDate,
-      cfsEntryTime: targetRound.cfsEntryTime !== undefined ? targetRound.cfsEntryTime : prev.cfsEntryTime,
-      cfsContactInfo: targetRound.cfsContactInfo !== undefined ? targetRound.cfsContactInfo : prev.cfsContactInfo,
-      cfsAddress: targetRound.cfsAddress !== undefined ? targetRound.cfsAddress : prev.cfsAddress,
-      shipmentType: targetRound.shipmentType !== undefined ? targetRound.shipmentType : prev.shipmentType,
-      fclSpecs: targetRound.fclSpecs !== undefined ? targetRound.fclSpecs : prev.fclSpecs,
-      containerWorkspaceType: targetRound.containerWorkspaceType !== undefined ? targetRound.containerWorkspaceType : prev.containerWorkspaceType,
-      shipmentCompleted: targetRound.shipmentCompleted !== undefined ? targetRound.shipmentCompleted : prev.shipmentCompleted,
-      ciNumber: targetRound.ciNumber !== undefined ? targetRound.ciNumber : prev.ciNumber,
-      blNumber: targetRound.blNumber !== undefined ? targetRound.blNumber : prev.blNumber,
-      blNumbers: targetRound.blNumbers !== undefined ? targetRound.blNumbers : prev.blNumbers,
-      exportDeclarationNo: targetRound.exportDeclarationNo !== undefined ? targetRound.exportDeclarationNo : prev.exportDeclarationNo,
-      customsExchangeRate: targetRound.customsExchangeRate !== undefined ? targetRound.customsExchangeRate : prev.customsExchangeRate
-    }));
+      bookingNo: targetRound.bookingNo !== undefined ? targetRound.bookingNo : (targetRound.roundNumber === 1 ? basicForm.bookingNo : ''),
+      vesselBooking: targetRound.vesselBooking !== undefined ? targetRound.vesselBooking : (targetRound.roundNumber === 1 ? basicForm.vesselBooking : ''),
+      forwarderConfirmed: targetRound.forwarderConfirmed !== undefined ? targetRound.forwarderConfirmed : (targetRound.roundNumber === 1 ? basicForm.forwarderConfirmed : ''),
+      etd: targetRound.etd !== undefined ? targetRound.etd : (targetRound.roundNumber === 1 ? basicForm.etd : ''),
+      eta: targetRound.eta !== undefined ? targetRound.eta : (targetRound.roundNumber === 1 ? basicForm.eta : ''),
+      docCutoffDate: targetRound.docCutoffDate !== undefined ? targetRound.docCutoffDate : (targetRound.roundNumber === 1 ? basicForm.docCutoffDate : ''),
+      cargoCutoffDate: targetRound.cargoCutoffDate !== undefined ? targetRound.cargoCutoffDate : (targetRound.roundNumber === 1 ? basicForm.cargoCutoffDate : ''),
+      cfsEntryDate: targetRound.cfsEntryDate !== undefined ? targetRound.cfsEntryDate : (targetRound.roundNumber === 1 ? basicForm.cfsEntryDate : ''),
+      cfsEntryTime: targetRound.cfsEntryTime !== undefined ? targetRound.cfsEntryTime : (targetRound.roundNumber === 1 ? basicForm.cfsEntryTime : '오전 10시까지'),
+      cfsContactInfo: targetRound.cfsContactInfo !== undefined ? targetRound.cfsContactInfo : (targetRound.roundNumber === 1 ? basicForm.cfsContactInfo : ''),
+      cfsAddress: targetRound.cfsAddress !== undefined ? targetRound.cfsAddress : (targetRound.roundNumber === 1 ? basicForm.cfsAddress : ''),
+      shipmentType: targetRound.shipmentType !== undefined ? targetRound.shipmentType : (targetRound.roundNumber === 1 ? basicForm.shipmentType : 'FCL'),
+      fclSpecs: targetRound.fclSpecs !== undefined ? targetRound.fclSpecs : (targetRound.roundNumber === 1 ? basicForm.fclSpecs : []),
+      containerWorkspaceType: targetRound.containerWorkspaceType !== undefined ? targetRound.containerWorkspaceType : (targetRound.roundNumber === 1 ? basicForm.containerWorkspaceType : ''),
+      shipmentCompleted: targetRound.shipmentCompleted !== undefined ? targetRound.shipmentCompleted : (targetRound.roundNumber === 1 ? basicForm.shipmentCompleted : ''),
+      ciNumber: targetRound.ciNumber !== undefined ? targetRound.ciNumber : (targetRound.roundNumber === 1 ? basicForm.ciNumber : ''),
+      blNumber: targetRound.blNumber !== undefined ? targetRound.blNumber : (targetRound.roundNumber === 1 ? basicForm.blNumber : ''),
+      blNumbers: targetRound.blNumbers !== undefined ? targetRound.blNumbers : (targetRound.roundNumber === 1 ? basicForm.blNumbers : []),
+      exportDeclarationNo: targetRound.exportDeclarationNo !== undefined ? targetRound.exportDeclarationNo : (targetRound.roundNumber === 1 ? basicForm.exportDeclarationNo : ''),
+      customsExchangeRate: targetRound.customsExchangeRate !== undefined ? targetRound.customsExchangeRate : (targetRound.roundNumber === 1 ? basicForm.customsExchangeRate : 0)
+    };
+    latestOrderStateRef.current.basicForm = updatedBf;
+    setBasicForm(updatedBf);
 
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: targetArrivalReports } : prev);
 
@@ -3609,10 +3610,10 @@ export const OrderDetail: React.FC = () => {
 
         // order 객체에 현재 활성화된 차수의 도착보고서 적용 (1차면 root, 2차 이상이면 해당 차수)
         let mergedOrder = data;
-        if (activeR && activeR.roundNumber > 1 && activeR.supplierArrivalReports) {
+        if (activeR && activeR.roundNumber > 1) {
           mergedOrder = {
             ...data,
-            supplierArrivalReports: activeR.supplierArrivalReports
+            supplierArrivalReports: activeR.supplierArrivalReports || {}
           };
         }
         setOrder(mergedOrder);
@@ -3684,25 +3685,25 @@ export const OrderDetail: React.FC = () => {
           externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : '',
           issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS',
           
-          ciNumber: (activeR && activeR.roundNumber > 1 && activeR.ciNumber !== undefined) ? activeR.ciNumber : (data.ciNumber || ''),
-          bookingNo: (activeR && activeR.roundNumber > 1 && activeR.bookingNo !== undefined) ? activeR.bookingNo : (data.bookingNo || ''),
-          vesselBooking: (activeR && activeR.roundNumber > 1 && activeR.vesselBooking !== undefined) ? activeR.vesselBooking : (data.vesselBooking || ''),
-          forwarderConfirmed: (activeR && activeR.roundNumber > 1 && activeR.forwarderConfirmed !== undefined) ? activeR.forwarderConfirmed : (data.forwarderConfirmed || ''),
+          ciNumber: (activeR && activeR.roundNumber > 1) ? (activeR.ciNumber || '') : (data.ciNumber || ''),
+          bookingNo: (activeR && activeR.roundNumber > 1) ? (activeR.bookingNo || '') : (data.bookingNo || ''),
+          vesselBooking: (activeR && activeR.roundNumber > 1) ? (activeR.vesselBooking || '') : (data.vesselBooking || ''),
+          forwarderConfirmed: (activeR && activeR.roundNumber > 1) ? (activeR.forwarderConfirmed || '') : (data.forwarderConfirmed || ''),
           cargoReadyDate: (activeR && (activeR as any).cargoReadyDate !== undefined) ? (activeR as any).cargoReadyDate : (data.cargoReadyDate || ''),
-          cfsEntryDate: (activeR && activeR.roundNumber > 1 && activeR.cfsEntryDate !== undefined) ? activeR.cfsEntryDate : (data.cfsEntryDate || ''),
-          cfsEntryTime: (activeR && activeR.roundNumber > 1 && activeR.cfsEntryTime !== undefined) ? activeR.cfsEntryTime : (data.cfsEntryTime || '오전 10시까지'),
-          cfsContactInfo: (activeR && activeR.roundNumber > 1 && activeR.cfsContactInfo !== undefined) ? activeR.cfsContactInfo : (data.cfsContactInfo || ''),
-          docCutoffDate: (activeR && activeR.roundNumber > 1 && activeR.docCutoffDate !== undefined) ? activeR.docCutoffDate : (data.docsDeadlineDate || data.docCutoffDate || ''),
-          cargoCutoffDate: (activeR && activeR.roundNumber > 1 && activeR.cargoCutoffDate !== undefined) ? activeR.cargoCutoffDate : (data.cargoCutoffDate || ''),
-          etd: (activeR && activeR.roundNumber > 1 && activeR.etd !== undefined) ? activeR.etd : (data.etd || ''),
-          eta: (activeR && activeR.roundNumber > 1 && activeR.eta !== undefined) ? activeR.eta : (data.eta || ''),
+          cfsEntryDate: (activeR && activeR.roundNumber > 1) ? (activeR.cfsEntryDate || '') : (data.cfsEntryDate || ''),
+          cfsEntryTime: (activeR && activeR.roundNumber > 1) ? (activeR.cfsEntryTime || '오전 10시까지') : (data.cfsEntryTime || '오전 10시까지'),
+          cfsContactInfo: (activeR && activeR.roundNumber > 1) ? (activeR.cfsContactInfo || '') : (data.cfsContactInfo || ''),
+          docCutoffDate: (activeR && activeR.roundNumber > 1) ? (activeR.docCutoffDate || '') : (data.docsDeadlineDate || data.docCutoffDate || ''),
+          cargoCutoffDate: (activeR && activeR.roundNumber > 1) ? (activeR.cargoCutoffDate || '') : (data.cargoCutoffDate || ''),
+          etd: (activeR && activeR.roundNumber > 1) ? (activeR.etd || '') : (data.etd || ''),
+          eta: (activeR && activeR.roundNumber > 1) ? (activeR.eta || '') : (data.eta || ''),
           containerVolumeQuantities: (activeR && (activeR as any).containerVolumeQuantities !== undefined) ? (activeR as any).containerVolumeQuantities : (data.containerVolumeQuantities || ''),
-          exportDeclarationNo: (activeR && activeR.roundNumber > 1 && activeR.exportDeclarationNo !== undefined) ? activeR.exportDeclarationNo : (data.exportDeclarationNo || ''),
+          exportDeclarationNo: (activeR && activeR.roundNumber > 1) ? (activeR.exportDeclarationNo || '') : (data.exportDeclarationNo || ''),
           lcNo: data.lcNo || '',
-          customsExchangeRate: (activeR && activeR.roundNumber > 1 && activeR.customsExchangeRate !== undefined) ? activeR.customsExchangeRate : (data.customsExchangeRate || 0),
+          customsExchangeRate: (activeR && activeR.roundNumber > 1) ? (activeR.customsExchangeRate || 0) : (data.customsExchangeRate || 0),
           dispatchStatusByVendor: data.dispatchStatusByVendor || '',
-          containerWorkspaceType: (activeR && activeR.roundNumber > 1 && activeR.containerWorkspaceType !== undefined) ? activeR.containerWorkspaceType : (data.containerWorkspaceType || ''),
-          shipmentCompleted: (activeR && activeR.roundNumber > 1 && activeR.shipmentCompleted !== undefined) ? activeR.shipmentCompleted : (data.shipmentCompleted || ''),
+          containerWorkspaceType: (activeR && activeR.roundNumber > 1) ? (activeR.containerWorkspaceType || '') : (data.containerWorkspaceType || ''),
+          shipmentCompleted: (activeR && activeR.roundNumber > 1) ? (activeR.shipmentCompleted || '') : (data.shipmentCompleted || ''),
           docsSentOrBankSubmitted: data.docsSentOrBankSubmitted || '',
           purchaseCertificateByVendor: data.purchaseCertificateByVendor || '',
           paymentStatusByVendor: data.paymentStatusByVendor || '',
@@ -3715,7 +3716,7 @@ export const OrderDetail: React.FC = () => {
           supplierProductionDates: data.supplierProductionDates || {},
           forwarderQuotationAmount: data.forwarderQuotationAmount || 0,
           finalFreight: data.finalFreight || 0,
-          cfsAddress: (activeR && activeR.roundNumber > 1 && activeR.cfsAddress !== undefined) ? activeR.cfsAddress : (data.cfsAddress || ''),
+          cfsAddress: (activeR && activeR.roundNumber > 1) ? (activeR.cfsAddress || '') : (data.cfsAddress || ''),
           cfsContact: data.cfsContact || '',
           ciPlStatus: data.ciPlStatus || '',
           containerWorkStatus: data.containerWorkStatus || '',
@@ -3865,11 +3866,11 @@ export const OrderDetail: React.FC = () => {
           lcRemark: data.lcRemark || '',
           actualContainerSimulation: data.actualContainerSimulation || null,
           quotationId: data.quotationId || '',
-          shipmentType: (activeR && activeR.roundNumber > 1 && activeR.shipmentType !== undefined) ? activeR.shipmentType : (data.shipmentType || 'FCL'),
-          fclSpecs: (activeR && activeR.roundNumber > 1 && activeR.fclSpecs !== undefined) ? activeR.fclSpecs : (data.fclSpecs || []),
+          shipmentType: (activeR && activeR.roundNumber > 1) ? (activeR.shipmentType || 'FCL') : (data.shipmentType || 'FCL'),
+          fclSpecs: (activeR && activeR.roundNumber > 1) ? (activeR.fclSpecs || []) : (data.fclSpecs || []),
           type: data.type || 'trade',
-          blNumbers: (activeR && activeR.roundNumber > 1 && activeR.blNumbers !== undefined) ? activeR.blNumbers : (data.blNumbers || (data.blNumber ? [data.blNumber] : [])),
-          blNumber: (activeR && activeR.roundNumber > 1 && activeR.blNumber !== undefined) ? activeR.blNumber : (data.blNumber || ''),
+          blNumbers: (activeR && activeR.roundNumber > 1) ? (activeR.blNumbers || (activeR.blNumber ? [activeR.blNumber] : [])) : (data.blNumbers || (data.blNumber ? [data.blNumber] : [])),
+          blNumber: (activeR && activeR.roundNumber > 1) ? (activeR.blNumber || '') : (data.blNumber || ''),
           exchangeRate: data.exchangeRate || 1400
         });
         const itemsWithHs = (data.items || []).map((it, idx) => {
@@ -4487,29 +4488,20 @@ export const OrderDetail: React.FC = () => {
     return filtered;
   }, [isSplitShipment, activeRound, basicForm.packingList, orderItems, allOrderSuppliers]);
 
-  // Direct volume update handler to prevent onSnapshot overwrite race-conditions
-  const handleUpdateVolumeDataDirectly = async (shipmentType: 'LCL' | 'FCL', fclSpecs: any[]) => {
+  // Volume and FCL specs update handler
+  const handleUpdateVolumeDataDirectly = (shipmentType: 'LCL' | 'FCL', fclSpecs: any[], saveImmediately: boolean = false) => {
     if (!order) return;
-    setBasicForm(prev => ({
-      ...prev,
-      shipmentType,
-      fclSpecs
+    const sanitizedFcl = (fclSpecs || []).map(c => ({
+      type: c.type || '40HQ',
+      qty: Number(c.qty) || 1,
+      containerNo: c.containerNo || '',
+      sealNo: c.sealNo || ''
     }));
-    handleUpdateActiveRound({ shipmentType, fclSpecs });
-    try {
-      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      await updateDoc(docRef, {
-        shipmentType,
-        fclSpecs: fclSpecs.map(c => ({
-          type: c.type,
-          qty: Number(c.qty) || 1,
-          containerNo: c.containerNo || '',
-          sealNo: c.sealNo || ''
-        })),
-        shipmentRounds: latestOrderStateRef.current.shipmentRounds || []
-      });
-    } catch (err) {
-      console.error("Direct volume update error:", err);
+
+    handleUpdateActiveRound({ shipmentType, fclSpecs: sanitizedFcl });
+
+    if (saveImmediately) {
+      handleSaveBasic(false);
     }
   };
 
@@ -4555,6 +4547,7 @@ export const OrderDetail: React.FC = () => {
     const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
     const curRound = curRounds.find(r => r.id === curActiveRoundId);
     const isCurRound1 = !isSplitShipment || !curRound || curRound.roundNumber <= 1;
+    const r1 = curRounds.find(r => r.roundNumber === 1);
 
     try {
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', curOrder.id);
@@ -4650,29 +4643,29 @@ export const OrderDetail: React.FC = () => {
         type: basicForm.type || 'trade',
         exchangeRate: Number(basicForm.exchangeRate) || 1400,
         
-        ciNumber: basicForm.ciNumber,
-        bookingNo: basicForm.bookingNo || '',
-        vesselBooking: basicForm.vesselBooking,
-        forwarderConfirmed: basicForm.forwarderConfirmed,
+        ciNumber: isCurRound1 ? basicForm.ciNumber : (r1?.ciNumber || curOrder.ciNumber || ''),
+        bookingNo: isCurRound1 ? (basicForm.bookingNo || '') : (r1?.bookingNo || curOrder.bookingNo || ''),
+        vesselBooking: isCurRound1 ? basicForm.vesselBooking : (r1?.vesselBooking || curOrder.vesselBooking || ''),
+        forwarderConfirmed: isCurRound1 ? basicForm.forwarderConfirmed : (r1?.forwarderConfirmed || curOrder.forwarderConfirmed || ''),
         cargoReadyDate: basicForm.cargoReadyDate,
-        cfsEntryDate: basicForm.cfsEntryDate || '',
-        cfsEntryTime: basicForm.cfsEntryTime || '오전 10시까지',
+        cfsEntryDate: isCurRound1 ? (basicForm.cfsEntryDate || '') : (r1?.cfsEntryDate || curOrder.cfsEntryDate || ''),
+        cfsEntryTime: isCurRound1 ? (basicForm.cfsEntryTime || '오전 10시까지') : (r1?.cfsEntryTime || curOrder.cfsEntryTime || '오전 10시까지'),
         supplierArrivalReports: isCurRound1
           ? (curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {})
           : (curRounds.find(r => r.roundNumber === 1)?.supplierArrivalReports || curOrder?.supplierArrivalReports || {}),
-        cfsContactInfo: basicForm.cfsContactInfo || '',
-        docCutoffDate: basicForm.docCutoffDate,
-        docsDeadlineDate: basicForm.docCutoffDate,
-        cargoCutoffDate: basicForm.cargoCutoffDate || '',
-        etd: basicForm.etd,
-        eta: basicForm.eta,
+        cfsContactInfo: isCurRound1 ? (basicForm.cfsContactInfo || '') : (r1?.cfsContactInfo || curOrder.cfsContactInfo || ''),
+        docCutoffDate: isCurRound1 ? basicForm.docCutoffDate : (r1?.docCutoffDate || curOrder.docCutoffDate || ''),
+        docsDeadlineDate: isCurRound1 ? basicForm.docCutoffDate : (r1?.docCutoffDate || curOrder.docCutoffDate || ''),
+        cargoCutoffDate: isCurRound1 ? (basicForm.cargoCutoffDate || '') : (r1?.cargoCutoffDate || curOrder.cargoCutoffDate || ''),
+        etd: isCurRound1 ? basicForm.etd : (r1?.etd || curOrder.etd || ''),
+        eta: isCurRound1 ? basicForm.eta : (r1?.eta || curOrder.eta || ''),
         containerVolumeQuantities: basicForm.containerVolumeQuantities,
-        exportDeclarationNo: basicForm.exportDeclarationNo,
+        exportDeclarationNo: isCurRound1 ? basicForm.exportDeclarationNo : (r1?.exportDeclarationNo || curOrder.exportDeclarationNo || ''),
         lcNo: basicForm.lcNo,
-        customsExchangeRate: Number(basicForm.customsExchangeRate) || 0,
+        customsExchangeRate: isCurRound1 ? (Number(basicForm.customsExchangeRate) || 0) : (Number(r1?.customsExchangeRate) || Number(curOrder.customsExchangeRate) || 0),
         dispatchStatusByVendor: basicForm.dispatchStatusByVendor,
-        containerWorkspaceType: basicForm.containerWorkspaceType,
-        shipmentCompleted: basicForm.shipmentCompleted,
+        containerWorkspaceType: isCurRound1 ? basicForm.containerWorkspaceType : (r1?.containerWorkspaceType || curOrder.containerWorkspaceType || ''),
+        shipmentCompleted: isCurRound1 ? basicForm.shipmentCompleted : (r1?.shipmentCompleted || curOrder.shipmentCompleted || ''),
         docsSentOrBankSubmitted: basicForm.docsSentOrBankSubmitted,
         purchaseCertificateByVendor: basicForm.purchaseCertificateByVendor,
         paymentStatusByVendor: basicForm.paymentStatusByVendor,
@@ -4686,7 +4679,7 @@ export const OrderDetail: React.FC = () => {
         supplierProductionDates: dataSupplierProdDates(basicForm.supplierProductionDates),
         forwarderQuotationAmount: Number(basicForm.forwarderQuotationAmount) || 0,
         finalFreight: Number(basicForm.finalFreight) || 0,
-        cfsAddress: basicForm.cfsAddress || '',
+        cfsAddress: isCurRound1 ? (basicForm.cfsAddress || '') : (r1?.cfsAddress || curOrder.cfsAddress || ''),
         cfsContact: basicForm.cfsContact,
         ciPlStatus: basicForm.ciPlStatus,
         containerWorkStatus: basicForm.containerWorkStatus,
@@ -4719,8 +4712,13 @@ export const OrderDetail: React.FC = () => {
         lcIssuingDate: basicForm.lcIssuingDate,
         lcDescription: basicForm.lcDescription,
         lcRemark: basicForm.lcRemark,
-        shipmentType: basicForm.shipmentType || 'FCL',
-        fclSpecs: (basicForm.fclSpecs || []).map(c => ({ type: c.type, qty: c.qty, containerNo: c.containerNo || '', sealNo: c.sealNo || '' })),
+        shipmentType: isCurRound1 ? (basicForm.shipmentType || 'FCL') : (r1?.shipmentType || curOrder.shipmentType || 'FCL'),
+        fclSpecs: (isCurRound1 ? (basicForm.fclSpecs || []) : (r1?.fclSpecs || curOrder.fclSpecs || [])).map((c: any) => ({
+          type: c.type || '40HQ',
+          qty: Number(c.qty) || 1,
+          containerNo: c.containerNo || '',
+          sealNo: c.sealNo || ''
+        })),
 
         packingList: isCurRound1
           ? (basicForm.packingList || null)
@@ -4732,8 +4730,8 @@ export const OrderDetail: React.FC = () => {
         commonShippingMark: commonShippingMark,
         activeSourcingTab: sourcingTabToSave,
         quotationId: basicForm.quotationId || '',
-        blNumbers: basicForm.blNumbers || [],
-        blNumber: basicForm.blNumber || '',
+        blNumbers: isCurRound1 ? (basicForm.blNumbers || []) : (r1?.blNumbers || curOrder.blNumbers || []),
+        blNumber: isCurRound1 ? (basicForm.blNumber || '') : (r1?.blNumber || curOrder.blNumber || ''),
         isSplitShipment: isSplitShipment,
         shipmentRounds: curRounds.map(r => {
           if (r.id === curActiveRoundId) {
@@ -4750,8 +4748,13 @@ export const OrderDetail: React.FC = () => {
               cfsEntryTime: basicForm.cfsEntryTime,
               cfsContactInfo: basicForm.cfsContactInfo,
               cfsAddress: basicForm.cfsAddress,
-              shipmentType: basicForm.shipmentType,
-              fclSpecs: basicForm.fclSpecs,
+              shipmentType: basicForm.shipmentType || 'FCL',
+              fclSpecs: (basicForm.fclSpecs || []).map(c => ({
+                type: c.type || '40HQ',
+                qty: Number(c.qty) || 1,
+                containerNo: c.containerNo || '',
+                sealNo: c.sealNo || ''
+              })),
               containerWorkspaceType: basicForm.containerWorkspaceType,
               shipmentCompleted: basicForm.shipmentCompleted,
               ciNumber: basicForm.ciNumber,
@@ -4761,7 +4764,10 @@ export const OrderDetail: React.FC = () => {
               customsExchangeRate: basicForm.customsExchangeRate,
               packingList: basicForm.packingList,
               supplierArrivalReports: (() => {
-                const rep = { ...(curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {}) };
+                const source = (r.id === curActiveRoundId)
+                  ? (curOrder?.supplierArrivalReports || r.supplierArrivalReports || {})
+                  : (r.supplierArrivalReports || {});
+                const rep = { ...source };
                 if (r.roundNumber > 1 && basicForm.packingList?.containers) {
                   const vSups = new Set<string>();
                   basicForm.packingList.containers.forEach((c: any) => {
@@ -12408,12 +12414,6 @@ ${downloadLink}`;
                                     eta: addDays(baseDate, 18)               // 14일 운송 표준 적용
                                   };
                                   handleUpdateActiveRound(schedUpdates);
-                                  if (!activeRound || activeRound.roundNumber === 1) {
-                                    setBasicForm(prev => ({
-                                      ...prev,
-                                      ...schedUpdates
-                                    }));
-                                  }
                                 } catch (err) {
                                   console.error(err);
                                 }
@@ -12558,7 +12558,7 @@ ${downloadLink}`;
                                 value="LCL"
                                 checked={basicForm.shipmentType === 'LCL'}
                                 disabled={!isEditing}
-                                onChange={() => handleUpdateVolumeDataDirectly('LCL', basicForm.fclSpecs || [])}
+                                onChange={() => handleUpdateVolumeDataDirectly('LCL', basicForm.fclSpecs || [], true)}
                               /> LCL
                             </label>
                             <label style={{ fontSize: '13.5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
@@ -12568,7 +12568,7 @@ ${downloadLink}`;
                                 value="FCL"
                                 checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
                                 disabled={!isEditing}
-                                onChange={() => handleUpdateVolumeDataDirectly('FCL', basicForm.fclSpecs || [])}
+                                onChange={() => handleUpdateVolumeDataDirectly('FCL', basicForm.fclSpecs || [], true)}
                               /> FCL
                             </label>
                           </div>
@@ -12585,7 +12585,8 @@ ${downloadLink}`;
                                     const current = basicForm.fclSpecs || [];
                                     handleUpdateVolumeDataDirectly(
                                       (basicForm.shipmentType || 'FCL') as any,
-                                      [...current, { type: '20GP', qty: 1, containerNo: '', sealNo: '' }]
+                                      [...current, { type: '40HQ', qty: 1, containerNo: '', sealNo: '' }],
+                                      true
                                     );
                                   }}
                                   style={{ padding: '3px 8px', fontSize: '13.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -12607,11 +12608,11 @@ ${downloadLink}`;
                                     disabled={!isEditing}
                                     onChange={e => {
                                       const selectedVal = e.target.value;
-                                      const currentVal = c.type || '20GP';
+                                      const currentVal = c.type || '40HQ';
                                       handleContainerTypeSelection(selectedVal, currentVal, customContainerTypes, (newType) => {
                                         const updated = [...(basicForm.fclSpecs || [])];
                                         updated[idx].type = newType as any;
-                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated, true);
                                       });
                                     }}
                                     style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', background: '#fff', width: '110px' }}
@@ -12631,8 +12632,9 @@ ${downloadLink}`;
                                     onChange={e => {
                                       const updated = [...(basicForm.fclSpecs || [])];
                                       updated[idx].qty = parseInt(e.target.value) || 1;
-                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated, false);
                                     }}
+                                    onBlur={() => handleSaveBasic(false)}
                                     style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', width: '50px', textAlign: 'right' }}
                                   />
                                   <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)' }}>대</span>
@@ -12645,8 +12647,9 @@ ${downloadLink}`;
                                     onChange={e => {
                                       const updated = [...(basicForm.fclSpecs || [])];
                                       updated[idx].containerNo = e.target.value;
-                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated, false);
                                     }}
+                                    onBlur={() => handleSaveBasic(false)}
                                     style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', width: '110px' }}
                                   />
                                   <input
@@ -12657,8 +12660,9 @@ ${downloadLink}`;
                                     onChange={e => {
                                       const updated = [...(basicForm.fclSpecs || [])];
                                       updated[idx].sealNo = e.target.value;
-                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated, false);
                                     }}
+                                    onBlur={() => handleSaveBasic(false)}
                                     style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', outline: 'none', width: '90px' }}
                                   />
 
@@ -12667,7 +12671,7 @@ ${downloadLink}`;
                                       type="button"
                                       onClick={() => {
                                         const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
-                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated, true);
                                       }}
                                       style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '15.5px', fontWeight: 700 }}
                                     >✕</button>
@@ -12691,9 +12695,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const newBookingNo = e.target.value;
                             handleUpdateActiveRound('bookingNo', newBookingNo);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, bookingNo: newBookingNo }));
-                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
@@ -12705,7 +12706,7 @@ ${downloadLink}`;
                               });
                               return {
                                 ...prev,
-                                bookingNo: newBookingNo,
+                                ...(activeRound?.roundNumber === 1 ? { bookingNo: newBookingNo } : {}),
                                 supplierArrivalReports: currentReports
                               };
                             });
@@ -12723,9 +12724,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const val = e.target.value;
                             handleUpdateActiveRound('vesselBooking', val);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, vesselBooking: val }));
-                            }
                           }} 
                           disabled={!isEditing} 
                           style={inputStyle(isEditing)} 
@@ -12739,9 +12737,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const val = e.target.value;
                             handleUpdateActiveRound('docCutoffDate', val);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, docCutoffDate: val }));
-                            }
                           }} 
                           disabled={!isEditing} 
                           style={inputStyle(isEditing)} 
@@ -12754,9 +12749,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const val = e.target.value;
                             handleUpdateActiveRound('cargoCutoffDate', val);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, cargoCutoffDate: val }));
-                            }
                           }} 
                           disabled={!isEditing} 
                           style={inputStyle(isEditing)} 
@@ -12771,9 +12763,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const val = e.target.value;
                             handleUpdateActiveRound('etd', val);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, etd: val }));
-                            }
                           }} 
                           disabled={!isEditing} 
                           style={inputStyle(isEditing)} 
@@ -12788,9 +12777,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const val = e.target.value;
                             handleUpdateActiveRound('eta', val);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, eta: val }));
-                            }
                           }} 
                           disabled={!isEditing} 
                           style={inputStyle(isEditing)} 
@@ -12808,9 +12794,6 @@ ${downloadLink}`;
                             onChange={e => {
                               const val = e.target.value as any;
                               handleUpdateActiveRound('containerWorkspaceType', val);
-                              if (!activeRound || activeRound.roundNumber === 1) {
-                                setBasicForm(p => ({ ...p, containerWorkspaceType: val }));
-                              }
                             }} 
                             style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14.5px', width: '100%', height: '37px' }}
                           >
@@ -12830,9 +12813,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const newDate = e.target.value;
                             handleUpdateActiveRound('cfsEntryDate', newDate);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, cfsEntryDate: newDate }));
-                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
@@ -12853,7 +12833,7 @@ ${downloadLink}`;
                               });
                               return {
                                 ...prev,
-                                cfsEntryDate: newDate,
+                                ...(activeRound?.roundNumber === 1 ? { cfsEntryDate: newDate } : {}),
                                 supplierArrivalReports: currentReports
                               };
                             });
@@ -12871,9 +12851,6 @@ ${downloadLink}`;
                           onChange={e => {
                             const newTime = e.target.value;
                             handleUpdateActiveRound('cfsEntryTime', newTime);
-                            if (!activeRound || activeRound.roundNumber === 1) {
-                              setBasicForm(p => ({ ...p, cfsEntryTime: newTime }));
-                            }
                             setOrder(prev => {
                               if (!prev) return prev;
                               const currentReports = { ...(prev.supplierArrivalReports || {}) };
@@ -12893,7 +12870,7 @@ ${downloadLink}`;
                               }
                               return {
                                 ...prev,
-                                cfsEntryTime: newTime,
+                                ...(activeRound?.roundNumber === 1 ? { cfsEntryTime: newTime } : {}),
                                 supplierArrivalReports: currentReports
                               };
                             });
@@ -12937,7 +12914,7 @@ ${downloadLink}`;
                                     createdAt: serverTimestamp()
                                   });
                                   setCfsList((prev: string[]) => [...prev, newCfsVal.trim()]);
-                                  setBasicForm(p => ({ ...p, cfsContactInfo: newCfsVal.trim() }));
+                                  handleUpdateActiveRound('cfsContactInfo', newCfsVal.trim());
                                   setNewCfsVal('');
                                   setIsAddingCfs(false);
                                   alert('CFS가 등록 및 선택되었습니다.');
@@ -12954,8 +12931,8 @@ ${downloadLink}`;
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <select
                               disabled={!isEditing}
-                              value={basicForm.cfsContactInfo || ''}
-                              onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))}
+                              value={activeRound?.cfsContactInfo ?? basicForm.cfsContactInfo ?? ''}
+                              onChange={e => handleUpdateActiveRound('cfsContactInfo', e.target.value)}
                               style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14.5px', width: '220px', height: '37px', background: '#fff' }}
                             >
                               <option value="">선택하세요</option>
@@ -12966,8 +12943,8 @@ ${downloadLink}`;
                             <input 
                               type="text" 
                               style={{ ...inputStyle(isEditing), height: '37px', flex: 1 }} 
-                              value={basicForm.cfsContactInfo || ''} 
-                              onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} 
+                              value={activeRound?.cfsContactInfo ?? basicForm.cfsContactInfo ?? ''} 
+                              onChange={e => handleUpdateActiveRound('cfsContactInfo', e.target.value)} 
                               disabled={!isEditing} 
                               placeholder="선택한 CFS 주소 및 담당자 정보 상세" 
                             />
@@ -15553,9 +15530,6 @@ ${downloadLink}`;
                         onChange={e => {
                           const val = e.target.value;
                           handleUpdateActiveRound('exportDeclarationNo', val);
-                          if (!activeRound || activeRound.roundNumber === 1) {
-                            setBasicForm(p => ({ ...p, exportDeclarationNo: val }));
-                          }
                         }} 
                         disabled={!isEditing} 
                         style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} 
@@ -15571,9 +15545,6 @@ ${downloadLink}`;
                         onChange={e => {
                           const val = parseFloat(e.target.value) || 0;
                           handleUpdateActiveRound('customsExchangeRate', val);
-                          if (!activeRound || activeRound.roundNumber === 1) {
-                            setBasicForm(p => ({ ...p, customsExchangeRate: val }));
-                          }
                         }} 
                         disabled={!isEditing} 
                         style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} 
@@ -15596,13 +15567,6 @@ ${downloadLink}`;
                                     const nextBls = [...currentBls, ''];
                                     const combined = nextBls.filter(Boolean).join(', ');
                                     handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
-                                    if (!activeRound || activeRound.roundNumber === 1) {
-                                      setBasicForm(p => ({
-                                        ...p,
-                                        blNumbers: nextBls,
-                                        blNumber: combined
-                                      }));
-                                    }
                                   }}
                                   style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
@@ -15633,13 +15597,6 @@ ${downloadLink}`;
                                   nextBls[idx] = e.target.value;
                                   const combined = nextBls.filter(Boolean).join(', ');
                                   handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
-                                  if (!activeRound || activeRound.roundNumber === 1) {
-                                    setBasicForm(p => ({
-                                      ...p,
-                                      blNumbers: nextBls,
-                                      blNumber: combined
-                                    }));
-                                  }
                                 }}
                                 placeholder={`B/L 번호 #${idx + 1}`}
                                 style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
@@ -15651,13 +15608,6 @@ ${downloadLink}`;
                                     const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
                                     const combined = nextBls.filter(Boolean).join(', ');
                                     handleUpdateActiveRound({ blNumbers: nextBls, blNumber: combined });
-                                    if (!activeRound || activeRound.roundNumber === 1) {
-                                      setBasicForm(p => ({
-                                        ...p,
-                                        blNumbers: nextBls,
-                                        blNumber: combined
-                                      }));
-                                    }
                                   }}
                                   style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
                                 >

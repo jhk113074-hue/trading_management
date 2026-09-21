@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.575',
+    version: 'v2.8.575',
+    date: '2026-09-21',
+    category: '버그수정',
+    title: '2차 선적 FCL 컨테이너/수량/일정/부킹 데이터 입력 시 원상복구 결함 및 도착보고서 잔존 오염 완벽 해결',
+    content: '• 2차 선적 FCL 컨테이너 상세 정보(40HQ/수량/컨테이너번호/Seal No) 저장 안정화: 컨테이너 추가/삭제/타입 변경 시 즉시 안전 저장(saveImmediately=true) 및 텍스트/수량 타이핑 시 React state 동기화 후 포커스 아웃(onBlur) 시 클라우드 저장 연동으로 타이핑 도중 데이터가 원상복구되거나 소실되던 문제 완전 해결\n• 물류일정 및 부킹 정보(ETD/ETA/CARGO CLS/DOC CLS/BOOKING NO/선박명) 2차 선적 격리 저장 정상화: 기존 입력 핸들러에 걸려있던 roundNumber === 1 제약을 전면 제거하여 2차 선적의 일정 및 번호가 activeRound 및 basicForm에 실시간 동기화되고 자동 저장 시 1차 선적 데이터로 되돌아가지 않도록 근본 차단\n• 1차 선적 루트 도큐먼트 보호: 2차 선적 데이터를 편집 및 저장할 때 1차 선적의 루트 필드(부킹번호, 선박명, 물류일정, FCL 컨테이너 등)가 2차 선적 값으로 오염되거나 덮어씌워지지 않도록 isCurRound1 다중 방어막 적용\n• onSnapshot 실시간 수신 시 2차 선적 독립성 보장: Firestore 리스너가 호출될 때 2차 선적의 fclSpecs, shipmentType, 일정, 도착보고서가 루트 1차 선적의 기본값으로 폴백(fallback)되지 않고 2차 선적의 독립된 데이터를 온전히 유지하도록 개선\n• 2차 선적 도착보고서 완전 격리: 2차 선적 활성화 시 루트 1차 선적의 도착보고서가 아닌 현재 차수(2차 선적)에 배정된 공급사 및 화물 데이터만 1:1로 매핑되도록 철저히 정제',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.574',
     version: 'v2.8.574',
     date: '2026-09-21',
