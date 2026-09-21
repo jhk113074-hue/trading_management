@@ -830,20 +830,20 @@ export const Layout: React.FC = () => {
       )}
 
       <div className="main-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <header className="header" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <header className="header" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', gap: '16px', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               style={{
                 background: 'transparent',
                 border: 'none',
-                fontSize: '28px',
+                fontSize: '26px',
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '8px',
+                padding: '6px',
                 borderRadius: 'var(--radius-md)',
                 transition: 'background 0.1s',
                 lineHeight: 1
@@ -854,21 +854,21 @@ export const Layout: React.FC = () => {
             >
               ☰
             </button>
-            <div className="header-logo-text" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '8px' }}>
+            <div className="header-logo-text" style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', gap: '8px' }}>
               <span style={{ color: 'var(--primary-color)', marginRight: '2px' }}>YSACC</span>
               <span style={{ color: 'var(--text-primary)' }}>업무포탈</span>
               <span 
                 title={BUILD_FULL_TEXT} 
                 style={{ 
-                  padding: '3px 9px', 
+                  padding: '2px 8px', 
                   background: '#eff6ff', 
                   border: '1px solid #93c5fd', 
                   color: '#1e40af', 
                   borderRadius: '12px', 
-                  fontSize: '12px', 
+                  fontSize: '11.5px', 
                   fontWeight: 750,
                   letterSpacing: '0.02em',
-                  marginLeft: '4px' 
+                  marginLeft: '2px' 
                 }}
               >
                 {APP_VERSION}
@@ -878,123 +878,133 @@ export const Layout: React.FC = () => {
 
           {/* 중앙: 오늘의 기준환율 (USD / EUR / USD/CNY + 새로고침 🔄) */}
           <div 
+            className="header-exchange-container"
             style={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '4px 10px',
-              background: '#f8fafc',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
-              fontSize: '12.5px',
-              color: '#334155',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              zIndex: 10
+              justifyContent: 'center',
+              flex: '1 1 auto',
+              minWidth: 0,
+              padding: '0 8px'
             }}
-            title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
           >
-            <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <span>💵</span>
-              <span>기준환율</span>
-            </span>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-              {/* USD with 30-day moving average & trend */}
-              <span 
-                style={{ 
-                  background: '#fff', 
-                  padding: '2px 8px', 
-                  borderRadius: '4px', 
-                  border: exchangeRates.usdTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.usdTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-                title={`현재: ₩${exchangeRates.usd.toLocaleString()} | 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원)`}
-              >
-                <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 800,
-                  color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b' 
-                }}>
-                  {exchangeRates.usdTrend === 'UP' ? '🔺' : exchangeRates.usdTrend === 'DOWN' ? '🔻' : '➖'}
-                </span>
-                {exchangeRates.usdMa30 && (
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-                    (30일평균 ₩{exchangeRates.usdMa30.toLocaleString()})
-                  </span>
-                )}
-              </span>
-
-              <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
-              </span>
-
-              {/* USD / CNY with 30-day moving average & trend */}
-              <span 
-                style={{ 
-                  background: '#fff', 
-                  padding: '2px 8px', 
-                  borderRadius: '4px', 
-                  border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #fed7aa' : '1px solid #e2e8f0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-                title={`1 USD = ${exchangeRates.cny} CNY | 30일 이동평균: ${exchangeRates.cnyMa30 ?? '-'} CNY (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff})`}
-              >
-                <strong style={{ color: '#d97706' }}>USD/CNY</strong> {exchangeRates.cny.toFixed(2)}
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 800,
-                  color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#d97706' : '#64748b' 
-                }}>
-                  {exchangeRates.cnyTrend === 'UP' ? '🔺' : exchangeRates.cnyTrend === 'DOWN' ? '🔻' : '➖'}
-                </span>
-                {exchangeRates.cnyMa30 && (
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-                    (30일평균 {exchangeRates.cnyMa30.toFixed(2)})
-                  </span>
-                )}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                fetchExchangeRates();
-              }}
-              disabled={exchangeRates.loading}
+            <div 
+              className="header-exchange-widget"
               style={{
-                background: 'none',
-                border: 'none',
-                cursor: exchangeRates.loading ? 'wait' : 'pointer',
-                fontSize: '13px',
-                padding: '2px 4px',
-                borderRadius: '4px',
-                color: exchangeRates.loading ? '#94a3b8' : '#2563eb',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s'
+                gap: '8px',
+                padding: '4px 10px',
+                background: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#334155',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
-              title="실시간 환율 새로고침 🔄"
+              title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
             >
-              <span style={{ display: 'inline-block', transform: exchangeRates.loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>
-                🔄
+              <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+                <span>💵</span>
+                <span>기준환율</span>
               </span>
-            </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', flexShrink: 0 }}>
+                {/* USD with 30-day moving average & trend */}
+                <span 
+                  style={{ 
+                    background: '#fff', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    border: exchangeRates.usdTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.usdTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={`현재: ₩${exchangeRates.usd.toLocaleString()} | 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원)`}
+                >
+                  <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 800,
+                    color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b' 
+                  }}>
+                    {exchangeRates.usdTrend === 'UP' ? '🔺' : exchangeRates.usdTrend === 'DOWN' ? '🔻' : '➖'}
+                  </span>
+                  {exchangeRates.usdMa30 && (
+                    <span className="header-exchange-ma" style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                      (30일평균 ₩{exchangeRates.usdMa30.toLocaleString()})
+                    </span>
+                  )}
+                </span>
+
+                <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                  <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
+                </span>
+
+                {/* USD / CNY with 30-day moving average & trend */}
+                <span 
+                  style={{ 
+                    background: '#fff', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #fed7aa' : '1px solid #e2e8f0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={`1 USD = ${exchangeRates.cny} CNY | 30일 이동평균: ${exchangeRates.cnyMa30 ?? '-'} CNY (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff})`}
+                >
+                  <strong style={{ color: '#d97706' }}>USD/CNY</strong> {exchangeRates.cny.toFixed(2)}
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 800,
+                    color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#d97706' : '#64748b' 
+                  }}>
+                    {exchangeRates.cnyTrend === 'UP' ? '🔺' : exchangeRates.cnyTrend === 'DOWN' ? '🔻' : '➖'}
+                  </span>
+                  {exchangeRates.cnyMa30 && (
+                    <span className="header-exchange-ma" style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                      (30일평균 {exchangeRates.cnyMa30.toFixed(2)})
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fetchExchangeRates();
+                }}
+                disabled={exchangeRates.loading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: exchangeRates.loading ? 'wait' : 'pointer',
+                  fontSize: '13px',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  color: exchangeRates.loading ? '#94a3b8' : '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s'
+                }}
+                title="실시간 환율 새로고침 🔄"
+              >
+                <span style={{ display: 'inline-block', transform: exchangeRates.loading ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s' }}>
+                  🔄
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
             {userProfile && (
-              <span className="header-user-text" style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              <span className="header-user-text" style={{ marginRight: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
@@ -1370,17 +1380,19 @@ export const Layout: React.FC = () => {
             <div className="header-session-time" style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
+              gap: '6px',
+              padding: '0 10px',
+              height: '34px',
+              borderRadius: '4px',
               backgroundColor: '#f8fafc',
-              border: '1px solid var(--border-color)',
-              fontSize: '13.5px',
+              border: '1px solid #cbd5e1',
+              fontSize: '13px',
               fontWeight: 700,
               color: 'var(--text-secondary)',
-              marginRight: '6px',
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap'
             }}>
-              <span className="header-session-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span className="header-session-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                 🔒 남은시간: <span style={{ color: sessionTimeLeft <= 300 ? '#ef4444' : '#0f172a' }}>{formatCountdown(sessionTimeLeft)}</span>
               </span>
               <Button
@@ -1388,7 +1400,7 @@ export const Layout: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={handleExtendSession}
-                style={{ padding: '2px 10px' }}
+                style={{ padding: '0 8px', height: '24px', fontSize: '11.5px', lineHeight: '24px', borderRadius: '4px' }}
               >
                 연장
               </Button>
@@ -1398,20 +1410,28 @@ export const Layout: React.FC = () => {
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-color)',
+              gap: '6px',
+              padding: '0 12px',
+              height: '34px',
+              borderRadius: '4px',
+              border: '1px solid #cbd5e1',
               backgroundColor: '#ffffff',
-              fontSize: '15px',
+              fontSize: '13px',
               fontWeight: 600,
               color: 'var(--text-secondary)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxSizing: 'border-box'
             }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: '1' }}>⚙</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1' }}>⚙</span>
               <span className="header-profile-text">내 정보 수정</span>
             </Link>
-            <Button variant="secondary" onClick={logout} className="header-logout-btn">
+            <Button 
+              variant="secondary" 
+              onClick={logout} 
+              className="header-logout-btn"
+              style={{ height: '34px', padding: '0 12px', fontSize: '13px', borderRadius: '4px', whiteSpace: 'nowrap' }}
+            >
               로그아웃
             </Button>
           </div>

@@ -360,6 +360,18 @@ body {
   }
 }
 
+/* 상단 헤더 기준환율 반응형 겹침 방지 */
+@media (max-width: 1450px) {
+  .header-exchange-ma {
+    display: none !important;
+  }
+}
+@media (max-width: 1180px) {
+  .header-exchange-container {
+    display: none !important;
+  }
+}
+
 /* 모바일 반응형 헤더 & 대시보드 보완 스타일 */
 @media (max-width: 768px) {
   .header {

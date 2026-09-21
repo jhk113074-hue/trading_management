@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.576',
+    version: 'v2.8.576',
+    date: '2026-09-21',
+    category: 'UI/UX',
+    title: '상단 헤더(Header) 기준환율 위젯 및 사용자 프로필 영역 겹침 현상 완벽 방지 및 반응형 레이아웃 개선',
+    content: '• 상단 헤더 절대 위치(absolute) 제거 및 3단 플렉스(Flex) 구조 정립: 기존 좌측 로고, 중앙 절대 위치 환율 위젯, 우측 사용자 영역 간의 충돌 원인이었던 absolute 배치를 flex-1 auto 기반의 반응형 플렉스 구조로 개편하여 어떤 모니터 해상도에서도 환율 위젯과 사용자 프로필 텍스트 및 버튼이 서로 겹치거나 가려지지 않도록 전면 개선\n• 중간 해상도(1180px~1450px) 텍스트 압축 최적화: 환율 항목의 "(30일평균 ...)" 상세 텍스트를 중간 화면에서 자동 숨김 처리하여 위젯 너비를 540px에서 260px로 슬림화하고, 툴팁(title)을 통해 마우스 오버 시 30일 평균 환율을 손쉽게 확인할 수 있도록 개선\n• 1180px 이하 소형 화면 헤더 요소 보호: 너비가 좁아질 경우 환율 위젯이 사용자 영역을 침범하지 않도록 안전 숨김 처리하여 세션 연장, 프로필 수정, 로그아웃 버튼의 사용성 100% 확보\n• 디자인 시스템 표준화: 우측 세션 타이머, 내 정보 수정, 로그아웃 버튼의 높이(34px), 테두리(border-radius: 4px), 폰트 가독성을 YSACC 디자인 표준 규격에 완벽 일치',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.575',
     version: 'v2.8.575',
     date: '2026-09-21',
