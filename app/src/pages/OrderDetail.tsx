@@ -2648,8 +2648,25 @@ export const OrderDetail: React.FC = () => {
       currentRounds = currentRounds.map(r => r.id === targetRoundId ? { ...r, packingList: targetPackingList } : r);
     }
 
-    // 3. 대상 차수의 독립 도착보고서 준비
-    const targetArrivalReports = targetRound.supplierArrivalReports || {};
+    // 3. 대상 차수의 독립 도착보고서 준비 (2차 이상일 경우 본 차수 컨테이너에 없는 타 공급사 오염 즉시 제거)
+    let targetArrivalReports = { ...(targetRound.supplierArrivalReports || {}) };
+    if (targetRound.roundNumber > 1) {
+      const validSuppliers = new Set<string>();
+      (targetPackingList?.containers || []).forEach((c: any) => {
+        (c.items || []).forEach((it: any) => {
+          if (it.supplier && it.supplier.trim() && it.supplier !== 'General Supplier' && it.supplier !== '기타 공급사') {
+            validSuppliers.add(it.supplier.trim());
+          }
+        });
+      });
+      Object.keys(targetArrivalReports).forEach(sup => {
+        const matches = Array.from(validSuppliers).some(vs => isSameSupplier(vs, sup));
+        if (!matches) {
+          delete targetArrivalReports[sup];
+        }
+      });
+      currentRounds = currentRounds.map(r => r.id === targetRoundId ? { ...r, supplierArrivalReports: targetArrivalReports } : r);
+    }
 
     // 4. 상태 갱신
     activeRoundIdRef.current = targetRoundId;
@@ -3564,10 +3581,27 @@ export const OrderDetail: React.FC = () => {
               'CONTAINER-01'
             );
           }
+          // Round 2+ arrival reports auto-heal/purge foreign suppliers
+          let roundReports = { ...(r.supplierArrivalReports || {}) };
+          const validRoundSuppliers = new Set<string>();
+          (roundPL?.containers || []).forEach((c: any) => {
+            (c.items || []).forEach((it: any) => {
+              if (it.supplier && it.supplier.trim() && it.supplier !== 'General Supplier' && it.supplier !== '기타 공급사') {
+                validRoundSuppliers.add(it.supplier.trim());
+              }
+            });
+          });
+          Object.keys(roundReports).forEach(sup => {
+            const matches = Array.from(validRoundSuppliers).some(vs => isSameSupplier(vs, sup));
+            if (!matches) {
+              delete roundReports[sup];
+            }
+          });
+
           return {
             ...r,
             packingList: roundPL,
-            supplierArrivalReports: r.supplierArrivalReports || {}
+            supplierArrivalReports: roundReports
           };
         });
 
@@ -4409,6 +4443,50 @@ export const OrderDetail: React.FC = () => {
     });
   }, [groupedSupplierItems, order, orderItems, sourcingItems, basicForm?.packingList, suppliersList]);
 
+  // 활성 선적 차수 전용 공급사 목록 (분할 선적 2차 이상일 때 해당 차수 컨테이너/배정 품목 공급사만 필터링)
+  const activeRoundSuppliers = useMemo(() => {
+    if (!isSplitShipment || !activeRound || activeRound.roundNumber <= 1) {
+      return allOrderSuppliers;
+    }
+    const roundSuppliersSet = new Set<string>();
+
+    if (basicForm.packingList?.containers) {
+      basicForm.packingList.containers.forEach((c: any) => {
+        (c.items || []).forEach((it: any) => {
+          if (it.supplier && it.supplier.trim() && it.supplier !== 'General Supplier' && it.supplier !== '기타 공급사') {
+            roundSuppliersSet.add(it.supplier.trim());
+          }
+        });
+      });
+    }
+
+    if (activeRound.allocatedItems) {
+      activeRound.allocatedItems.forEach((ai: any) => {
+        if (Number(ai.shippedQty) > 0) {
+          const matched = (orderItems || []).find((oi: any) => 
+            (ai.itemId && oi.itemId === ai.itemId) || 
+            (ai.productCode && oi.productCode === ai.productCode)
+          );
+          const sup = matched?.supplier || (ai as any).supplier;
+          if (sup && sup.trim() && sup !== 'General Supplier' && sup !== '기타 공급사') {
+            roundSuppliersSet.add(sup.trim());
+          }
+        }
+      });
+    }
+
+    const filtered = allOrderSuppliers.filter(s => 
+      Array.from(roundSuppliersSet).some(rs => isSameSupplier(rs, s))
+    );
+    roundSuppliersSet.forEach(rs => {
+      if (!filtered.some(fs => isSameSupplier(fs, rs))) {
+        filtered.push(rs);
+      }
+    });
+
+    return filtered;
+  }, [isSplitShipment, activeRound, basicForm.packingList, orderItems, allOrderSuppliers]);
+
   // Direct volume update handler to prevent onSnapshot overwrite race-conditions
   const handleUpdateVolumeDataDirectly = async (shipmentType: 'LCL' | 'FCL', fclSpecs: any[]) => {
     if (!order) return;
@@ -4682,7 +4760,25 @@ export const OrderDetail: React.FC = () => {
               exportDeclarationNo: basicForm.exportDeclarationNo,
               customsExchangeRate: basicForm.customsExchangeRate,
               packingList: basicForm.packingList,
-              supplierArrivalReports: curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {}
+              supplierArrivalReports: (() => {
+                const rep = { ...(curOrder?.supplierArrivalReports || (curBasicForm as any).supplierArrivalReports || {}) };
+                if (r.roundNumber > 1 && basicForm.packingList?.containers) {
+                  const vSups = new Set<string>();
+                  basicForm.packingList.containers.forEach((c: any) => {
+                    (c.items || []).forEach((it: any) => {
+                      if (it.supplier && it.supplier.trim() && it.supplier !== 'General Supplier' && it.supplier !== '기타 공급사') {
+                        vSups.add(it.supplier.trim());
+                      }
+                    });
+                  });
+                  Object.keys(rep).forEach(k => {
+                    if (!Array.from(vSups).some(vs => isSameSupplier(vs, k))) {
+                      delete rep[k];
+                    }
+                  });
+                }
+                return rep;
+              })()
             };
           }
           return r;
@@ -5296,18 +5392,35 @@ export const OrderDetail: React.FC = () => {
     });
     if (grandTotalPlt === 0) grandTotalPlt = 1;
 
+    const curActiveRound = activeRound;
+    const isRound2Plus = isSplitShipment && curActiveRound && curActiveRound.roundNumber > 1;
+
     const updatedReports: any = { ...(currentReports || {}) };
 
     const containerSuppliers: string[] = [];
     containers.forEach((container: any) => {
       (container.items || []).forEach((it: any) => {
-        if (it.supplier && it.supplier.trim()) {
+        if (it.supplier && it.supplier.trim() && it.supplier !== 'General Supplier' && it.supplier !== '기타 공급사') {
           containerSuppliers.push(it.supplier.trim());
         }
       });
     });
-    const targetSuppliers = Array.from(new Set([...allOrderSuppliers, ...containerSuppliers]))
-      .filter(s => s && s.trim() && s !== 'General Supplier');
+
+    const uniqueContainerSuppliers = Array.from(new Set(containerSuppliers));
+
+    if (isRound2Plus) {
+      // 2차 선적 이상: 본 차수 컨테이너에 적재되지 않은 타 차수 외래 공급사는 도착보고서에서 즉시 제거
+      Object.keys(updatedReports).forEach(supKey => {
+        const isInContainer = uniqueContainerSuppliers.some(cs => isSameSupplier(cs, supKey));
+        if (!isInContainer) {
+          delete updatedReports[supKey];
+        }
+      });
+    }
+
+    const targetSuppliers = isRound2Plus
+      ? uniqueContainerSuppliers
+      : Array.from(new Set([...allOrderSuppliers, ...containerSuppliers])).filter(s => s && s.trim() && s !== 'General Supplier' && s !== '기타 공급사');
 
     targetSuppliers.forEach((supplierName: string) => {
       let matchingItems: any[] = [];
@@ -8918,8 +9031,13 @@ ${downloadLink}`;
 
       const matchingPkgNos = Array.from(new Set(matchingItems.map(m => m.pkgNo).filter(Boolean)));
       const currentPkgNos = Array.from(new Set(packingItemsList.map((p: any) => p.pkgNo).filter(Boolean)));
+      const hasMismatchedTotalPlts = packingItemsList.some((p: any) => {
+        const m = (p.marks || '').match(/PALLET NO\.\s*:\s*\d+\s*\/\s*(\d+)/i);
+        return m && Number(m[1]) !== grandTotalPlt;
+      });
       const isCorrupted = (matchingPkgNos.length > 1 && currentPkgNos.length <= 1) || 
-                          (packingItemsList.length > 0 && matchingItems.length > 0 && packingItemsList.length !== matchingItems.length);
+                          (packingItemsList.length > 0 && matchingItems.length > 0 && packingItemsList.length !== matchingItems.length) ||
+                          hasMismatchedTotalPlts;
 
       if (matchingItems.length > 0 && (packingItemsList.length === 0 || isCorrupted)) {
         packingItemsList = [];
@@ -14170,12 +14288,12 @@ ${downloadLink}`;
                     </div>
                   )}
 
-                  {allOrderSuppliers.length === 0 ? (
+                  {activeRoundSuppliers.length === 0 ? (
                     <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14.5px' }}>
                       등록된 제조사(공급업체) 정보가 없습니다.
                     </div>
                   ) : (
-                    allOrderSuppliers.map(supplierName => {
+                    activeRoundSuppliers.map(supplierName => {
                       const items = groupedSupplierItems[supplierName] || [];
                       const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
                     basicForm.issuingCompany || order.issuingCompany || 'YSACC',
@@ -14271,11 +14389,16 @@ ${downloadLink}`;
 
                       // Recurrence Prevention & Self-Healing:
                       // Check if saved arrival report data was corrupted (e.g. multiple distinct pallets in container collapsed into single pallet No in report)
-                      // or if container item count changed
+                      // or if container item count changed or total pallet count mismatches current round
                       const matchingPkgNos = Array.from(new Set(matchingContainerItems.map(m => m.pkgNo).filter(Boolean)));
                       const currentPkgNos = Array.from(new Set(packingItemsList.map((p: any) => p.pkgNo).filter(Boolean)));
+                      const hasMismatchedTotalPlts = packingItemsList.some((p: any) => {
+                        const m = (p.marks || '').match(/PALLET NO\.\s*:\s*\d+\s*\/\s*(\d+)/i);
+                        return m && Number(m[1]) !== grandTotalPlt;
+                      });
                       const isCorrupted = (matchingPkgNos.length > 1 && currentPkgNos.length <= 1) ||
-                                          (packingItemsList.length > 0 && matchingContainerItems.length > 0 && packingItemsList.length !== matchingContainerItems.length);
+                                          (packingItemsList.length > 0 && matchingContainerItems.length > 0 && packingItemsList.length !== matchingContainerItems.length) ||
+                                          hasMismatchedTotalPlts;
 
                       if (matchingContainerItems.length > 0 && (packingItemsList.length === 0 || isCorrupted)) {
                         packingItemsList = buildItemsFromContainer(matchingContainerItems, grandTotalPlt);
@@ -14352,16 +14475,28 @@ ${downloadLink}`;
                         }];
                       }
 
+                      const cleanRoundReports = (reports: any) => {
+                        const res = { ...reports };
+                        if (isSplitShipment && activeRound && activeRound.roundNumber > 1) {
+                          Object.keys(res).forEach(k => {
+                            if (!activeRoundSuppliers.some(as => isSameSupplier(as, k))) {
+                              delete res[k];
+                            }
+                          });
+                        }
+                        return res;
+                      };
+
                       const updateArrivalReportItem = (itemIdx: number, field: string, val: any) => {
                         const nextItems = [...packingItemsList];
                         nextItems[itemIdx] = { ...nextItems[itemIdx], [field]: val };
-                        const updatedReports = {
+                        const updatedReports = cleanRoundReports({
                           ...(order.supplierArrivalReports || {}),
                           [supplierName]: {
                             ...repData,
                             packingItems: nextItems
                           }
-                        };
+                        });
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
                         setShipmentRounds(prev => {
                           const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
@@ -14377,13 +14512,13 @@ ${downloadLink}`;
                             nextItems[startIdx + g] = { ...nextItems[startIdx + g], [field]: val };
                           }
                         }
-                        const updatedReports = {
+                        const updatedReports = cleanRoundReports({
                           ...(order.supplierArrivalReports || {}),
                           [supplierName]: {
                             ...repData,
                             packingItems: nextItems
                           }
-                        };
+                        });
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
                         setShipmentRounds(prev => {
                           const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
@@ -14402,13 +14537,13 @@ ${downloadLink}`;
                           grossWeight: 0,
                           measurement: ''
                         }];
-                        const updatedReports = {
+                        const updatedReports = cleanRoundReports({
                           ...(order.supplierArrivalReports || {}),
                           [supplierName]: {
                             ...repData,
                             packingItems: nextItems
                           }
-                        };
+                        });
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
                         setShipmentRounds(prev => {
                           const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
@@ -14420,13 +14555,13 @@ ${downloadLink}`;
                       const removeArrivalReportItemRow = (itemIdx: number) => {
                         if (packingItemsList.length <= 1) return;
                         const nextItems = packingItemsList.filter((_, idx) => idx !== itemIdx);
-                        const updatedReports = {
+                        const updatedReports = cleanRoundReports({
                           ...(order.supplierArrivalReports || {}),
                           [supplierName]: {
                             ...repData,
                             packingItems: nextItems
                           }
-                        };
+                        });
                         setOrder(prev => prev ? { ...prev, supplierArrivalReports: updatedReports } : prev);
                         setShipmentRounds(prev => {
                           const updated = prev.map(r => r.id === activeRoundId ? { ...r, supplierArrivalReports: updatedReports } : r);
@@ -14963,13 +15098,13 @@ ${downloadLink}`;
                                   const canonicalMatch = suppliersList.find(s => isSameSupplier(s.name, supplierName));
                                   const targetKey = canonicalMatch?.name || supplierName;
 
-                                  const updatedReports = {
+                                  const updatedReports = cleanRoundReports({
                                     ...(order.supplierArrivalReports || {}),
                                     [targetKey]: {
                                       ...repData,
                                       packingItems: refreshedList
                                     }
-                                  };
+                                  });
                                   Object.keys(updatedReports).forEach(k => {
                                     if (k !== targetKey && isSameSupplier(k, targetKey)) {
                                       delete updatedReports[k];

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.574',
+    version: 'v2.8.574',
+    date: '2026-09-21',
+    category: '버그수정',
+    title: '2차 선적 도착보고서 타 차수(1차 선적) 공급사 노출 및 구 데이터 혼입 결함 완전 해결',
+    content: '• 2차 선적 도착보고 공급사 목록 격리(activeRoundSuppliers): 주문 전체 공급사가 아닌 2차 선적 컨테이너 적재 및 차수 배정 품목에 존재하는 공급사((주)하나테크, (주)진보산업 등)만 도착보고 카드에 노출되도록 근본 수정 (1차 선적 공급사인 "주식회사 정도"가 2차 선적 도착보고에 나타나던 문제 완전 제거)\n• 차수별 쉬핑마크 파렛트 번호 및 총 수량 자가 치유(Self-Healing): 2차 선적의 전체 파렛트 수량(grandTotalPlt)과 일치하지 않는 과거 1차 선적 쉬핑마크(예: "PALLET NO. : 1 / 24")가 남아있는 경우, 현재 활성 차수 컨테이너 데이터에 맞춰 "PALLET NO. : 1 / 5" 형식으로 즉시 자동 복원\n• 도착보고서 저장 및 동기화 시 타 차수 외래 공급사 자동 살균(Sanitization): 2차 이상 선적 작업 중 패킹리스트 동기화, 행 추가/수정, 전체 저장 실행 시 현재 차수 컨테이너에 속하지 않는 타 차수 공급사 데이터가 저장 도큐먼트에 유입되지 않도록 원천 차단\n• 선적 차수 전환 및 실시간 동기화 시 도착보고서 격리 유지: 1차 선적과 2차 선적을 오갈 때 각 차수에 속한 공급사와 파렛트 데이터만 정확히 표시되도록 다계층 방어 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.573',
     version: 'v2.8.573',
     date: '2026-09-21',
