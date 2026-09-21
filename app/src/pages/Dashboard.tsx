@@ -139,6 +139,7 @@ const WorldClocks: React.FC = () => {
   const [time, setTime] = useState(new Date());
   const [clocks, setClocks] = useState<any[]>(DEFAULT_CLOCKS);
   const [showSettings, setShowSettings] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // New country form states
   const [newLabel, setNewLabel] = useState('');
@@ -173,6 +174,12 @@ const WorldClocks: React.FC = () => {
       });
     } catch {
       return '';
+    }
+  };
+
+  const handleScroll = (delta: number) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
     }
   };
 
@@ -214,52 +221,209 @@ const WorldClocks: React.FC = () => {
     }
   };
 
+  const handleResetDefaults = async () => {
+    if (!window.confirm("세계 시각 목록을 기본 9개국으로 초기화하시겠습니까?")) return;
+    try {
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "world_clocks");
+      await setDoc(docRef, { list: DEFAULT_CLOCKS });
+    } catch (err) {
+      console.error(err);
+      alert("초기화 실패");
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', minWidth: 0 }}>
       <div 
-        className="world-clock-bar"
         style={{ 
           display: 'flex', 
-          gap: '8px', 
           alignItems: 'center', 
           background: '#f8fafc', 
-          padding: '4px 10px', 
-          borderRadius: '6px', 
+          padding: '3px 6px', 
+          borderRadius: '8px', 
           border: '1px solid #e2e8f0', 
-          whiteSpace: 'nowrap', 
-          overflowX: 'auto', 
           width: '100%', 
-          justifyContent: 'flex-start', 
-          position: 'relative',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          boxSizing: 'border-box',
+          gap: '5px',
+          minWidth: 0
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '1px 6px', flexShrink: 0, marginRight: '2px' }}>
-          <span style={{ fontSize: '10.5px', fontWeight: 750, color: '#475569' }}>🌐 세계 시각</span>
+        {/* 좌측 고정 타이틀 배지 */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '5px',
+          padding: '3px 8px',
+          flexShrink: 0,
+          boxShadow: '0 1px 2px rgba(59,130,246,0.08)'
+        }}>
+          <span style={{ fontSize: '11px' }}>🌐</span>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e40af', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>세계 시각</span>
         </div>
-        {clocks.map((c, idx) => (
-          <React.Fragment key={c.zone + '_' + idx}>
-            {idx > 0 && <span style={{ color: '#cbd5e1', fontSize: '9px' }}>•</span>}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 600, color: '#334155', flexShrink: 0 }}>
-              <img 
-                src={`https://flagcdn.com/w20/${c.code}.png`}
-                srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
-                width="14" 
-                height="10" 
-                alt={c.label} 
-                style={{ borderRadius: '2px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
-              />
-              <span style={{ color: '#64748b', fontSize: '10px', fontWeight: 600 }}>{c.label}</span>
-              <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, letterSpacing: '-0.02em' }}>{formatTime(c.zone)}</span>
-            </div>
-          </React.Fragment>
-        ))}
+
+        {/* 좌측 스크롤 화살표 버튼 */}
+        <button
+          type="button"
+          onClick={() => handleScroll(-140)}
+          style={{
+            width: '20px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#475569',
+            cursor: 'pointer',
+            flexShrink: 0,
+            padding: 0,
+            transition: 'all 0.15s ease'
+          }}
+          title="이전 국가 시각 보기"
+          onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+        >
+          ‹
+        </button>
+
+        {/* 가로 스크롤 국가 시각 칩 목록 */}
+        <div
+          ref={scrollContainerRef}
+          className="world-clock-scroll"
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            minWidth: 0,
+            padding: '1px 2px'
+          }}
+        >
+          {clocks.map((c, idx) => {
+            const isKr = c.code === 'kr';
+            const currentTimeStr = formatTime(c.zone);
+            return (
+              <div
+                key={c.zone + '_' + idx}
+                title={`${c.label} (${c.zone}) - 현재시각: ${currentTimeStr}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: isKr ? '#eff6ff' : '#ffffff',
+                  border: `1px solid ${isKr ? '#93c5fd' : '#e2e8f0'}`,
+                  borderRadius: '6px',
+                  padding: '2.5px 7px',
+                  flexShrink: 0,
+                  boxShadow: isKr ? '0 1px 3px rgba(37,99,235,0.1)' : '0 1px 2px rgba(0,0,0,0.03)',
+                  transition: 'all 0.15s ease',
+                  cursor: 'default',
+                  userSelect: 'none'
+                }}
+                onMouseEnter={ev => {
+                  ev.currentTarget.style.borderColor = '#3b82f6';
+                  ev.currentTarget.style.transform = 'translateY(-1px)';
+                  ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+                }}
+                onMouseLeave={ev => {
+                  ev.currentTarget.style.borderColor = isKr ? '#93c5fd' : '#e2e8f0';
+                  ev.currentTarget.style.transform = 'none';
+                  ev.currentTarget.style.boxShadow = isKr ? '0 1px 3px rgba(37,99,235,0.1)' : '0 1px 2px rgba(0,0,0,0.03)';
+                }}
+              >
+                <img 
+                  src={`https://flagcdn.com/w20/${c.code}.png`}
+                  srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
+                  width="15" 
+                  height="11" 
+                  alt={c.label} 
+                  style={{ borderRadius: '2px', border: '1px solid rgba(0,0,0,0.12)', objectFit: 'cover', display: 'inline-block' }} 
+                />
+                <span style={{
+                  color: isKr ? '#1d4ed8' : '#334155',
+                  fontSize: '11px',
+                  fontWeight: isKr ? 800 : 700,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {c.label}
+                </span>
+                <span style={{
+                  color: isKr ? '#1e40af' : '#0f172a',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  letterSpacing: '-0.02em',
+                  background: isKr ? '#dbeafe' : '#f1f5f9',
+                  padding: '1px 5px',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {currentTimeStr}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 우측 스크롤 화살표 버튼 */}
+        <button
+          type="button"
+          onClick={() => handleScroll(140)}
+          style={{
+            width: '20px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#475569',
+            cursor: 'pointer',
+            flexShrink: 0,
+            padding: 0,
+            transition: 'all 0.15s ease'
+          }}
+          title="다음 국가 시각 보기"
+          onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+        >
+          ›
+        </button>
+
+        {/* 세계 시각 관리 설정 버튼 */}
         <button
           type="button"
           onClick={() => setShowSettings(!showSettings)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: '1px 3px', marginLeft: '4px', color: '#64748b', flexShrink: 0 }}
+          style={{
+            height: '24px',
+            padding: '0 6px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showSettings ? '#eff6ff' : '#ffffff',
+            border: `1px solid ${showSettings ? '#3b82f6' : '#cbd5e1'}`,
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            color: showSettings ? '#2563eb' : '#475569',
+            flexShrink: 0,
+            transition: 'all 0.15s ease'
+          }}
           title="세계 시각 국가 추가/관리"
+          onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = showSettings ? '#eff6ff' : '#ffffff'; }}
         >
           ⚙️
         </button>
@@ -267,27 +431,52 @@ const WorldClocks: React.FC = () => {
 
       {/* Inline Settings Panel */}
       {showSettings && (
-        <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>⚙️ 세계 시각 표시 국가 관리</span>
-            <button type="button" onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕ 닫기</button>
+            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              ⚙️ 세계 시각 표시 국가 관리 <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>({clocks.length}개국 등록됨)</span>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                style={{ height: '26px', padding: '0 8px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#475569', fontWeight: 700 }}
+              >
+                기본값 복원
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSettings(false)}
+                style={{ height: '26px', padding: '0 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#475569', fontWeight: 700 }}
+              >
+                ✕ 닫기
+              </button>
+            </div>
           </div>
 
           {/* Current Countries List with delete actions */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-default)' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
             {clocks.map((c, idx) => (
-              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', background: '#f1f5f9', color: '#334155', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
-                <img src={`https://flagcdn.com/w20/${c.code}.png`} width="12" height="9" alt={c.label} style={{ objectFit: 'cover' }} />
+              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: 700, background: '#f8fafc', color: '#334155', padding: '3px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                <img src={`https://flagcdn.com/w20/${c.code}.png`} width="13" height="10" alt={c.label} style={{ objectFit: 'cover', borderRadius: '1.5px' }} />
                 <span>{c.label}</span>
-                <button type="button" onClick={() => handleRemoveCountry(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontSize: '10px', color: '#ef4444', fontWeight: 'bold' }}>✕</button>
+                <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>({formatTime(c.zone)})</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCountry(idx)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}
+                  title="삭제"
+                >
+                  ✕
+                </button>
               </span>
             ))}
           </div>
 
           {/* Add Form */}
           <form onSubmit={handleAddCountry} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr auto', gap: '8px', alignItems: 'end' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: '1 / span 4', marginBottom: '4px' }}>
-              <label style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 800 }}>🌐 빠른 국가/지역 프리셋 선택</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: '1 / span 4', marginBottom: '2px' }}>
+              <label style={{ fontSize: '11px', color: '#2563eb', fontWeight: 800 }}>🌐 빠른 국가/지역 프리셋 선택</label>
               <select 
                 onChange={e => {
                   const val = e.target.value;
@@ -300,7 +489,7 @@ const WorldClocks: React.FC = () => {
                     }
                   }
                 }}
-                style={{ padding: '6px 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff', color: '#1e3a8a', fontWeight: 700, cursor: 'pointer' }}
+                style={{ height: '34px', padding: '0 8px', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '12.5px', outline: 'none', backgroundColor: '#eff6ff', color: '#1e40af', fontWeight: 700, cursor: 'pointer' }}
               >
                 <option value="">-- 주요 국가/도시 목록에서 선택 --</option>
                 {PRESET_COUNTRIES.map((p, idx) => (
@@ -310,38 +499,43 @@ const WorldClocks: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>국가 한글명</label>
+              <label style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>국가 한글명</label>
               <input 
                 type="text" 
                 placeholder="예: 일본" 
                 value={newLabel} 
                 onChange={e => setNewLabel(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                style={{ height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', fontWeight: 600, color: '#1e293b' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>국가코드 (ISO 2자리)</label>
+              <label style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>국가코드 (ISO 2자리)</label>
               <input 
                 type="text" 
                 placeholder="예: jp" 
                 value={newCode} 
                 onChange={e => setNewCode(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                style={{ height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', fontWeight: 600, color: '#1e293b' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>표준 시간대</label>
+              <label style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>표준 시간대</label>
               <select 
                 value={newZone} 
                 onChange={e => setNewZone(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', backgroundColor: '#fff' }}
+                style={{ height: '34px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff', fontWeight: 600, color: '#1e293b' }}
               >
                 {COMMON_TIMEZONES.map(z => (
                   <option key={z.value} value={z.value}>{z.label}</option>
                 ))}
               </select>
             </div>
-            <button type="submit" style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '31px' }}>
+            <button
+              type="submit"
+              style={{ height: '34px', padding: '0 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 750, cursor: 'pointer', transition: 'all 0.15s ease', whiteSpace: 'nowrap' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}
+            >
               ＋ 국가 추가
             </button>
           </form>
@@ -1910,7 +2104,8 @@ export const Dashboard: React.FC = () => {
           text-overflow: clip !important;
           max-width: none !important;
         }
-        .world-clock-bar::-webkit-scrollbar {
+        .world-clock-bar::-webkit-scrollbar,
+        .world-clock-scroll::-webkit-scrollbar {
           display: none;
         }
         .custom-scrollbar::-webkit-scrollbar {
