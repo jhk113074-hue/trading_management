@@ -57,30 +57,54 @@ export const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeNotificationTask, setActiveNotificationTask] = useState<Task | null>(null);
 
-  // 실시간 기준환율 및 USD/CNY 30일 이동평균(MA30) 상태
+  // 실시간 기준환율, 최근 3일간 오름/내림 트랜드 및 30일 이동평균(MA30) 상태
   const [exchangeRates, setExchangeRates] = useState<{
     usd: number;
     usdMa30: number | null;
     usdTrend: 'UP' | 'DOWN' | 'SAME';
     usdDiff: number;
+    usd3dRate: number | null;
+    usd3dDate: string;
+
     eur: number;
+    eurMa30: number | null;
+    eurTrend: 'UP' | 'DOWN' | 'SAME';
+    eurDiff: number;
+    eur3dRate: number | null;
+    eur3dDate: string;
+
     cny: number;
     cnyMa30: number | null;
     cnyTrend: 'UP' | 'DOWN' | 'SAME';
     cnyDiff: number;
+    cny3dRate: number | null;
+    cny3dDate: string;
+
     time: string;
     loading: boolean;
     error: boolean;
   }>({
-    usd: 1391,
-    usdMa30: 1432.8,
+    usd: 1375.6,
+    usdMa30: 1369.2,
     usdTrend: 'DOWN',
-    usdDiff: -41.8,
-    eur: 1620,
-    cny: 6.75,
-    cnyMa30: 6.75,
+    usdDiff: -7.0,
+    usd3dRate: 1382.6,
+    usd3dDate: '',
+
+    eur: 1578.0,
+    eurMa30: 1588.2,
+    eurTrend: 'DOWN',
+    eurDiff: -9.3,
+    eur3dRate: 1587.3,
+    eur3dDate: '',
+
+    cny: 6.71,
+    cnyMa30: 6.72,
     cnyTrend: 'SAME',
     cnyDiff: 0,
+    cny3dRate: 6.71,
+    cny3dDate: '',
+
     time: '',
     loading: false,
     error: false,
@@ -93,69 +117,112 @@ export const Layout: React.FC = () => {
       const res = await fetch('https://open.er-api.com/v6/latest/USD');
       if (!res.ok) throw new Error('환율 정보를 불러올 수 없습니다.');
       const data = await res.json();
-      const krw = data.rates?.KRW || 1390;
-      const eur = data.rates?.EUR ? krw / data.rates.EUR : 1620;
-      const usdToCny = data.rates?.CNY || 6.75; // 1 USD = ? CNY
+      const krw = data.rates?.KRW || 1375.6;
+      const eurRate = data.rates?.EUR ? krw / data.rates.EUR : 1578;
+      const usdToCny = data.rates?.CNY || 6.71;
       
       const currentUsd = Math.round(krw * 10) / 10;
       try {
         localStorage.setItem('site_live_usd_rate', String(currentUsd));
       } catch (_) {}
+      const currentEur = Math.round(eurRate * 10) / 10;
       const currentCny = Math.round(usdToCny * 100) / 100;
+
       let calculatedMa30: number | null = null;
       let calculatedTrend: 'UP' | 'DOWN' | 'SAME' = 'SAME';
       let calculatedDiff = 0;
+      let calculatedUsd3dRate: number | null = null;
+      let calculatedUsdDate = '';
+
+      let calculatedEurMa30: number | null = null;
+      let calculatedEurTrend: 'UP' | 'DOWN' | 'SAME' = 'SAME';
+      let calculatedEurDiff = 0;
+      let calculatedEur3dRate: number | null = null;
+      let calculatedEurDate = '';
 
       let calculatedCnyMa30: number | null = null;
       let calculatedCnyTrend: 'UP' | 'DOWN' | 'SAME' = 'SAME';
       let calculatedCnyDiff = 0;
+      let calculatedCny3dRate: number | null = null;
+      let calculatedCnyDate = '';
 
-      // 2. 30일 전 과거 데이터 호출하여 USD(KRW) & USD/CNY 30일 이동평균(MA 30) 산출
+      // 2. 과거 35일간의 일별 데이터를 호출하여 30일 이동평균 및 최근 3일간 오름/내림 트랜드 정밀 산출
       try {
         const d = new Date();
         const end = d.toISOString().split('T')[0];
-        d.setDate(d.getDate() - 30);
+        d.setDate(d.getDate() - 35);
         const start = d.toISOString().split('T')[0];
 
-        // USD (KRW) 30일 데이터
-        const histRes = await fetch(`https://api.frankfurter.dev/v1/${start}..${end}?base=USD&symbols=KRW`);
+        const histRes = await fetch(`https://api.frankfurter.dev/v1/${start}..${end}?base=USD&symbols=KRW,CNY,EUR`);
         if (histRes.ok) {
           const histData = await histRes.json();
-          const rateValues: number[] = Object.values(histData.rates || {}).map((r: any) => r.KRW);
-          if (rateValues.length > 0) {
-            const sum = rateValues.reduce((a, b) => a + b, 0);
-            calculatedMa30 = Math.round((sum / rateValues.length) * 10) / 10;
-            calculatedDiff = Math.round((currentUsd - calculatedMa30) * 10) / 10;
-            if (calculatedDiff > 1) {
-              calculatedTrend = 'UP';
-            } else if (calculatedDiff < -1) {
-              calculatedTrend = 'DOWN';
-            } else {
-              calculatedTrend = 'SAME';
-            }
-          }
-        }
+          const dates = Object.keys(histData.rates || {}).sort();
+          
+          if (dates.length > 0) {
+            // 최근 3영업일 전 기준 날짜 (예: 2026-09-17)
+            const last3Dates = dates.slice(-3);
+            const date3dAgo = last3Dates[0] || dates[dates.length - 1];
 
-        // USD/CNY 30일 데이터
-        const cnyHistRes = await fetch(`https://api.frankfurter.dev/v1/${start}..${end}?base=USD&symbols=CNY`);
-        if (cnyHistRes.ok) {
-          const cnyHistData = await cnyHistRes.json();
-          const cnyRateValues: number[] = Object.values(cnyHistData.rates || {}).map((r: any) => r.CNY);
-          if (cnyRateValues.length > 0) {
-            const cnySum = cnyRateValues.reduce((a, b) => a + b, 0);
-            calculatedCnyMa30 = Math.round((cnySum / cnyRateValues.length) * 100) / 100;
-            calculatedCnyDiff = Math.round((currentCny - calculatedCnyMa30) * 100) / 100;
-            if (calculatedCnyDiff > 0.01) {
-              calculatedCnyTrend = 'UP';
-            } else if (calculatedCnyDiff < -0.01) {
-              calculatedCnyTrend = 'DOWN';
-            } else {
-              calculatedCnyTrend = 'SAME';
+            // ── (1) USD / KRW: 30일 이동평균 & 최근 3일 오름/내림 트랜드 ──
+            const usdValues = dates.map(dt => histData.rates[dt]?.KRW).filter(Boolean) as number[];
+            if (usdValues.length > 0) {
+              calculatedMa30 = Math.round((usdValues.reduce((a, b) => a + b, 0) / usdValues.length) * 10) / 10;
+              const rate3d = histData.rates[date3dAgo]?.KRW || currentUsd;
+              calculatedUsd3dRate = Math.round(rate3d * 10) / 10;
+              calculatedDiff = Math.round((currentUsd - rate3d) * 10) / 10;
+              calculatedUsdDate = date3dAgo;
+              if (calculatedDiff >= 0.5) {
+                calculatedTrend = 'UP';
+              } else if (calculatedDiff <= -0.5) {
+                calculatedTrend = 'DOWN';
+              } else {
+                calculatedTrend = 'SAME';
+              }
+            }
+
+            // ── (2) USD / CNY: 30일 이동평균 & 최근 3일 오름/내림 트랜드 ──
+            const cnyValues = dates.map(dt => histData.rates[dt]?.CNY).filter(Boolean) as number[];
+            if (cnyValues.length > 0) {
+              calculatedCnyMa30 = Math.round((cnyValues.reduce((a, b) => a + b, 0) / cnyValues.length) * 100) / 100;
+              const rate3dCny = histData.rates[date3dAgo]?.CNY || currentCny;
+              calculatedCny3dRate = Math.round(rate3dCny * 100) / 100;
+              calculatedCnyDiff = Math.round((currentCny - rate3dCny) * 100) / 100;
+              calculatedCnyDate = date3dAgo;
+              if (calculatedCnyDiff >= 0.005) {
+                calculatedCnyTrend = 'UP';
+              } else if (calculatedCnyDiff <= -0.005) {
+                calculatedCnyTrend = 'DOWN';
+              } else {
+                calculatedCnyTrend = 'SAME';
+              }
+            }
+
+            // ── (3) EUR / KRW: 30일 이동평균 & 최근 3일 오름/내림 트랜드 ──
+            const eurValues = dates.map(dt => {
+              const k = histData.rates[dt]?.KRW;
+              const e = histData.rates[dt]?.EUR;
+              return (k && e) ? k / e : null;
+            }).filter(Boolean) as number[];
+            if (eurValues.length > 0) {
+              calculatedEurMa30 = Math.round((eurValues.reduce((a, b) => a + b, 0) / eurValues.length) * 10) / 10;
+              const rate3dEur = (histData.rates[date3dAgo]?.KRW && histData.rates[date3dAgo]?.EUR)
+                ? histData.rates[date3dAgo].KRW / histData.rates[date3dAgo].EUR
+                : currentEur;
+              calculatedEur3dRate = Math.round(rate3dEur * 10) / 10;
+              calculatedEurDiff = Math.round((currentEur - rate3dEur) * 10) / 10;
+              calculatedEurDate = date3dAgo;
+              if (calculatedEurDiff >= 0.5) {
+                calculatedEurTrend = 'UP';
+              } else if (calculatedEurDiff <= -0.5) {
+                calculatedEurTrend = 'DOWN';
+              } else {
+                calculatedEurTrend = 'SAME';
+              }
             }
           }
         }
       } catch (histErr) {
-        console.warn('30일 이동평균 조회 중 오류 (기본값 유지):', histErr);
+        console.warn('3일 트랜드 및 30일 이동평균 조회 중 오류:', histErr);
       }
 
       const now = new Date();
@@ -163,14 +230,23 @@ export const Layout: React.FC = () => {
       
       setExchangeRates({
         usd: currentUsd,
-        usdMa30: calculatedMa30 ?? 1432.8,
+        usdMa30: calculatedMa30 ?? 1369.2,
         usdTrend: calculatedTrend,
         usdDiff: calculatedDiff,
-        eur: Math.round(eur * 10) / 10,
+        usd3dRate: calculatedUsd3dRate,
+        usd3dDate: calculatedUsdDate,
+        eur: currentEur,
+        eurMa30: calculatedEurMa30 ?? 1588.2,
+        eurTrend: calculatedEurTrend,
+        eurDiff: calculatedEurDiff,
+        eur3dRate: calculatedEur3dRate,
+        eur3dDate: calculatedEurDate,
         cny: currentCny,
-        cnyMa30: calculatedCnyMa30 ?? 6.75,
+        cnyMa30: calculatedCnyMa30 ?? 6.72,
         cnyTrend: calculatedCnyTrend,
         cnyDiff: calculatedCnyDiff,
+        cny3dRate: calculatedCny3dRate,
+        cny3dDate: calculatedCnyDate,
         time: timeStr,
         loading: false,
         error: false
@@ -904,7 +980,7 @@ export const Layout: React.FC = () => {
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
-              title={`실시간 매매기준율 (마지막 갱신: ${exchangeRates.time || '조회중'})`}
+              title={`실시간 매매기준율 (최근 3일 오름/내림 트랜드 및 30일 이동평균, 마지막 갱신: ${exchangeRates.time || '조회중'})`}
             >
               <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                 <span>💵</span>
@@ -912,7 +988,7 @@ export const Layout: React.FC = () => {
               </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', flexShrink: 0 }}>
-                {/* USD with 30-day moving average & trend */}
+                {/* USD with 3-day trend & 30-day moving average */}
                 <span 
                   style={{ 
                     background: '#fff', 
@@ -923,15 +999,20 @@ export const Layout: React.FC = () => {
                     alignItems: 'center',
                     gap: '4px'
                   }}
-                  title={`현재: ₩${exchangeRates.usd.toLocaleString()} | 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원)`}
+                  title={`[USD/KRW 환율 동향]\n• 실시간 기준: ₩${exchangeRates.usd.toLocaleString()}\n• 최근 3일간 트랜드: ${exchangeRates.usdTrend === 'UP' ? '▲ 상승' : exchangeRates.usdTrend === 'DOWN' ? '▼ 하락' : '━ 보합'} (${exchangeRates.usdDiff > 0 ? '+' : ''}${exchangeRates.usdDiff}원, ${exchangeRates.usd3dDate ? `${exchangeRates.usd3dDate} ₩${exchangeRates.usd3dRate?.toLocaleString()} 대비` : '3일전 대비'})\n• 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'}`}
                 >
                   <strong style={{ color: '#2563eb' }}>USD</strong> ₩{exchangeRates.usd.toLocaleString()}
                   <span style={{ 
                     fontSize: '11px', 
                     fontWeight: 800,
-                    color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b' 
+                    color: exchangeRates.usdTrend === 'UP' ? '#ef4444' : exchangeRates.usdTrend === 'DOWN' ? '#2563eb' : '#64748b',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px'
                   }}>
-                    {exchangeRates.usdTrend === 'UP' ? '🔺' : exchangeRates.usdTrend === 'DOWN' ? '🔻' : '➖'}
+                    <span>{exchangeRates.usdTrend === 'UP' ? '▲' : exchangeRates.usdTrend === 'DOWN' ? '▼' : '━'}</span>
+                    <span style={{ letterSpacing: '-0.02em' }}>{exchangeRates.usdDiff > 0 ? `+${exchangeRates.usdDiff}` : exchangeRates.usdDiff}</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 700 }}>(3일)</span>
                   </span>
                   {exchangeRates.usdMa30 && (
                     <span className="header-exchange-ma" style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
@@ -940,30 +1021,64 @@ export const Layout: React.FC = () => {
                   )}
                 </span>
 
-                <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                  <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
-                </span>
-
-                {/* USD / CNY with 30-day moving average & trend */}
+                {/* EUR with 3-day trend & 30-day moving average */}
                 <span 
                   style={{ 
                     background: '#fff', 
                     padding: '2px 8px', 
                     borderRadius: '4px', 
-                    border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #fed7aa' : '1px solid #e2e8f0',
+                    border: exchangeRates.eurTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.eurTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px'
                   }}
-                  title={`1 USD = ${exchangeRates.cny} CNY | 30일 이동평균: ${exchangeRates.cnyMa30 ?? '-'} CNY (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff})`}
+                  title={`[EUR/KRW 환율 동향]\n• 실시간 기준: ₩${exchangeRates.eur.toLocaleString()}\n• 최근 3일간 트랜드: ${exchangeRates.eurTrend === 'UP' ? '▲ 상승' : exchangeRates.eurTrend === 'DOWN' ? '▼ 하락' : '━ 보합'} (${exchangeRates.eurDiff > 0 ? '+' : ''}${exchangeRates.eurDiff}원, ${exchangeRates.eur3dDate ? `${exchangeRates.eur3dDate} ₩${exchangeRates.eur3dRate?.toLocaleString()} 대비` : '3일전 대비'})\n• 30일 이동평균: ₩${exchangeRates.eurMa30?.toLocaleString() || '-'}`}
+                >
+                  <strong style={{ color: '#059669' }}>EUR</strong> ₩{exchangeRates.eur.toLocaleString()}
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 800,
+                    color: exchangeRates.eurTrend === 'UP' ? '#ef4444' : exchangeRates.eurTrend === 'DOWN' ? '#2563eb' : '#64748b',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px'
+                  }}>
+                    <span>{exchangeRates.eurTrend === 'UP' ? '▲' : exchangeRates.eurTrend === 'DOWN' ? '▼' : '━'}</span>
+                    <span style={{ letterSpacing: '-0.02em' }}>{exchangeRates.eurDiff > 0 ? `+${exchangeRates.eurDiff}` : exchangeRates.eurDiff}</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 700 }}>(3일)</span>
+                  </span>
+                  {exchangeRates.eurMa30 && (
+                    <span className="header-exchange-ma" style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                      (30일평균 ₩{exchangeRates.eurMa30.toLocaleString()})
+                    </span>
+                  )}
+                </span>
+
+                {/* USD / CNY with 3-day trend & 30-day moving average */}
+                <span 
+                  style={{ 
+                    background: '#fff', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    border: exchangeRates.cnyTrend === 'UP' ? '1px solid #fecaca' : exchangeRates.cnyTrend === 'DOWN' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={`[USD/CNY 환율 동향]\n• 실시간 기준: ${exchangeRates.cny.toFixed(2)}\n• 최근 3일간 트랜드: ${exchangeRates.cnyTrend === 'UP' ? '▲ 상승' : exchangeRates.cnyTrend === 'DOWN' ? '▼ 하락' : '━ 보합'} (${exchangeRates.cnyDiff > 0 ? '+' : ''}${exchangeRates.cnyDiff.toFixed(2)}, ${exchangeRates.cny3dDate ? `${exchangeRates.cny3dDate} ${exchangeRates.cny3dRate?.toFixed(2)} 대비` : '3일전 대비'})\n• 30일 이동평균: ${exchangeRates.cnyMa30?.toFixed(2) || '-'}`}
                 >
                   <strong style={{ color: '#d97706' }}>USD/CNY</strong> {exchangeRates.cny.toFixed(2)}
                   <span style={{ 
                     fontSize: '11px', 
                     fontWeight: 800,
-                    color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#d97706' : '#64748b' 
+                    color: exchangeRates.cnyTrend === 'UP' ? '#ef4444' : exchangeRates.cnyTrend === 'DOWN' ? '#2563eb' : '#64748b',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px'
                   }}>
-                    {exchangeRates.cnyTrend === 'UP' ? '🔺' : exchangeRates.cnyTrend === 'DOWN' ? '🔻' : '➖'}
+                    <span>{exchangeRates.cnyTrend === 'UP' ? '▲' : exchangeRates.cnyTrend === 'DOWN' ? '▼' : '━'}</span>
+                    <span style={{ letterSpacing: '-0.02em' }}>{exchangeRates.cnyDiff > 0 ? `+${exchangeRates.cnyDiff.toFixed(2)}` : exchangeRates.cnyDiff < 0 ? exchangeRates.cnyDiff.toFixed(2) : '0.00'}</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 700 }}>(3일)</span>
                   </span>
                   {exchangeRates.cnyMa30 && (
                     <span className="header-exchange-ma" style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
