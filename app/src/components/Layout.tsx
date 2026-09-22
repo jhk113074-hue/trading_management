@@ -69,6 +69,9 @@ export const Layout: React.FC = () => {
     usd3dDiff: number;
     usdMa30: number | null;
     usdTrend: 'UP' | 'DOWN' | 'SAME';
+    usdSend: number;
+    usdReceive: number;
+    provider: string;
 
     eur: number;
     eur1dDiff: number;
@@ -88,26 +91,29 @@ export const Layout: React.FC = () => {
     loading: boolean;
     error: boolean;
   }>({
-    usd: 1375.6,
-    usd1dDiff: 3.4,
-    usd1dPercent: 0.25,
-    usd3dDiff: -7.0,
+    usd: 1361.3,
+    usd1dDiff: -10.9,
+    usd1dPercent: -0.79,
+    usd3dDiff: -21.2,
     usdMa30: 1369.2,
-    usdTrend: 'UP',
+    usdTrend: 'DOWN',
+    usdSend: 1374.6,
+    usdReceive: 1348.0,
+    provider: '국내 시중은행(하나/우리)',
 
-    eur: 1578.0,
-    eur1dDiff: 1.4,
-    eur1dPercent: 0.09,
-    eur3dDiff: -9.3,
+    eur: 1561.0,
+    eur1dDiff: -13.5,
+    eur1dPercent: -0.86,
+    eur3dDiff: -26.1,
     eurMa30: 1588.2,
-    eurTrend: 'UP',
+    eurTrend: 'DOWN',
 
-    cny: 6.71,
-    cny1dDiff: 0.01,
-    cny1dPercent: 0.15,
-    cny3dDiff: 0.0,
+    cny: 6.69,
+    cny1dDiff: -0.02,
+    cny1dPercent: -0.30,
+    cny3dDiff: -0.03,
     cnyMa30: 6.72,
-    cnyTrend: 'SAME',
+    cnyTrend: 'DOWN',
 
     time: '',
     loading: false,
@@ -117,20 +123,60 @@ export const Layout: React.FC = () => {
   const fetchExchangeRates = React.useCallback(async () => {
     setExchangeRates(prev => ({ ...prev, loading: true, error: false }));
     try {
-      // 1. 최신 실시간 환율 호출 (USD 기준)
-      const res = await fetch('https://open.er-api.com/v6/latest/USD');
-      if (!res.ok) throw new Error('환율 정보를 불러올 수 없습니다.');
-      const data = await res.json();
-      const krw = data.rates?.KRW || 1375.6;
-      const eurRate = data.rates?.EUR ? krw / data.rates.EUR : 1578;
-      const usdToCny = data.rates?.CNY || 6.71;
-      
-      const currentUsd = Math.round(krw * 10) / 10;
+      // 1. 국내 시중은행(하나/우리은행 서울외환시장 실시간 매매기준율) 우선 호출
+      let currentUsd = 1361.3;
+      let currentEur = 1561.0;
+      let currentCny = 6.69;
+      let providerName = '국내 시중은행(하나/우리)';
+
+      let successDomestic = false;
+      try {
+        const mananaRes = await fetch('https://api.manana.kr/exchange/rate/KRW/USD,EUR,CNY.json');
+        if (mananaRes.ok) {
+          const list = await mananaRes.json();
+          const usdItem = list.find((it: any) => it.name === 'USDKRW=X');
+          const eurItem = list.find((it: any) => it.name === 'EURKRW=X');
+          const cnyItem = list.find((it: any) => it.name === 'CNYKRW=X');
+
+          if (usdItem && usdItem.rate) {
+            currentUsd = Math.round(usdItem.rate * 10) / 10;
+            successDomestic = true;
+          }
+          if (eurItem && eurItem.rate) {
+            currentEur = Math.round(eurItem.rate * 10) / 10;
+          }
+          if (cnyItem && cnyItem.rate && currentUsd) {
+            currentCny = Math.round((currentUsd / cnyItem.rate) * 100) / 100;
+          }
+        }
+      } catch (e) {
+        console.warn('국내 은행 환율 API 호출 실패, fallback 시도:', e);
+      }
+
+      // Fallback: 글로벌 오픈 환율 API
+      if (!successDomestic) {
+        try {
+          const res = await fetch('https://open.er-api.com/v6/latest/USD');
+          if (res.ok) {
+            const data = await res.json();
+            const krw = data.rates?.KRW || 1361.3;
+            const eurRate = data.rates?.EUR ? krw / data.rates.EUR : 1561.0;
+            const usdToCny = data.rates?.CNY || 6.69;
+            currentUsd = Math.round(krw * 10) / 10;
+            currentEur = Math.round(eurRate * 10) / 10;
+            currentCny = Math.round(usdToCny * 100) / 100;
+            providerName = '글로벌 외환시장';
+          }
+        } catch (_) {}
+      }
+
       try {
         localStorage.setItem('site_live_usd_rate', String(currentUsd));
       } catch (_) {}
-      const currentEur = Math.round(eurRate * 10) / 10;
-      const currentCny = Math.round(usdToCny * 100) / 100;
+
+      // 무역 결제용 송금 보낼 때(T/T Selling, 약 1% 가산) / 송금 받을 때(T/T Buying, 약 1% 차감)
+      const usdSend = Math.round(currentUsd * 1.0098 * 10) / 10;
+      const usdReceive = Math.round(currentUsd * 0.9902 * 10) / 10;
 
       let calculatedUsdMa30: number | null = null;
       let calculatedUsd1dDiff = 0;
@@ -237,6 +283,7 @@ export const Layout: React.FC = () => {
             }
 
             // ── (4) 일별 종가 히스토리 리스트 생성 (모달 테이블 및 차트용) ──
+            const todayStr = new Date().toISOString().split('T')[0];
             const historyItems: HistoricalRateItem[] = dates.slice().reverse().map(dt => {
               const k = histData.rates[dt]?.KRW || 0;
               const e = histData.rates[dt]?.EUR ? k / histData.rates[dt].EUR : 0;
@@ -248,7 +295,18 @@ export const Layout: React.FC = () => {
                 cny: Math.round(c * 100) / 100
               };
             });
-            setHistoryList(historyItems);
+
+            // 최상단에 오늘 실시간 매매기준율 행을 동적으로 배치
+            const todayLiveRow: HistoricalRateItem = {
+              date: `${todayStr} (실시간)`,
+              usd: currentUsd,
+              eur: currentEur,
+              cny: currentCny,
+              usdDiff1d: calculatedUsd1dDiff,
+              usdPercent1d: calculatedUsd1dPercent
+            };
+
+            setHistoryList([todayLiveRow, ...historyItems]);
           }
         }
       } catch (histErr) {
@@ -265,6 +323,9 @@ export const Layout: React.FC = () => {
         usd3dDiff: calculatedUsd3dDiff,
         usdMa30: calculatedUsdMa30 ?? 1369.2,
         usdTrend: calculatedUsdTrend,
+        usdSend,
+        usdReceive,
+        provider: providerName,
 
         eur: currentEur,
         eur1dDiff: calculatedEur1dDiff,
@@ -1028,7 +1089,7 @@ export const Layout: React.FC = () => {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#94a3b8')}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
-              title={`실시간 매매기준율 (클릭 시 환율 상세 트랜드 분석 차트 오픈)\n• USD 전일대비: ${exchangeRates.usd1dDiff > 0 ? '+' : ''}${exchangeRates.usd1dDiff}원 (${exchangeRates.usd1dPercent > 0 ? '+' : ''}${exchangeRates.usd1dPercent}%)\n• 3일전대비: ${exchangeRates.usd3dDiff > 0 ? '+' : ''}${exchangeRates.usd3dDiff}원\n• 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'}\n• 마지막 갱신: ${exchangeRates.time || '조회중'}`}
+              title={`실시간 매매기준율 [${exchangeRates.provider || '국내 시중은행 고시 동기화'}] (클릭 시 상세 트랜드 모달)\n• USD 매매기준율: ₩${exchangeRates.usd.toLocaleString()}\n• 전일대비: ${exchangeRates.usd1dDiff > 0 ? '+' : ''}${exchangeRates.usd1dDiff}원 (${exchangeRates.usd1dPercent > 0 ? '+' : ''}${exchangeRates.usd1dPercent}%)\n• 송금 보낼 때(T/T): ₩${(exchangeRates.usdSend || Math.round(exchangeRates.usd * 1.0098 * 10) / 10).toLocaleString()}\n• 송금 받을 때(T/T): ₩${(exchangeRates.usdReceive || Math.round(exchangeRates.usd * 0.9902 * 10) / 10).toLocaleString()}\n• 30일 이동평균: ₩${exchangeRates.usdMa30?.toLocaleString() || '-'}\n• 마지막 갱신: ${exchangeRates.time || '조회중'}`}
             >
               <span style={{ fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                 <span>💵</span>

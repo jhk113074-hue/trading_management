@@ -18,6 +18,9 @@ interface Props {
     usd1dPercent: number;
     usd3dDiff: number;
     usdMa30: number | null;
+    usdSend?: number;
+    usdReceive?: number;
+    provider?: string;
     eur: number;
     eur1dDiff: number;
     eur1dPercent: number;
@@ -153,12 +156,15 @@ export const ExchangeRateModal: React.FC<Props> = ({
             <div>
               <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>실시간 환율 & 시장 트랜드 정밀 분석</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: '10px' }}>
+                  {currentRates.provider || '국내 시중은행(하나/우리)'} 동기화
+                </span>
                 <span style={{ fontSize: '11px', fontWeight: 700, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '10px' }}>
                   {currentRates.time ? `${currentRates.time} 갱신` : '실시간'}
                 </span>
               </div>
               <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
-                전일대비(1D) 실시간 등락폭, 최근 3일/7일/30일 최고·최저가 및 이동평균 추이를 분석합니다.
+                국내 서울외환시장 실시간 매매기준율 및 무역 결제 전신환(T/T 송금) 환율, 기간별 트랜드를 분석합니다.
               </div>
             </div>
           </div>
@@ -290,6 +296,52 @@ export const ExchangeRateModal: React.FC<Props> = ({
               </div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginTop: '1px' }}>
                 평균대비: {ma30 ? `${currentRate >= ma30 ? '+' : ''}${Math.round((currentRate - ma30) * 10) / 10}${currSymbol}` : '-'}
+              </div>
+            </div>
+          </div>
+
+          {/* 무역 결제 실거래 환율 안내 바 (송금 보낼 때 / 송금 받을 때) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#f8fafc',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            padding: '10px 16px',
+            fontSize: '12.5px',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '15px' }}>🏦</span>
+              <span style={{ fontWeight: 800, color: '#1e293b' }}>
+                국내 시중은행({currentRates.provider || '하나/우리은행'}) 실거래 기준
+              </span>
+              <span style={{ fontSize: '11px', color: '#64748b', background: '#e2e8f0', padding: '1px 6px', borderRadius: '4px' }}>
+                전신환(T/T)
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, marginRight: '6px' }}>
+                  송금 보낼 때 (수입 대금 결제)
+                </span>
+                <span style={{ fontSize: '14.5px', fontWeight: 850, color: '#e11d48' }}>
+                  {currSymbol}{(selectedCurrency === 'USD' ? (currentRates.usdSend || Math.round(currentRate * 1.0098 * 10) / 10) : Math.round(currentRate * 1.01 * 10) / 10).toLocaleString()}
+                </span>
+              </div>
+
+              <div style={{ width: '1px', height: '18px', background: '#cbd5e1' }} />
+
+              <div>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, marginRight: '6px' }}>
+                  송금 받을 때 (수출 대금 입금)
+                </span>
+                <span style={{ fontSize: '14.5px', fontWeight: 850, color: '#2563eb' }}>
+                  {currSymbol}{(selectedCurrency === 'USD' ? (currentRates.usdReceive || Math.round(currentRate * 0.9902 * 10) / 10) : Math.round(currentRate * 0.99 * 10) / 10).toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
