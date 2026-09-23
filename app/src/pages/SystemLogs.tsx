@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.586',
+    version: 'v2.8.586',
+    date: '2026-09-23',
+    category: '기능개선',
+    title: '고객사 관리(CRM 및 업무 이력 연동) 리치 본문 내용·첨부파일 목록 및 뷰어·외부 링크 전면 지원',
+    content: '• CRM 연동 업무 본문 내용(HTML Rich Content) 가독성 고도화: 단순 한 줄 텍스트 표시에서 벗어나 서식, 표, 줄바꿈 등이 포함된 에디터 본문을 스크롤 가능한 쾌적한 뷰로 시각화하고, 빈 HTML 태그 자동 감지를 통해 본문 유무 상태를 명확히 안내\n• 첨부파일(Attachments) 칩 목록 및 원클릭 미리보기·다운로드 신설: 각 업무 및 회의록에 첨부된 파일들(PDF, 엑셀, 이미지, 문서 등)을 시각적 칩 형태로 표시하고, 용량 표시와 함께 [🔍 미리보기(오버레이 뷰어)] 및 [⬇ 다운로드] 버튼 제공\n• 인라인 오버레이 파일 뷰어(PDF / 이미지): 돋보기 아이콘 클릭 시 고객사 모달 안에서 PDF 문서를 바로 읽거나 고화질 이미지를 확대 확인할 수 있는 반응형 뷰어 팝업 탑재\n• 외부 클라우드 파일 링크(Dropbox/웹 링크) 목록 칩 지원: 외부에 업로드된 대용량 파일이나 공유 링크도 즉시 새 탭에서 열어볼 수 있도록 링크 뱃지 노출\n• 고객사 모달 내 [🔍 업무 상세 열기 ↗] 연계: CRM 이력 카드에서 버튼 클릭 시 업무 상세 모달(TaskModal)을 바로 띄워 내용 수정, 댓글 확인, 추가 파일 업로드까지 원스톱 처리 지원',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.585',
     version: 'v2.8.585',
     date: '2026-09-22',

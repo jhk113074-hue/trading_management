@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
 import type { Supplier } from '../types/supplier';
 import { SupplierSearchModal } from './SupplierSearchModal';
+import { TaskModal } from './TaskModal';
 
 interface Props {
   initialCustomer?: Customer;
@@ -18,6 +19,11 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
   const [activeTab, setActiveTab] = useState<'info' | 'crm'>('info');
   const [crmTasks, setCrmTasks] = useState<any[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+
+  // CRM Task Detail Modal & File Preview States
+  const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<any | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState<string>('');
 
   // 다중 담당자 임시 추가용 state
   const [newContactName, setNewContactName] = useState('');
@@ -126,87 +132,103 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
     }
   }, [initialCustomer]);
 
-  useEffect(() => {
-    const fetchCrmTasks = async () => {
-      const customerIdQuery = initialCustomer?.id || formData.customerCode;
-      const nameToQuery = formData.name || initialCustomer?.name;
+  const fetchCrmTasks = useCallback(async () => {
+    const customerIdQuery = initialCustomer?.id || formData.customerCode;
+    const nameToQuery = formData.name || initialCustomer?.name;
+    
+    if (!customerIdQuery && !nameToQuery) {
+      setCrmTasks([]);
+      return;
+    }
+    
+    setIsLoadingTasks(true);
+    try {
+      let taskList: any[] = [];
+      let meetingList: any[] = [];
       
-      if (!customerIdQuery && !nameToQuery) {
-        setCrmTasks([]);
-        return;
-      }
-      
-      setIsLoadingTasks(true);
-      try {
-        let taskList: any[] = [];
-        let meetingList: any[] = [];
-        
-        // 1. Fetch Tasks
-        if (customerIdQuery) {
-          const qId = query(
-            collection(db, 'tasks'),
-            where('customerId', '==', customerIdQuery)
-          );
-          const snapId = await getDocs(qId);
-          snapId.forEach(d => {
-            taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
-          });
-        }
-        if (taskList.length === 0 && nameToQuery) {
-          const qName = query(
-            collection(db, 'tasks'),
-            where('customerName', '==', nameToQuery)
-          );
-          const snapName = await getDocs(qName);
-          snapName.forEach(d => {
-            if (!taskList.some(existing => existing.id === d.id)) {
-              taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
-            }
-          });
-        }
-
-        // 2. Fetch Meetings
-        if (customerIdQuery) {
-          const qMeetId = query(
-            collection(db, 'meetings'),
-            where('customerId', '==', customerIdQuery)
-          );
-          const snapMeetId = await getDocs(qMeetId);
-          snapMeetId.forEach(d => {
-            meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
-          });
-        }
-        if (meetingList.length === 0 && nameToQuery) {
-          const qMeetName = query(
-            collection(db, 'meetings'),
-            where('customerName', '==', nameToQuery)
-          );
-          const snapMeetName = await getDocs(qMeetName);
-          snapMeetName.forEach(d => {
-            if (!meetingList.some(existing => existing.id === d.id)) {
-              meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
-            }
-          });
-        }
-
-        // 3. Merge and Sort CRM Tasks
-        const mergedList = [...taskList, ...meetingList];
-        mergedList.sort((a, b) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
+      // 1. Fetch Tasks
+      if (customerIdQuery) {
+        const qId = query(
+          collection(db, 'tasks'),
+          where('customerId', '==', customerIdQuery)
+        );
+        const snapId = await getDocs(qId);
+        snapId.forEach(d => {
+          taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
         });
-        
-        setCrmTasks(mergedList);
-      } catch (err) {
-        console.error("Error fetching CRM items:", err);
-      } finally {
-        setIsLoadingTasks(false);
       }
-    };
+      if (taskList.length === 0 && nameToQuery) {
+        const qName = query(
+          collection(db, 'tasks'),
+          where('customerName', '==', nameToQuery)
+        );
+        const snapName = await getDocs(qName);
+        snapName.forEach(d => {
+          if (!taskList.some(existing => existing.id === d.id)) {
+            taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
+          }
+        });
+      }
 
+      // 2. Fetch Meetings
+      if (customerIdQuery) {
+        const qMeetId = query(
+          collection(db, 'meetings'),
+          where('customerId', '==', customerIdQuery)
+        );
+        const snapMeetId = await getDocs(qMeetId);
+        snapMeetId.forEach(d => {
+          meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
+        });
+      }
+      if (meetingList.length === 0 && nameToQuery) {
+        const qMeetName = query(
+          collection(db, 'meetings'),
+          where('customerName', '==', nameToQuery)
+        );
+        const snapMeetName = await getDocs(qMeetName);
+        snapMeetName.forEach(d => {
+          if (!meetingList.some(existing => existing.id === d.id)) {
+            meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
+          }
+        });
+      }
+
+      // 3. Merge and Sort CRM Tasks
+      const mergedList = [...taskList, ...meetingList];
+      mergedList.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      setCrmTasks(mergedList);
+    } catch (err) {
+      console.error("Error fetching CRM items:", err);
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  }, [initialCustomer?.id, initialCustomer?.name, formData.customerCode, formData.name]);
+
+  const handleSaveTaskDetail = async (updatedFields: any) => {
+    if (!selectedTaskForDetail?.id) return;
+    try {
+      await updateDoc(doc(db, 'tasks', selectedTaskForDetail.id), {
+        ...updatedFields,
+        updatedAt: serverTimestamp()
+      });
+      setSelectedTaskForDetail(null);
+      fetchCrmTasks();
+    } catch (e) {
+      console.error('Failed to update task detail:', e);
+    }
+  };
+
+  useEffect(() => {
     fetchCrmTasks();
+  }, [fetchCrmTasks]);
 
+  useEffect(() => {
     // Real-time Sales & Payment History Subscription
     const targetId = String(initialCustomer?.id || formData.customerCode || '').trim();
     const targetCode = String(formData.customerCode || initialCustomer?.customerCode || '').trim();
@@ -722,57 +744,275 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
                   📭 등록된 연동 업무 히스토리가 없습니다.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {crmTasks.map((t) => (
-                    <div key={t.id} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
-                      {/* 업무 / 회의록 요약 헤더 */}
-                      <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ 
-                            fontSize: '10.5px', 
-                            fontWeight: 800, 
-                            padding: '2px 6px', 
-                            borderRadius: '4px',
-                            background: t.crmType === 'MEETING' ? '#f3e8ff' : (t.status === 'DONE' ? '#dcfce7' : '#fee2e2'),
-                            color: t.crmType === 'MEETING' ? '#7e22ce' : (t.status === 'DONE' ? '#15803d' : '#b91c1c')
-                          }}>
-                            {t.crmType === 'MEETING' ? '📝 회의록' : (t.status === 'DONE' ? '완료' : '진행중')}
-                          </span>
-                          {t.crmType === 'TASK' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {crmTasks.map((t) => {
+                    const rawContent = t.content || t.description || '';
+                    const strippedText = rawContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                    const hasText = strippedText.length > 0;
+
+                    const attList = Array.isArray(t.attachments) ? t.attachments.filter(Boolean) : [];
+                    const extLinks = Array.isArray(t.externalFileLinks)
+                      ? t.externalFileLinks.filter(Boolean)
+                      : (t.externalFileLink ? [t.externalFileLink] : []);
+                    const actionItems = Array.isArray(t.actionItems) ? t.actionItems : [];
+
+                    return (
+                      <div key={t.id} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+                        {/* 업무 / 회의록 요약 헤더 */}
+                        <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span style={{ 
                               fontSize: '10.5px', 
                               fontWeight: 800, 
                               padding: '2px 6px', 
                               borderRadius: '4px',
-                              background: '#e0f2fe',
-                              color: '#0369a1'
+                              background: t.crmType === 'MEETING' ? '#f3e8ff' : (t.status === 'DONE' ? '#dcfce7' : '#fee2e2'),
+                              color: t.crmType === 'MEETING' ? '#7e22ce' : (t.status === 'DONE' ? '#15803d' : '#b91c1c')
                             }}>
-                              중요도: {t.importance || 'B'}
+                              {t.crmType === 'MEETING' ? '📝 회의록' : (t.status === 'DONE' ? '완료' : '진행중')}
                             </span>
-                          )}
-                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>{t.title}</span>
-                          {t.crmType === 'MEETING' && t.projectName && (
-                            <span style={{ fontSize: '11px', color: 'var(--focus-ring)', background: '#f0fdfa', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
-                              🚀 {t.projectName}
-                            </span>
-                          )}
+                            {t.crmType === 'TASK' && (
+                              <span style={{ 
+                                fontSize: '10.5px', 
+                                fontWeight: 800, 
+                                padding: '2px 6px', 
+                                borderRadius: '4px',
+                                background: '#e0f2fe',
+                                color: '#0369a1'
+                              }}>
+                                중요도: {t.importance || 'B'}
+                              </span>
+                            )}
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>{t.title}</span>
+                            {t.crmType === 'MEETING' && t.projectName && (
+                              <span style={{ fontSize: '11px', color: '#0d9488', background: '#f0fdfa', border: '1px solid #ccfbf1', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
+                                🚀 {t.projectName}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#64748b' }}>
+                            {t.crmType === 'MEETING' ? (
+                              <span>작성: <strong style={{ color: '#334155' }}>{t.createdByName || '시스템'}</strong> | 회의일: {t.date || t.createdAt?.substring(0,10)}</span>
+                            ) : (
+                              <span>담당: <strong style={{ color: '#334155' }}>{t.assigneeName || '미지정'}</strong> | 등록일: {t.createdAt ? t.createdAt.substring(0,10) : '-'}</span>
+                            )}
+                            {t.crmType === 'TASK' && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTaskForDetail(t)}
+                                style={{
+                                  background: '#eff6ff',
+                                  border: '1px solid #bfdbfe',
+                                  color: '#1d4ed8',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                                title="업무 상세 조회 및 수정 팝업 열기"
+                              >
+                                <span>🔍</span>
+                                <span>상세 열기 ↗</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          {t.crmType === 'MEETING' ? (
-                            <>작성: <strong style={{ color: '#334155' }}>{t.createdByName || '시스템'}</strong> | 회의일: {t.date || t.createdAt?.substring(0,10)}</>
+                        
+                        {/* 업무 / 회의록 본문 내용 및 메모 */}
+                        <div style={{ padding: '10px 14px', background: '#ffffff', fontSize: '13px', color: '#334155', lineHeight: '1.6' }}>
+                          {hasText ? (
+                            <div 
+                              className="crm-task-rich-content"
+                              style={{ maxHeight: '350px', overflowY: 'auto', wordBreak: 'break-word' }}
+                              dangerouslySetInnerHTML={{ __html: rawContent }}
+                            />
                           ) : (
-                            <>담당: <strong style={{ color: '#334155' }}>{t.assigneeName || '미지정'}</strong> | 등록일: {t.createdAt ? t.createdAt.substring(0,10) : '-'}</>
+                            <div style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '12px' }}>
+                              {attList.length > 0 || extLinks.length > 0 ? '(작성된 본문 설명 없음)' : '작성된 내용이 없습니다.'}
+                            </div>
+                          )}
+
+                          {/* 회의록 조치 사항 (Action Items) */}
+                          {actionItems.length > 0 && (
+                            <div style={{ marginTop: '10px', padding: '8px 12px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                📋 조치 사항 (Action Items {actionItems.length}건)
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {actionItems.map((act: any, actIdx: number) => (
+                                  <div key={actIdx} style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ color: act.status === 'COMPLETED' ? '#16a34a' : '#ea580c' }}>
+                                      {act.status === 'COMPLETED' ? '✅' : '⏳'}
+                                    </span>
+                                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{act.task}</span>
+                                    {act.assignee && <span style={{ fontSize: '11px', color: '#64748b' }}>({act.assignee})</span>}
+                                    {act.dueDate && <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>~{act.dueDate}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 첨부파일 (Attachments) 목록 섹션 */}
+                          {attList.length > 0 && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>📎</span>
+                                <span>첨부파일 ({attList.length}건)</span>
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {attList.map((att: any, attIdx: number) => {
+                                  const name = att.name || `첨부파일_${attIdx + 1}`;
+                                  const fileUrl = att.url || att.data;
+                                  const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
+                                  const isPdf = /\.pdf$/i.test(name);
+                                  const isExcel = /\.(xls|xlsx|csv)$/i.test(name);
+                                  const sizeStr = att.size ? (att.size > 1024 * 1024 ? `${(att.size / (1024 * 1024)).toFixed(1)}MB` : `${(att.size / 1024).toFixed(1)}KB`) : '';
+
+                                  return (
+                                    <div 
+                                      key={attIdx}
+                                      style={{
+                                        background: '#f8fafc',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '4px',
+                                        padding: '4px 8px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontSize: '11.5px',
+                                        maxWidth: '320px',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                                      }}
+                                    >
+                                      <div 
+                                        onClick={() => { if (fileUrl) { setPreviewUrl(fileUrl); setPreviewName(name); } }} 
+                                        style={{ cursor: fileUrl ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                                        title="미리보기"
+                                      >
+                                        {isImg && fileUrl ? (
+                                          <img src={fileUrl} alt={name} style={{ width: '22px', height: '22px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #cbd5e1' }} />
+                                        ) : (
+                                          <span style={{ fontSize: '14px' }}>
+                                            {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                                        <span 
+                                          onClick={() => { if (fileUrl) { setPreviewUrl(fileUrl); setPreviewName(name); } }}
+                                          style={{ 
+                                            fontWeight: 700, 
+                                            color: '#1e293b', 
+                                            overflow: 'hidden', 
+                                            textOverflow: 'ellipsis', 
+                                            whiteSpace: 'nowrap',
+                                            cursor: fileUrl ? 'pointer' : 'default'
+                                          }}
+                                          title={name}
+                                        >
+                                          {name}
+                                        </span>
+                                        {sizeStr && <span style={{ fontSize: '9.5px', color: '#64748b' }}>({sizeStr})</span>}
+                                      </div>
+
+                                      {fileUrl && (
+                                        <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
+                                          <button
+                                            type="button"
+                                            onClick={() => { setPreviewUrl(fileUrl); setPreviewName(name); }}
+                                            style={{
+                                              background: '#f1f5f9',
+                                              border: '1px solid #cbd5e1',
+                                              borderRadius: '3px',
+                                              padding: '2px 5px',
+                                              fontSize: '10px',
+                                              cursor: 'pointer',
+                                              color: '#334155'
+                                            }}
+                                            title="미리보기"
+                                          >
+                                            🔍
+                                          </button>
+                                          <a
+                                            href={fileUrl}
+                                            download={name}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{
+                                              background: '#eff6ff',
+                                              border: '1px solid #bfdbfe',
+                                              borderRadius: '3px',
+                                              padding: '2px 5px',
+                                              fontSize: '10px',
+                                              color: '#2563eb',
+                                              textDecoration: 'none',
+                                              display: 'inline-flex',
+                                              alignItems: 'center'
+                                            }}
+                                            title="다운로드"
+                                          >
+                                            ⬇
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 외부 파일 링크 (External File Links) 목록 */}
+                          {extLinks.length > 0 && (
+                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: attList.length > 0 ? 'none' : '1px solid #f1f5f9' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>🔗</span>
+                                <span>외부 파일 링크 ({extLinks.length}건)</span>
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {extLinks.map((link: string, lIdx: number) => (
+                                  <a
+                                    key={lIdx}
+                                    href={link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      background: '#f8fafc',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: '4px',
+                                      padding: '3px 8px',
+                                      fontSize: '11px',
+                                      color: '#2563eb',
+                                      fontWeight: 600,
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      maxWidth: '280px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                    title={link}
+                                  >
+                                    <span>🌐</span>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{link}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
-                      
-                      {/* 업무 / 회의록 본문 설명 및 메모 */}
-                      <div 
-                        style={{ padding: '12px', background: '#ffffff', fontSize: '13px', color: '#334155', lineHeight: '1.6', fontFamily: 'inherit' }}
-                        dangerouslySetInnerHTML={{ __html: t.content || t.description || '<span style="color: var(--text-muted); font-style: italic;">작성된 내용이 없습니다.</span>' }}
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1312,6 +1552,129 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
           setIsSupplierSearchOpen(false);
         }}
       />
+    )}
+
+    {/* CRM 업무 상세 및 수정 팝업 모달 */}
+    {selectedTaskForDetail && (
+      <TaskModal
+        initialTask={selectedTaskForDetail}
+        onClose={() => setSelectedTaskForDetail(null)}
+        onSave={handleSaveTaskDetail}
+      />
+    )}
+
+    {/* 첨부파일 오버레이 뷰어 모달 */}
+    {previewUrl && (
+      <div
+        onClick={() => setPreviewUrl(null)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(3px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}
+      >
+        <div 
+          onClick={e => e.stopPropagation()} 
+          style={{ 
+            background: '#fff', 
+            borderRadius: '8px', 
+            overflow: 'hidden', 
+            maxWidth: '92vw', 
+            maxHeight: '90vh', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #cbd5e1'
+          }}
+        >
+          <div style={{ padding: '12px 18px', background: '#f8fafc', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+              <span style={{ fontSize: '16px' }}>📄</span>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '600px' }}>
+                {previewName}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <a 
+                href={previewUrl} 
+                download={previewName} 
+                target="_blank" 
+                rel="noreferrer" 
+                style={{ 
+                  padding: '5px 12px', 
+                  background: '#3b82f6', 
+                  color: '#fff', 
+                  borderRadius: '4px', 
+                  fontSize: '12px', 
+                  textDecoration: 'none', 
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>⬇</span>
+                <span>다운로드</span>
+              </a>
+              <button 
+                type="button" 
+                onClick={() => setPreviewUrl(null)} 
+                style={{ 
+                  padding: '5px 10px', 
+                  background: '#f1f5f9', 
+                  border: '1px solid #cbd5e1', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer', 
+                  fontSize: '12px', 
+                  fontWeight: 700,
+                  color: '#475569'
+                }}
+              >
+                ✕ 닫기
+              </button>
+            </div>
+          </div>
+          <div style={{ overflow: 'auto', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', minWidth: '320px', minHeight: '240px' }}>
+            {/\.(jpg|jpeg|png|gif|webp)$/i.test(previewName) ? (
+              <img src={previewUrl} alt={previewName} style={{ maxWidth: '85vw', maxHeight: '75vh', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+            ) : /\.pdf$/i.test(previewName) ? (
+              <iframe src={previewUrl} title={previewName} style={{ width: '80vw', height: '75vh', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }} />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                <div style={{ fontSize: '48px', marginBottom: '14px' }}>📎</div>
+                <div style={{ marginBottom: '16px', fontWeight: 700, color: '#1e293b', fontSize: '14px' }}>{previewName}</div>
+                <p style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '16px' }}>이 파일 형식은 브라우저 인라인 미리보기를 지원하지 않습니다.</p>
+                <a 
+                  href={previewUrl} 
+                  download={previewName} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ 
+                    background: '#3b82f6', 
+                    color: '#fff', 
+                    padding: '8px 18px', 
+                    borderRadius: '4px', 
+                    textDecoration: 'none', 
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>⬇ 다운로드하여 열기</span>
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     )}
     </>
   );
