@@ -28,9 +28,10 @@ interface Props {
   onClose: () => void;
   onSave: (task: Partial<Task>) => void;
   onDelete?: (taskId: string) => void | Promise<void>;
+  zIndex?: number;
 }
 
-export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave, onDelete }) => {
+export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave, onDelete, zIndex }) => {
   const [title, setTitle] = useState(initialTask?.title || '');
   const [description, setDescription] = useState(initialTask?.description || '');
   const [visibility, setVisibility] = useState<Visibility>(initialTask?.visibility || 'PUBLIC');
@@ -758,6 +759,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave, onDel
   return (
     <div
       className="modal-overlay"
+      style={{ zIndex: zIndex ?? 1000 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div

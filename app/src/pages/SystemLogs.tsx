@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.587',
+    version: 'v2.8.587',
+    date: '2026-09-23',
+    category: '버그수정',
+    title: '고객사 CRM 연동 [상세 열기] 시 중첩 모달 z-index 레이어 순위(Layer Stacking) 정상화',
+    content: '• 중첩 모달 z-index 레이어 계층 역전 버그 수정: 고객사 정보 모달(z-index: 3000) 내에서 [🔍 상세 열기] 클릭 시 업무 상세 모달(TaskModal)의 기본 오버레이(z-index: 1000)가 뒤로 가려져 조작 불가능하던 문제를 해결하기 위해, TaskModal에 zIndex 파라미터를 추가하고 최상위 계층(z-index: 5000)으로 강제 승격시켜 고객사 모달 맨 위에 즉각 표시되도록 수정 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.586',
     version: 'v2.8.586',
     date: '2026-09-23',

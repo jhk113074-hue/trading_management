@@ -1560,6 +1560,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose, onSav
         initialTask={selectedTaskForDetail}
         onClose={() => setSelectedTaskForDetail(null)}
         onSave={handleSaveTaskDetail}
+        zIndex={5000}
       />
     )}
 
