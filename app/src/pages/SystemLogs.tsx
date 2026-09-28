@@ -18,6 +18,24 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.591',
+    version: 'v2.8.591',
+    date: '2026-09-28',
+    category: '기능개선',
+    title: '분할 선적(1차/2차 등) 차수별 서류 업로드 및 관리의 100% 완전 독립 격리(Complete Isolation) 체계 완성',
+    content: '• 1차 선적과 2차 선적 간 서류 완벽 분리: 1차 선적 탭에서 업로드한 서류(CI/PL, COO, B/L, 수출면장, 컨테이너 작업 사진, 품질/생산 서류 등)는 오직 1차 선적에만 귀속되고, 2차 선적 탭에서 업로드한 서류는 2차 선적에만 독립 보관되어 차수 간 서류 섞임 및 교차 오염을 원천 차단\n• 차수별 독립 업로드 및 삭제 원자적 저장: 2차 선적에서 파일을 추가하거나 삭제할 때 1차 선적 및 루트 주문 문서에 영향을 주지 않고 해당 차수의 shipmentRounds 객체만 독립 갱신\n• 차수별 지원 서류 범위 확대: 기존 5대 통관 서류에 더해 [그밖의 생산/품질 서류] 및 [컨테이너 작업 및 운송 사진]까지 차수별 분할 관리 항목으로 전격 편입',
+    author: '시스템 관리자'
+  },
+  {
+    id: 'log-v2.8.590',
+    version: 'v2.8.590',
+    date: '2026-09-28',
+    category: '버그수정',
+    title: '서류관리(CI/PL, COO, B/L, 수출면장 등) 분할 선적 모드 첨부파일 업로드 및 실시간 표시 버그 수정',
+    content: '• 분할 선적(Shipment Round) 차수별 첨부파일 동기화 및 Firestore 원자적 저장 복구: 1차/2차 등 분할 선적 차수가 운용 중일 때 서류를 업로드하면 루트 주문 문서에만 반영되고 차수 객체(shipmentRounds)에 저장되지 않아, 업로드 성공 팝업 후 onSnapshot 리스너에 의해 화면에서 파일이 즉시 사라지던 문제를 해결. 파일 업로드 및 삭제 시 shipmentRounds 배열 전체를 Firestore에 원자적으로 동시 기록하도록 개선\n• 1차 선적 기존 파일 fallback 보강: 기존에 루트 주문에 업로드되어 있던 서류들이 1차 선적 화면에 빈 배열로 마스킹되지 않도록 onSnapshot 초기 로드 및 renderFileField 목록 결정 시 상호 연동 보강\n• UI 즉시 반영 및 파일 입력(input) 재선택 버그 방지: 업로드 및 삭제 즉시 React 상태(setOrder, setShipmentRounds)를 즉각 갱신하여 딜레이 없는 화면 업데이트를 보장하고, 동일 파일 재업로드 시 이벤트 누락 방지를 위해 파일 input value 자동 초기화 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.589',
     version: 'v2.8.589',
     date: '2026-09-28',

@@ -108,6 +108,8 @@ export interface ShipmentRound {
   plFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   exportDeclarationFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   cooFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  containerWorkFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   
   // 5. 차수별 패킹리스트 & 쉬핑마크
   packingList?: any;

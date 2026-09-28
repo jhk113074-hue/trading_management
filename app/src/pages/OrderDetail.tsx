@@ -3546,6 +3546,8 @@ export const OrderDetail: React.FC = () => {
           plFiles: data.plFiles || [],
           exportDeclarationFiles: data.exportDeclarationFiles || [],
           cooFiles: data.cooFiles || [],
+          otherFiles: data.otherFiles || [],
+          containerWorkFiles: data.containerWorkFiles || [],
           packingList: data.packingList || null,
           supplierArrivalReports: (data as any).supplierArrivalReports || {},
           allocatedItems: (data.items || []).map((it: any) => ({
@@ -3567,6 +3569,13 @@ export const OrderDetail: React.FC = () => {
           if (idx === 0) {
             return {
               ...r,
+              blFiles: (r.blFiles && r.blFiles.length > 0) ? r.blFiles : (data.blFiles || []),
+              ciFiles: (r.ciFiles && r.ciFiles.length > 0) ? r.ciFiles : (data.ciFiles || []),
+              plFiles: (r.plFiles && r.plFiles.length > 0) ? r.plFiles : (data.plFiles || []),
+              exportDeclarationFiles: (r.exportDeclarationFiles && r.exportDeclarationFiles.length > 0) ? r.exportDeclarationFiles : (data.exportDeclarationFiles || []),
+              cooFiles: (r.cooFiles && r.cooFiles.length > 0) ? r.cooFiles : (data.cooFiles || []),
+              otherFiles: (r.otherFiles && r.otherFiles.length > 0) ? r.otherFiles : (data.otherFiles || []),
+              containerWorkFiles: (r.containerWorkFiles && r.containerWorkFiles.length > 0) ? r.containerWorkFiles : (data.containerWorkFiles || []),
               packingList: r.packingList || data.packingList || null,
               supplierArrivalReports: r.supplierArrivalReports || (data as any).supplierArrivalReports || {}
             };
@@ -6614,16 +6623,62 @@ export const OrderDetail: React.FC = () => {
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      const updatedList = [...(order[fieldName] || []), ...uploadedFiles];
-      await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
-      const isSplitShipmentField = ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
-      if (activeRound && isSplitShipmentField) {
-        const currentRoundFiles = ((activeRound as any)[fieldName] as any[]) || [];
-        handleUpdateActiveRound(fieldName as any, [...currentRoundFiles, ...uploadedFiles]);
+      const isSplitShipmentField = Boolean(isSplitShipment && activeRound && ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles', 'otherFiles', 'containerWorkFiles'].includes(fieldName));
+      
+      const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+      const targetId = activeRoundIdRef.current || activeRoundId || curRounds[0]?.id;
+      const roundIdx = curRounds.findIndex(r => r.id === targetId);
+      const isRound1OrNonSplit = !isSplitShipmentField || roundIdx <= 0;
+
+      // 1) 1차 선적이거나 비분할 모드일 때만 루트 order[fieldName]에 저장 (2차 선적 파일은 절대 루트에 섞지 않음)
+      let updatedOrderList = order[fieldName] || [];
+      if (isRound1OrNonSplit) {
+        updatedOrderList = [...(order[fieldName] || []), ...uploadedFiles];
       }
+
+      // 2) 해당 차수(1차 또는 2차 등)에 독립적으로 파일 목록 업데이트
+      let updatedRounds = curRounds;
+      if (isSplitShipmentField && curRounds.length > 0 && roundIdx !== -1) {
+        const targetRound = curRounds[roundIdx];
+        const currentRoundFiles = ((targetRound as any)[fieldName] as any[]) || [];
+        const updatedRoundFiles = [...currentRoundFiles, ...uploadedFiles];
+        
+        updatedRounds = [...curRounds];
+        updatedRounds[roundIdx] = {
+          ...targetRound,
+          [fieldName]: updatedRoundFiles
+        };
+      }
+
+      // 3. Firestore에 동시 원자적 저장 (차수별 격리 보장)
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      const updatePayload: any = {
+        updatedAt: serverTimestamp()
+      };
+      if (isRound1OrNonSplit) {
+        updatePayload[fieldName] = updatedOrderList;
+      }
+      if (isSplitShipmentField && updatedRounds.length > 0) {
+        updatePayload.shipmentRounds = updatedRounds;
+      }
+      await setDoc(orderRef, updatePayload, { merge: true });
+
+      // 4. React 상태 즉각 갱신
+      if (isRound1OrNonSplit) {
+        setOrder(prev => prev ? { ...prev, [fieldName]: updatedOrderList } : prev);
+      }
+      if (isSplitShipmentField && updatedRounds.length > 0) {
+        setShipmentRounds(updatedRounds);
+        latestOrderStateRef.current.shipmentRounds = updatedRounds;
+      }
+
       await autoRegisterOrderTask(order.piNumber || '알수없음', order.customer || '알수없음', `${fieldName} 파일 첨부 업로드: ${uploadedFiles.map(f => f.name).join(', ')}`);
       
+      // 3. input 리셋하여 동일 파일 재업로드 지원
+      if (e && e.target) {
+        try { e.target.value = ''; } catch (_) {}
+      }
+
       alert("✅ 모든 파일이 성공적으로 업로드되었습니다.");
     } catch (err: any) {
       console.error("Upload failed", err);
@@ -6978,7 +7033,21 @@ export const OrderDetail: React.FC = () => {
   // Delete document attachment from Storage & Firestore for specific fields
   const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | 'attachments', idx: number) => {
     if (!order) return;
-    const fileList = order[fieldName] || [];
+    const isSplitShipmentField = Boolean(isSplitShipment && activeRound && ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles', 'otherFiles', 'containerWorkFiles'].includes(fieldName));
+
+    const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+    const targetRoundId = activeRoundIdRef.current || activeRoundId || curRounds[0]?.id;
+    const roundIdx = curRounds.findIndex(r => r.id === targetRoundId);
+    const targetRound = roundIdx !== -1 ? curRounds[roundIdx] : null;
+    const isRound1 = roundIdx <= 0;
+
+    const roundFiles = (isSplitShipmentField && targetRound) ? ((targetRound as any)[fieldName] as any[]) : null;
+    const fileList: any[] = isSplitShipmentField
+      ? ((Array.isArray(roundFiles) && roundFiles.length > 0)
+          ? roundFiles
+          : (isRound1 ? (order[fieldName] || []) : []))
+      : (order[fieldName] || []);
+
     const target = fileList[idx];
     if (!target) return;
     if (!window.confirm(`'${target.name}' 파일을 영구 삭제하시겠습니까?`)) return;
@@ -6988,14 +7057,39 @@ export const OrderDetail: React.FC = () => {
         const fileRef = ref(storage, target.path);
         await deleteObject(fileRef).catch(e => console.warn("Failed to delete from storage:", e));
       }
-      const updatedList = fileList.filter((_, i) => i !== idx);
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
-      const isSplitShipmentField = ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
-      if (activeRound && isSplitShipmentField) {
-        const currentRoundFiles = ((activeRound as any)[fieldName] as any[]) || [];
-        handleUpdateActiveRound(fieldName as any, currentRoundFiles.filter((_, i) => i !== idx));
+
+      const updatedFileList = fileList.filter((_, i) => i !== idx);
+
+      let updatedRounds = curRounds;
+      if (isSplitShipmentField && roundIdx !== -1 && targetRound) {
+        updatedRounds = [...curRounds];
+        updatedRounds[roundIdx] = {
+          ...targetRound,
+          [fieldName]: updatedFileList
+        };
       }
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      const updatePayload: any = {
+        updatedAt: serverTimestamp()
+      };
+
+      // 1차 선적이거나 비분할 모드일 때만 루트 order에서도 제거
+      if (!isSplitShipmentField || isRound1) {
+        const currentOrderFiles = order[fieldName] || [];
+        const updatedOrderList = currentOrderFiles.filter((f: any) => f.url !== target.url && f.name !== target.name);
+        updatePayload[fieldName] = updatedOrderList;
+        setOrder(prev => prev ? { ...prev, [fieldName]: updatedOrderList } : prev);
+      }
+
+      if (isSplitShipmentField && updatedRounds.length > 0) {
+        updatePayload.shipmentRounds = updatedRounds;
+        setShipmentRounds(updatedRounds);
+        latestOrderStateRef.current.shipmentRounds = updatedRounds;
+      }
+
+      await setDoc(orderRef, updatePayload, { merge: true });
+
       alert("✅ 파일이 삭제되었습니다.");
     } catch (err: any) {
       alert("파일 삭제 실패: " + err.message);
@@ -7257,8 +7351,14 @@ export const OrderDetail: React.FC = () => {
     inputDocId: string,
     gridSpan?: string
   ) => {
-    const isRoundField = isSplitShipment && activeRound && ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles'].includes(fieldName);
-    const fileList = (isRoundField && (activeRound as any)[fieldName]) ? ((activeRound as any)[fieldName] as any[]) : (order?.[fieldName] || []);
+    const isRoundField = Boolean(isSplitShipment && activeRound && ['blFiles', 'ciFiles', 'plFiles', 'exportDeclarationFiles', 'cooFiles', 'otherFiles', 'containerWorkFiles'].includes(fieldName));
+    const roundFiles = isRoundField && (activeRound as any)[fieldName];
+    const isRound1 = activeRound?.roundNumber === 1;
+    const fileList: any[] = isRoundField
+      ? ((Array.isArray(roundFiles) && roundFiles.length > 0)
+          ? roundFiles
+          : (isRound1 && order?.[fieldName]?.length ? order[fieldName] : []))
+      : (order?.[fieldName] || []);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
