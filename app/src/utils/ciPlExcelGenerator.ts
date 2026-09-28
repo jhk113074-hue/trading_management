@@ -510,6 +510,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       let totalAmt = 0;
 
       // 1. Regular Product Items
+      const firstProductRow = currRow;
       regularItems.forEach(it => {
         const r = currRow;
         const cleanName = cleanCiName(it.name || '');
@@ -542,7 +543,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ws.getCell(`K${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`K${r}`).numFmt = '$#,##0.00';
 
-        ws.getCell(`L${r}`).value = amt;
+        // Formula: Quantity (I) * Unit Price (K) = Amount (L)
+        ws.getCell(`L${r}`).value = { formula: `I${r}*K${r}`, result: amt };
         ws.getCell(`L${r}`).font = { name: 'Tahoma', size: 9.5 };
         ws.getCell(`L${r}`).alignment = { horizontal: 'right', vertical: 'middle' };
         ws.getCell(`L${r}`).numFmt = '$#,##0.00';
@@ -651,6 +653,8 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       // Total Amount
       const totalRow = currRow;
+      const dataStartRow = firstProductRow;
+      const dataEndRow = currRow - 1;
       ws.getRow(totalRow).height = 26;
       ws.mergeCells(`A${totalRow}:H${totalRow}`);
       const totTitleCell = ws.getCell(`A${totalRow}`);
@@ -658,7 +662,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       totTitleCell.font = { name: 'Tahoma', size: 10, bold: true, color: { argb: 'FF000000' } };
       totTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-      ws.getCell(`I${totalRow}`).value = totalQty;
+      ws.getCell(`I${totalRow}`).value = dataStartRow <= dataEndRow
+        ? { formula: `SUM(I${dataStartRow}:I${dataEndRow})`, result: totalQty }
+        : totalQty;
       ws.getCell(`I${totalRow}`).font = { name: 'Tahoma', size: 10, bold: true };
       ws.getCell(`I${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`I${totalRow}`).numFmt = '#,##0';
@@ -666,7 +672,9 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`J${totalRow}`).value = '';
       ws.getCell(`K${totalRow}`).value = '';
 
-      ws.getCell(`L${totalRow}`).value = totalAmt;
+      ws.getCell(`L${totalRow}`).value = dataStartRow <= dataEndRow
+        ? { formula: `SUM(L${dataStartRow}:L${dataEndRow})`, result: totalAmt }
+        : totalAmt;
       ws.getCell(`L${totalRow}`).font = { name: 'Tahoma', size: 10.5, bold: true };
       ws.getCell(`L${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
       ws.getCell(`L${totalRow}`).numFmt = '$#,##0.00';

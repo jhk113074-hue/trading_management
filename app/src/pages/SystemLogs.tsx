@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.588',
+    version: 'v2.8.588',
+    date: '2026-09-28',
+    category: '기능개선',
+    title: 'Commercial Invoice (CI) 엑셀 내보내기 수식 자동화 (Amount = Quantity * Unit Price 및 TOTAL AMOUNT = SUM) 적용',
+    content: '• 품목별 Amount(금액) 셀 동적 계산식 적용: 엑셀 파일 다운로드 시 품목별 Amount 열(L열)에 고정된 정적 숫자가 아닌 `=I{행}*K{행}` (수량 × 단가) 엑셀 수식을 직접 입력하여, 엑셀 프로그램 내에서 수량이나 단가 변경 시 금액이 실시간으로 자동 재계산되도록 고도화\n• TOTAL AMOUNT(총 합계) 셀 동적 SUM 수식 적용: 하단 합계 행의 총 수량(I열) 및 총 금액(L열)에 `=SUM(I{시작}:I{끝})` 및 `=SUM(L{시작}:L{끝})` 수식을 부여하여 품목 금액 수정 및 추가 시 합계가 즉각 연동 계산되도록 개선\n• ExcelJS 수식 캐시(result) 동시 바인딩: 엑셀 뷰어 및 구글 스프레드시트 호환성을 위해 계산된 수식과 계산 결과 캐시값을 함께 전달하여 첫 로딩 시 #VALUE! 에러 없는 매끄러운 엑셀 문서 오픈 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.587',
     version: 'v2.8.587',
     date: '2026-09-23',
