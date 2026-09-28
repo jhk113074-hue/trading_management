@@ -1001,6 +1001,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
         ? data.containers
         : [{ containerNo: '', sealNo: '', items: (data.plItems || data.items || []).map((it, idx) => ({ pkgNo: String(idx + 1), description: it.name, netWeight: it.netWeight, grossWeight: it.grossWeight, cbm: it.cbm, qty: it.qty })) }];
 
+      const plDataStartRow = currRow;
       containersList.forEach((cData, cIdx) => {
         const cItems = cData.items || [];
         interface PlPkgGroup {
@@ -1203,6 +1204,7 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
 
       // Total Row for Packing List
       const totalRow = currRow;
+      const plDataEndRow = currRow - 1;
       ws.getRow(totalRow).height = 24;
 
       ws.mergeCells(`A${totalRow}:C${totalRow}`);
@@ -1211,20 +1213,32 @@ export const exportCiPlToExcel = async (data: CiPlData) => {
       ws.getCell(`A${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
       ws.mergeCells(`D${totalRow}:H${totalRow}`);
-      ws.getCell(`D${totalRow}`).value = `${totalPkgCount || data.totalPackages || 1} GT`;
+      ws.getCell(`D${totalRow}`).value = plDataStartRow <= plDataEndRow
+        ? { formula: `SUM(M${plDataStartRow}:M${plDataEndRow})`, result: totalPkgCount || data.totalPackages || 1 }
+        : `${totalPkgCount || data.totalPackages || 1} GT`;
+      ws.getCell(`D${totalRow}`).numFmt = '#,##0" GT"';
       ws.getCell(`D${totalRow}`).font = { name: 'Tahoma', size: 9, bold: true };
       ws.getCell(`D${totalRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
-      ws.getCell(`I${totalRow}`).value = `${totalNetW.toLocaleString()} KGS`;
+      ws.getCell(`I${totalRow}`).value = plDataStartRow <= plDataEndRow
+        ? { formula: `SUM(I${plDataStartRow}:I${plDataEndRow})`, result: totalNetW }
+        : totalNetW;
+      ws.getCell(`I${totalRow}`).numFmt = '#,##0" KGS"';
       ws.getCell(`I${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`I${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
 
-      ws.getCell(`J${totalRow}`).value = `${totalGrossW.toLocaleString()} KGS`;
+      ws.getCell(`J${totalRow}`).value = plDataStartRow <= plDataEndRow
+        ? { formula: `SUM(J${plDataStartRow}:J${plDataEndRow})`, result: totalGrossW }
+        : totalGrossW;
+      ws.getCell(`J${totalRow}`).numFmt = '#,##0" KGS"';
       ws.getCell(`J${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`J${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
 
       ws.mergeCells(`K${totalRow}:L${totalRow}`);
-      ws.getCell(`K${totalRow}`).value = `${totalCbmV.toFixed(2)} CBM`;
+      ws.getCell(`K${totalRow}`).value = plDataStartRow <= plDataEndRow
+        ? { formula: `SUM(K${plDataStartRow}:K${plDataEndRow})`, result: totalCbmV }
+        : totalCbmV;
+      ws.getCell(`K${totalRow}`).numFmt = '#,##0.00" CBM"';
       ws.getCell(`K${totalRow}`).font = { name: 'Tahoma', size: 9.5, bold: true };
       ws.getCell(`K${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
 

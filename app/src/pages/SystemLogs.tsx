@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.589',
+    version: 'v2.8.589',
+    date: '2026-09-28',
+    category: '기능개선',
+    title: 'Packing List (PL) 엑셀 내보내기 TOTAL 합계 행 수식(SUM) 및 단위 서식 자동화 적용',
+    content: '• 총 포장 수량(Number of Packages) 동적 SUM 수식 적용: TOTAL 행의 포장 수량(D열)에 `=SUM(M{시작}:M{끝})` 수식 및 `#,##0" GT"` 숫자 서식을 부여하여 각 패키지/컨테이너 수량 변경 시 합계 수량이 자동 연동 계산되도록 개선\n• 총 순중량(Net Weight) 동적 SUM 수식 적용: TOTAL 행의 Net Weight(I열)에 고정 문자열 대신 `=SUM(I{시작}:I{끝})` 수식 및 `#,##0" KGS"` 서식을 적용하여 각 항목의 중량 수정 시 실시간 자동 재계산 구현\n• 총 총중량(Gross Weight) 동적 SUM 수식 적용: TOTAL 행의 Gross Weight(J열)에 고정 문자열 대신 `=SUM(J{시작}:J{끝})` 수식 및 `#,##0" KGS"` 서식 적용\n• 총 부피(Measurement CBM) 동적 SUM 수식 적용: TOTAL 행의 CBM(K열)에 고정 문자열 대신 `=SUM(K{시작}:K{끝})` 수식 및 `#,##0.00" CBM"` 서식 적용\n• CI 및 PL 전 시트 수식 체계 완성: Commercial Invoice의 품목별 금액 및 총액 계산식에 이어, Packing List의 모든 합계 지표까지 엑셀 표준 수식화 완료',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.588',
     version: 'v2.8.588',
     date: '2026-09-28',
