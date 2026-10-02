@@ -3920,10 +3920,33 @@ export const OrderDetail: React.FC = () => {
           };
         });
 
+        const extractItemCode = (name?: string, code?: string): string => {
+          if (code && code.trim()) return code.trim().toUpperCase();
+          if (!name) return '';
+          const match = name.match(/\[([A-Za-z0-9_-]+)\]/);
+          if (match) return match[1].trim().toUpperCase();
+          return '';
+        };
+
+        const isSameOrderItem = (itemA: any, itemB: any): boolean => {
+          if (!itemA || !itemB) return false;
+          if (itemA === itemB) return true;
+          if (itemA.itemId && itemB.itemId && String(itemA.itemId) === String(itemB.itemId)) return true;
+          
+          const codeA = extractItemCode(itemA.name, itemA.productCode || itemA.itemCode);
+          const codeB = extractItemCode(itemB.name, itemB.productCode || itemB.itemCode);
+          if (codeA && codeB && codeA === codeB) return true;
+
+          const cleanNameA = (itemA.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
+          const cleanNameB = (itemB.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
+          if (cleanNameA && cleanNameB && cleanNameA === cleanNameB) return true;
+
+          return false;
+        };
+
         const alignedSourcing = rawSourcing.map((sIt: any, idx: number) => {
           const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId))
-            || ((sIt.productCode || sIt.itemCode) && restoredOrderItems.find((r: any) => (r.productCode || r.itemCode) === (sIt.productCode || sIt.itemCode)))
-            || (sIt.name && restoredOrderItems.find((r: any) => r.name === sIt.name))
+            || restoredOrderItems.find((r: any) => isSameOrderItem(r, sIt))
             || restoredOrderItems[idx];
 
           const activeSupplier = (sIt.supplier != null && sIt.supplier.trim() !== '') ? sIt.supplier.trim() : (rIt?.supplier?.trim() || '');
@@ -3953,7 +3976,7 @@ export const OrderDetail: React.FC = () => {
           return {
             ...sIt,
             name: sIt.name || rIt?.name || '',
-            productCode: sIt.productCode || rIt?.productCode || '',
+            productCode: sIt.productCode || rIt?.productCode || extractItemCode(sIt.name || rIt?.name),
             supplier: activeSupplier,
             supplierContact: activeContact,
             remark: sIt.remark !== undefined ? sIt.remark : (sIt.supplierRemark || rIt?.remark || rIt?.supplierRemark || ''),
@@ -3968,13 +3991,9 @@ export const OrderDetail: React.FC = () => {
           };
         });
 
-        // Defensive healing: Any item present in restoredOrderItems that is missing from alignedSourcing MUST be appended
+        // Defensive healing: 견적 품목 중 소싱 목록에 완전히 누락된 품목만 스마트 매칭하여 보강
         restoredOrderItems.forEach((rIt: any) => {
-          const exists = alignedSourcing.some((s: any) => 
-            (rIt.itemId && s.itemId && rIt.itemId === s.itemId) ||
-            (rIt.productCode && (s.productCode || s.itemCode) && rIt.productCode === (s.productCode || s.itemCode)) ||
-            (rIt.name && s.name && rIt.name === s.name)
-          );
+          const exists = alignedSourcing.some((s: any) => isSameOrderItem(rIt, s));
           if (!exists) {
             alignedSourcing.push({
               ...rIt,
@@ -3989,10 +4008,40 @@ export const OrderDetail: React.FC = () => {
           }
         });
 
+        // 중복 품목 자동 정리 (Auto-Deduplication):
+        // 동일 공급사 내에서 동일 품목 코드가 견적 품목 수를 초과하여 중복 존재하는 경우 잉여 항목 제거
+        const deduplicatedSourcing: any[] = [];
+        const seenCountBySupplierAndCode: Record<string, number> = {};
+
+        alignedSourcing.forEach((sIt: any) => {
+          const sup = (sIt.supplier || '').trim();
+          const code = extractItemCode(sIt.name, sIt.productCode || sIt.itemCode);
+
+          if (code && sup) {
+            const key = `${sup}:::${code}`;
+            const curSeen = seenCountBySupplierAndCode[key] || 0;
+            // 견적서(restoredOrderItems)에서 이 공급사의 이 품목 코드가 몇 개인지 확인
+            const orderCount = restoredOrderItems.filter((r: any) => 
+              (r.supplier || '').trim() === sup && 
+              extractItemCode(r.name, r.productCode || r.itemCode) === code
+            ).length;
+
+            // 만약 견적서의 품목 개수를 이미 채웠다면 추가 중복 항목은 제외
+            if (orderCount > 0 && curSeen >= orderCount) {
+              console.warn(`[Auto-Deduplicate] Skipping redundant duplicate sourcing item: ${sIt.name} (Code: ${code}) for supplier: ${sup}`);
+              return;
+            }
+            seenCountBySupplierAndCode[key] = curSeen + 1;
+          }
+          deduplicatedSourcing.push(sIt);
+        });
+
+        const finalSourcingList = deduplicatedSourcing;
+
         // On initial load or remote external update, set order items
         if (!isInitialOrderLoadRef.current) {
           setOrderItems(restoredOrderItems);
-          setSourcingItems(alignedSourcing);
+          setSourcingItems(finalSourcingList);
           setForwardersList(data.forwarders || []);
           isInitialOrderLoadRef.current = true;
         } else {
@@ -4011,7 +4060,7 @@ export const OrderDetail: React.FC = () => {
 
           setSourcingItems(prev => {
             const currentLocal = latestOrderStateRef.current.sourcingItems || prev;
-            return alignedSourcing.map((aIt, idx) => {
+            return finalSourcingList.map((aIt, idx) => {
               const localIt = (aIt.itemId && currentLocal.find((c: any) => c.itemId && c.itemId === aIt.itemId)) || currentLocal[idx];
               return {
                 ...aIt,
@@ -12033,7 +12082,11 @@ ${downloadLink}`;
                                                 type="button"
                                                 onClick={() => {
                                                   if (window.confirm('정말 이 품목을 발주에서 제외하시겠습니까?')) {
-                                                    setSourcingItems(prev => prev.filter(x => x !== it));
+                                                    setSourcingItems(prev => {
+                                                      const next = prev.filter(x => x !== it);
+                                                      latestOrderStateRef.current.sourcingItems = next;
+                                                      return next;
+                                                    });
                                                   }
                                                 }}
                                                 style={{ padding: '4px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}

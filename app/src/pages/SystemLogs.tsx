@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.592',
+    version: 'v2.8.592',
+    date: '2026-10-02',
+    category: '버그수정',
+    title: '소싱/발주 탭 품목 스마트 매칭·자동 중복 제거(Auto-Deduplication) 및 삭제 부활 버그 수정',
+    content: '• 품목 스마트 식별 알고리즘(Smart Item Matcher) 도입: 견적 확정 품목과 소싱 품목 간의 이름 차이(규격 괄호 유무 등)로 인해 동일 품목이 서로 다른 품목으로 오인되어 소싱 목록에 중복 추가(6개 -> 7개)되던 문제 해결. 품목 코드([P0057]), 상품코드, 정규화된 품목명을 종합 분석하여 1:1 스마트 매칭 적용\n• 기존 중복 항목 자동 치료(Auto-Deduplication): 동일 공급사 내에서 견적 품목 수량을 초과하여 존재하는 잉여 중복 행을 화면 로드 및 저장 시 자동으로 감지하고 정상 수량으로 정리 복원\n• 삭제 품목 재유입 방지: 공급사 PO에서 품목을 삭제 후 저장하더라도 onSnapshot의 누락 품목 보강(Defensive healing) 로직에서 삭제된 품목이 다시 부활하지 않도록 완전 차단',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.591',
     version: 'v2.8.591',
     date: '2026-09-28',
