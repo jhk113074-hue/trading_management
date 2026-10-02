@@ -6,6 +6,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { sendPoEmailDirectly } from '../services/emailService';
 
 const COMPANY_ID = 'YSACC';
 
@@ -217,6 +218,7 @@ const IssueRow: React.FC<{ issue: Issue; onClick: () => void }> = ({ issue, onCl
 
 // ── 이슈 생성 모달 ─────────────────────────────────────────────────────
 const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({ onClose, userName }) => {
+  const { userProfile } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<Category>('기능오류');
@@ -305,6 +307,8 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         status: '미해결',
         attachments,
         createdBy: userName,
+        createdById: userProfile?.id || '',
+        createdByEmail: userProfile?.email || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -418,6 +422,7 @@ const IssueDetailModal: React.FC<{
   issue: Issue; onClose: () => void; userName: string;
   onUpdate: (updated: Issue) => void;
 }> = ({ issue, onClose, userName, onUpdate }) => {
+  const { userProfile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>(issue.attachments || []);
@@ -492,11 +497,110 @@ const IssueDetailModal: React.FC<{
   }, [attachments]);
 
   const handleStatusChange = async (s: Status) => {
+    if (s === status) return;
     setStatus(s);
-    await updateDoc(doc(db, 'companies', COMPANY_ID, 'issues', issue.id), {
-      status: s, updatedAt: serverTimestamp()
-    });
-    onUpdate({ ...issue, status: s });
+    try {
+      await updateDoc(doc(db, 'companies', COMPANY_ID, 'issues', issue.id), {
+        status: s,
+        updatedAt: serverTimestamp()
+      });
+      onUpdate({ ...issue, status: s });
+
+      // '해결됨'으로 변경 시 작성자에게 사내메일(쪽지) 및 이메일 자동 통지
+      if (s === '해결됨') {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        let targetUser: any = null;
+        usersSnap.forEach(d => {
+          const u = { id: d.id, ...d.data() } as any;
+          if (
+            (issue.createdBy && u.name && u.name.trim() === issue.createdBy.trim()) ||
+            (issue.createdBy && u.name && (u.name.includes(issue.createdBy) || issue.createdBy.includes(u.name)))
+          ) {
+            targetUser = u;
+          }
+        });
+
+        if (targetUser) {
+          const mailTitle = `[이슈 해결 알림] No. ${issue.issueNo || '-'} ${issue.title} 처리가 완료되었습니다.`;
+          const mailHtml = `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px;">
+              <div style="border-bottom: 2px solid #16a34a; padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="color: #16a34a; margin: 0; font-size: 16px;">✅ 등록하신 사내 이슈/개선요청이 '해결됨' 처리되었습니다.</h3>
+              </div>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px;">
+                <tr>
+                  <td style="padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-weight: bold; width: 110px; color: #475569;">이슈 번호</td>
+                  <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;">No. ${issue.issueNo || '-'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-weight: bold; color: #475569;">제목</td>
+                  <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;">${issue.title}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-weight: bold; color: #475569;">카테고리/우선순위</td>
+                  <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">${issue.category} / ${issue.priority}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-weight: bold; color: #475569;">처리자</td>
+                  <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 600; color: #2563eb;">${userProfile?.name || userName || '관리자'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-weight: bold; color: #475569;">처리 일시</td>
+                  <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">${new Date().toLocaleString('ko-KR')}</td>
+                </tr>
+              </table>
+              <div style="background: #f1f5f9; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 4px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 4px;">[등록 내용]</div>
+                <div style="font-size: 13px; color: #1e293b; white-space: pre-wrap;">${issue.content || '(내용 없음)'}</div>
+              </div>
+              <p style="font-size: 12.5px; color: #64748b; margin: 0;">
+                ※ 확인 후 추가 문의나 피드백이 있으신 경우 사내게시판(VOC/이슈) 댓글 또는 사내메일(쪽지)로 회신해 주시기 바랍니다.
+              </p>
+            </div>
+          `;
+
+          await addDoc(collection(db, 'mails'), {
+            senderId: userProfile?.id || 'admin',
+            senderName: userProfile?.name || userName || '관리자',
+            receiverId: targetUser.id,
+            receiverName: targetUser.name,
+            title: mailTitle,
+            content: mailHtml,
+            isRead: false,
+            isImportant: true,
+            createdAt: new Date().toISOString(),
+            type: 'GENERAL'
+          });
+
+          if (targetUser.email) {
+            sendPoEmailDirectly({
+              to: targetUser.email,
+              subject: mailTitle,
+              text: `[이슈 해결 알림]\nNo. ${issue.issueNo || '-'} ${issue.title} 건이 '해결됨' 처리되었습니다.\n\n처리자: ${userProfile?.name || userName || '관리자'}\n일시: ${new Date().toLocaleString('ko-KR')}\n\n등록 내용:\n${issue.content}`,
+              html: mailHtml
+            }).catch(e => console.warn('Email dispatch failed:', e));
+          }
+
+          // 이슈 댓글에도 자동 기록
+          await addDoc(
+            collection(doc(db, 'companies', COMPANY_ID), `issues/${issue.id}/comments`),
+            {
+              content: `이슈가 '해결됨' 처리되었습니다. 작성자(${targetUser.name})에게 사내메일 통지가 발송되었습니다.`,
+              attachments: [],
+              createdBy: userProfile?.name || userName || '시스템',
+              createdAt: serverTimestamp()
+            }
+          ).catch(console.warn);
+
+          alert(`✅ 상태가 [해결됨]으로 변경되었으며, 작성자(${targetUser.name})에게 사내메일(쪽지) 통지가 즉시 전송되었습니다.`);
+        } else {
+          alert('✅ 상태가 [해결됨]으로 변경되었습니다.');
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert('상태 변경 실패: ' + e.message);
+    }
   };
 
   const handleFileUpload = async (files: FileList | File[] | null) => {
