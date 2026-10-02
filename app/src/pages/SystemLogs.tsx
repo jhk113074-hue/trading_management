@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.596',
+    version: 'v2.8.596',
+    date: '2026-10-02',
+    category: 'UI/UX',
+    title: '주문 상세 상단 L/C 거래 상세 정보 화면 고도화 및 2열 컴팩트 레이아웃 개편',
+    content: '• L/C 거래 상세 정보 2열 그리드 컴팩트화: 기존 세로 5개 줄로 길게 늘어서 있던 필드(은행, 번호, 개설일, 품목설명, 비고)를 2열 대칭 그리드(Row 1: 발행은행 / 번호, Row 2: 개설일 / 품목설명, Row 3: L/C 중요사항 비고)로 전면 개편하여 카드 세로 높이를 50% 이상 획기적으로 축소\n• 상단 패널 좌우 화면 비율 및 균형 최적화: 우측 컬럼 너비를 300px에서 390px로 확장 조정하여, 좌측 [주문 기본 정보] 카드와 우측 [L/C 상세 정보 + 거래 서류 첨부] 카드의 하단 높이가 완벽하게 1:1로 일치하도록 레이아웃 밸런스 완성\n• YSACC UI/UX 디자인 시스템 규격 적용: 11px uppercase 라벨, 세련된 포커스/인풋 스타일링 및 시인성 높은 L/C 중요사항(Remark) 옐로우 하이라이트 박스 표준화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.595',
     version: 'v2.8.595',
     date: '2026-10-02',

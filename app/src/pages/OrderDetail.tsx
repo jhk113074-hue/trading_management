@@ -10425,7 +10425,7 @@ ${downloadLink}`;
 
       {/* Top Panel: PI Info & CI, Items Summary (Consolidated) */}
       {showPoDetails && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '14px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 390px', gap: '14px', alignItems: 'start' }}>
 
         {/* Left: Consolidated Order Information */}
         <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -10712,31 +10712,34 @@ ${downloadLink}`;
         </div>
 
         {/* Right: L/C details & PO/LC/Sales Contract 파일 첨부 관리 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* L/C Details Section */}
           {basicForm.isLc === 'Y' && (
-            <div style={{ padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontWeight: 800, fontSize: '13px', color: '#1e40af', borderBottom: '1px solid #bfdbfe', paddingBottom: '4px', marginBottom: '4px' }}>💳 L/C 거래 상세 정보</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>L/C ISSUING BANK</span>
-                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
+            <div style={{ padding: '10px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #bfdbfe', paddingBottom: '4px' }}>
+                <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e40af' }}>💳 L/C 거래 상세 정보</span>
+                <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>신용장 거래</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>L/C ISSUING BANK</span>
+                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', color: '#1e293b', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="발행 은행" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>LC 번호</span>
-                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>L/C 번호</span>
+                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', color: '#1e293b', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="L/C 번호" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>LC ISSUING DATE</span>
-                  <DateInput value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>L/C ISSUING DATE</span>
+                  <DateInput value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', color: '#1e293b', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af' }}>DESCRIPTION</span>
-                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e40af', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>DESCRIPTION</span>
+                  <input type="text" value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', height: '32px', background: isEditing ? '#fff' : '#f8fafc', color: '#1e293b', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="물품 설명 / LC Description" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#b45309' }}>⚠️ L/C 중요사항 기록 (Remark)</span>
-                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #fcd34d', borderRadius: '4px', fontSize: '13px', background: isEditing ? '#fffbeb' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
+                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#b45309', letterSpacing: '0.02em', textTransform: 'uppercase' }}>⚠️ L/C 중요사항 기록 (Remark)</span>
+                  <input type="text" value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #fcd34d', borderRadius: '4px', fontSize: '12.5px', height: '32px', background: isEditing ? '#fffbeb' : '#fefce8', color: '#92400e', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} placeholder="L/C 관련 주요 조건 및 주의사항 기록" />
                 </div>
               </div>
             </div>
