@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.593',
+    version: 'v2.8.593',
+    date: '2026-10-02',
+    category: '버그수정',
+    title: '공급사 발주서(PO) 렌더링 시 견적 품목 이중 병합 차단 및 발주 품목 삭제/수정 불가 버그 근본 해결',
+    content: '• groupedSupplierItems 이중 병합(Double Merging) 구조 근본 차단: 소싱 품목(sourcingItems)이 이미 존재하는 경우 화면 렌더링 계층에서 견적 확정 품목(orderItems)을 다시 무조건 순회하며 발주서 테이블에 이중으로 강제 삽입하던 취약점 제거\n• 공급사별 발주 품목 중복 검사 스마트화: addItemToGroup 검사 시 extractItemCode 및 isSameOrderItem 스마트 매칭을 전면 적용하여 규격 괄호(예: [P0057] (1×1m, Wall, 1.2T)) 차이로 동일 품목이 7번째 항목으로 추가 노출되던 화면 버그 완벽 차단\n• 발주 품목 수정 및 삭제 기능 정상화: 기존에 orderItems에서 잘못 합성되어 들어온 품목은 sourcingItems 인덱스를 찾지 못해(-1) 이름/단가 수정 및 휴지통(삭제) 버튼이 동작하지 않던 문제를 해결하고, PO 테이블에서 품목 삭제 시 클라우드 DB(Firestore)에도 즉시 원자적으로 영구 반영되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.592',
     version: 'v2.8.592',
     date: '2026-10-02',

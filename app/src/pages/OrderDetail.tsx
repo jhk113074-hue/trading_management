@@ -646,6 +646,30 @@ const SalePriceInput: React.FC<{
   );
 };
 
+export const extractItemCode = (name?: string, code?: string): string => {
+  if (code && code.trim()) return code.trim().toUpperCase();
+  if (!name) return '';
+  const match = name.match(/\[([A-Za-z0-9_-]+)\]/);
+  if (match) return match[1].trim().toUpperCase();
+  return '';
+};
+
+export const isSameOrderItem = (itemA: any, itemB: any): boolean => {
+  if (!itemA || !itemB) return false;
+  if (itemA === itemB) return true;
+  if (itemA.itemId && itemB.itemId && String(itemA.itemId) === String(itemB.itemId)) return true;
+  
+  const codeA = extractItemCode(itemA.name, itemA.productCode || itemA.itemCode);
+  const codeB = extractItemCode(itemB.name, itemB.productCode || itemB.itemCode);
+  if (codeA && codeB && codeA === codeB) return true;
+
+  const cleanNameA = (itemA.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
+  const cleanNameB = (itemB.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
+  if (cleanNameA && cleanNameB && cleanNameA === cleanNameB) return true;
+
+  return false;
+};
+
 export const OrderDetail: React.FC = () => {
   const { userProfile } = useAuth();
 
@@ -3920,29 +3944,7 @@ export const OrderDetail: React.FC = () => {
           };
         });
 
-        const extractItemCode = (name?: string, code?: string): string => {
-          if (code && code.trim()) return code.trim().toUpperCase();
-          if (!name) return '';
-          const match = name.match(/\[([A-Za-z0-9_-]+)\]/);
-          if (match) return match[1].trim().toUpperCase();
-          return '';
-        };
 
-        const isSameOrderItem = (itemA: any, itemB: any): boolean => {
-          if (!itemA || !itemB) return false;
-          if (itemA === itemB) return true;
-          if (itemA.itemId && itemB.itemId && String(itemA.itemId) === String(itemB.itemId)) return true;
-          
-          const codeA = extractItemCode(itemA.name, itemA.productCode || itemA.itemCode);
-          const codeB = extractItemCode(itemB.name, itemB.productCode || itemB.itemCode);
-          if (codeA && codeB && codeA === codeB) return true;
-
-          const cleanNameA = (itemA.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
-          const cleanNameB = (itemB.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
-          if (cleanNameA && cleanNameB && cleanNameA === cleanNameB) return true;
-
-          return false;
-        };
 
         const alignedSourcing = rawSourcing.map((sIt: any, idx: number) => {
           const rIt = (sIt.itemId && restoredOrderItems.find((r: any) => r.itemId && r.itemId === sIt.itemId))
@@ -4404,12 +4406,12 @@ export const OrderDetail: React.FC = () => {
         groups[supplierName] = [];
       }
       const isDuplicate = groups[supplierName].some((existing: any) => {
-        if (item.itemId && existing.itemId && item.itemId === existing.itemId) return true;
-        const codeA = item.productCode || item.itemCode;
-        const codeB = existing.productCode || existing.itemCode;
-        if (codeA && codeB && codeA === codeB && (item.name === existing.name || !item.name)) return true;
-        if (item.name && existing.name && item.name === existing.name && item.qty === existing.qty) return true;
-        return false;
+        if (item === existing) return true;
+        if (item.itemId && existing.itemId && String(item.itemId) === String(existing.itemId)) return true;
+        const codeA = extractItemCode(item.name, item.productCode || item.itemCode);
+        const codeB = extractItemCode(existing.name, existing.productCode || existing.itemCode);
+        if (codeA && codeB && codeA === codeB) return true;
+        return isSameOrderItem(item, existing);
       });
       if (!isDuplicate) {
         groups[supplierName].push(item as OrderItem);
@@ -4418,9 +4420,7 @@ export const OrderDetail: React.FC = () => {
 
     if (sourcingItems && sourcingItems.length > 0) {
       (sourcingItems as OrderItem[]).forEach(addItemToGroup);
-    }
-    // Defensive merge: check orderItems and order.items to guarantee no supplier/item is ever dropped
-    if (orderItems && orderItems.length > 0) {
+    } else if (orderItems && orderItems.length > 0) {
       (orderItems as OrderItem[]).forEach(addItemToGroup);
     } else if (order?.items && order.items.length > 0) {
       (order.items as OrderItem[]).forEach(addItemToGroup);
@@ -12080,15 +12080,26 @@ ${downloadLink}`;
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => {
-                                                  if (window.confirm('정말 이 품목을 발주에서 제외하시겠습니까?')) {
-                                                    setSourcingItems(prev => {
-                                                      const next = prev.filter(x => x !== it);
-                                                      latestOrderStateRef.current.sourcingItems = next;
-                                                      return next;
-                                                    });
-                                                  }
-                                                }}
+                                                onClick={async () => {
+                                                   if (window.confirm('정말 이 품목을 발주에서 제외하시겠습니까?')) {
+                                                     const next = sourcingItems.filter(x => {
+                                                       if (x === it) return false;
+                                                       if (it.itemId && x.itemId && String(x.itemId) === String(it.itemId)) return false;
+                                                       return !isSameOrderItem(x, it);
+                                                     });
+                                                     setSourcingItems(next);
+                                                     latestOrderStateRef.current.sourcingItems = next;
+
+                                                     if (order?.id) {
+                                                       try {
+                                                         const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+                                                         await updateDoc(orderRef, { sourcingItems: next });
+                                                       } catch (err) {
+                                                         console.warn('Auto-save after PO item delete failed:', err);
+                                                       }
+                                                     }
+                                                   }
+                                                 }}
                                                 style={{ padding: '4px 6px', background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                                 title="품목 삭제"
                                               >
