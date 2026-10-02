@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.594',
+    version: 'v2.8.594',
+    date: '2026-10-02',
+    category: '버그수정',
+    title: '동일 제품군(규격/두께 상이) 품목의 과도한 중복 오인 제거 및 발주서 6개 전 품목 완벽 복원',
+    content: '• 품목 식별 알고리즘(isSameOrderItem) 근본 혁신: 기존에 품목 코드([P0057], [P0150] 등)가 명확히 다름에도 규격 괄호(1×1m 등)를 제거한 기본 제품명(Insulation Skin Cover)이 유사하다는 이유로 서로 다른 품목을 동일 품목으로 잘못 판단하여 6개 중 3개가 삭제되던 치명적 결함 해결\n• 품목 코드 우선 판정 원칙 확립: 고유 품목 코드(P0152, P0150, P0300, P0057, P0151, P0053)가 서로 다르면 어떠한 경우에도 다른 품목으로 판별하도록 엄격 분리\n• 주식회사 정도 6개 발주 품목 및 총 금액(₩52,606,000) 100% 정상화: 발주서(PO) 테이블 및 업체별 발주액 요약 테이블에서 1번부터 6번까지 전 품목이 누락 없이 완벽 렌더링되도록 자동 복구',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.593',
     version: 'v2.8.593',
     date: '2026-10-02',

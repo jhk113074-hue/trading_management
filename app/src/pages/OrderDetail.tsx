@@ -661,11 +661,34 @@ export const isSameOrderItem = (itemA: any, itemB: any): boolean => {
   
   const codeA = extractItemCode(itemA.name, itemA.productCode || itemA.itemCode);
   const codeB = extractItemCode(itemB.name, itemB.productCode || itemB.itemCode);
-  if (codeA && codeB && codeA === codeB) return true;
+  
+  // 1. Both items have a product code: they MUST match identically. Different codes mean different items!
+  if (codeA && codeB) {
+    return codeA === codeB;
+  }
 
-  const cleanNameA = (itemA.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
-  const cleanNameB = (itemB.name || '').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '').toLowerCase();
-  if (cleanNameA && cleanNameB && cleanNameA === cleanNameB) return true;
+  // 2. If one has code and the other does not:
+  if (codeA || codeB) {
+    const cleanA = (itemA.name || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
+    const cleanB = (itemB.name || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
+    const specA = (itemA.spec || '').trim().toLowerCase();
+    const specB = (itemB.spec || '').trim().toLowerCase();
+    if (cleanA && cleanB && cleanA === cleanB) {
+      if (specA || specB) return specA === specB;
+      return true;
+    }
+    return false;
+  }
+
+  // 3. Neither has product code: compare name and spec exactly
+  const nameA = (itemA.name || '').trim().toLowerCase();
+  const nameB = (itemB.name || '').trim().toLowerCase();
+  if (nameA && nameB && nameA === nameB) {
+    const specA = (itemA.spec || '').trim().toLowerCase();
+    const specB = (itemB.spec || '').trim().toLowerCase();
+    if (specA || specB) return specA === specB;
+    return true;
+  }
 
   return false;
 };
@@ -4024,7 +4047,7 @@ export const OrderDetail: React.FC = () => {
             const curSeen = seenCountBySupplierAndCode[key] || 0;
             // 견적서(restoredOrderItems)에서 이 공급사의 이 품목 코드가 몇 개인지 확인
             const orderCount = restoredOrderItems.filter((r: any) => 
-              (r.supplier || '').trim() === sup && 
+              isSameSupplier(r.supplier || '', sup) && 
               extractItemCode(r.name, r.productCode || r.itemCode) === code
             ).length;
 
@@ -4408,9 +4431,6 @@ export const OrderDetail: React.FC = () => {
       const isDuplicate = groups[supplierName].some((existing: any) => {
         if (item === existing) return true;
         if (item.itemId && existing.itemId && String(item.itemId) === String(existing.itemId)) return true;
-        const codeA = extractItemCode(item.name, item.productCode || item.itemCode);
-        const codeB = extractItemCode(existing.name, existing.productCode || existing.itemCode);
-        if (codeA && codeB && codeA === codeB) return true;
         return isSameOrderItem(item, existing);
       });
       if (!isDuplicate) {
