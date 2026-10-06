@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.597',
+    version: 'v2.8.597',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '도착 보고서(Arrival Report) 쉬핑마크 첫번째 행 표시·이후 Pallet No. 간소화, 규격 미입력 비우기 및 A4 단일 1장 맞춤 인쇄 최적화',
+    content: '• 쉬핑마크 첫 행만 전체 표시 및 이후 Pallet No. 간소화: 도착 보고서 인쇄 및 출력 시 첫 번째 팔레트만 다이아몬드 로고 도형 및 전체 쉬핑마크를 온전하게 표시하고, 2번째 팔레트부터는 [PALLET NO. : 2 / 17] 형태로 팔레트 번호만 굵고 깔끔하게 표시하여 행 높이를 60% 이상 대폭 축소\n• Measurement(규격) 엄격 검증 및 미입력 행 비우기: 패킹리스트에서 WxLxH 세 숫자가 모두 정상 입력된 팔레트 규격만 Measurement에 사이즈(+CBM)로 표기하고, 불완전하거나 비어있는 행에 제품명/사양 문자열이 오염되어 들어가던 문제를 원천 차단하여 규격 미입력 행은 완전히 빈칸(-)으로 정제\n• A4 단일 페이지 1장 인쇄 완벽 최적화: 여백(7mm 8mm), 표 셀 패딩, 폰트 비율을 A4 세로 1장에 쏙 들어가도록 컴팩트하게 재조정하고 하단 불필요한 50px 빈 공백 행을 제거하여 17개 이상 팔레트도 1장 안에 깔끔하게 출력되도록 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.596',
     version: 'v2.8.596',
     date: '2026-10-02',

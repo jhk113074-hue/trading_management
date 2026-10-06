@@ -55,7 +55,19 @@ interface Props {
 const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): string => {
   let cleanDims = '';
   if (dimStr && dimStr !== '0x0x0' && dimStr !== '0*0*0') {
-    cleanDims = String(dimStr).replace(/[x×X]/g, '*').replace(/\s+/g, '');
+    const norm = String(dimStr).toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '');
+    const parts = norm.split('x');
+    if (parts.length >= 3) {
+      const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+      if (isStrictNum(parts[0]) && isStrictNum(parts[1]) && isStrictNum(parts[2])) {
+        cleanDims = `${parts[0]}*${parts[1]}*${parts[2]}`;
+      }
+    }
+  }
+  
+  // 규격(Pallet 사이즈)이 온전하지 않으면 비웁니다.
+  if (!cleanDims) {
+    return '';
   }
   
   let formattedCbm = '';
@@ -76,14 +88,10 @@ const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): s
     }
   }
 
-  if (cleanDims && formattedCbm) {
+  if (formattedCbm) {
     return `${cleanDims} (${formattedCbm})`;
-  } else if (cleanDims) {
-    return cleanDims;
-  } else if (formattedCbm) {
-    return formattedCbm;
   }
-  return '';
+  return cleanDims;
 };
 
 export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, packingList, initialData, defaultShippingMark = '', onClose, onSave }) => {

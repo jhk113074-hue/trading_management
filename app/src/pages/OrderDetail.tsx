@@ -309,7 +309,21 @@ const evaluateFormulaGlobal = (val: any): number => {
 const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): string => {
   let cleanDims = '';
   if (dimStr && dimStr !== '0x0x0' && dimStr !== '0*0*0') {
-    cleanDims = String(dimStr).replace(/[x×X]/g, '*').replace(/\s+/g, '');
+    // 3차원 치수(W, L, H)가 모두 숫자인지 엄격 검증
+    const norm = String(dimStr).toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '');
+    const parts = norm.split('x');
+    if (parts.length >= 3) {
+      const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+      if (isStrictNum(parts[0]) && isStrictNum(parts[1]) && isStrictNum(parts[2])) {
+        cleanDims = `${parts[0]}*${parts[1]}*${parts[2]}`;
+      }
+    }
+  }
+  
+  // 사용자의 요청: "규격이 안들어가 있는것은 비워주세요."
+  // 규격(W*L*H 팔레트 사이즈)이 온전히 존재하지 않으면 Measurement 칸을 완전히 비웁니다.
+  if (!cleanDims) {
+    return '';
   }
   
   let formattedCbm = '';
@@ -330,15 +344,39 @@ const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): s
     }
   }
 
-  if (cleanDims && formattedCbm) {
+  if (formattedCbm) {
     return `${cleanDims} (${formattedCbm})`;
-  } else if (cleanDims) {
-    return cleanDims;
-  } else if (formattedCbm) {
-    return formattedCbm;
   }
-  return '';
+  return cleanDims;
 };
+
+// 렌더링 시점에 과거에 잘못 저장된 비규격 텍스트([P0234]..., 품목명 등)를 정제하여, 온전한 규격이 없으면 '-'로 비워주는 헬퍼
+const sanitizeMeasurementDisplay = (meas?: string): string => {
+  if (!meas || meas === '-' || meas === '0x0x0' || meas === '0*0*0') return '-';
+  
+  const cbmMatch = meas.match(/([0-9]+(?:\.[0-9]+)?\s*CBM)/i);
+  const cbmPart = cbmMatch ? cbmMatch[1] : '';
+
+  // 괄호(CBM)를 제거한 뒤 남은 치수 부분이 유효한 W*L*H 숫자 치수인지 검사
+  const cleanStr = meas.replace(/\([^)]*\)/g, '').trim();
+  const dimParts = cleanStr.toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '').split('x');
+  
+  let validDims = '';
+  if (dimParts.length >= 3) {
+    const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+    if (isStrictNum(dimParts[0]) && isStrictNum(dimParts[1]) && isStrictNum(dimParts[2])) {
+      validDims = `${dimParts[0]}*${dimParts[1]}*${dimParts[2]}`;
+    }
+  }
+
+  // 규격(Pallet 사이즈)이 온전하지 않으면 비웁니다.
+  if (!validDims) {
+    return '-';
+  }
+
+  return cbmPart ? `${validDims} (${cbmPart})` : validDims;
+};
+
 
 interface FormulaWeightInputProps {
   value: string | number | undefined;
@@ -2185,13 +2223,14 @@ export const OrderDetail: React.FC = () => {
               updatedIt.supplier = supName;
             }
             // Auto fill dimensions if missing or corrupted on row but exists on product master
-            const dimParts = (updatedIt.dimensions || '').toLowerCase().replace(/[*×]/g, 'x').replace(/\s+/g, '').split('x');
+            const dimParts = (updatedIt.dimensions || '').toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '').split('x');
+            const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
             const isInvalidDim = !updatedIt.dimensions || 
                                  updatedIt.dimensions === '0x0x0' || 
                                  updatedIt.dimensions === '0*0*0' ||
-                                 /[a-z\[\]#_]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×x]/g, '')) ||
                                  dimParts.length < 3 ||
-                                 !dimParts.slice(0, 3).every((p: string) => /^\d+(\.\d+)?$/.test(p.trim()) && parseFloat(p) > 0);
+                                 !dimParts.slice(0, 3).every(isStrictNum) ||
+                                 /[a-z\[\]#_,]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×xX.]/g, ''));
 
             if (isInvalidDim) {
               const pW = prod.palletWidth || prod.specWidth || 0;
@@ -2200,12 +2239,22 @@ export const OrderDetail: React.FC = () => {
               if (pW > 0 && pL > 0 && pH > 0) {
                 updatedIt.dimensions = `${pW}x${pL}x${pH}`;
                 containerChanged = true;
-              } else if (updatedIt.dimensions && /[a-z\[\]#_]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×x]/g, ''))) {
-                // Clear corrupted non-dimension strings like "[p0233..." so they don't pollute UI
+              } else if (updatedIt.dimensions) {
+                // Clear corrupted non-dimension strings like "[p0233...", "1100*1m,roof..." so they don't pollute UI
                 updatedIt.dimensions = '';
                 containerChanged = true;
               }
             }
+          }
+        }
+
+        // Even without prod, clear corrupted non-dimension strings from row
+        if (updatedIt.dimensions) {
+          const dimParts = (updatedIt.dimensions || '').toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '').split('x');
+          const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+          if (dimParts.length < 3 || !dimParts.slice(0, 3).every(isStrictNum) || /[a-z\[\]#_,]/i.test((updatedIt.dimensions || '').toLowerCase().replace(/[*×xX.]/g, ''))) {
+            updatedIt.dimensions = '';
+            containerChanged = true;
           }
         }
 
@@ -9340,13 +9389,14 @@ ${downloadLink}`;
               <title>도착보고 - ${poNum}</title>
               <style>
                 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-                body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
-                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
-                .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
-                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
-                .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
+                @page { size: A4 portrait; margin: 7mm 8mm; }
+                body { font-family: 'Noto Sans KR', sans-serif; padding: 10px 15px; color: #000; font-size: 10.5px; line-height: 1.3; }
+                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 2.5px double #000; padding-bottom: 4px; margin-bottom: 8px; align-items: end; }
+                .title-korean { font-size: 22px; font-weight: 900; letter-spacing: 0.08em; color: #000; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+                .info-table td { border: 1px solid #000; padding: 3px 6px; font-size: 10px; vertical-align: top; line-height: 1.25; }
+                .desc-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+                .desc-table th, .desc-table td { border: 1px solid #000; padding: 3px 4px; font-size: 9.5px; vertical-align: middle; line-height: 1.2; }
                 .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
                 .desc-table td.right { text-align: right; }
                 .desc-table td.center { text-align: center; }
@@ -9356,7 +9406,7 @@ ${downloadLink}`;
             <body>
               <div class="header-container">
                 <div class="title-korean">도착 보고서 (Arrival Report)</div>
-                <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
+                <div style="text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.4;">
                   <strong>Doc No:</strong> ${poNum}<br/>
                   <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
                 </div>
@@ -9369,7 +9419,7 @@ ${downloadLink}`;
                   </td>
                   <td style="width: 50%;">
                     <strong>8) Booking No.</strong><br/>
-                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${basicForm.bookingNo || (repData.bookingNo && repData.bookingNo !== basicForm.vesselBooking ? repData.bookingNo : '') || '-'}</span>
+                    <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">${basicForm.bookingNo || (repData.bookingNo && repData.bookingNo !== basicForm.vesselBooking ? repData.bookingNo : '') || '-'}</span>
                   </td>
                 </tr>
                 <tr>
@@ -9405,13 +9455,11 @@ ${downloadLink}`;
                       </div>
                     </div>
                   </td>
-                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
-                    위 제품 상차시 내용물 및 포장에<br/>
-                    파손이 없고 적절한 방법으로<br/>
-                    운송하였음을 확인합니다.<br/><br/>
-                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
-                    기사님 연락처 : <br/><br/>
-                    차 넘 버 : 
+                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 11px; font-weight: bold; background: #fffbeb; line-height: 1.35;">
+                    위 제품 상차시 내용물 및 포장에 파손이 없고<br/>
+                    적절한 방법으로 운송하였음을 확인합니다.<br/><br/>
+                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/>
+                    기사님 연락처 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 차 넘 버 : 
                   </td>
                 </tr>
                 <tr>
@@ -9432,17 +9480,17 @@ ${downloadLink}`;
               <table class="desc-table">
                 <thead>
                   <tr>
-                    <th style="width: 25%">10) Marks</th>
-                    <th style="width: 25%">11) Description of Goods</th>
-                    <th style="width: 10%">12) Qty</th>
-                    <th style="width: 10%">13) Package</th>
-                    <th style="width: 15%" colspan="2">14) Weight (kg)</th>
-                    <th style="width: 15%">16) Measurement</th>
+                    <th style="width: 23%">10) Marks</th>
+                    <th style="width: 27%">11) Description of Goods</th>
+                    <th style="width: 8%">12) Qty</th>
+                    <th style="width: 8%">13) Package</th>
+                    <th style="width: 16%" colspan="2">14) Weight (kg)</th>
+                    <th style="width: 18%">16) Measurement</th>
                   </tr>
                   <tr>
                     <th></th><th></th><th></th><th></th>
-                    <th style="font-size: 9px; width: 7.5%">Net</th>
-                    <th style="font-size: 9px; width: 7.5%">Gross</th>
+                    <th style="font-size: 8.5px; width: 8%">Net</th>
+                    <th style="font-size: 8.5px; width: 8%">Gross</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -9463,11 +9511,18 @@ ${downloadLink}`;
                     return `
                       <tr>
                         ${!isSecondary ? `
-                          <td rowspan="${spanCount}" class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold; vertical-align: middle;">
-                            ${(it.marks || '').replace(/\n/g, '<br/>')}
+                          <td rowspan="${spanCount}" class="center" style="font-size: 9.5px; line-height: 1.2; font-weight: bold; vertical-align: middle; padding: 2px;">
+                            ${itemIdx === 0 
+                              ? renderShippingMarkCellHtml(it.marks) 
+                              : (() => {
+                                  const m = (it.marks || '').match(/(PALLET\s*(?:NO\.?|#)?\s*:\s*\d+(?:\s*\/\s*\d+)?|PKG\s*(?:NO\.?|#)?\s*:\s*\d+(?:\s*\/\s*\d+)?)/i);
+                                  const pText = m ? m[1].toUpperCase() : (it.pkgNo ? `PALLET NO. : ${it.pkgNo}` : `PALLET NO. : ${itemIdx + 1}`);
+                                  return `<div style="font-size: 10.5px; font-weight: 800; color: #000; text-align: center; padding: 4px 0; letter-spacing: 0.02em;">${pText}</div>`;
+                                })()
+                            }
                           </td>
                         ` : ''}
-                        <td style="font-size: 11px; line-height: 1.5;">
+                        <td style="font-size: 10px; line-height: 1.35;">
                           ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
                         </td>
                         ${!isSecondary ? `
@@ -9475,7 +9530,7 @@ ${downloadLink}`;
                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
                           <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.netWeight) ? Math.round(evaluateFormula(it.netWeight)).toLocaleString() : '-'}</td>
                           <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.grossWeight) ? Math.round(evaluateFormula(it.grossWeight)).toLocaleString() : '-'}</td>
-                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
+                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle; font-size: 9.5px;">${sanitizeMeasurementDisplay(it.measurement)}</td>
                         ` : ''}
                       </tr>
                     `;
@@ -14531,16 +14586,10 @@ ${downloadLink}`;
                             grossWeight: evaluateFormulaGlobal(cIt.grossWeight),
                             measurement: (() => {
                               let dimStr = cIt.dimensions || '';
-                              if (!dimStr || dimStr === '0x0x0' || dimStr === '0*0*0') {
-                                const match = (cIt.description || '').match(/^\[(.*?)\]/);
-                                const itemCode = match ? match[1] : (cIt.itemCode || '');
-                                const prod = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                const pW = prod?.palletWidth || prod?.specWidth || 0;
-                                const pL = prod?.palletLength || prod?.specLength || 0;
-                                const pH = prod?.palletHeight || prod?.specHeight || 0;
-                                if (pW > 0 && pL > 0 && pH > 0) {
-                                  dimStr = `${pW}*${pL}*${pH}`;
-                                }
+                              const parts = String(dimStr).toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '').split('x');
+                              const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+                              if (!parts || parts.length < 3 || !parts.slice(0, 3).every(isStrictNum)) {
+                                dimStr = '';
                               }
                               return formatMeasurementWithDims(dimStr, cIt.cbm);
                             })()
@@ -14603,7 +14652,20 @@ ${downloadLink}`;
                           const grossWt = (cIt?.grossWeight !== undefined && cIt?.grossWeight !== '') 
                             ? evaluateFormulaGlobal(cIt.grossWeight) 
                             : evaluateFormulaGlobal(it.grossWeight);
-                          const measurement = cIt ? formatMeasurementWithDims(cIt.dimensions, cIt.cbm) : (it.measurement || '');
+                          
+                          let measurement = '';
+                          if (cIt) {
+                            let dimStr = cIt.dimensions || '';
+                            const parts = String(dimStr).toLowerCase().replace(/[*×X]/g, 'x').replace(/\s+/g, '').split('x');
+                            const isStrictNum = (s: string) => /^\d+(\.\d+)?$/.test((s || '').trim()) && parseFloat(s) > 0;
+                            if (!parts || parts.length < 3 || !parts.slice(0, 3).every(isStrictNum)) {
+                              dimStr = '';
+                            }
+                            measurement = formatMeasurementWithDims(dimStr, cIt.cbm);
+                          } else {
+                            measurement = sanitizeMeasurementDisplay(it.measurement);
+                            if (measurement === '-') measurement = '';
+                          }
 
                           return {
                             ...it,
@@ -14619,7 +14681,7 @@ ${downloadLink}`;
                             packageType: it.packageType && it.packageType !== '단품' ? it.packageType : 'PL',
                             netWeight: netWt,
                             grossWeight: grossWt,
-                            measurement: measurement || it.measurement
+                            measurement: measurement
                           };
                         });
                       }
@@ -14862,18 +14924,21 @@ ${downloadLink}`;
                               <title>도착보고 - ${poNum}</title>
                               <style>
                                 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-                                body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
-                                .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+                                @page { size: A4 portrait; margin: 7mm 8mm; }
                                 @media print {
                                   .no-print { display: none !important; }
-                                  body { padding: 0; }
+                                  body { padding: 0 !important; margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                  .info-table, .desc-table { page-break-inside: auto; }
+                                  tr { page-break-inside: avoid; page-break-after: auto; }
                                 }
-                                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
-                                .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
-                                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                                .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
-                                .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                                .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
+                                body { font-family: 'Noto Sans KR', sans-serif; padding: 10px 15px; color: #000; font-size: 10.5px; line-height: 1.3; }
+                                .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 8px 18px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+                                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 2.5px double #000; padding-bottom: 4px; margin-bottom: 8px; align-items: end; }
+                                .title-korean { font-size: 22px; font-weight: 900; letter-spacing: 0.08em; color: #000; }
+                                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+                                .info-table td { border: 1px solid #000; padding: 3px 6px; font-size: 10px; vertical-align: top; line-height: 1.25; }
+                                .desc-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+                                .desc-table th, .desc-table td { border: 1px solid #000; padding: 3px 4px; font-size: 9.5px; vertical-align: middle; line-height: 1.2; }
                                 .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
                                 .desc-table td.right { text-align: right; }
                                 .desc-table td.center { text-align: center; }
@@ -14884,7 +14949,7 @@ ${downloadLink}`;
                               <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
                               <div class="header-container">
                                 <div class="title-korean">도착 보고서 (Arrival Report)</div>
-                                <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
+                                <div style="text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.4;">
                                   <strong>Doc No:</strong> ${poNum}<br/>
                                   <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
                                 </div>
@@ -14898,7 +14963,7 @@ ${downloadLink}`;
                                   </td>
                                   <td style="width: 50%;">
                                     <strong>8) Booking No.</strong><br/>
-                                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
+                                    <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
                                   </td>
                                 </tr>
                                 <tr>
@@ -14934,13 +14999,11 @@ ${downloadLink}`;
                                       </div>
                                     </div>
                                   </td>
-                                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
-                                    위 제품 상차시 내용물 및 포장에<br/>
-                                    파손이 없고 적절한 방법으로<br/>
-                                    운송하였음을 확인합니다.<br/><br/>
-                                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
-                                    기사님 연락처 : <br/><br/>
-                                    차 넘 버 : 
+                                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 11px; font-weight: bold; background: #fffbeb; line-height: 1.35;">
+                                    위 제품 상차시 내용물 및 포장에 파손이 없고<br/>
+                                    적절한 방법으로 운송하였음을 확인합니다.<br/><br/>
+                                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/>
+                                    기사님 연락처 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 차 넘 버 : 
                                   </td>
                                 </tr>
                                 <tr>
@@ -14962,20 +15025,20 @@ ${downloadLink}`;
                               <table class="desc-table">
                                 <thead>
                                   <tr>
-                                    <th style="width: 25%">10) Marks</th>
-                                    <th style="width: 25%">11) Description of Goods</th>
-                                    <th style="width: 10%">12) Qty</th>
-                                    <th style="width: 10%">13) Package</th>
-                                    <th style="width: 15%" colspan="2">14) Weight (kg)</th>
-                                    <th style="width: 15%">16) Measurement</th>
+                                    <th style="width: 23%">10) Marks</th>
+                                    <th style="width: 27%">11) Description of Goods</th>
+                                    <th style="width: 8%">12) Qty</th>
+                                    <th style="width: 8%">13) Package</th>
+                                    <th style="width: 16%" colspan="2">14) Weight (kg)</th>
+                                    <th style="width: 18%">16) Measurement</th>
                                   </tr>
                                   <tr>
                                     <th></th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
-                                    <th style="font-size: 9px; width: 7.5%">Net</th>
-                                    <th style="font-size: 9px; width: 7.5%">Gross</th>
+                                    <th style="font-size: 8.5px; width: 8%">Net</th>
+                                    <th style="font-size: 8.5px; width: 8%">Gross</th>
                                     <th></th>
                                   </tr>
                                 </thead>
@@ -14996,11 +15059,18 @@ ${downloadLink}`;
                                     return `
                                       <tr>
                                         ${!isSecondary ? `
-                                          <td rowspan="${spanCount}" class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold; vertical-align: middle;">
-                                            ${renderShippingMarkCellHtml(it.marks)}
+                                          <td rowspan="${spanCount}" class="center" style="font-size: 9.5px; line-height: 1.2; font-weight: bold; vertical-align: middle; padding: 2px;">
+                                            ${itemIdx === 0 
+                                              ? renderShippingMarkCellHtml(it.marks) 
+                                              : (() => {
+                                                  const m = (it.marks || '').match(/(PALLET\s*(?:NO\.?|#)?\s*:\s*\d+(?:\s*\/\s*\d+)?|PKG\s*(?:NO\.?|#)?\s*:\s*\d+(?:\s*\/\s*\d+)?)/i);
+                                                  const pText = m ? m[1].toUpperCase() : (it.pkgNo ? `PALLET NO. : ${it.pkgNo}${grandTotalPlt ? ` / ${grandTotalPlt}` : ''}` : `PALLET NO. : ${itemIdx + 1}`);
+                                                  return `<div style="font-size: 10.5px; font-weight: 800; color: #000; text-align: center; padding: 4px 0; letter-spacing: 0.02em;">${pText}</div>`;
+                                                })()
+                                            }
                                           </td>
                                         ` : ''}
-                                        <td style="font-size: 11px; line-height: 1.5;">
+                                        <td style="font-size: 10px; line-height: 1.35;">
                                           ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
                                         </td>
                                         ${!isSecondary ? `
@@ -15008,20 +15078,11 @@ ${downloadLink}`;
                                           <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.packageType || 'PL'}</td>
                                           <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.netWeight) ? Math.round(evaluateFormula(it.netWeight)).toLocaleString() : '-'}</td>
                                           <td rowspan="${spanCount}" class="right" style="vertical-align: middle;">${evaluateFormula(it.grossWeight) ? Math.round(evaluateFormula(it.grossWeight)).toLocaleString() : '-'}</td>
-                                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle;">${it.measurement || '-'}</td>
+                                          <td rowspan="${spanCount}" class="center" style="vertical-align: middle; font-size: 9.5px;">${sanitizeMeasurementDisplay(it.measurement)}</td>
                                         ` : ''}
                                       </tr>
                                     `;
                                   }).join('')}
-                                  <tr>
-                                    <td style="border-top: none; border-bottom: none; height: 50px;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                    <td style="border-top: none; border-bottom: none;"></td>
-                                  </tr>
                                   <tr class="total-row">
                                     <td class="center">TOTAL</td>
                                     <td></td>
