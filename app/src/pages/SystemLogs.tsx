@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.605',
+    version: 'v2.8.605',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '패킹리스트 다단적재(Stackable) 및 회전허용(Rotation) 설정 즉시 자동저장(Auto-save) 구현',
+    content: '• 다단적재(🔼/⛔) 및 회전허용(🔄/🔒) 토글 즉시 Firestore 자동 저장: 패킹리스트 테이블에서 파렛트 다단적재 금지(⛔) 또는 회전 불가(🔒) 버튼 클릭 시, 상단 전체 저장 버튼을 따로 누르지 않아도 Firestore 데이터베이스에 즉시 동기화 저장되도록 구현\n• 페이지 이탈 및 재진입 시 설정 보존: 다른 메뉴나 대시보드로 이동했다가 다시 주문 상세로 진입하더라도 사용자가 설정한 다단적재 및 회전 옵션이 영구적으로 안전하게 유지\n• 파렛트 순번(Pallet No) 수동 변경 시 자동저장 보강: 순번 입력 후 포커스 아웃(onBlur) 시 변경된 순번이 즉시 자동 반영되도록 동기화 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.604',
     version: 'v2.8.604',
     date: '2026-10-06',

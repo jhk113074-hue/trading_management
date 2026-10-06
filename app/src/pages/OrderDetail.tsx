@@ -14022,11 +14022,20 @@ ${downloadLink}`;
                                                     if (!isNaN(targetNum) && targetNum > 0 && targetNum !== curPalletIdx + 1) {
                                                       movePalletToNumber(cIdx, curPalletIdx, targetNum);
                                                     } else if (val !== it.pkgNo) {
-                                                      const nextContainers = [...basicForm.packingList.containers];
-                                                      for (let g = 0; g < spanCount; g++) {
-                                                        nextContainers[cIdx].items[itIdx + g].pkgNo = val;
-                                                      }
+                                                      const nextContainers = basicForm.packingList.containers.map((c: any, cI: number) => {
+                                                        if (cI !== cIdx) return c;
+                                                        const newItems = (c.items || []).map((item: any, itI: number) => {
+                                                          if (itI >= itIdx && itI < itIdx + spanCount) {
+                                                            return { ...item, pkgNo: val };
+                                                          }
+                                                          return item;
+                                                        });
+                                                        return { ...c, items: newItems };
+                                                      });
                                                       setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                      const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+                                                      setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+                                                      savePackingListToFirestore(nextContainers, nextReports);
                                                     }
                                                   }} 
                                                   title="순번 숫자를 수정하고 Enter를 누르면 파렛트 전체가 해당 순번으로 이동합니다."
@@ -14354,11 +14363,20 @@ ${downloadLink}`;
                                                   disabled={!isEditing}
                                                   onClick={() => {
                                                     const nextVal = isStack ? 'N' : 'Y';
-                                                    const nextContainers = [...basicForm.packingList.containers];
-                                                    for (let g = 0; g < spanCount; g++) {
-                                                      nextContainers[cIdx].items[itIdx + g].stackable = nextVal;
-                                                    }
+                                                    const nextContainers = basicForm.packingList.containers.map((c: any, cI: number) => {
+                                                      if (cI !== cIdx) return c;
+                                                      const newItems = (c.items || []).map((item: any, itI: number) => {
+                                                        if (itI >= itIdx && itI < itIdx + spanCount) {
+                                                          return { ...item, stackable: nextVal };
+                                                        }
+                                                        return item;
+                                                      });
+                                                      return { ...c, items: newItems };
+                                                    });
                                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+                                                    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+                                                    savePackingListToFirestore(nextContainers, nextReports);
                                                   }}
                                                   title={isEditing ? (isStack ? '다단적재: 가능 (클릭 시 [다단 불가]로 변경)' : '다단적재: 불가 (클릭 시 [다단 적재 가능]으로 변경)') : (isStack ? '다단적재 가능' : '다단 불가')}
                                                   style={{
@@ -14396,11 +14414,20 @@ ${downloadLink}`;
                                                   disabled={!isEditing}
                                                   onClick={() => {
                                                     const nextVal = isRot ? 'N' : 'Y';
-                                                    const nextContainers = [...basicForm.packingList.containers];
-                                                    for (let g = 0; g < spanCount; g++) {
-                                                      nextContainers[cIdx].items[itIdx + g].rotation = nextVal;
-                                                    }
+                                                    const nextContainers = basicForm.packingList.containers.map((c: any, cI: number) => {
+                                                      if (cI !== cIdx) return c;
+                                                      const newItems = (c.items || []).map((item: any, itI: number) => {
+                                                        if (itI >= itIdx && itI < itIdx + spanCount) {
+                                                          return { ...item, rotation: nextVal };
+                                                        }
+                                                        return item;
+                                                      });
+                                                      return { ...c, items: newItems };
+                                                    });
                                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+                                                    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+                                                    savePackingListToFirestore(nextContainers, nextReports);
                                                   }}
                                                   title={isEditing ? (isRot ? '회전허용: 가능 (클릭 시 [회전 불가(방향 고정)]로 변경)' : '회전허용: 불가 (클릭 시 [회전 가능]으로 변경)') : (isRot ? '회전 가능' : '회전 불가')}
                                                   style={{
