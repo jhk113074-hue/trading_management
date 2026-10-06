@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.598',
+    version: 'v2.8.598',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '혼적(Co-loading) 팔레트 대표 공급사 도착보고서 통합 및 비대표 공급사 도착보고서 미표시 처리',
+    content: '• 혼적 팔레트 대표 공급사 도착보고서 자동 통합: 1개의 팔레트에 여러 공급업체의 화물이 함께 적재(혼적, Co-loading)된 경우, 실제 팔레트 수량(PKG > 0)을 보유한 대표 공급사의 도착보고서에 해당 팔레트에 혼적된 모든 타사 품목이 함께 포함되어 보고되도록 귀속 로직 개선\n• 비대표 공급사 불필요한 도착보고서 자동 제외: 자신 명의의 단독/대표 팔레트가 전혀 없고 타사 팔레트에 전량 혼적된 공급사(예: 부영금속, 이지에이치디, 우성기계 등)는 별도 도착보고서가 발행되거나 목록에 나타나지 않도록 완벽 필터링\n• 자동 PDF 생성 및 관리 동기화: 도착보고서/쉬핑마크 자동 일괄 생성(autoEnsureArrivalAndShippingDocs) 시에도 비대표 공급사는 제외하여 불필요한 빈 문서 생성을 원천 차단하고 업무 효율 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.597',
     version: 'v2.8.597',
     date: '2026-10-06',

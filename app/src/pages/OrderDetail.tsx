@@ -377,6 +377,47 @@ const sanitizeMeasurementDisplay = (meas?: string): string => {
   return cbmPart ? `${validDims} (${cbmPart})` : validDims;
 };
 
+// 혼적(Co-loading/Shared Pallet) 규칙에 따라 특정 공급사가 대표(Head)인 팔레트의 모든 품목(혼적된 타사 품목 포함)을 추출하는 헬퍼
+const getSupplierArrivalContainerItems = (containers: any[] | undefined, targetSupplier: string): any[] => {
+  if (!containers || containers.length === 0 || !targetSupplier) return [];
+  const result: any[] = [];
+
+  containers.forEach((container: any) => {
+    const cItems = container.items || [];
+    // 1. pkgNo 기준으로 품목 그룹핑 (순서 보존)
+    const palletMap = new Map<string, { headSupplier: string; items: any[] }>();
+    cItems.forEach((cIt: any, cIdx: number) => {
+      const pNo = cIt.pkgNo || String(cIdx + 1);
+      if (!palletMap.has(pNo)) {
+        palletMap.set(pNo, { headSupplier: '', items: [] });
+      }
+      const pGroup = palletMap.get(pNo)!;
+      pGroup.items.push(cIt);
+      // 팔레트의 대표 공급사: Number(pkg) > 0 인 품목의 공급사를 최우선으로 지정
+      if (Number(cIt.pkg) > 0 && !pGroup.headSupplier) {
+        pGroup.headSupplier = cIt.supplier || '';
+      }
+    });
+
+    // 만약 그룹 내 모든 품목이 pkg=0 인 경우 첫 번째 품목의 supplier를 fallback으로 사용
+    palletMap.forEach(pGroup => {
+      if (!pGroup.headSupplier && pGroup.items.length > 0) {
+        pGroup.headSupplier = pGroup.items[0]?.supplier || '';
+      }
+    });
+
+    // 2. 해당 팔레트의 대표 공급사가 targetSupplier와 일치하면, 그 팔레트의 모든 품목(혼적 품목 포함)을 결과에 추가
+    palletMap.forEach(pGroup => {
+      if (isSameSupplier(pGroup.headSupplier, targetSupplier)) {
+        result.push(...pGroup.items);
+      }
+    });
+  });
+
+  return result;
+};
+
+
 
 interface FormulaWeightInputProps {
   value: string | number | undefined;
@@ -9245,13 +9286,11 @@ ${downloadLink}`;
 
     let packingItemsList = repData.packingItems || [];
     if (basicForm.packingList?.containers) {
-      let matchingItems: any[] = [];
-      basicForm.packingList.containers.forEach((container: any) => {
-        const itemsForSupplier = (container.items || []).filter((it: any) => 
-          isSameSupplier(it.supplier, supplierName)
-        );
-        matchingItems = [...matchingItems, ...itemsForSupplier];
-      });
+      const matchingItems = getSupplierArrivalContainerItems(basicForm.packingList.containers, supplierName);
+      // 혼적 전용 공급사(자신이 대표인 팔레트가 전혀 없는 공급사)는 도착보고서 생성 안 함
+      if (matchingItems.length === 0) {
+        return { arrivalPdfUrl: '', shippingPdfUrl: '', poNum };
+      }
 
       const matchingPkgNos = Array.from(new Set(matchingItems.map(m => m.pkgNo).filter(Boolean)));
       const currentPkgNos = Array.from(new Set(packingItemsList.map((p: any) => p.pkgNo).filter(Boolean)));
@@ -14507,12 +14546,23 @@ ${downloadLink}`;
                     </div>
                   )}
 
-                  {activeRoundSuppliers.length === 0 ? (
-                    <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                      등록된 제조사(공급업체) 정보가 없습니다.
-                    </div>
-                  ) : (
-                    activeRoundSuppliers.map(supplierName => {
+                  {(() => {
+                    const arrivalSuppliers = (basicForm.packingList?.containers && basicForm.packingList.containers.length > 0)
+                      ? activeRoundSuppliers.filter(sName => {
+                          const items = getSupplierArrivalContainerItems(basicForm.packingList?.containers, sName);
+                          return items.length > 0;
+                        })
+                      : activeRoundSuppliers;
+
+                    if (arrivalSuppliers.length === 0) {
+                      return (
+                        <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14.5px' }}>
+                          등록된 제조사(공급업체) 정보가 없거나, 모든 화물이 타사 팔레트에 혼적되어 별도 도착보고서가 필요하지 않습니다.
+                        </div>
+                      );
+                    }
+
+                    return arrivalSuppliers.map(supplierName => {
                       const items = groupedSupplierItems[supplierName] || [];
                       const poNum = basicForm.supplierPoDetails?.[supplierName]?.poNumber || order.supplierPoDetails?.[supplierName]?.poNumber || generateSupplierPoNumber(
                     basicForm.issuingCompany || order.issuingCompany || 'YSACC',
@@ -14539,16 +14589,8 @@ ${downloadLink}`;
                       }
                       if (grandTotalPlt === 0) grandTotalPlt = items.length || 1;
 
-                      // Extract all matching container items for this supplier in exact container order
-                      const matchingContainerItems: any[] = [];
-                      if (basicForm.packingList?.containers) {
-                        basicForm.packingList.containers.forEach((container: any) => {
-                          const itemsForSupplier = (container.items || []).filter((cIt: any) => 
-                            isSameSupplier(cIt.supplier, supplierName)
-                          );
-                          matchingContainerItems.push(...itemsForSupplier);
-                        });
-                      }
+                      // 혼적(Co-loading/Shared Pallet) 규칙: 대표 공급사 팔레트에 실린 모든 품목(혼적 타사 품목 포함) 추출
+                      const matchingContainerItems = getSupplierArrivalContainerItems(basicForm.packingList?.containers, supplierName);
 
                       // Helper to build pristine arrival report items directly from container items
                       const buildItemsFromContainer = (cItems: any[], totalPlts: number) => {
@@ -15720,8 +15762,8 @@ ${downloadLink}`;
                           })()}
                         </div>
                       );
-                    })
-                  )}
+                    });
+                  })()}
 
                 </div>
               )}
