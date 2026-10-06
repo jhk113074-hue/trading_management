@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.603',
+    version: 'v2.8.603',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 패킹리스트 테이블 최하단 줄(Bottom Row) TOTAL 합계 표시 및 캐시 버스팅 강화',
+    content: '• 패킹리스트 테이블 최하단 줄 TOTAL 합계 행 물리적 추가: 테이블 마지막 줄(Row N 다음 줄)에 TOTAL 합계 행을 tbody 직접 자식으로 굵고 선명하게 렌더링하여 스크롤 최하단에서 총 파렛트 수, 총 제품 수량(EA), 총 순중량(Net WT), 총 총중량(Gross WT), 총 CBM이 완벽하게 표시되도록 완성\n• 브라우저 iframe 및 정적 스크립트 캐시 버스팅 전면 적용: 주문 상세에서 3D 시뮬레이터 iframe 호출 시 최신 빌드 타임스탬프 쿼리스트링(?v=BUILD_DATE_BUILD_TIME)을 부여하고, container/index.html 내부 스크립트 캐시 버전을 갱신하여 클라이언트 브라우저 캐시로 인한 구버전 렌더링 원천 차단',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.602',
     version: 'v2.8.602',
     date: '2026-10-06',

@@ -32,6 +32,7 @@ import { getOverallProgress, getStageProgress, getEffectiveStageCompletion, type
 import type { Customer } from '../types/customer';
 import { useAuth } from '../contexts/AuthContext';
 import { isMonitoringUser } from '../utils/userUtils';
+import { BUILD_DATE, BUILD_TIME } from '../version';
 
 const STEP_LABEL_TO_STAGE_KEY: Record<string, StageKey | undefined> = {
   '수주정보': '수주정보',
@@ -20092,7 +20093,7 @@ ${downloadLink}`;
             </div>
             <div style={{ flex: 1, position: 'relative' }}>
               <iframe
-                src="/container/index.html"
+                src={`/container/index.html?v=${BUILD_DATE}_${BUILD_TIME}`}
                 title="컨테이너 적재 프로그램"
                 onLoad={(e) => {
                   const iframe = e.currentTarget;

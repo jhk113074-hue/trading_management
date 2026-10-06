@@ -1797,31 +1797,40 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        // Bottom summary row in tfoot
+        // Bottom summary row appended directly into packingListTbody (as the very last row) and tfoot
+        const totalRowInner = `
+            <td colspan="3" style="padding: 12px 14px; text-align: center; font-size: 0.95rem; color: #1e293b; background: #f1f5f9; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                <span style="background: #2563eb; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 800; margin-right: 8px;">TOTAL</span>
+                <strong>합계: 총 ${loaded.length}개 파렛트 (${totalCbm.toFixed(3)} CBM)</strong>
+            </td>
+            <td style="padding: 12px 8px; text-align: right; font-size: 1rem; color: #15803d; background: #f0fdf4; font-weight: 900; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                ${Math.round(totalProductQty).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">EA</span>
+            </td>
+            <td style="padding: 12px 8px; text-align: center; font-size: 0.85rem; color: #64748b; background: #f8fafc; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                -
+            </td>
+            <td style="padding: 12px 8px; text-align: right; font-size: 1rem; color: #0284c7; background: #f0f9ff; font-weight: 900; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                ${Math.round(totalNet).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
+            </td>
+            <td style="padding: 12px 8px; text-align: right; font-size: 1rem; color: #0f766e; background: #f0fdf4; font-weight: 900; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                ${Math.round(totalGross).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
+            </td>
+            <td colspan="3" style="padding: 12px 14px; text-align: center; font-size: 0.88rem; color: #16a34a; background: #f8fafc; font-weight: 800; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;">
+                ✓ 전량 적재 완료 (${loaded.length} / ${loaded.length})
+            </td>
+        `;
+
+        const totalTr = document.createElement('tr');
+        totalTr.className = 'packing-list-total-row';
+        totalTr.style.background = '#f8fafc';
+        totalTr.style.borderTop = '2px solid #64748b';
+        totalTr.style.borderBottom = '2px solid #64748b';
+        totalTr.style.fontWeight = '800';
+        totalTr.innerHTML = totalRowInner;
+        packingListTbody.appendChild(totalTr);
+
         if (tfoot) {
-            tfoot.innerHTML = `
-                <tr style="background: #f8fafc; border-top: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; font-weight: 800;">
-                    <td colspan="3" style="padding: 10px 14px; text-align: center; font-size: 0.95rem; color: #1e293b; background: #f1f5f9;">
-                        <span style="background: #2563eb; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 800; margin-right: 8px;">TOTAL</span>
-                        합계: 총 <strong>${loaded.length}</strong>개 파렛트 (${totalCbm.toFixed(3)} CBM)
-                    </td>
-                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #15803d; background: #f0fdf4; font-weight: 900;">
-                        ${Math.round(totalProductQty).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">EA</span>
-                    </td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.85rem; color: #64748b;">
-                        -
-                    </td>
-                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #0284c7; background: #f0f9ff; font-weight: 900;">
-                        ${Math.round(totalNet).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
-                    </td>
-                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #0f766e; background: #f0fdf4; font-weight: 900;">
-                        ${Math.round(totalGross).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
-                    </td>
-                    <td colspan="3" style="padding: 10px 12px; text-align: center; font-size: 0.85rem; color: #16a34a; background: #f8fafc; font-weight: 800;">
-                        ✓ 전량 적재 완료 (${loaded.length} / ${loaded.length})
-                    </td>
-                </tr>
-            `;
+            tfoot.innerHTML = `<tr style="background: #f8fafc; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b; font-weight: 800;">${totalRowInner}</tr>`;
         }
     };
 
