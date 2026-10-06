@@ -2844,6 +2844,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const evalContainerWeight = (val) => {
+        if (val === undefined || val === null || val === '') return 0;
+        if (typeof val === 'number') return isNaN(val) ? 0 : val;
+        const str = String(val).trim();
+        const hasFormula = str.startsWith('=') || /^(ROUNGUP|ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(str);
+        if (hasFormula) {
+            try {
+                let expr = str.startsWith('=') ? str.slice(1).trim() : str.trim();
+                expr = expr.replace(/(\d),(\d{3})/g, '$1$2');
+                expr = expr
+                    .replace(/\broungup\b/gi, 'ROUNDUP')
+                    .replace(/\broundup\b/gi, 'ROUNDUP')
+                    .replace(/\brounddown\b/gi, 'ROUNDDOWN')
+                    .replace(/\bround\b/gi, 'ROUND')
+                    .replace(/\bceil(?:ing)?\b/gi, 'CEILING')
+                    .replace(/\bfloor\b/gi, 'FLOOR')
+                    .replace(/\bint\b/gi, 'INT')
+                    .replace(/\babs\b/gi, 'ABS');
+                const ROUNDUP = (v, d = 0) => {
+                    const num = Number(v);
+                    if (isNaN(num)) return 0;
+                    const factor = Math.pow(10, Number(d) || 0);
+                    return (num >= 0 ? Math.ceil(num * factor) : Math.floor(num * factor)) / factor;
+                };
+                const ROUNDDOWN = (v, d = 0) => {
+                    const num = Number(v);
+                    if (isNaN(num)) return 0;
+                    const factor = Math.pow(10, Number(d) || 0);
+                    return (num >= 0 ? Math.floor(num * factor) : Math.ceil(num * factor)) / factor;
+                };
+                const ROUND = (v, d = 0) => {
+                    const num = Number(v);
+                    if (isNaN(num)) return 0;
+                    const factor = Math.pow(10, Number(d) || 0);
+                    return Math.round(num * factor) / factor;
+                };
+                const CEILING = ROUNDUP;
+                const FLOOR = ROUNDDOWN;
+                const INT = (v) => Math.floor(Number(v) || 0);
+                const ABS = (v) => Math.abs(Number(v) || 0);
+                const evalFn = new Function('ROUNDUP', 'ROUNDDOWN', 'ROUND', 'CEILING', 'FLOOR', 'INT', 'ABS',
+                    '"use strict"; return (' + expr + ');'
+                );
+                const res = evalFn(ROUNDUP, ROUNDDOWN, ROUND, CEILING, FLOOR, INT, ABS);
+                if (typeof res === 'number' && isFinite(res)) return res;
+            } catch (err) {
+                console.warn('evalContainerWeight failed:', str, err);
+            }
+        }
+        const cleaned = parseFloat(str.replace(/,/g, ''));
+        return isNaN(cleaned) ? 0 : cleaned;
+    };
+
     // --- PostMessage from Parent (Proforma Invoice) ---
     window.addEventListener('message', (event) => {
         const data = event.data;
@@ -2908,8 +2961,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const w = parseFloat(piItem.w) || 0;
                     const d = parseFloat(piItem.d) || 0;
                     const h = parseFloat(piItem.h) || 0;
-                    const nw = parseFloat(piItem.netWeight) || 0;
-                    const gw = parseFloat(piItem.grossWeight) || 0;
+                    const nw = evalContainerWeight(piItem.netWeight);
+                    const gw = evalContainerWeight(piItem.grossWeight);
                     const qty = Math.ceil(parseFloat(piItem.qty)) || 1;
                     
                     let hasDimensions = (w > 0 && d > 0 && h > 0);
@@ -3342,9 +3395,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             w: parseFloat(it.w) || 0,
                             d: parseFloat(it.d) || 0,
                             h: parseFloat(it.h) || 0,
-                            netWeight: parseFloat(it.netWeight) || 0,
-                            grossWeight: parseFloat(it.grossWeight) || 0,
-                            weight: parseFloat(it.grossWeight) || 0, // compatibility
+                            netWeight: evalContainerWeight(it.netWeight),
+                            grossWeight: evalContainerWeight(it.grossWeight),
+                            weight: evalContainerWeight(it.grossWeight), // compatibility
                             qty: Math.ceil(parseFloat(it.qty)) || 0,
                             stackable: it.stackable !== false,
                             rotation: it.rotation !== false

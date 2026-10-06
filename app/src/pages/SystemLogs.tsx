@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.601',
+    version: 'v2.8.601',
+    date: '2026-10-06',
+    category: '버그수정',
+    title: '3D 컨테이너 적재 시뮬레이션 수식(Formula) 중량(Net/Gross WT) 0 표시 오류 수정',
+    content: '• 수식 형태 중량값 0 변환 오류 근본 해결: 패킹리스트에서 수식(=ROUNDUP(...), =1500+15 등)으로 입력된 순중량(Net Weight)과 총중량(Gross Weight)이 3D 적재 시뮬레이션 연동 시 Number() 또는 parseFloat() 실패(NaN)로 인해 0으로 전송되던 문제 원천 수정\n• 3D 시뮬레이션 페이로드 수식 자동 계산: 시뮬레이션 데이터 빌더(buildPackerSimulationPayload)에서 evaluateFormulaGlobal을 적용하여 혼적(Co-loading) 품목 및 단일 품목의 수식을 정밀 계산된 최종 중량 숫자로 변환 후 전송\n• 3D 적재 엔진(container/app.js) 수식 인터프리터 2중 방어 탑재: 3D 컨테이너 시뮬레이터 내부에도 evalContainerWeight 함수를 장착하여, 수식 문자열이나 천 단위 쉼표가 포함된 중량이 유입되더라도 0이 아닌 정확한 숫자로 즉시 해석하여 테이블 및 적재 통계에 온전하게 표시되도록 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.600',
     version: 'v2.8.600',
     date: '2026-10-06',

@@ -3422,19 +3422,23 @@ export const OrderDetail: React.FC = () => {
           const h = Number(dims[2]) || 1000;
 
           let desc = (it.description || '화물').replace(/^P#\d+\.\s*/i, '');
-          let sumNet = Number(it.netWeight) || 0;
-          let sumGross = Number(it.grossWeight) || 0;
+          let sumNet = evaluateFormulaGlobal(it.netWeight);
+          let sumGross = evaluateFormulaGlobal(it.grossWeight);
 
           if (spanCount > 1) {
             const mergedItems = itemsList.slice(itIdx, itIdx + spanCount);
             const descList = mergedItems.map((x: any) => (x.description || '').replace(/^P#\d+\.\s*/i, '')).filter(Boolean);
             desc = `[혼적 ${spanCount}건] ` + descList.join(' + ');
             if (sumNet === 0) {
-              sumNet = mergedItems.reduce((acc: number, x: any) => acc + (Number(x.netWeight) || 0), 0);
+              sumNet = mergedItems.reduce((acc: number, x: any) => acc + evaluateFormulaGlobal(x.netWeight), 0);
             }
             if (sumGross === 0) {
-              sumGross = mergedItems.reduce((acc: number, x: any) => acc + (Number(x.grossWeight) || 0), 0);
+              sumGross = mergedItems.reduce((acc: number, x: any) => acc + evaluateFormulaGlobal(x.grossWeight), 0);
             }
+          }
+
+          if (sumGross === 0 && sumNet > 0) {
+            sumGross = Math.round(sumNet * 1.02);
           }
 
           let count = parseInt(it.pkg, 10);
@@ -3453,6 +3457,7 @@ export const OrderDetail: React.FC = () => {
             h: h,
             netWeight: sumNet,
             grossWeight: sumGross,
+            cbm: evaluateFormulaGlobal(it.cbm) || Number(((w * d * h) / 1000000000).toFixed(3)),
             packageType: it.packageType || 'Pallet',
             stackable: isStackable,
             rotation: isRotation
@@ -3479,8 +3484,8 @@ export const OrderDetail: React.FC = () => {
           w: w,
           d: d,
           h: h,
-          netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
-          grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
+          netWeight: evaluateFormulaGlobal(item.netWeight || matchedProd?.palletWeight || 0),
+          grossWeight: evaluateFormulaGlobal(item.grossWeight || matchedProd?.palletGrossWeight || 0),
           packageType: item.packageType || 'Pallet',
           stackable: item.stackable !== undefined ? (item.stackable !== 'N' && item.stackable !== false) : (matchedProd?.stackable !== 'N'),
           rotation: item.rotation !== undefined ? (item.rotation !== 'N' && item.rotation !== false) : (matchedProd?.rotation !== 'N')
