@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.607',
+    version: 'v2.8.607',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '현재 차수 선적 배정 수량(Step 1) vs 패킹리스트 수량(Step 2) 실시간 자동 대조 검증 모달 및 알림 배지 탑재',
+    content: '• 선적수량 vs 패킹수량 원클릭 자동 대조 검증(Reconciliation) 기능 신설: [STEP 2] 패킹리스트 상단에 [⚖️ 선적수량 vs 패킹수량 대조 검증] 버튼을 탑재하여, Step 1에서 배정한 선적수량과 Step 2 패킹리스트에 실제 적재된 수량을 품목별로 정밀 비교\n• 누락 및 부족 품목 한눈에 확인: 배정 품목별로 [배정수량 / 패킹수량 / 차이 / 검증 상태]를 테이블로 시각화하여, 0개 미패킹 누락(❌), 수량 부족(⚠️), 수량 초과(❗), 완벽 일치(✅) 상태를 직관적으로 파악\n• 세트 품목(BOLT SET 등) 및 혼적 파렛트 스마트 통합 집계: 볼트 세트(1B+1N+1W)나 혼적 파렛트로 분할/결합 적재된 품목들도 개별 규격별로 지능형 매칭되어 정확한 합산 수량으로 대조\n• 패킹리스트 상단 실시간 동기화 상태 배지 제공: 패킹리스트 화면에서 별도 모달을 열지 않아도 상단 배너에 [✅ 배정 수량 100% 패킹 완료] 또는 [⚠️ 수량 불일치 N건 감지]가 실시간으로 표기',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.606',
     version: 'v2.8.606',
     date: '2026-10-06',

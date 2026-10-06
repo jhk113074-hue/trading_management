@@ -1233,6 +1233,96 @@ export const OrderDetail: React.FC = () => {
 
   const [isSyncingFromPi, setIsSyncingFromPi] = useState(false);
   const [isFetchingExchangeRate, setIsFetchingExchangeRate] = useState(false);
+  const [isReconciliationModalOpen, setIsReconciliationModalOpen] = useState(false);
+
+  const getPackingReconciliationData = () => {
+    const allocated = (activeRound?.allocatedItems || []).filter(ai => (Number(ai.shippedQty) || 0) > 0);
+    const packingContainers = basicForm.packingList?.containers || [];
+    const allPackingItems: any[] = [];
+    packingContainers.forEach((c: any) => {
+      (c.items || []).forEach((pi: any) => {
+        allPackingItems.push(pi);
+      });
+    });
+
+    const cleanStr = (s: string) => (s || '').toLowerCase().replace(/\[.*?\]/g, '').replace(/[\s_\-*]/g, '');
+
+    const itemsReport = allocated.map((ai, idx) => {
+      const aiCode = (ai.productCode || '').toLowerCase().trim();
+      const aiCleanName = cleanStr(ai.name || '');
+      const allocQty = Number(ai.shippedQty) || 0;
+
+      let matchedPackedQty = 0;
+      const matchedDetails: string[] = [];
+
+      allPackingItems.forEach(pi => {
+        const piCode = (pi.itemCode || '').toLowerCase().trim();
+        const piCleanDesc = cleanStr(pi.description || '');
+        const piQty = Number(pi.qty) || 0;
+
+        // 1. Direct product code match
+        const codeMatched = !!(aiCode && (piCode === aiCode || (pi.description || '').toLowerCase().includes(`[${aiCode}]`)));
+
+        // 2. Exact or substring clean name match
+        const nameMatched = aiCleanName.length >= 4 && (
+          piCleanDesc === aiCleanName || 
+          piCleanDesc.includes(aiCleanName) || 
+          aiCleanName.includes(piCleanDesc)
+        );
+
+        // 3. Bolt Set matching (e.g. M10X50 BOLT SET contains M10X50 BOLT, NUT, P/W)
+        let boltSetMatched = false;
+        if (piCleanDesc.includes('boltset') || (piCleanDesc.includes('bolt') && piCleanDesc.includes('set'))) {
+          const sizeMatch = aiCleanName.match(/m\d+x\d+/) || aiCleanName.match(/m\d+\*\d+/);
+          if (sizeMatch && piCleanDesc.includes(sizeMatch[0].replace('*', 'x'))) {
+            boltSetMatched = true;
+          }
+        }
+
+        if (codeMatched || nameMatched || boltSetMatched) {
+          matchedPackedQty += piQty;
+          matchedDetails.push(`${pi.description || '품목'} (${piQty.toLocaleString()})`);
+        }
+      });
+
+      const diff = matchedPackedQty - allocQty;
+      let status: 'MATCHED' | 'SHORTAGE' | 'MISSING' | 'EXCESS' = 'MATCHED';
+      if (matchedPackedQty === 0) status = 'MISSING';
+      else if (diff < 0) status = 'SHORTAGE';
+      else if (diff > 0) status = 'EXCESS';
+
+      return {
+        idx: idx + 1,
+        itemId: ai.itemId,
+        productCode: ai.productCode || '',
+        name: ai.name || '',
+        grade: (ai as any).grade || (ai as any).spec || '',
+        unit: ai.unit || 'EA',
+        allocatedQty: allocQty,
+        packedQty: matchedPackedQty,
+        diff,
+        status,
+        matchedDetails
+      };
+    });
+
+    const totalAllocatedCount = itemsReport.length;
+    const matchedCount = itemsReport.filter(r => r.status === 'MATCHED').length;
+    const shortageCount = itemsReport.filter(r => r.status === 'SHORTAGE').length;
+    const missingCount = itemsReport.filter(r => r.status === 'MISSING').length;
+    const excessCount = itemsReport.filter(r => r.status === 'EXCESS').length;
+    const isAllMatched = totalAllocatedCount > 0 && matchedCount === totalAllocatedCount;
+
+    return {
+      itemsReport,
+      totalAllocatedCount,
+      matchedCount,
+      shortageCount,
+      missingCount,
+      excessCount,
+      isAllMatched
+    };
+  };
 
   const handleAutoFetchExchangeRate = async () => {
     // 1. 활성 차수 또는 basicForm에서 선적일자(ETD) 추출
@@ -13706,38 +13796,80 @@ ${downloadLink}`;
 
                       {/* 차수 정보 요약 및 배정 품목 불러오기 버튼 */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderTop: `1px dashed ${activeRound.roundNumber === 1 ? '#bfdbfe' : '#a7f3d0'}`, paddingTop: '8px', fontSize: '12px', color: '#475569' }}>
-                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <span><strong>CI NO:</strong> {activeRound.ciNumber || basicForm.ciNumber || '미지정'}</span>
                           <span><strong>ETD:</strong> {activeRound.etd || basicForm.etd || '미정'}</span>
                           <span><strong>선박/부킹:</strong> {activeRound.vesselBooking || basicForm.vesselBooking || '미지정'}</span>
                           <span><strong>차수 배정 품목:</strong> <span style={{ color: activeRound.roundNumber === 1 ? '#2563eb' : '#059669', fontWeight: 800 }}>{(activeRound.allocatedItems || []).filter(ai => Number(ai.shippedQty) > 0).length}개</span> 품목</span>
                           <span><strong>컨테이너:</strong> <span style={{ fontWeight: 800 }}>{basicForm.packingList?.containers?.length || 0}개</span></span>
+                          {(() => {
+                            const recon = getPackingReconciliationData();
+                            if (recon.totalAllocatedCount === 0) return null;
+                            if (recon.isAllMatched) {
+                              return (
+                                <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  ✅ 배정 수량 100% 패킹 완료
+                                </span>
+                              );
+                            }
+                            return (
+                              <span style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                ⚠️ 수량 불일치 {recon.missingCount + recon.shortageCount}건 감지
+                              </span>
+                            );
+                          })()}
                         </div>
 
-                        {isEditing && (
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button
                             type="button"
-                            onClick={() => handlePopulatePackingFromAllocated(activeRound)}
+                            onClick={() => setIsReconciliationModalOpen(true)}
                             style={{
                               height: '30px',
                               padding: '0 12px',
                               fontSize: '12px',
                               fontWeight: 750,
                               borderRadius: '4px',
-                              background: activeRound.roundNumber === 1 ? '#3b82f6' : '#10b981',
+                              background: '#475569',
                               color: '#fff',
                               border: 'none',
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                              transition: 'all 0.15s ease'
                             }}
-                            title="본 차수에 배정된 수량을 바탕으로 컨테이너 및 패킹리스트를 초기화/재생성합니다"
+                            title="현재 차수 선적 배정 수량(Step 1)과 실제 패킹리스트 수량(Step 2)을 대조하여 누락 및 불일치를 확인합니다"
                           >
-                            <span>📦</span> [{activeRound.title}] 배정 품목으로 패킹리스트 불러오기
+                            <span>⚖️</span> 선적수량 vs 패킹수량 대조 검증
                           </button>
-                        )}
+
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => handlePopulatePackingFromAllocated(activeRound)}
+                              style={{
+                                height: '30px',
+                                padding: '0 12px',
+                                fontSize: '12px',
+                                fontWeight: 750,
+                                borderRadius: '4px',
+                                background: activeRound.roundNumber === 1 ? '#3b82f6' : '#10b981',
+                                color: '#fff',
+                                border: 'none',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                              }}
+                              title="본 차수에 배정된 수량을 바탕으로 컨테이너 및 패킹리스트를 초기화/재생성합니다"
+                            >
+                              <span>📦</span> [{activeRound.title}] 배정 품목으로 패킹리스트 불러오기
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -19972,6 +20104,196 @@ ${downloadLink}`;
           </div>
         </div>
       )}
+
+      {/* ⚖️ 선적 배정 수량 vs 패킹리스트 수량 대조/검증 모달 */}
+      {isReconciliationModalOpen && (() => {
+        const recon = getPackingReconciliationData();
+        return (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, backdropFilter: 'blur(3px)', padding: '20px' }}>
+            <div style={{ background: '#fff', borderRadius: '8px', width: '1060px', maxWidth: '96vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #cbd5e1' }}>
+              
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>⚖️</span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
+                      선적 배정 수량 vs 패킹리스트 수량 대조 검증 [{activeRound?.title || '1차 선적'}]
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                      [Step 1] 현재 차수에 배정된 선적수량과 [Step 2] 패킹리스트에 실제 적재된 수량을 품목별로 비교 검증합니다.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsReconciliationModalOpen(false)}
+                  style={{ background: 'transparent', border: 'none', fontSize: '20px', color: '#64748b', cursor: 'pointer', padding: '4px 8px' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Summary KPI Cards */}
+              <div style={{ padding: '14px 20px', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '10px 14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>차수 배정 품목</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#1d4ed8', marginTop: '2px' }}>{recon.totalAllocatedCount.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600 }}>개 품목</span></div>
+                </div>
+                <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', padding: '10px 14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#065f46', textTransform: 'uppercase' }}>✅ 수량 일치 (완료)</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>{recon.matchedCount.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600 }}>개</span></div>
+                </div>
+                <div style={{ background: recon.shortageCount > 0 ? '#fffbeb' : '#f8fafc', border: '1px solid ' + (recon.shortageCount > 0 ? '#fde68a' : '#e2e8f0'), borderRadius: '6px', padding: '10px 14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: recon.shortageCount > 0 ? '#92400e' : '#64748b', textTransform: 'uppercase' }}>⚠️ 수량 부족 (덜 담김)</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: recon.shortageCount > 0 ? '#d97706' : '#64748b', marginTop: '2px' }}>{recon.shortageCount.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600 }}>개</span></div>
+                </div>
+                <div style={{ background: recon.missingCount > 0 ? '#fef2f2' : '#f8fafc', border: '1px solid ' + (recon.missingCount > 0 ? '#fecaca' : '#e2e8f0'), borderRadius: '6px', padding: '10px 14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: recon.missingCount > 0 ? '#991b1b' : '#64748b', textTransform: 'uppercase' }}>❌ 미패킹 (0개 누락)</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: recon.missingCount > 0 ? '#dc2626' : '#64748b', marginTop: '2px' }}>{recon.missingCount.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600 }}>개</span></div>
+                </div>
+                {recon.excessCount > 0 && (
+                  <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '6px', padding: '10px 14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#6b21a8', textTransform: 'uppercase' }}>❗ 수량 초과</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#7e22ce', marginTop: '2px' }}>{recon.excessCount.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 600 }}>개</span></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Alert Banner */}
+              <div style={{ padding: '8px 20px', background: recon.isAllMatched ? '#f0fdf4' : '#fff7ed', borderBottom: '1px solid #e2e8f0', fontSize: '13px', fontWeight: 700, color: recon.isAllMatched ? '#166534' : '#c2410c', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{recon.isAllMatched ? '🎉' : '⚠️'}</span>
+                <span>
+                  {recon.isAllMatched
+                    ? '현재 차수에 배정된 모든 품목이 패킹리스트에 완벽하게 일치하여 적재되었습니다!'
+                    : `총 ${recon.missingCount + recon.shortageCount}개 품목에서 패킹 누락 또는 수량 부족이 감지되었습니다. 아래 대조표를 확인해 주세요.`}
+                </span>
+              </div>
+
+              {/* Table Container */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1', color: '#475569' }}>
+                      <th style={{ padding: '8px 10px', width: '40px', textAlign: 'center' }}>No</th>
+                      <th style={{ padding: '8px 10px', width: '80px' }}>품목코드</th>
+                      <th style={{ padding: '8px 10px' }}>품명 및 규격</th>
+                      <th style={{ padding: '8px 10px', width: '50px', textAlign: 'center' }}>단위</th>
+                      <th style={{ padding: '8px 10px', width: '110px', textAlign: 'right' }}>Step 1 선적배정</th>
+                      <th style={{ padding: '8px 10px', width: '110px', textAlign: 'right' }}>Step 2 패킹수량</th>
+                      <th style={{ padding: '8px 10px', width: '110px', textAlign: 'right' }}>차이</th>
+                      <th style={{ padding: '8px 10px', width: '120px', textAlign: 'center' }}>검증 상태</th>
+                      <th style={{ padding: '8px 10px', width: '160px' }}>패킹리스트 매칭 내역</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recon.itemsReport.map(item => {
+                      let rowBg = '#fff';
+                      let statusBadge = (
+                        <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }}>
+                          ✅ 완벽 일치
+                        </span>
+                      );
+
+                      if (item.status === 'MISSING') {
+                        rowBg = '#fef2f2';
+                        statusBadge = (
+                          <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+                            ❌ 미패킹 누락
+                          </span>
+                        );
+                      } else if (item.status === 'SHORTAGE') {
+                        rowBg = '#fffbeb';
+                        statusBadge = (
+                          <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d' }}>
+                            ⚠️ {Math.abs(item.diff).toLocaleString()} {item.unit} 부족
+                          </span>
+                        );
+                      } else if (item.status === 'EXCESS') {
+                        rowBg = '#faf5ff';
+                        statusBadge = (
+                          <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#f3e8ff', color: '#7e22ce', border: '1px solid #d8b4fe' }}>
+                            ❗ +{item.diff.toLocaleString()} {item.unit} 초과
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <tr key={item.idx} style={{ background: rowBg, borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{item.idx}</td>
+                          <td style={{ padding: '8px 10px', fontWeight: 700, color: '#0284c7' }}>{item.productCode || '-'}</td>
+                          <td style={{ padding: '8px 10px', color: '#1e293b', fontWeight: 600 }}>
+                            {item.name}
+                            {item.grade && <span style={{ color: '#64748b', fontSize: '11.5px', marginLeft: '4px' }}>({item.grade})</span>}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>{item.unit}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#1e293b' }}>
+                            {item.allocatedQty.toLocaleString()}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: item.status === 'MISSING' ? '#dc2626' : (item.status === 'SHORTAGE' ? '#d97706' : '#15803d') }}>
+                            {item.packedQty.toLocaleString()}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800 }}>
+                            {item.diff === 0 ? (
+                              <span style={{ color: '#15803d' }}>0</span>
+                            ) : item.diff < 0 ? (
+                              <span style={{ color: '#dc2626' }}>{item.diff.toLocaleString()}</span>
+                            ) : (
+                              <span style={{ color: '#7e22ce' }}>+{item.diff.toLocaleString()}</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                            {statusBadge}
+                          </td>
+                          <td style={{ padding: '8px 10px', fontSize: '11px', color: '#64748b' }}>
+                            {item.matchedDetails.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {item.matchedDetails.slice(0, 2).map((d, dIdx) => (
+                                  <span key={dIdx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }} title={d}>• {d}</span>
+                                ))}
+                                {item.matchedDetails.length > 2 && (
+                                  <span style={{ color: '#0284c7', fontWeight: 700 }}>외 {item.matchedDetails.length - 2}건</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span style={{ color: '#ef4444', fontStyle: 'italic' }}>패킹 기록 없음</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  💡 혼적 파렛트 또는 세트 품목(BOLT SET 등)도 수량이 자동으로 통합 계산되어 대조됩니다.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsReconciliationModalOpen(false)}
+                  style={{
+                    height: '34px',
+                    padding: '0 20px',
+                    background: '#3b82f6',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontWeight: 750,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  확인 (닫기)
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
       {isProdModalOpen && (
         <ProductModal
