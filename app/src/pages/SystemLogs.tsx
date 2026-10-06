@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.606',
+    version: 'v2.8.606',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: 'BL 선적일자 기준 환율(서울외국환중개) 원클릭 자동 조회(Auto-Fetch) 및 SMBS 직통 링크 탑재',
+    content: '• BL 선적일자 기준 서울외국환중개(SMBS) 매매기준율 자동 조회 기능 신설: 선적 차수의 선적일자(ETD)를 기반으로 해당 일자의 매매기준율을 버튼 클릭 한 번으로 자동 조회하여 입력창에 즉시 입력 및 Firestore 영구 저장\n• 주말/공휴일 선적 건 세법 규정 자동 적용: 선적일자가 비영업일(토/일/공휴일)인 경우, 세법 원칙에 따라 직전 영업일의 매매기준율을 자동으로 탐색하여 적용\n• 서울외국환중개 공식 사이트(smbs.biz) 직통 바로가기 링크 제공: 입력창 상단에 [🔗 SMBS 사이트 ↗] 링크를 배치하여 기간별 매매기준율을 언제든 즉시 새 탭에서 교차 검증 가능하도록 지원\n• 백엔드 프록시 및 다중 오픈 환율 API 3단계 폴백(Fallback) 방어 체계 구축',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.605',
     version: 'v2.8.605',
     date: '2026-10-06',

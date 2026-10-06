@@ -486,6 +486,64 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+
+// ─────────────────────────────────────────
+// API: 서울외국환중개 / 매매기준율 환율 조회
+// ─────────────────────────────────────────
+app.get('/api/exchange-rate/smbs', async (req, res) => {
+  try {
+    const { date, currency = 'USD' } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: 'date parameter is required (YYYY-MM-DD)' });
+    }
+
+    const currUpper = String(currency).toUpperCase();
+    const reutersCode = `FX_${currUpper}KRW`;
+    const url = `https://m.stock.naver.com/front-api/marketIndex/prices?category=exchange&reutersCode=${reutersCode}&page=1&pageSize=60`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(502).json({ error: 'Failed to fetch exchange rate source' });
+    }
+
+    const json = await response.json();
+    const list = json.result || [];
+
+    const targetDate = String(date).trim();
+    let found = list.find(item => item.localTradedAt === targetDate);
+    if (!found) {
+      const pastList = list.filter(item => item.localTradedAt <= targetDate);
+      if (pastList.length > 0) {
+        found = pastList[0];
+      } else if (list.length > 0) {
+        found = list[0];
+      }
+    }
+
+    if (found) {
+      const rateNum = parseFloat(String(found.closePrice).replace(/,/g, ''));
+      return res.json({
+        success: true,
+        date: found.localTradedAt,
+        requestedDate: targetDate,
+        rate: rateNum,
+        currency: currUpper,
+        source: '서울외국환중개 / 매매기준율',
+        isExactDate: found.localTradedAt === targetDate
+      });
+    }
+
+    return res.status(404).json({ error: 'Exchange rate not found for the given date' });
+  } catch (e) {
+    console.error('Error fetching SMBS exchange rate:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
 // ─────────────────────────────────────────
 // 서버 시작
 // ─────────────────────────────────────────

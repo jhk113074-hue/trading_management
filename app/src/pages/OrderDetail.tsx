@@ -1232,6 +1232,126 @@ export const OrderDetail: React.FC = () => {
   };
 
   const [isSyncingFromPi, setIsSyncingFromPi] = useState(false);
+  const [isFetchingExchangeRate, setIsFetchingExchangeRate] = useState(false);
+
+  const handleAutoFetchExchangeRate = async () => {
+    // 1. 활성 차수 또는 basicForm에서 선적일자(ETD) 추출
+    const rawDate = (activeRound?.etd || basicForm.etd || (activeRound as any)?.roundDate || (activeRound as any)?.cargoReadyDate || basicForm.cargoReadyDate || '').trim();
+    if (!rawDate) {
+      alert('선적일자(ETD)가 지정되지 않았습니다.\n먼저 상단 운송/일정 정보에서 선적일자(ETD)를 입력해 주세요.');
+      return;
+    }
+
+    // 날짜 포맷 정규화: YYYY-MM-DD
+    const normDate = rawDate.replace(/\./g, '-').replace(/\//g, '-').substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normDate)) {
+      alert(`선적일자 포맷(${rawDate})이 올바르지 않습니다. YYYY-MM-DD 형식으로 입력해 주세요.`);
+      return;
+    }
+
+    const orderCurrency = (order?.currency || (order as any)?.tradeCurrency || 'USD').toUpperCase();
+    setIsFetchingExchangeRate(true);
+
+    try {
+      let finalRate: number | null = null;
+      let appliedDate = normDate;
+      let sourceInfo = '서울외국환중개 / 매매기준율';
+      let isExact = true;
+
+      // 1차 시도: 백엔드 API (네이버 증권 시장지표 - 서울외국환중개/하나은행 매매기준율)
+      const backendUrl = `${import.meta.env.VITE_API_URL || 'https://ysacc-backend.onrender.com'}/api/exchange-rate/smbs?date=${normDate}&currency=${orderCurrency}`;
+      try {
+        const resp = await fetch(backendUrl, { signal: AbortSignal.timeout(5000) });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.success && data.rate) {
+            finalRate = data.rate;
+            appliedDate = data.date;
+            isExact = !!data.isExactDate;
+            sourceInfo = data.source || sourceInfo;
+          }
+        }
+      } catch (err) {
+        console.warn('백엔드 환율 API 호출 실패, 오픈 API 폴백 시도:', err);
+      }
+
+      // 2차 시도 (백엔드 실패 시 오픈 환율 API 폴백)
+      if (!finalRate) {
+        try {
+          const fallbackResp = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${normDate}/v1/currencies/${orderCurrency.toLowerCase()}.json`, {
+            signal: AbortSignal.timeout(4000)
+          });
+          if (fallbackResp.ok) {
+            const fbData = await fallbackResp.json();
+            const currObj = fbData[orderCurrency.toLowerCase()];
+            if (currObj && currObj.krw) {
+              finalRate = parseFloat(Number(currObj.krw).toFixed(2));
+              sourceInfo = '공공 환율 Open API (fallback)';
+            }
+          }
+        } catch (fbErr) {
+          console.warn('Fallback currency API failed:', fbErr);
+        }
+      }
+
+      // 3차 시도: Frankfurter API
+      if (!finalRate) {
+        try {
+          const frankResp = await fetch(`https://api.frankfurter.app/${normDate}?from=${orderCurrency}&to=KRW`, {
+            signal: AbortSignal.timeout(4000)
+          });
+          if (frankResp.ok) {
+            const fData = await frankResp.json();
+            if (fData.rates && fData.rates.KRW) {
+              finalRate = parseFloat(Number(fData.rates.KRW).toFixed(2));
+              appliedDate = fData.date || normDate;
+              sourceInfo = 'ECB 기준 환율 (fallback)';
+            }
+          }
+        } catch (fErr) {
+          console.warn('Frankfurter API failed:', fErr);
+        }
+      }
+
+      if (finalRate && finalRate > 0) {
+        handleUpdateActiveRound('customsExchangeRate', finalRate);
+
+        // Firestore에도 즉시 자동 저장
+        if (order?.id) {
+          try {
+            const curRoundId = activeRoundIdRef.current || activeRoundId || 'round-1';
+            const curRounds = latestOrderStateRef.current.shipmentRounds || shipmentRounds || [];
+            const updatedRounds = curRounds.map(r => {
+              if (r.id === curRoundId) {
+                return { ...r, customsExchangeRate: finalRate };
+              }
+              return r;
+            });
+            const updatePayload: any = {
+              shipmentRounds: updatedRounds,
+              customsExchangeRate: finalRate,
+              updatedAt: serverTimestamp()
+            };
+            await setDoc(doc(db, 'companies', COMPANY_ID, 'orders', order.id), updatePayload, { merge: true });
+          } catch (saveErr) {
+            console.error('Failed to auto-save customsExchangeRate to Firestore:', saveErr);
+          }
+        }
+
+        if (isExact) {
+          alert(`✅ 선적일자(${normDate}) 환율 자동 조회 성공!\n\n• 기준 환율: ${finalRate.toLocaleString()}원 (${orderCurrency}/KRW)\n• 출처: ${sourceInfo}\n\n입력창에 반영 및 자동 저장되었습니다.`);
+        } else {
+          alert(`✅ 선적일자(${normDate}) 환율 자동 조회 성공!\n\n• 선적일자가 영업일(주말/공휴일)이 아니므로, 세법 규정에 따라 직전 영업일(${appliedDate}) 매매기준율이 적용되었습니다.\n• 적용 환율: ${finalRate.toLocaleString()}원 (${orderCurrency}/KRW)\n• 출처: ${sourceInfo}\n\n입력창에 반영 및 자동 저장되었습니다.`);
+        }
+      } else {
+        alert(`선적일자(${normDate})의 환율 정보를 가져오지 못했습니다.\n\n우측 상단의 [🔗 SMBS 사이트 ↗] 링크를 클릭하여 서울외국환중개 사이트에서 환율을 확인하신 후 직접 입력해 주세요.`);
+      }
+    } catch (e: any) {
+      alert(`환율 조회 중 오류가 발생했습니다: ${e?.message || e}`);
+    } finally {
+      setIsFetchingExchangeRate(false);
+    }
+  };
 
   const handleSyncItemsFromPi = async () => {
     const targetPiId = order?.quotationId || basicForm.quotationId;
@@ -16129,20 +16249,60 @@ ${downloadLink}`;
                         placeholder="예: 010-22-19-1234567" 
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '310px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>BL 선적일자 기준 환율(서울외국환중개 사이트) {!!(activeRound?.customsExchangeRate || basicForm.customsExchangeRate) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
-                      <input 
-                        type="number" 
-                        step="0.01" 
-                        value={activeRound?.customsExchangeRate ?? basicForm.customsExchangeRate ?? ''} 
-                        onChange={e => {
-                          const val = parseFloat(e.target.value) || 0;
-                          handleUpdateActiveRound('customsExchangeRate', val);
-                        }} 
-                        disabled={!isEditing} 
-                        style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} 
-                        placeholder="예: 1478.44" 
-                      />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '370px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          BL 선적일자 기준 환율(서울외국환중개 사이트) {!!(activeRound?.customsExchangeRate || basicForm.customsExchangeRate) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                        </span>
+                        <a
+                          href="https://www.smbs.biz/Inquiry/PeriodExrate.jsp"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: '10.5px', color: '#0284c7', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                          title="서울외국환중개 사이트에서 선적일자 기간별 매매기준율 직접 조회하기"
+                        >
+                          🔗 SMBS 사이트 ↗
+                        </a>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          value={activeRound?.customsExchangeRate ?? basicForm.customsExchangeRate ?? ''} 
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            handleUpdateActiveRound('customsExchangeRate', val);
+                          }} 
+                          disabled={!isEditing} 
+                          style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', flex: 1 }} 
+                          placeholder="예: 1342.50" 
+                        />
+                        <button
+                          type="button"
+                          disabled={!isEditing || isFetchingExchangeRate}
+                          onClick={() => handleAutoFetchExchangeRate()}
+                          style={{
+                            height: '34px',
+                            padding: '0 12px',
+                            background: isFetchingExchangeRate ? '#94a3b8' : '#0284c7',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: (!isEditing || isFetchingExchangeRate) ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="선적일자(ETD)를 기준으로 서울외국환중개 매매기준율을 자동으로 조회하여 입력합니다."
+                        >
+                          {isFetchingExchangeRate ? '⏳ 조회 중...' : '⚡ 자동 조회'}
+                        </button>
+                      </div>
                     </div>
 
                     {/* B/L 번호 목록 다중 입력 */}
