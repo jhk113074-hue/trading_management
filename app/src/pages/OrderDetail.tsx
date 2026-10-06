@@ -240,7 +240,7 @@ const evaluateFormulaGlobal = (val: any): number => {
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
   const str = String(val).trim();
   const hasFormulaPrefix = str.startsWith('=');
-  const looksLikeFormula = hasFormulaPrefix || /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(str);
+  const looksLikeFormula = hasFormulaPrefix || /^(ROUNGUP|ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(str);
   if (looksLikeFormula) {
     try {
       let expr = hasFormulaPrefix ? str.slice(1).trim() : str.trim();
@@ -251,6 +251,7 @@ const evaluateFormulaGlobal = (val: any): number => {
 
       // Standardize Excel function names (case-insensitive)
       expr = expr
+        .replace(/\broungup\b/gi, 'ROUNDUP')
         .replace(/\broundup\b/gi, 'ROUNDUP')
         .replace(/\brounddown\b/gi, 'ROUNDDOWN')
         .replace(/\bround\b/gi, 'ROUND')
@@ -304,6 +305,21 @@ const evaluateFormulaGlobal = (val: any): number => {
   }
   const parsed = parseFloat(str.replace(/,/g, ''));
   return isNaN(parsed) ? 0 : parsed;
+};
+
+// CBM 기본 수식 생성 헬퍼: 규격(WxLxH)을 미터 단위로 환산하여 =ROUNDUP(W*L*H, 1) 수식 반환 (PKG 수량 반영 가능)
+export const getDefaultCbmFormula = (dimStr?: string, pkgCount?: string | number): string => {
+  if (!dimStr) return '';
+  const cleanDims = String(dimStr).toLowerCase().replace(/\s+/g, '').replace(/[*×]/g, 'x');
+  const dims = cleanDims.split('x').map((n: string) => parseFloat(n) || 0);
+  if (dims.length >= 3 && dims[0] > 0 && dims[1] > 0 && dims[2] > 0) {
+    const mW = dims[0] >= 10 ? parseFloat((dims[0] / 1000).toFixed(4)).toString() : dims[0].toString();
+    const mL = dims[1] >= 10 ? parseFloat((dims[1] / 1000).toFixed(4)).toString() : dims[1].toString();
+    const mH = dims[2] >= 10 ? parseFloat((dims[2] / 1000).toFixed(4)).toString() : dims[2].toString();
+    const count = parseInt(String(pkgCount || '1'), 10) || 1;
+    return `=ROUNDUP(${mW}*${mL}*${mH}${count > 1 ? `*${count}` : ''},1)`;
+  }
+  return '';
 };
 
 const formatMeasurementWithDims = (dimStr?: string, cbmVal?: string | number): string => {
@@ -431,7 +447,7 @@ interface FormulaWeightInputProps {
 const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange, placeholder, disabled, decimals, unit = 'kg' }) => {
   const [isFocused, setIsFocused] = useState(false);
   const rawStr = value !== undefined && value !== null ? String(value) : '';
-  const isFormula = rawStr.trim().startsWith('=') || /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(rawStr.trim());
+  const isFormula = rawStr.trim().startsWith('=') || /^(ROUNGUP|ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR|INT|ABS)\b/i.test(rawStr.trim());
   const evaluatedNum = evaluateFormulaGlobal(rawStr);
 
   const displayVal = isFocused
@@ -458,8 +474,12 @@ const FormulaWeightInput: React.FC<FormulaWeightInputProps> = ({ value, onChange
         onBlur={e => {
           setIsFocused(false);
           const v = e.target.value.trim();
-          if (v && !v.startsWith('=') && /^(ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR)\b/i.test(v)) {
-            onChange('=' + v);
+          if (v && !v.startsWith('=')) {
+            if (/^(ROUNGUP|ROUNDUP|ROUNDDOWN|ROUND|CEILING|FLOOR)\b/i.test(v)) {
+              onChange('=' + v);
+            } else if (decimals === 3 && !isNaN(Number(v))) {
+              onChange('=' + v);
+            }
           }
         }}
         onChange={e => onChange(e.target.value)}
@@ -913,6 +933,8 @@ export const OrderDetail: React.FC = () => {
   const [splitModalTarget, setSplitModalTarget] = useState<{ containerIdx: number; itemIdx: number; item: any } | null>(null);
   const [draggedPackingItem, setDraggedPackingItem] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
   const [dragOverItemIdx, setDragOverItemIdx] = useState<{ containerIdx: number; itemIdx: number } | null>(null);
+  const [draggedPallet, setDraggedPallet] = useState<{ containerIdx: number; palletIdx: number } | null>(null);
+  const [dragOverPalletIdx, setDragOverPalletIdx] = useState<{ containerIdx: number; palletIdx: number } | null>(null);
 
   const handlePackingItemDragStart = (e: React.DragEvent, containerIdx: number, itemIdx: number) => {
     setDraggedPackingItem({ containerIdx, itemIdx });
@@ -959,6 +981,78 @@ export const OrderDetail: React.FC = () => {
     setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
 
     savePackingListToFirestore(nextContainers, nextReports);
+  };
+
+  const getContainerPalletGroups = (items: any[]): any[][] => {
+    const pallets: any[][] = [];
+    let i = 0;
+    while (i < items.length) {
+      const it = items[i];
+      let span = 1;
+      const grpId = it._mergeGroupId;
+      if (grpId && it._sharedGroupHead) {
+        for (let k = i + 1; k < items.length; k++) {
+          if (items[k]?._mergeGroupId === grpId && items[k]?._sharedWithPrev) {
+            span++;
+          } else {
+            break;
+          }
+        }
+      } else if (it.pkgNo) {
+        for (let k = i + 1; k < items.length; k++) {
+          if (items[k]?.pkgNo && items[k].pkgNo === it.pkgNo) {
+            span++;
+          } else {
+            break;
+          }
+        }
+      }
+      pallets.push(items.slice(i, i + span));
+      i += span;
+    }
+    return pallets;
+  };
+
+  const movePalletToNumber = (containerIdx: number, palletIdx: number, targetNo: number) => {
+    const containers = basicForm.packingList?.containers || [];
+    if (!containers[containerIdx]) return;
+    const items = (containers[containerIdx].items || []).map((it: any) => ({ ...it }));
+    const pallets = getContainerPalletGroups(items);
+    if (palletIdx < 0 || palletIdx >= pallets.length) return;
+
+    const targetIdx = Math.max(0, Math.min(pallets.length - 1, targetNo - 1));
+    if (targetIdx === palletIdx) return;
+
+    const [moved] = pallets.splice(palletIdx, 1);
+    pallets.splice(targetIdx, 0, moved);
+
+    const newItems = pallets.flat();
+    recalculateContainerPkgNos(newItems);
+
+    const nextContainers = containers.map((c: any, idx: number) => 
+      idx === containerIdx ? { ...c, items: newItems } : c
+    );
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+
+    const { updatedReports: nextReports } = syncArrivalReportsFromContainers(nextContainers, order?.supplierArrivalReports);
+    setOrder(prev => prev ? { ...prev, supplierArrivalReports: nextReports } : prev);
+    savePackingListToFirestore(nextContainers, nextReports);
+  };
+
+  const movePalletUp = (containerIdx: number, palletIdx: number) => {
+    movePalletToNumber(containerIdx, palletIdx, palletIdx);
+  };
+
+  const movePalletDown = (containerIdx: number, palletIdx: number) => {
+    movePalletToNumber(containerIdx, palletIdx, palletIdx + 2);
+  };
+
+  const handlePalletDrop = (targetContainerIdx: number, targetPalletIdx: number) => {
+    if (!draggedPallet) return;
+    if (draggedPallet.containerIdx !== targetContainerIdx) return;
+    movePalletToNumber(targetContainerIdx, draggedPallet.palletIdx, targetPalletIdx + 1);
+    setDraggedPallet(null);
+    setDragOverPalletIdx(null);
   };
 
 
@@ -2307,13 +2401,11 @@ export const OrderDetail: React.FC = () => {
           if (!count || count <= 0) count = parseInt(calculatePkgFromPkgNo(updatedIt.pkgNo) || '1', 10);
           if (count <= 0) count = 1;
 
-          const mW = dims[0] >= 10 ? parseFloat((dims[0] / 1000).toFixed(4)).toString() : dims[0].toString();
-          const mL = dims[1] >= 10 ? parseFloat((dims[1] / 1000).toFixed(4)).toString() : dims[1].toString();
-          const mH = dims[2] >= 10 ? parseFloat((dims[2] / 1000).toFixed(4)).toString() : dims[2].toString();
-          const defaultCbmFormula = `=ROUNDUP(${mW}*${mL}*${mH}${count > 1 ? `*${count}` : ''},1)`;
+          const defaultCbmFormula = getDefaultCbmFormula(updatedIt.dimensions, count);
 
-          // Only set default formula if CBM is not yet entered or empty/0 (preserves all manual user formulas/edits)
-          if (!updatedIt.cbm || updatedIt.cbm === '' || updatedIt.cbm === '0' || updatedIt.cbm === 0) {
+          // If CBM is empty, '0', or not a formula starting with '=' (e.g. static number like '1.815')
+          const curCbmStr = String(updatedIt.cbm || '').trim();
+          if (!curCbmStr || curCbmStr === '0' || !curCbmStr.startsWith('=')) {
             containerChanged = true;
             updatedIt.cbm = defaultCbmFormula;
           }
@@ -2575,6 +2667,8 @@ export const OrderDetail: React.FC = () => {
         dimStr = `${pW}*${pL}*${pH}`;
       }
 
+      const defaultCbmFormula = getDefaultCbmFormula(dimStr, 1);
+
       return {
         shippingMark: '',
         description: it.name || matchedOrderItem?.name || '',
@@ -2587,7 +2681,7 @@ export const OrderDetail: React.FC = () => {
         dimensions: dimStr,
         netWeight: String(netWeight),
         grossWeight: String(grossWeight),
-        cbm: String(cbm),
+        cbm: defaultCbmFormula || String(cbm),
         stackable: 'Y',
         rotation: 'Y'
       };
@@ -6112,7 +6206,7 @@ export const OrderDetail: React.FC = () => {
           supplier: supplierName,
           netWeight: String(Math.round(netW)),
           grossWeight: String(Math.round(grossW)),
-          cbm: String(cbm > 0 ? cbm.toFixed(3) : '0.010'),
+          cbm: getDefaultCbmFormula(`${w}x${l}x${h}`, 1) || String(cbm > 0 ? cbm.toFixed(3) : '0.010'),
           stackable: 'Y',
           rotation: 'Y'
         };
@@ -13720,6 +13814,10 @@ ${downloadLink}`;
                               <tbody>
                                 {(() => {
                                   const itemsList = c.items || [];
+                                  const palletGroups = getContainerPalletGroups(itemsList);
+                                  const totalPalletsInContainer = palletGroups.length;
+                                  let palletCounter = 0;
+
                                   return itemsList.map((it: any, itIdx: number) => {
                                     const hasGroup = !!it._mergeGroupId;
                                     const isSecondary = hasGroup && !!it._sharedWithPrev && itIdx > 0 && itemsList[itIdx - 1]?._mergeGroupId === it._mergeGroupId;
@@ -13735,6 +13833,8 @@ ${downloadLink}`;
                                         }
                                       }
                                     }
+
+                                    const curPalletIdx = !isSecondary ? palletCounter++ : -1;
 
                                     // Group items indexes for group selection
                                     const groupIndexes = Array.from({ length: spanCount }, (_, o) => itIdx + o);
@@ -13780,27 +13880,168 @@ ${downloadLink}`;
                                           </td>
                                         )}
 
-                                        {/* 2. PKG NO. */}
+                                        {/* 2. PKG NO. - Entire Pallet Control (Drag & Drop, Number Input, Up/Down) */}
                                         {!isSecondary && (
-                                          <td rowSpan={spanCount} style={{ padding: '4px', verticalAlign: 'middle', background: spanCount > 1 ? '#f8fafc' : undefined, borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                              <input 
-                                                type="text" 
-                                                placeholder="예: 1-5" 
-                                                disabled={!isEditing} 
-                                                style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '90%', textAlign: 'center', height: '32px', fontWeight: 'bold', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} 
-                                                value={it.pkgNo || ''} 
-                                                onChange={e => {
-                                                  const val = e.target.value;
-                                                  const nextContainers = [...basicForm.packingList.containers];
-                                                  for (let g = 0; g < spanCount; g++) {
-                                                    nextContainers[cIdx].items[itIdx + g].pkgNo = val;
-                                                  }
-                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                                }} 
-                                              />
+                                          <td 
+                                            rowSpan={spanCount} 
+                                            onDragOver={e => {
+                                              if (draggedPallet && draggedPallet.containerIdx === cIdx) {
+                                                e.preventDefault();
+                                                e.dataTransfer.dropEffect = 'move';
+                                                setDragOverPalletIdx({ containerIdx: cIdx, palletIdx: curPalletIdx });
+                                              }
+                                            }}
+                                            onDragLeave={() => {
+                                              if (draggedPallet) setDragOverPalletIdx(null);
+                                            }}
+                                            onDrop={e => {
+                                              if (draggedPallet && draggedPallet.containerIdx === cIdx) {
+                                                e.preventDefault();
+                                                handlePalletDrop(cIdx, curPalletIdx);
+                                              }
+                                            }}
+                                            style={{ 
+                                              padding: '4px', 
+                                              verticalAlign: 'middle', 
+                                              background: (dragOverPalletIdx?.containerIdx === cIdx && dragOverPalletIdx?.palletIdx === curPalletIdx) 
+                                                ? '#bae6fd' 
+                                                : (spanCount > 1 ? '#f8fafc' : undefined), 
+                                              borderRight: spanCount > 1 ? '1px solid #cbd5e1' : undefined,
+                                              border: (dragOverPalletIdx?.containerIdx === cIdx && dragOverPalletIdx?.palletIdx === curPalletIdx) 
+                                                ? '2px dashed #0284c7' 
+                                                : undefined,
+                                              transition: 'all 0.15s ease'
+                                            }}
+                                          >
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', justifyContent: 'center' }}>
+                                                {/* Pallet Drag Handle */}
+                                                <div 
+                                                  draggable={isEditing}
+                                                  onDragStart={e => {
+                                                    setDraggedPallet({ containerIdx: cIdx, palletIdx: curPalletIdx });
+                                                    e.dataTransfer.setData('text/plain', `pallet_${cIdx}_${curPalletIdx}`);
+                                                    e.dataTransfer.effectAllowed = 'move';
+                                                  }}
+                                                  onDragEnd={() => {
+                                                    setDraggedPallet(null);
+                                                    setDragOverPalletIdx(null);
+                                                  }}
+                                                  title="파렛트 전체를 마우스로 잡고 위/아래로 드래그하여 순서 변경 (혼적 품목 일괄 이동)"
+                                                  style={{
+                                                    cursor: isEditing ? 'grab' : 'not-allowed',
+                                                    padding: '2px 4px',
+                                                    color: '#64748b',
+                                                    fontSize: '12px',
+                                                    fontWeight: 900,
+                                                    userSelect: 'none',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    background: '#f1f5f9',
+                                                    borderRadius: '3px',
+                                                    border: '1px solid #cbd5e1'
+                                                  }}
+                                                >
+                                                  ⋮⋮
+                                                </div>
+
+                                                {/* Pallet No Input */}
+                                                <input 
+                                                  type="text" 
+                                                  placeholder="No" 
+                                                  disabled={!isEditing} 
+                                                  style={{ 
+                                                    padding: '3px 4px', 
+                                                    border: '1px solid #cbd5e1', 
+                                                    borderRadius: '4px', 
+                                                    fontSize: '13px', 
+                                                    width: '42px', 
+                                                    textAlign: 'center', 
+                                                    height: '28px', 
+                                                    fontWeight: '800', 
+                                                    boxSizing: 'border-box', 
+                                                    background: isEditing ? '#fff' : '#f1f5f9', 
+                                                    color: isEditing ? '#1e3a8a' : '#64748b', 
+                                                    outline: 'none' 
+                                                  }} 
+                                                  defaultValue={it.pkgNo || String(curPalletIdx + 1)}
+                                                  key={`pkgNo_${cIdx}_${itIdx}_${it.pkgNo}`}
+                                                  onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                      e.currentTarget.blur();
+                                                    }
+                                                  }}
+                                                  onBlur={e => {
+                                                    const val = e.target.value.trim();
+                                                    const targetNum = parseInt(val, 10);
+                                                    if (!isNaN(targetNum) && targetNum > 0 && targetNum !== curPalletIdx + 1) {
+                                                      movePalletToNumber(cIdx, curPalletIdx, targetNum);
+                                                    } else if (val !== it.pkgNo) {
+                                                      const nextContainers = [...basicForm.packingList.containers];
+                                                      for (let g = 0; g < spanCount; g++) {
+                                                        nextContainers[cIdx].items[itIdx + g].pkgNo = val;
+                                                      }
+                                                      setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                    }
+                                                  }} 
+                                                  title="순번 숫자를 수정하고 Enter를 누르면 파렛트 전체가 해당 순번으로 이동합니다."
+                                                />
+
+                                                {/* Pallet Up / Down buttons */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                  <button
+                                                    type="button"
+                                                    disabled={!isEditing || curPalletIdx === 0}
+                                                    onClick={() => movePalletUp(cIdx, curPalletIdx)}
+                                                    title="이 파렛트 전체를 위로 1칸 이동 (혼적 품목 일괄 이동)"
+                                                    style={{
+                                                      height: '14px',
+                                                      width: '18px',
+                                                      lineHeight: '12px',
+                                                      fontSize: '9px',
+                                                      fontWeight: 900,
+                                                      background: (!isEditing || curPalletIdx === 0) ? '#f1f5f9' : '#e0f2fe',
+                                                      color: (!isEditing || curPalletIdx === 0) ? '#94a3b8' : '#0369a1',
+                                                      border: '1px solid #cbd5e1',
+                                                      borderRadius: '2px',
+                                                      cursor: (!isEditing || curPalletIdx === 0) ? 'not-allowed' : 'pointer',
+                                                      padding: 0,
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center'
+                                                    }}
+                                                  >
+                                                    ▲
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    disabled={!isEditing || curPalletIdx === totalPalletsInContainer - 1}
+                                                    onClick={() => movePalletDown(cIdx, curPalletIdx)}
+                                                    title="이 파렛트 전체를 아래로 1칸 이동 (혼적 품목 일괄 이동)"
+                                                    style={{
+                                                      height: '14px',
+                                                      width: '18px',
+                                                      lineHeight: '12px',
+                                                      fontSize: '9px',
+                                                      fontWeight: 900,
+                                                      background: (!isEditing || curPalletIdx === totalPalletsInContainer - 1) ? '#f1f5f9' : '#e0f2fe',
+                                                      color: (!isEditing || curPalletIdx === totalPalletsInContainer - 1) ? '#94a3b8' : '#0369a1',
+                                                      border: '1px solid #cbd5e1',
+                                                      borderRadius: '2px',
+                                                      cursor: (!isEditing || curPalletIdx === totalPalletsInContainer - 1) ? 'not-allowed' : 'pointer',
+                                                      padding: 0,
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center'
+                                                    }}
+                                                  >
+                                                    ▼
+                                                  </button>
+                                                </div>
+                                              </div>
+
                                               {spanCount > 1 && (
-                                                <span style={{ fontSize: '10px', color: '#6366f1', fontWeight: 700 }}>
+                                                <span style={{ fontSize: '10.5px', color: '#4f46e5', fontWeight: 800, background: '#eef2ff', padding: '1px 5px', borderRadius: '3px', border: '1px solid #c7d2fe' }}>
                                                   [혼적 {spanCount}건]
                                                 </span>
                                               )}

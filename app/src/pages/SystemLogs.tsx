@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.600',
+    version: 'v2.8.600',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: 'CBM 기본값 규격 연동 =ROUNDUP(W*L*H, 1) 수식화 및 혼적 파렛트 전체 순번 변경(이동) 기능 탑재',
+    content: '• CBM 기본값 규격 연동 및 수식화(=ROUNDUP): 패킹리스트 CBM 기본값을 규격(WxLxH)을 미터 단위로 변환한 =ROUNDUP(W*L*H, 1) 엑셀 수식 형태로 자동 생성 및 소수점 3자리(0.000) 표준 반영\n• CBM 수식 직접 수정 및 오타(ROUNGUP)/소문자 자동 해석: 셀 클릭 시 실제 수식을 확인하고 자유롭게 수정할 수 있으며, 사용자가 =ROUNGUP 또는 roundup 등 오타나 소문자로 입력해도 정상 인식되어 계산 및 저장되도록 보강\n• 혼적 파렛트 전체 순번 변경(위치 이동) 기능 완비:\n  - PKG NO. 셀에 파렛트 전체 드래그 핸들(⋮⋮) 탑재: 마우스 드래그 앤 드롭으로 혼적된 모든 품목을 원자적으로 유지하면서 원하는 위치로 일괄 이동\n  - No. 직접 입력 이동: No 칸에 원하는 순번 번호(예: 3)를 입력하고 Enter를 누르면 파렛트 전체가 해당 순번으로 순간 이동 후 1~N 순번 자동 재배열\n  - ▲ / ▼ 원클릭 퀵 이동: 버튼 클릭으로 혼적 파렛트를 위/아래로 손쉽게 1칸씩 즉시 이동 지원\n• 실시간 Firestore 자동 저장 및 도착보고서 동기화: 파렛트 순서 변경 및 CBM 수식 수정 시 변경사항이 데이터베이스 및 도착보고서에 즉각 안전하게 자동 반영',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.599',
     version: 'v2.8.599',
     date: '2026-10-06',
