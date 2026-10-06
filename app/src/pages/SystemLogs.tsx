@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.602',
+    version: 'v2.8.602',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 패킹리스트 제품별 수량(QTY) 표시 및 합계(TOTAL) 행·요약 배지 탑재',
+    content: '• 제품별 수량(QTY) 전용 컬럼 추가: 3D 컨테이너 시뮬레이션 패킹리스트 테이블에 [제품 수량] 열을 신설하여 단품 및 혼적 파렛트별 총 제품 수량(EA)을 명확하게 표시\n• 혼적(Co-loading) 파렛트 제품별 개별 수량 상세 내역(Breakdown) 표시: 여러 품목이 함께 적재된 혼적 파렛트의 경우 하위 품목별 이름과 개별 수량을 불릿(•) 리스트 형태로 투명하게 구분 표기\n• 패킹리스트 종합 합계(TOTAL) 행 및 헤더 요약 배지 탑재:\n  - 테이블 최하단 tfoot 영역에 총 파렛트 수, 총 제품 수량(EA), 총 순중량(Net WT), 총 총중량(Gross WT), 총 CBM 일괄 합산 표기\n  - 패킹리스트 상단 헤더에 통계 배지(총 파렛트 수 / 총 제품 수량 / NET WT / GROSS WT / CBM)를 배치하여 한눈에 적재 현황 파악 가능\n• 인쇄 미리보기(Print Preview) 종합 연동: 인쇄 출력 화면에서도 [제품 수량] 열 및 최하단 TOTAL 합계 행이 온전하게 반영되도록 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.601',
     version: 'v2.8.601',
     date: '2026-10-06',

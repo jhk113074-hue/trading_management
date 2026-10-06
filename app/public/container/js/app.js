@@ -1669,17 +1669,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderPackingList = (loaded) => {
         packingListTbody.innerHTML = '';
+        const tfoot = document.getElementById('packing-list-tfoot');
+        if (tfoot) tfoot.innerHTML = '';
+        const summaryBadges = document.getElementById('packing-list-summary-badges');
+        if (summaryBadges) summaryBadges.innerHTML = '';
+
         if (!loaded || loaded.length === 0) {
             packingListContainer.classList.add('hidden');
             return;
         }
         
         packingListContainer.classList.remove('hidden');
+
+        let totalNet = 0;
+        let totalGross = 0;
+        let totalCbm = 0;
+        let totalProductQty = 0;
+
         loaded.sort((a, b) => a.globalIndex - b.globalIndex).forEach(item => {
-            const netDisp = item.netWeight !== undefined ? item.netWeight.toLocaleString() : '-';
-            const grossDisp = item.grossWeight !== undefined ? item.grossWeight.toLocaleString() : item.weight.toLocaleString();
+            const netVal = typeof item.netWeight === 'number' ? item.netWeight : (evalContainerWeight(item.netWeight) || 0);
+            const grossVal = typeof item.grossWeight === 'number' ? item.grossWeight : (evalContainerWeight(item.grossWeight !== undefined ? item.grossWeight : item.weight) || 0);
+            const pQty = typeof item.productQty === 'number' ? item.productQty : (parseFloat(item.productQty) || (item.qty || 1));
+            const unit = item.unit || 'EA';
+
+            totalNet += netVal;
+            totalGross += grossVal;
+            totalProductQty += pQty;
+
+            const l = item.packedL || item.w || 0;
+            const w = item.packedW || item.d || 0;
+            const h = item.packedH || item.h || 0;
+            if (l > 0 && w > 0 && h > 0) {
+                totalCbm += (l * w * h) / 1000000000;
+            }
+
+            const netDisp = netVal > 0 ? netVal.toLocaleString() : (item.netWeight !== undefined ? String(item.netWeight) : '-');
+            const grossDisp = grossVal > 0 ? grossVal.toLocaleString() : (item.grossWeight !== undefined ? String(item.grossWeight) : '-');
             const pkgTypeDisp = item.packageType ? ` <small style="color:var(--text-secondary);">(${item.packageType})</small>` : '';
-            const detailsDisp = item.contentDetails ? `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">${item.contentDetails}</div>` : '';
+
+            // SubItems formatting
+            let nameAndBreakdownHtml = '';
+            if (item.subItems && Array.isArray(item.subItems) && item.subItems.length > 1) {
+                nameAndBreakdownHtml = `
+                    <div style="font-weight: 700; color: #1e293b;">
+                        <span style="display: inline-block; padding: 1px 6px; background: #e0f2fe; color: #0369a1; border-radius: 3px; font-size: 0.75rem; margin-right: 4px;">혼적 ${item.subItems.length}건</span>
+                        ${item.name}
+                    </div>
+                    <div style="margin-top: 4px; padding: 4px 8px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.78rem;">
+                        ${item.subItems.map(s => `
+                            <div style="display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px dashed #e2e8f0;">
+                                <span style="color: #475569;">• ${s.name}</span>
+                                <span style="font-weight: 800; color: #15803d; white-space: nowrap;">${Number(s.qty).toLocaleString()} ${s.unit || 'EA'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                nameAndBreakdownHtml = `
+                    <div style="font-weight: 600; color: #1e293b;">
+                        ${item.name} ${pkgTypeDisp}
+                    </div>
+                    ${item.contentDetails && !item.contentDetails.includes(item.name) ? `<div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">${item.contentDetails}</div>` : ''}
+                `;
+            }
+
             const isSelected = selectedPalletGlobalIndex === item.globalIndex;
             
             const tr = document.createElement('tr');
@@ -1703,10 +1756,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${pkgNoDisplay}
                     </span>
                 </td>
-                <td>${item.name} <small class="text-muted">(${item.itemIndex})</small>${pkgTypeDisp}${detailsDisp}</td>
+                <td>${nameAndBreakdownHtml}</td>
+                <td style="text-align: right; font-weight: 800; color: #15803d; background: #f0fdf4;">
+                    ${pQty > 0 ? pQty.toLocaleString() : '-'} <small style="font-size: 0.72rem; color: #64748b; font-weight: normal;">${unit}</small>
+                </td>
                 <td>${item.packedL} × ${item.packedW} × ${item.packedH}</td>
-                <td>${netDisp}</td>
-                <td>${grossDisp}</td>
+                <td style="text-align: right; font-weight: 600;">${netDisp}</td>
+                <td style="text-align: right; font-weight: 600;">${grossDisp}</td>
                 <td style="font-family: monospace; font-size: 0.8rem; color: #0369a1; font-weight: 600;">
                     X: ${item.x} / Y: ${item.y} / Z: ${item.z}
                 </td>
@@ -1719,6 +1775,54 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             packingListTbody.appendChild(tr);
         });
+
+        // Top summary badges
+        if (summaryBadges) {
+            summaryBadges.innerHTML = `
+                <span style="padding: 3px 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.8rem; color: #334155; font-weight: 700;">
+                    총 <strong>${loaded.length}</strong>개 파렛트
+                </span>
+                <span style="padding: 3px 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; font-size: 0.8rem; color: #15803d; font-weight: 800;">
+                    총 제품 수량: <strong>${Math.round(totalProductQty).toLocaleString()}</strong> EA
+                </span>
+                <span style="padding: 3px 10px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; font-size: 0.8rem; color: #0369a1; font-weight: 800;">
+                    총 NET WT: <strong>${Math.round(totalNet).toLocaleString()}</strong> kg
+                </span>
+                <span style="padding: 3px 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.8rem; color: #475569; font-weight: 800;">
+                    총 GROSS WT: <strong>${Math.round(totalGross).toLocaleString()}</strong> kg
+                </span>
+                <span style="padding: 3px 10px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 4px; font-size: 0.8rem; color: #7e22ce; font-weight: 800;">
+                    총 CBM: <strong>${totalCbm.toFixed(3)}</strong> m³
+                </span>
+            `;
+        }
+
+        // Bottom summary row in tfoot
+        if (tfoot) {
+            tfoot.innerHTML = `
+                <tr style="background: #f8fafc; border-top: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; font-weight: 800;">
+                    <td colspan="3" style="padding: 10px 14px; text-align: center; font-size: 0.95rem; color: #1e293b; background: #f1f5f9;">
+                        <span style="background: #2563eb; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 800; margin-right: 8px;">TOTAL</span>
+                        합계: 총 <strong>${loaded.length}</strong>개 파렛트 (${totalCbm.toFixed(3)} CBM)
+                    </td>
+                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #15803d; background: #f0fdf4; font-weight: 900;">
+                        ${Math.round(totalProductQty).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">EA</span>
+                    </td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.85rem; color: #64748b;">
+                        -
+                    </td>
+                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #0284c7; background: #f0f9ff; font-weight: 900;">
+                        ${Math.round(totalNet).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
+                    </td>
+                    <td style="padding: 10px 8px; text-align: right; font-size: 1rem; color: #0f766e; background: #f0fdf4; font-weight: 900;">
+                        ${Math.round(totalGross).toLocaleString()} <span style="font-size: 0.72rem; font-weight: normal; color: #64748b;">kg</span>
+                    </td>
+                    <td colspan="3" style="padding: 10px 12px; text-align: center; font-size: 0.85rem; color: #16a34a; background: #f8fafc; font-weight: 800;">
+                        ✓ 전량 적재 완료 (${loaded.length} / ${loaded.length})
+                    </td>
+                </tr>
+            `;
+        }
     };
 
     const renderSimulationResult = () => {
@@ -1916,34 +2020,84 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">번호</th>
                             <th style="background:#eff6ff; border:1px solid #cbd5e1; padding:8px; color:#1e40af;">PKG NO.</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">화물명(포장형태) 및 내용물</th>
+                            <th style="background:#f0fdf4; border:1px solid #cbd5e1; padding:8px; color:#166534; text-align:right;">제품 수량</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">크기(W×D×H)</th>
-                            <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">Net Wt.</th>
-                            <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">Gross Wt.</th>
+                            <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px; text-align:right;">Net Wt. (kg)</th>
+                            <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px; text-align:right;">Gross Wt. (kg)</th>
                             <th style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">상태</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
             const loadedSorted = [...res.loaded].sort((a, b) => a.globalIndex - b.globalIndex);
+            let printTotalNet = 0;
+            let printTotalGross = 0;
+            let printTotalProductQty = 0;
+
             loadedSorted.forEach(item => {
+                const nw = typeof item.netWeight === 'number' ? item.netWeight : (evalContainerWeight(item.netWeight) || 0);
+                const gw = typeof item.grossWeight === 'number' ? item.grossWeight : (evalContainerWeight(item.grossWeight !== undefined ? item.grossWeight : item.weight) || 0);
+                const pQty = typeof item.productQty === 'number' ? item.productQty : (parseFloat(item.productQty) || (item.qty || 1));
+                const unit = item.unit || 'EA';
+
+                printTotalNet += nw;
+                printTotalGross += gw;
+                printTotalProductQty += pQty;
+
                 const pkgTypeDisp = item.packageType ? ` <span style="color:#64748b; font-size:12px;">(${item.packageType})</span>` : '';
-                const detailsDisp = item.contentDetails ? `<div style="font-size:12px; color:#64748b; margin-top:4px;">${item.contentDetails}</div>` : '';
+                let detailsDisp = '';
+                if (item.subItems && Array.isArray(item.subItems) && item.subItems.length > 1) {
+                    detailsDisp = `
+                        <div style="font-size:11px; margin-top:4px; padding:4px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:3px;">
+                            ${item.subItems.map(s => `<div>• ${s.name}: <strong>${Number(s.qty).toLocaleString()} ${s.unit || 'EA'}</strong></div>`).join('')}
+                        </div>
+                    `;
+                } else if (item.contentDetails) {
+                    detailsDisp = `<div style="font-size:12px; color:#64748b; margin-top:4px;">${item.contentDetails}</div>`;
+                }
+
                 tableHtml += `
                     <tr style="page-break-inside: avoid;">
                         <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${item.globalIndex}</td>
                         <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:#1d4ed8;">${item.pkgNo || item.globalIndex}</td>
                         <td style="border:1px solid #cbd5e1; padding:8px;">
-                            ${item.name}-${item.itemIndex}${pkgTypeDisp}
+                            <strong>${item.name}</strong>${pkgTypeDisp}
                             ${detailsDisp}
                         </td>
+                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:right; font-weight:bold; color:#15803d; background:#f0fdf4;">
+                            ${pQty > 0 ? pQty.toLocaleString() : '-'} ${unit}
+                        </td>
                         <td style="border:1px solid #cbd5e1; padding:8px; text-align:center;">${item.packedL} × ${item.packedW} × ${item.packedH}</td>
-                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">${item.netWeight !== undefined ? item.netWeight.toLocaleString() : '-'}</td>
-                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">${item.grossWeight !== undefined ? item.grossWeight.toLocaleString() : item.weight.toLocaleString()}</td>
+                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">${nw > 0 ? Math.round(nw).toLocaleString() : '-'}</td>
+                        <td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">${gw > 0 ? Math.round(gw).toLocaleString() : '-'}</td>
                         <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; color:#10b981;">적재됨 ${item.rotated ? '(회전됨)' : ''}</td>
                     </tr>
                 `;
             });
-            tableHtml += `</tbody></table>`;
+
+            tableHtml += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f1f5f9; font-weight: bold; border-top: 2px solid #334155; page-break-inside: avoid;">
+                            <td colspan="3" style="border:1px solid #cbd5e1; padding:10px; text-align:center; font-weight:bold;">
+                                합계 (TOTAL: 총 ${loadedSorted.length}개 파렛트)
+                            </td>
+                            <td style="border:1px solid #cbd5e1; padding:10px; text-align:right; font-weight:bold; color:#15803d; background:#f0fdf4;">
+                                ${Math.round(printTotalProductQty).toLocaleString()} EA
+                            </td>
+                            <td style="border:1px solid #cbd5e1; padding:10px; text-align:center;">-</td>
+                            <td style="border:1px solid #cbd5e1; padding:10px; text-align:right; font-weight:bold; color:#0369a1;">
+                                ${Math.round(printTotalNet).toLocaleString()} kg
+                            </td>
+                            <td style="border:1px solid #cbd5e1; padding:10px; text-align:right; font-weight:bold; color:#0f766e;">
+                                ${Math.round(printTotalGross).toLocaleString()} kg
+                            </td>
+                            <td style="border:1px solid #cbd5e1; padding:10px; text-align:center; color:#10b981; font-weight:bold;">
+                                전량 적재됨
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>`;
 
             containersHtml += `
                 <div class="container-section">
@@ -2972,7 +3126,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         name: piItem.desc,
                         pkgNo: piItem.pkgNo || '',
                         packageType: piItem.packageType || 'Pallet',
-                        contentDetails: piItem.remarks || '',
+                        contentDetails: piItem.contentDetails || piItem.remarks || '',
+                        productQty: piItem.productQty !== undefined ? piItem.productQty : (parseFloat(piItem.qty) || 1),
+                        unit: piItem.unit || 'EA',
+                        subItems: piItem.subItems || [],
                         w: w, d: d, h: h,
                         netWeight: nw, grossWeight: gw, weight: gw,
                         qty: qty,

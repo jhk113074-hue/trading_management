@@ -3424,17 +3424,45 @@ export const OrderDetail: React.FC = () => {
           let desc = (it.description || '화물').replace(/^P#\d+\.\s*/i, '');
           let sumNet = evaluateFormulaGlobal(it.netWeight);
           let sumGross = evaluateFormulaGlobal(it.grossWeight);
+          let productQty = parseFloat(it.qty) || 0;
+          let unit = it.unit || 'EA';
+          let subItems: any[] = [];
+          let contentDetails = '';
 
           if (spanCount > 1) {
             const mergedItems = itemsList.slice(itIdx, itIdx + spanCount);
-            const descList = mergedItems.map((x: any) => (x.description || '').replace(/^P#\d+\.\s*/i, '')).filter(Boolean);
+            productQty = 0;
+            subItems = mergedItems.map((x: any) => {
+              const xQty = parseFloat(x.qty) || 0;
+              const xUnit = x.unit || 'EA';
+              productQty += xQty;
+              const xName = (x.description || '').replace(/^P#\d+\.\s*/i, '');
+              return {
+                name: xName,
+                qty: xQty,
+                unit: xUnit,
+                netWeight: evaluateFormulaGlobal(x.netWeight),
+                grossWeight: evaluateFormulaGlobal(x.grossWeight)
+              };
+            });
+            const descList = subItems.map(x => `${x.name} (${x.qty.toLocaleString()} ${x.unit})`);
             desc = `[혼적 ${spanCount}건] ` + descList.join(' + ');
+            contentDetails = subItems.map(x => `• ${x.name}: ${x.qty.toLocaleString()} ${x.unit}`).join('\n');
             if (sumNet === 0) {
               sumNet = mergedItems.reduce((acc: number, x: any) => acc + evaluateFormulaGlobal(x.netWeight), 0);
             }
             if (sumGross === 0) {
               sumGross = mergedItems.reduce((acc: number, x: any) => acc + evaluateFormulaGlobal(x.grossWeight), 0);
             }
+          } else {
+            subItems = [{
+              name: desc,
+              qty: productQty,
+              unit: unit,
+              netWeight: sumNet,
+              grossWeight: sumGross
+            }];
+            contentDetails = `${productQty.toLocaleString()} ${unit}`;
           }
 
           if (sumGross === 0 && sumNet > 0) {
@@ -3452,6 +3480,10 @@ export const OrderDetail: React.FC = () => {
             desc: desc,
             pkgNo: it.pkgNo || '',
             qty: count,
+            productQty: productQty,
+            unit: unit,
+            subItems: subItems,
+            contentDetails: contentDetails,
             w: w,
             d: d,
             h: h,
@@ -3477,15 +3509,22 @@ export const OrderDetail: React.FC = () => {
         const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
         const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
         const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
+        const pQty = Number(item.qty) || 1;
+        const pUnit = item.unit || 'EA';
 
         itemsPayload.push({
           desc: item.name || '화물',
-          qty: item.qty || 1,
+          qty: 1,
+          productQty: pQty,
+          unit: pUnit,
+          subItems: [{ name: item.name || '화물', qty: pQty, unit: pUnit }],
+          contentDetails: `${pQty.toLocaleString()} ${pUnit}`,
           w: w,
           d: d,
           h: h,
           netWeight: evaluateFormulaGlobal(item.netWeight || matchedProd?.palletWeight || 0),
           grossWeight: evaluateFormulaGlobal(item.grossWeight || matchedProd?.palletGrossWeight || 0),
+          cbm: Number(((w * d * h) / 1000000000).toFixed(3)),
           packageType: item.packageType || 'Pallet',
           stackable: item.stackable !== undefined ? (item.stackable !== 'N' && item.stackable !== false) : (matchedProd?.stackable !== 'N'),
           rotation: item.rotation !== undefined ? (item.rotation !== 'N' && item.rotation !== false) : (matchedProd?.rotation !== 'N')

@@ -243,23 +243,28 @@
 
                     <!-- Packing List -->
                     <div id="packing-list-container" class="card hidden" style="margin-top: 1.5rem; padding: 1.25rem;">
-                        <h3 style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 700; color: #1e293b;">패킹 리스트 (Packing List)</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 8px;">
+                            <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b;">패킹 리스트 (Packing List)</h3>
+                            <div id="packing-list-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"></div>
+                        </div>
                         <div class="table-responsive">
                             <table class="data-table">
                                 <thead>
                                     <tr>
                                         <th>번호</th>
                                         <th style="background: #eff6ff; color: #1e40af;">PKG NO.</th>
-                                        <th>화물명</th>
+                                        <th>화물명 및 제품 내역</th>
+                                        <th style="background: #f0fdf4; color: #166534; text-align: right;">제품 수량</th>
                                         <th>크기(W×D×H)</th>
-                                        <th>Net Wt.</th>
-                                        <th>Gross Wt.</th>
+                                        <th>Net Wt. (kg)</th>
+                                        <th>Gross Wt. (kg)</th>
                                         <th>적재 위치 (X, Y, Z)</th>
                                         <th>상태</th>
                                         <th>위치조정</th>
                                     </tr>
                                 </thead>
                                 <tbody id="packing-list-tbody"></tbody>
+                                <tfoot id="packing-list-tfoot"></tfoot>
                             </table>
                         </div>
                     </div>
