@@ -1820,17 +1820,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
         `;
 
-        const totalTr = document.createElement('tr');
-        totalTr.className = 'packing-list-total-row';
-        totalTr.style.background = '#f8fafc';
-        totalTr.style.borderTop = '2px solid #64748b';
-        totalTr.style.borderBottom = '2px solid #64748b';
-        totalTr.style.fontWeight = '800';
-        totalTr.innerHTML = totalRowInner;
-        packingListTbody.appendChild(totalTr);
-
         if (tfoot) {
-            tfoot.innerHTML = `<tr style="background: #f8fafc; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b; font-weight: 800;">${totalRowInner}</tr>`;
+            tfoot.innerHTML = `<tr class="packing-list-total-row" style="background: #f8fafc; border-top: 2px solid #64748b; border-bottom: 2px solid #64748b; font-weight: 800;">${totalRowInner}</tr>`;
+        } else {
+            const totalTr = document.createElement('tr');
+            totalTr.className = 'packing-list-total-row';
+            totalTr.style.background = '#f8fafc';
+            totalTr.style.borderTop = '2px solid #64748b';
+            totalTr.style.borderBottom = '2px solid #64748b';
+            totalTr.style.fontWeight = '800';
+            totalTr.innerHTML = totalRowInner;
+            packingListTbody.appendChild(totalTr);
         }
     };
 

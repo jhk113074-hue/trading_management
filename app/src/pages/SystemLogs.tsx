@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.604',
+    version: 'v2.8.604',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '3D 적재 시뮬레이션 패킹리스트 테이블 최하단 TOTAL 합계 행 단일(1회) 표시 정제',
+    content: '• 합계 행 중복 렌더링 제거: 기존 tbody와 tfoot에 합계 행이 동시 주입되어 2개 줄로 중복 출력되던 현상을 수정하여, 테이블 최하단에 정확히 1번만 깔끔하게 표시되도록 정리',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.603',
     version: 'v2.8.603',
     date: '2026-10-06',
