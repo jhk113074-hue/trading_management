@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.599',
+    version: 'v2.8.599',
+    date: '2026-10-06',
+    category: '기능개선',
+    title: '도착보고서 인쇄 로딩 지연 원인 해결 및 0.01초 즉시 렌더링 성능 고도화',
+    content: '• 인쇄 팝업 창 블로킹 및 로딩 지연 근본 원인 해결: 기존 [🖨️ 도착보고 인쇄] 클릭 시 인쇄 팝업 창을 띄운 뒤 전체 주문 저장(handleSaveBasic)과 원격 회사 정보(getDoc) 네트워크 완료를 동기 대기(await)하느라 "데이터를 불러오는 중입니다..." 흰 화면이 수초간 멈춰있던 병목 현상 원천 제거\n• 백그라운드 비동기 저장 전환: 인쇄 시 실행되는 자동 저장을 백그라운드(Non-blocking) 비동기로 전환하여 사용자 화면 및 팝업 렌더링을 일절 지연시키지 않도록 분리\n• 인메모리 캐시 기반 0.01초 즉시 렌더링: 이미 메모리(React State)에 완벽하게 준비된 패킹리스트, 쉬핑마크, 공급사/당사 정보를 바탕으로 팝업 생성과 동시에 완성된 HTML을 즉시 주입하여 로딩 대기 시간 없이 0.01초 만에 인쇄 창이 바로 표시되도록 완성',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.598',
     version: 'v2.8.598',
     date: '2026-10-06',

@@ -14838,18 +14838,9 @@ ${downloadLink}`;
                         });
                       };
 
-                      const handlePrintArrivalReportInline = async () => {
-                        // Open window synchronously to avoid popup blocker
-                        const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
-                        if (win) {
-                          win.document.write("<html><body><div style='text-align:center; padding: 50px; font-family: sans-serif;'>데이터를 불러오는 중입니다...</div></body></html>");
-                        }
-
-                        try {
-                          await handleSaveBasic(false);
-                        } catch (err) {
-                          console.error("Auto-save before print failed:", err);
-                        }
+                      const handlePrintArrivalReportInline = () => {
+                        // Background non-blocking auto-save
+                        handleSaveBasic(false).catch(err => console.error("Auto-save before print failed:", err));
 
                         const isYS = order.issuingCompany === 'YS';
                         const myManagerName = userProfile?.name || auth.currentUser?.displayName || (auth.currentUser?.email ? auth.currentUser.email.split('@')[0] : '담당자');
@@ -14860,16 +14851,12 @@ ${downloadLink}`;
                         let address = isYS ? '청주시 흥덕구 월명로 76, 111-201' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
                         let phone = myManagerPhone || (isYS ? '01073611130' : '010-4494-1028');
 
-                        try {
-                          const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
-                          if (compDoc.exists()) {
-                            const data = compDoc.data();
-                            compName = data.nameKo || data.name || compName;
-                            address = data.addressKo || address;
-                            phone = myManagerPhone || data.phone || phone;
-                          }
-                        } catch (e) {
-                          console.error("Failed to load company info", e);
+                        const targetComp = myCompaniesList.find((c: any) => c.id === (isYS ? 'YS' : 'YSACC')) ||
+                                           myCompaniesList.find((c: any) => (c.code || '').toUpperCase() === (isYS ? 'YS' : 'YSACC'));
+                        if (targetComp) {
+                          compName = targetComp.nameKo || targetComp.name || compName;
+                          address = targetComp.addressKo || address;
+                          phone = myManagerPhone || targetComp.phone || phone;
                         }
 
                         let defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${myManagerName}${myManagerEmail ? `\nE-mail: ${myManagerEmail}` : ''}`;
@@ -15140,10 +15127,13 @@ ${downloadLink}`;
                           </html>
                         `;
 
+                        const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
                         if (win) {
                           win.document.open();
                           win.document.write(printHtml);
                           win.document.close();
+                        } else {
+                          alert("팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해 주세요.");
                         }
                       };
 
