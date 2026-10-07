@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.608',
+    version: 'v2.8.608',
+    date: '2026-10-07',
+    category: '기능개선',
+    title: '발주서 입고요청일 "추후통보" 원클릭 설정 체크박스 연동 및 공급사 발주서/문서 표기 지원',
+    content: '• 발주서 입고요청일 "추후통보" 지원: [소싱/발주] 탭 상단 공통 입고 요청일(납기일) 및 [수주정보] 탭 요청 납기일 입력란 옆에 [☑ 추후통보] 체크박스 신설\n• 원클릭 토글 UX: 체크박스 체크 시 "추후통보"로 즉시 전환되어 파란색 배지로 강조되며, 체크 해제 시 기존 지정일 또는 오늘 날짜로 매끄럽게 복원\n• 공급사별 개별 발주서 카드 헤더 연동: 발주서 목록 카드 메타 정보 바에 [입고요청일: 추후통보] 상태 뱃지를 노출하여 시각적 즉시 확인 가능\n• 발주서 인쇄(HTML/PDF) 및 문서 자동 반영: 입고요청일이 추후통보로 설정된 경우 발주서 양식 상단에 "입고요청일: 추후통보"로 정확히 출력',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.607',
     version: 'v2.8.607',
     date: '2026-10-06',

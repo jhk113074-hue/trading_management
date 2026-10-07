@@ -50,12 +50,12 @@ export const DateInput: React.FC<DateInputProps> = ({
     fontSize: '13px',
     height: '34px',
     outline: 'none',
-    background: disabled ? '#f1f5f9' : '#fff',
-    color: disabled ? '#64748b' : '#1e293b',
+    background: value === '추후통보' ? '#eff6ff' : (disabled ? '#f1f5f9' : '#fff'),
+    color: value === '추후통보' ? '#2563eb' : (disabled ? '#64748b' : '#1e293b'),
     boxSizing: 'border-box',
     width: '100%',
     fontFamily: 'inherit',
-    fontWeight: 600,
+    fontWeight: value === '추후통보' ? 800 : 600,
     ...style,
     paddingRight: '34px', // Space for calendar icon
   };
@@ -99,7 +99,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       <input
         type="date"
         ref={dateInputRef}
-        value={value || ''}
+        value={/^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value : ''}
         onChange={(e) => onChange({ target: { value: e.target.value } })}
         disabled={disabled}
         tabIndex={-1}

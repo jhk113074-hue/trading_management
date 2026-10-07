@@ -8124,8 +8124,8 @@ export const OrderDetail: React.FC = () => {
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
-    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
-    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
+    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후통보';
+    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후통보';
     const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
     const poDateFormatted = (() => {
       const parts = currentPoDateRaw.split('-');
@@ -8642,8 +8642,8 @@ export const OrderDetail: React.FC = () => {
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
-    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
-    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
+    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후통보';
+    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후통보';
     const currentPoDateRaw = poDetails.poDate || order.poDate || new Date().toISOString().split('T')[0];
     const poDateFormatted = (() => {
       const parts = currentPoDateRaw.split('-');
@@ -11028,8 +11028,36 @@ ${downloadLink}`;
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
-                <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#334155', outline: 'none', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
+                  <label style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    cursor: isEditing ? 'pointer' : 'default', 
+                    fontSize: '11px', 
+                    fontWeight: 750, 
+                    color: basicForm.requestedDelivery === '추후통보' ? '#2563eb' : '#64748b', 
+                    userSelect: 'none' 
+                  }}>
+                    <input
+                      type="checkbox"
+                      disabled={!isEditing}
+                      checked={basicForm.requestedDelivery === '추후통보'}
+                      onChange={e => {
+                        const nextVal = e.target.checked 
+                          ? '추후통보' 
+                          : (order?.requestedDelivery && order.requestedDelivery !== '추후통보' 
+                              ? order.requestedDelivery 
+                              : new Date().toISOString().split('T')[0]);
+                        setBasicForm(prev => ({ ...prev, requestedDelivery: nextVal }));
+                      }}
+                      style={{ width: '13px', height: '13px', cursor: isEditing ? 'pointer' : 'default', accentColor: '#2563eb' }}
+                    />
+                    추후통보
+                  </label>
+                </div>
+                <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing || basicForm.requestedDelivery === '추후통보'} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             </div>
 
@@ -11668,7 +11696,7 @@ ${downloadLink}`;
                       <div style={{ width: '160px' }}>
                         <DateInput
                           value={basicForm.requestedDelivery || ''}
-                          disabled={!isEditing}
+                          disabled={!isEditing || basicForm.requestedDelivery === '추후통보'}
                           onChange={e => {
                             const val = e.target.value;
                             setBasicForm(prev => ({
@@ -11678,6 +11706,37 @@ ${downloadLink}`;
                           }}
                         />
                       </div>
+                      <label style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        cursor: isEditing ? 'pointer' : 'default', 
+                        fontSize: '12.5px', 
+                        fontWeight: 750, 
+                        color: basicForm.requestedDelivery === '추후통보' ? '#2563eb' : '#475569', 
+                        userSelect: 'none', 
+                        background: basicForm.requestedDelivery === '추후통보' ? '#eff6ff' : '#fff', 
+                        padding: '4px 10px', 
+                        borderRadius: '4px', 
+                        border: basicForm.requestedDelivery === '추후통보' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                        transition: 'all 0.15s ease'
+                      }}>
+                        <input
+                          type="checkbox"
+                          disabled={!isEditing}
+                          checked={basicForm.requestedDelivery === '추후통보'}
+                          onChange={e => {
+                            const nextVal = e.target.checked 
+                              ? '추후통보' 
+                              : (order?.requestedDelivery && order.requestedDelivery !== '추후통보' 
+                                  ? order.requestedDelivery 
+                                  : new Date().toISOString().split('T')[0]);
+                            setBasicForm(prev => ({ ...prev, requestedDelivery: nextVal }));
+                          }}
+                          style={{ width: '15px', height: '15px', cursor: isEditing ? 'pointer' : 'default', accentColor: '#2563eb' }}
+                        />
+                        추후통보
+                      </label>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '300px' }}>
@@ -12167,6 +12226,20 @@ ${downloadLink}`;
                                     }}
                                     style={{ padding: '1px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '125px', height: '24px', fontWeight: 600, background: isEditing ? '#fff' : '#f8fafc', color: '#1e40af' }}
                                   />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontWeight: 700, color: '#475569' }}>입고요청일:</span>
+                                  <span style={{ 
+                                    fontWeight: 750, 
+                                    color: (basicForm.requestedDelivery === '추후통보' || !basicForm.requestedDelivery) ? '#2563eb' : '#0f172a',
+                                    background: (basicForm.requestedDelivery === '추후통보' || !basicForm.requestedDelivery) ? '#eff6ff' : '#f1f5f9',
+                                    padding: '2px 7px',
+                                    borderRadius: '4px',
+                                    fontSize: '11.5px',
+                                    border: (basicForm.requestedDelivery === '추후통보' || !basicForm.requestedDelivery) ? '1px solid #bfdbfe' : '1px solid #cbd5e1'
+                                  }}>
+                                    {basicForm.requestedDelivery || '추후통보'}
+                                  </span>
                                 </div>
                               </div>
                               <div style={{ fontSize: '11.5px', color: '#64748b' }}>
