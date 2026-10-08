@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.610',
+    version: 'v2.8.610',
+    date: '2026-10-08',
+    category: '신규기능',
+    title: '각 업무포탈 화면 상단 사용방법 배너(PortalGuideBanner) 및 종합 매뉴얼 모달(PortalGuideModal) 탑재',
+    content: '• 화면 상단 업무포탈 사용방법 배너 탑재: 대시보드, 수출 견적/주문, 수입, 국내, 이익/채권/채무, DB관리, 전자결재 등 전체 26개 포탈 화면 상단에 해당 업무의 핵심 목적, 처리 흐름(Workflow Step) 및 주요 버튼 사용방법을 즉시 확인할 수 있는 상단 가이드 바 신설\n• 원클릭 접기/펼치기 및 설정 자동 보존: 화면 공간을 효율적으로 활용할 수 있도록 [▼ 사용방법 보기 / ▲ 가이드 접기] 토글을 지원하며, 사용자가 설정한 펼침/접힘 상태가 브라우저에 자동 보존\n• 전사 업무포탈 종합 매뉴얼 모달 제공: 상단 내비게이션 바의 [📖 포탈 사용방법] 버튼 또는 배너의 [📖 전체 매뉴얼] 버튼을 누르면 검색창과 카테고리 필터가 포함된 종합 사용자 가이드 모달이 열려 전사 무역 업무 표준 매뉴얼을 언제든 열람 가능\n• 프로그램 변경 시 지속 업데이트 체계 및 규칙 수립: portalGuides.ts 중앙 가이드 시스템 구축 및 .agents/AGENTS.md 개발 규칙(Section 5)에 지속적 가이드 동기화 지침을 명문화하여 시스템 기능 변경 시 항상 최신 사용법이 유지되도록 표준화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.609',
     version: 'v2.8.609',
     date: '2026-10-08',

@@ -57,3 +57,6 @@ To maintain YSACC brand identity and consistency across all trading management m
 - **System Logs Synchronisation**: Every version increment must be recorded in `app/src/pages/SystemLogs.tsx` in `INITIAL_LOGS` with the version number, date, category, title, and detailed bullet points so users can review the changelog in the portal.
 - **Header Badge**: Ensure the version displayed in the layout header always matches the latest deployed build.
 
+## 5. Portal Usage Guide Synchronization Rules
+- **Continuous Guide Updates**: Whenever any portal feature, workflow, button, or business logic is created, modified, or patched, developers and agents MUST synchronously update the corresponding guide in `app/src/constants/portalGuides.ts`. This ensures that the top contextual guide banner (`PortalGuideBanner.tsx`) and the interactive user manual modal (`PortalGuideModal.tsx`) consistently provide accurate, up-to-date instructions, workflow steps, and operation tips across all trade management modules.
+

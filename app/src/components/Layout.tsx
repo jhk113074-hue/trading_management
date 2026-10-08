@@ -5,6 +5,9 @@ import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
 import { ExchangeRateModal, type HistoricalRateItem } from './ExchangeRateModal';
 import { Button, Card } from './ui';
+import { PortalGuideBanner } from './PortalGuideBanner';
+import { PortalGuideModal } from './PortalGuideModal';
+import { getPortalGuideByPath } from '../constants/portalGuides';
 import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
@@ -60,6 +63,19 @@ export const Layout: React.FC = () => {
 
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [historyList, setHistoryList] = useState<HistoricalRateItem[]>([]);
+
+  const [isPortalManualOpen, setIsPortalManualOpen] = useState(false);
+  const [selectedManualGuideId, setSelectedManualGuideId] = useState<string | undefined>(undefined);
+
+  const handleOpenPortalManual = (guideId?: string) => {
+    if (guideId) {
+      setSelectedManualGuideId(guideId);
+    } else {
+      const currentGuide = getPortalGuideByPath(location.pathname);
+      setSelectedManualGuideId(currentGuide.id);
+    }
+    setIsPortalManualOpen(true);
+  };
 
   // 실시간 기준환율, 전일대비(1D), 최근 3일 트랜드 및 30일 이동평균(MA30) 상태
   const [exchangeRates, setExchangeRates] = useState<{
@@ -1652,6 +1668,32 @@ export const Layout: React.FC = () => {
               </Button>
             </div>
 
+            <button
+              type="button"
+              onClick={() => handleOpenPortalManual()}
+              className="header-guide-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0 12px',
+                height: '34px',
+                borderRadius: '4px',
+                backgroundColor: '#eff6ff',
+                border: '1px solid #93c5fd',
+                color: '#1d4ed8',
+                fontSize: '13px',
+                fontWeight: 750,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxSizing: 'border-box'
+              }}
+              title="현재 화면 및 전체 업무포탈 사용방법 매뉴얼 열기"
+            >
+              <span>📖</span>
+              <span>포탈 사용방법</span>
+            </button>
+
             <Link to="/profile" className="btn header-profile-link" style={{
               textDecoration: 'none',
               display: 'inline-flex',
@@ -1682,6 +1724,8 @@ export const Layout: React.FC = () => {
             </Button>
           </div>
         </header>
+
+        <PortalGuideBanner onOpenFullManual={handleOpenPortalManual} />
 
         <main className="content-area">
           <Outlet />
@@ -1770,6 +1814,11 @@ export const Layout: React.FC = () => {
           </Card>
         </div>
       )}
+      <PortalGuideModal
+        isOpen={isPortalManualOpen}
+        onClose={() => setIsPortalManualOpen(false)}
+        initialGuideId={selectedManualGuideId}
+      />
     </div>
   );
 };
