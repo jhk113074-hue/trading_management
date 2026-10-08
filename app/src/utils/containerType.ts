@@ -109,3 +109,68 @@ export async function handleContainerTypeSelection(
     callback(selectedVal);
   }
 }
+
+/**
+ * Merges any incidental logistics charges (부대비용) into CIF CHARGES, FOB CHARGES,
+ * or the primary container freight charge row so that incidental charges are never
+ * displayed separately in PI documents/PDF/Excel.
+ */
+export function mergeIncidentalIntoFreightCharges(freightCharges: any[]): any[] {
+  if (!Array.isArray(freightCharges) || freightCharges.length === 0) return [];
+
+  const isIncidental = (typeOrName?: string) => {
+    if (!typeOrName) return false;
+    const str = typeOrName.toLowerCase();
+    return str.includes('부대비용') || str.includes('incidental') || str.includes('세부 부대비용');
+  };
+
+  const incidentalRows = freightCharges.filter(fc => isIncidental(fc.type || fc.name));
+  const mainRows = freightCharges.filter(fc => !isIncidental(fc.type || fc.name));
+
+  if (incidentalRows.length === 0) {
+    return freightCharges.map(fc => ({ ...fc }));
+  }
+
+  const totalIncidental = incidentalRows.reduce((sum, r) => {
+    const amt = typeof r.amount === 'number' ? r.amount : (Number(r.qty || 1) * Number(r.price || 0));
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+
+  if (mainRows.length === 0) {
+    return [{
+      type: 'CIF CHARGES',
+      name: 'CIF CHARGES',
+      qty: 1,
+      price: parseFloat(totalIncidental.toFixed(2)),
+      amount: parseFloat(totalIncidental.toFixed(2)),
+      remarks: '-'
+    }];
+  }
+
+  const result = mainRows.map(r => ({ ...r }));
+
+  // Priority 1: A row whose type/name explicitly contains 'CIF', 'FOB', or 'CFR'
+  let targetIndex = result.findIndex(r => {
+    const t = (r.type || r.name || '').toUpperCase();
+    return t.includes('CIF') || t.includes('FOB') || t.includes('CFR');
+  });
+
+  // Priority 2: If none has CIF/FOB/CFR, merge into the first container row
+  if (targetIndex === -1) {
+    targetIndex = 0;
+  }
+
+  const target = result[targetIndex];
+  const oldAmount = typeof target.amount === 'number' ? target.amount : (Number(target.qty || 1) * Number(target.price || 0));
+  const newAmount = parseFloat((oldAmount + totalIncidental).toFixed(2));
+  const qty = Number(target.qty || 1);
+  const newPrice = parseFloat((newAmount / (qty > 0 ? qty : 1)).toFixed(2));
+
+  result[targetIndex] = {
+    ...target,
+    price: newPrice,
+    amount: newAmount
+  };
+
+  return result;
+}

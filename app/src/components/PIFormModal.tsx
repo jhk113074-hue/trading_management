@@ -9,6 +9,7 @@ import type { Customer } from '../types/customer';
 import type { Product } from '../types/product';
 import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
+import { mergeIncidentalIntoFreightCharges } from '../utils/containerType';
 import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
@@ -372,7 +373,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
       // Handle arrays separately
       const rawFreight = Array.isArray(pi.freightCharges) ? pi.freightCharges : [];
-      defaults.freightCharges = rawFreight.map((f: any) => ({
+      const mappedFreight = rawFreight.map((f: any) => ({
         type: f.type || f.name || 'LCL',
         qty: typeof f.qty === 'number' ? f.qty : 1,
         price: typeof f.price === 'number' ? f.price : (f.amount || 0),
@@ -380,6 +381,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         name: f.type || f.name || 'LCL',
         amount: typeof f.amount === 'number' ? f.amount : ((f.qty || 1) * (f.price || 0))
       }));
+      defaults.freightCharges = mergeIncidentalIntoFreightCharges(mappedFreight);
       defaults.itemsSummary = Array.isArray(pi.itemsSummary) ? pi.itemsSummary : [];
     }
 

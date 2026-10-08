@@ -1,6 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
+import { mergeIncidentalIntoFreightCharges } from './containerType';
 
 /**
  * Generates a PDF-ready print view of a Proforma Invoice
@@ -61,7 +62,9 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
     `;
   }).join('');
 
-  const freightTable = (piData.freightCharges && piData.freightCharges.length > 0) ? `
+  const normalizedFreightCharges = mergeIncidentalIntoFreightCharges(piData.freightCharges || []);
+
+  const freightTable = (normalizedFreightCharges && normalizedFreightCharges.length > 0) ? `
   <div style="margin-top: 10px;">
     <div class="section-title color-red">FREIGHT CHARGES</div>
     <table class="items-table" style="margin-bottom: 5px;">
@@ -75,7 +78,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
         </tr>
       </thead>
       <tbody>
-        ${piData.freightCharges.map(fc => `
+        ${normalizedFreightCharges.map(fc => `
           <tr>
             <td style="text-align:center; padding:4px 10px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${fc.type || '-'}</td>
             <td style="text-align:center; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(fc.qty || 0).toLocaleString('en-US')}</td>
@@ -311,10 +314,10 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
         <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Subtotal (USD):</td>
         <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
       </tr>
-      ${piData.freightCharges && piData.freightCharges.length > 0 ? `
+      ${normalizedFreightCharges && normalizedFreightCharges.length > 0 ? `
       <tr>
         <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Freight Total (USD):</td>
-        <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.freightCharges || []).reduce((s, f) => s + ((f.qty || 0) * (f.price || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${normalizedFreightCharges.reduce((s, f) => s + ((f.qty || 0) * (f.price || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
       </tr>
       ` : ''}
       ${piData.insurance ? `

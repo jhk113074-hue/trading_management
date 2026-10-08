@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
+import { mergeIncidentalIntoFreightCharges } from './containerType';
 
 const getRawProductCode = (code: string) => {
   if (!code) return '';
@@ -468,7 +469,8 @@ export const generatePIExcel = async (
 
   // 6. FREIGHT CHARGES
   let freightTotal = 0;
-  if (piData.type !== 'consulting' && piData.freightCharges && piData.freightCharges.length > 0) {
+  const normalizedFreightCharges = mergeIncidentalIntoFreightCharges(piData.freightCharges || []);
+  if (piData.type !== 'consulting' && normalizedFreightCharges && normalizedFreightCharges.length > 0) {
     worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = "FREIGHT CHARGES";
     worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
@@ -506,7 +508,7 @@ export const generatePIExcel = async (
     currentRow++;
 
     // Freight Data
-    piData.freightCharges.forEach(fc => {
+    normalizedFreightCharges.forEach(fc => {
       worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
       worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
       const row = worksheet.getRow(currentRow);

@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.617',
+    version: 'v2.8.617',
+    date: '2026-10-08',
+    category: '기능개선',
+    title: '[수출 견적서 PI] 부대비용(Incidental Charges) CIF/FOB 운임 항목 자동 합산 및 단독 행 노출 제거',
+    content: '• 부대비용의 CIF/FOB CHARGES 자동 통합 합산: 해외 바이어에게 노출되는 견적서(PI) 인쇄/PDF/Excel 및 상세 화면에서, 국내 5대 부대비용(수출신고필증, 내륙운송비, 구매확인서 발급비 등)이 별도 행으로 분리 표기되지 않고 CIF CHARGES 또는 FOB CHARGES(또는 메인 컨테이너 해상운임) 단가 및 합계에 완벽히 합산되어 단일 항목으로 산출되도록 개선\n• 해외 바이어 대외 문서 전문성 강화: 수출 인보이스 표준 관례에 따라 대외 문서에는 부대비용(Incidental Charges) 분리 행을 전면 제거하고 올인(All-In) CIF/FOB 총액으로 일원화 표기\n• 기존 기발행 PI 및 실시간 연산 동기화: 신규 작성 건뿐 아니라 과거 발행된 기존 PI(예: PI-YSACC-2026-THE-03 등) 열람 및 PDF/Excel 출력 시에도 부대비용이 CIF/FOB 항목으로 자동 합산되어 일관되게 출력되도록 정규화 엔진(mergeIncidentalIntoFreightCharges) 적용\n• 견적 총액(Freight Total 및 Grand Total) 완벽 일치: 부대비용 분리 행 제거 후에도 운임 총액과 견적서 총액이 센트 단위 오차 없이 정확히 일치하도록 보장',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.616',
     version: 'v2.8.616',
     date: '2026-10-08',

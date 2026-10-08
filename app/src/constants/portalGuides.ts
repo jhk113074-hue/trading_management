@@ -837,9 +837,14 @@ export const PORTAL_GUIDES: PortalGuide[] = [
     ],
     instructions: [
       {
-        title: '결제 조건(Payment Terms) 실시간 직접 편집 & 마스터 관리 (신규)',
+        title: '부대비용(Incidental Charges) CIF/FOB 운임 자동 합산 및 분리 노출 방지 (신규)',
+        desc: '수출신고필증, 내륙운송비, 구매확인서 발급비 등 5대 부대비용을 입력하더라도 해외 바이어에게 발행되는 견적서(PI) 인쇄/PDF/Excel 상에는 별도 행으로 노출되지 않고, CIF CHARGES 또는 FOB CHARGES 단가 및 합계에 완벽히 자동 합산되어 단일 항목으로 깔끔하게 표기됩니다.',
+        badge: 'v2.8.617 최신'
+      },
+      {
+        title: '결제 조건(Payment Terms) 실시간 직접 편집 & 마스터 관리',
         desc: 'PAYMENT 항목 레이블 우측의 [✏️ 직접수정] 버튼 또는 드롭다운의 "✏️ 현재 값 직접 수정"을 누르면 텍스트 인풋으로 즉시 전환되어 문구를 자유롭게 편집할 수 있습니다. 또한 [⚙️] 버튼 또는 "⚙️ 항목 관리"를 열어 드롭다운 목록의 오타 수정(Edit) 및 불필요한 항목을 영구 삭제(Delete)할 수 있습니다.',
-        badge: 'v2.8.615 최신'
+        badge: '편의기능'
       },
       {
         title: '상품 DB 및 가격 자동 계산',

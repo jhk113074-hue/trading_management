@@ -345,19 +345,41 @@ export const FreightCalculatorSection: React.FC<Props> = ({
 
       const roundupDiff = parseFloat((finalWithRoundup - rawSubtotal).toFixed(2));
 
-      // 5. Construct freightCharges list
+      // 5. Construct freightCharges list (Combine incidental charges into CIF/FOB/container row, do NOT show separate incidental row)
       const finalFreightCharges: any[] = [...containerRows];
 
-      if (rawIncidentalUsd > 0 || roundupDiff !== 0) {
-        const adjustedIncidentalUsd = parseFloat(Math.max(0, rawIncidentalUsd + roundupDiff).toFixed(2));
-        finalFreightCharges.push({
-          type: '부대비용 (Incidental Charges)',
-          qty: 1,
-          price: adjustedIncidentalUsd,
-          amount: adjustedIncidentalUsd,
-          remarks: newDetails.freightRemarks || '수출신고/내륙운송 등 세부 부대비용',
-          name: '부대비용 (Incidental Charges)'
-        });
+      const totalIncidentalAndRoundup = (rawIncidentalUsd > 0 || roundupDiff !== 0)
+        ? parseFloat((rawIncidentalUsd + roundupDiff).toFixed(2))
+        : 0;
+
+      if (totalIncidentalAndRoundup !== 0) {
+        if (finalFreightCharges.length > 0) {
+          // Priority 1: Row with CIF, FOB, or CFR in type/name
+          let targetIdx = finalFreightCharges.findIndex((c: any) => {
+            const t = (c.type || c.name || '').toUpperCase();
+            return t.includes('CIF') || t.includes('FOB') || t.includes('CFR');
+          });
+          // Priority 2: First container row
+          if (targetIdx === -1) targetIdx = 0;
+
+          const target = finalFreightCharges[targetIdx];
+          const newAmt = parseFloat((Number(target.amount || 0) + totalIncidentalAndRoundup).toFixed(2));
+          const qty = Number(target.qty || 1);
+          finalFreightCharges[targetIdx] = {
+            ...target,
+            amount: newAmt,
+            price: parseFloat((newAmt / (qty > 0 ? qty : 1)).toFixed(2))
+          };
+        } else {
+          finalFreightCharges.push({
+            type: 'CIF CHARGES',
+            qty: 1,
+            price: totalIncidentalAndRoundup,
+            amount: totalIncidentalAndRoundup,
+            remarks: newDetails.freightRemarks || '-',
+            name: 'CIF CHARGES'
+          });
+        }
       }
 
       // Append extra charges
