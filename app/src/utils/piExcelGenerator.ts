@@ -798,11 +798,15 @@ export const generatePIExcel = async (
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   
-  let filename = piData.piNumber || 'PI';
+  const rawPiNumber = (piData.piNumber || piData.id || 'PI').trim();
+  let filename = rawPiNumber;
   if (piData.currentVersion && piData.currentVersion > 1) {
-    filename += ` R${piData.currentVersion - 1}`;
+    const revTag = `R${piData.currentVersion - 1}`;
+    if (!filename.toUpperCase().includes(revTag)) {
+      filename += `_${revTag}`;
+    }
   }
-  filename += `.xlsx`;
+  filename = filename.replace(/[\/\\?%*:|"<>]/g, '_').trim() + '.xlsx';
 
   saveAs(blob, filename);
 };

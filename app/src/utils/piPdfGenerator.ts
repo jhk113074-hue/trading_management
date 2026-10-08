@@ -92,12 +92,86 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
   </div>
   ` : '';
 
+  // Compute safe, standard file name using strictly the PI number
+  const rawPiNumber = (piData.piNumber || piData.id || 'Proforma_Invoice').trim();
+  let safeFileName = rawPiNumber;
+  if (piData.currentVersion && piData.currentVersion > 1) {
+    const revTag = `R${piData.currentVersion - 1}`;
+    if (!safeFileName.toUpperCase().includes(revTag)) {
+      safeFileName += `_${revTag}`;
+    }
+  }
+  safeFileName = safeFileName.replace(/[\/\\?%*:|"<>]/g, '_').trim();
+
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${piData.piNumber || 'Proforma Invoice'}${piData.currentVersion && piData.currentVersion > 1 ? `R${piData.currentVersion - 1}` : ''}</title>
+  <title>${safeFileName}</title>
+  <script>
+    document.title = "${safeFileName}";
+    window.addEventListener('DOMContentLoaded', function() {
+      document.title = "${safeFileName}";
+    });
+    window.addEventListener('load', function() {
+      document.title = "${safeFileName}";
+    });
+
+    function triggerPrint() {
+      document.title = "${safeFileName}";
+      setTimeout(function() {
+        window.print();
+      }, 100);
+    }
+
+    function downloadDirectPdf() {
+      var btn = document.getElementById('btn-direct-download');
+      if (btn) {
+        btn.innerText = '⏳ PDF 생성 중...';
+        btn.disabled = true;
+      }
+      var element = document.querySelector('.page-container');
+      var opt = {
+        margin: [6, 6, 6, 6],
+        filename: '${safeFileName}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.2, useCORS: true, letterRendering: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      function run() {
+        if (window.html2pdf) {
+          window.html2pdf().from(element).set(opt).save().then(function() {
+            if (btn) {
+              btn.innerText = '📥 PDF 바로 저장';
+              btn.disabled = false;
+            }
+          }).catch(function(err) {
+            alert('PDF 생성 오류: ' + err);
+            if (btn) {
+              btn.innerText = '📥 PDF 바로 저장';
+              btn.disabled = false;
+            }
+          });
+        }
+      }
+      if (window.html2pdf) {
+        run();
+      } else {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        s.onload = run;
+        s.onerror = function() {
+          alert('PDF 생성 라이브러리를 불러오지 못했습니다. 인쇄 대화상자를 이용해 주세요.');
+          if (btn) {
+            btn.innerText = '📥 PDF 바로 저장';
+            btn.disabled = false;
+          }
+        };
+        document.body.appendChild(s);
+      }
+    }
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #f3f4f6; display: flex; justify-content: center; padding: 25px 0; }
@@ -183,12 +257,57 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
       }
     }
 
-    .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 12px 28px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.3); z-index: 999; }
-    .print-btn:hover { background: #1d4ed8; }
+    .action-bar {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      display: flex;
+      gap: 10px;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .action-btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-direct {
+      background: #10b981;
+      color: #ffffff;
+    }
+    .btn-direct:hover {
+      background: #059669;
+    }
+    .btn-print {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .btn-print:hover {
+      background: #1d4ed8;
+    }
   </style>
 </head>
 <body>
-  <button class="print-btn no-print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+  <div class="action-bar no-print">
+    <button id="btn-direct-download" class="action-btn btn-direct" onclick="downloadDirectPdf()" title="인쇄창 없이 PDF 파일로 즉시 다운로드합니다">
+      📥 PDF 바로 저장
+    </button>
+    <button class="action-btn btn-print" onclick="triggerPrint()" title="인쇄 및 PDF 가상 프린터로 저장합니다 (파일 이름: ${safeFileName})">
+      🖨️ 인쇄 / PDF 출력 저장
+    </button>
+  </div>
 
   <div class="page-container">
 
@@ -415,10 +534,16 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
 </html>
   `;
 
-  const printWindow = window.open('', '_blank', 'width=900,height=950,scrollbars=yes,resizable=yes');
+  const printWindow = window.open('', '_blank', 'width=950,height=950,scrollbars=yes,resizable=yes');
   if (printWindow) {
+    printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
+    try {
+      printWindow.document.title = safeFileName;
+    } catch (e) {
+      console.error('Failed to set printWindow.document.title', e);
+    }
   } else {
     alert('팝업이 차단되었습니다. 팝업 차단을 해제해 주세요.');
   }

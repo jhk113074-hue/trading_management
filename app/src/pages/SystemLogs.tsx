@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.618',
+    version: 'v2.8.618',
+    date: '2026-10-08',
+    category: '기능개선',
+    title: '[도착보고서 & 견적서 PI] PDF 저장 좌우여백 최적화(타이트함 해소) & PI 번호 자동 파일명 지정 완비',
+    content: '• 도착보고서(Arrival Report) PDF 저장 시 좌우·상하 여백 최적화: A4 세로 규격 PDF 파일 생성 시 기존 3.9mm에 불과했던 극도로 좁은 좌우 여백을 A4 공문서 표준 규격인 14.5mm로 대폭 확장하여, 양옆이 종이 끝에 타이트하게 붙거나 답답하게 보이던 문제를 완벽 해결\\n• 상하·좌우 균형감 있는 레이아웃 정렬: 테이블이 페이지 전체에서 시각적으로 편안하고 안정감 있게 정렬되도록 A4 세로 여백(상하 12.5mm, 좌우 14.5mm)을 다이렉트 PDF(downloadDirectPdf), html2pdf 라이브러리, 인쇄(@page margin 12mm 14mm), 모달 미리보기 전체에 일괄 적용\\n• 견적서(PI) PDF 저장 시 파일명 = PI 번호 자동 제안: 인쇄 대화상자(가상 프린터 Microsoft Print to PDF 등)로 PDF를 저장할 때 브라우저 팝업의 document.title을 순수 PI 번호(예: `PI-YSACC-2026-THE-03.pdf`, 개정 시 `_R1.pdf`)로 완벽 동기화하여 수동 입력 없이 원클릭 저장 지원\\n• 견적서(PI) 전용 듀얼 액션 바 지원: 인쇄 미리보기 화면 하단에 [📥 PDF 바로 저장 (다운로드)] 및 [🖨️ 인쇄 / PDF 출력 저장] 듀얼 버튼을 제공하여 대화상자 없는 즉시 다운로드와 가상 프린터 출력을 모두 지원\\n• 엑셀(Excel) 다운로드 파일명 규격화: 엑셀 파일명 역시 PI 번호와 개정 번호가 일관된 형식(PI-YSACC-2026-THE-03.xlsx)으로 자동 명명되도록 통일',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.617',
     version: 'v2.8.617',
     date: '2026-10-08',
