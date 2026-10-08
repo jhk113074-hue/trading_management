@@ -517,11 +517,11 @@ const OrderTabSourcingMockup: React.FC<{ activePin: number | null; onSelectPin: 
   );
 };
 
-/* 3. 소싱/선적 탭 Mockup */
+/* 3. 소싱/선적 탭 Mockup (패킹 및 컨테이너로딩플랜 & 도착보고 상관관계) */
 const OrderTabShippingMockup: React.FC<{ activePin: number | null; onSelectPin: (p: number) => void }> = ({ activePin, onSelectPin }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px' }}>
-      {/* Header & Sub-Tab indicator */}
+      {/* 1. Header & Main Tab Switcher */}
       <div style={{ background: '#ffffff', borderRadius: '6px', padding: '10px 14px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e293b' }}>📦 PO-2026-UNG-01</span>
@@ -547,114 +547,305 @@ const OrderTabShippingMockup: React.FC<{ activePin: number | null; onSelectPin: 
         </div>
       </div>
 
-      {/* Top Action Bar (Pin 1: 선적수량 배정, Pin 2: 수량 대조 검증) */}
-      <div style={{ background: '#ffffff', borderRadius: '6px', padding: '10px 14px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {/* Pin 1: 선적 차수 배정 */}
-        <div
-          onClick={() => onSelectPin(1)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', background: activePin === 1 ? '#eff6ff' : 'transparent', border: activePin === 1 ? '1.5px solid #2563eb' : 'none' }}
-        >
-          <span style={{ fontWeight: 750, color: '#334155' }}>선적 차수: <strong>1차 선적 (전체 선적 10,000 PCS)</strong></span>
-          <PinBadge num={1} active={activePin === 1} />
+      {/* 2. Top Shipment Round Bar & Sub-Tabs */}
+      <div style={{ background: '#ffffff', borderRadius: '6px', padding: '10px 14px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Shipment Round Selection (Pin 1) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => onSelectPin(1)}>
+            <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>선적 차수 선택:</span>
+            <span style={{ background: '#2563eb', color: '#ffffff', padding: '3px 10px', borderRadius: '4px', fontWeight: 750, fontSize: '11px' }}>
+              1차 선적 (2026-10-04)
+            </span>
+            <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', fontWeight: 750, fontSize: '11px' }}>
+              + 분할 선적 추가
+            </span>
+            <PinBadge num={1} active={activePin === 1} />
+          </div>
+          <span style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+            단일 선적 모드
+          </span>
         </div>
 
-        {/* Pin 2: 수량 대조 검증 */}
+        {/* 3-Tab Sub Navigation bar (Pin 9: 도착보고 상관관계 연계) */}
+        <div style={{ display: 'flex', gap: '6px', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+          <span style={{ padding: '5px 12px', borderRadius: '4px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', fontWeight: 700, fontSize: '11.5px' }}>
+            포워딩/운송사 선정
+          </span>
+          <span style={{ padding: '5px 12px', borderRadius: '4px', background: '#2563eb', color: '#ffffff', fontWeight: 800, fontSize: '11.5px', border: '1px solid #1d4ed8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>📦 패킹 및 컨테이너로딩플랜</span>
+            <span style={{ background: '#1d4ed8', padding: '1px 5px', borderRadius: '3px', fontSize: '10px' }}>현재화면</span>
+          </span>
+          <span
+            onClick={() => onSelectPin(9)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '4px',
+              background: activePin === 9 ? '#fef08a' : '#eff6ff',
+              border: activePin === 9 ? '2px solid #ef4444' : '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              fontWeight: 800,
+              fontSize: '11.5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <span>🚚 도착보고 (공급사 연계)</span>
+            <PinBadge num={9} active={activePin === 9} />
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Global Excel Toolbar & Container Header (Pin 7) */}
+      <div style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+        <div style={{ background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '12.5px' }}>
+            📦 컨테이너 로딩 플랜 및 패킹리스트 (자동/수동 편집 지원)
+          </span>
+          {/* Global Buttons (Pin 7) */}
+          <div style={{ display: 'flex', gap: '6px', cursor: 'pointer' }} onClick={() => onSelectPin(7)}>
+            <span style={{ background: '#059669', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>
+              📊 전체 엑셀 다운로드
+            </span>
+            <span style={{ background: '#059669', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>
+              📥 전체 엑셀 업로드
+            </span>
+            <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', padding: '4px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>
+              + 컨테이너 추가
+            </span>
+            <PinBadge num={7} active={activePin === 7} />
+          </div>
+        </div>
+
+        {/* 4. Yellow Formula & Function Guide Box (Pin 2) */}
         <div
           onClick={() => onSelectPin(2)}
           style={{
-            background: activePin === 2 ? '#fef08a' : '#eff6ff',
-            color: '#1d4ed8',
-            border: activePin === 2 ? '2px solid #ef4444' : '1px solid #bfdbfe',
-            padding: '4px 10px',
-            borderRadius: '4px',
-            fontWeight: 800,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
+            margin: '8px 12px',
+            padding: '8px 12px',
+            background: activePin === 2 ? '#fef08a' : '#fffbeb',
+            border: activePin === 2 ? '2px solid #ef4444' : '1px solid #fde68a',
+            borderRadius: '6px',
+            cursor: 'pointer'
           }}
         >
-          <span>⚖️ [선적수량 vs 패킹수량 대조 검증]</span>
-          <PinBadge num={2} active={activePin === 2} />
-        </div>
-      </div>
-
-      {/* Packing List Container Card */}
-      <div style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
-        <div style={{ background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '12.5px' }}>📦 Container 1 (20ft GP - MSCU1234567)</span>
-          <span style={{ fontSize: '11px', color: '#64748b' }}>G/W: 1,320 kg | 5 Pallets</span>
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-          <thead>
-            <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-              <th style={{ padding: '6px 10px', textAlign: 'left' }}>쉬핑마크 / 파렛트</th>
-              <th style={{ padding: '6px 10px', textAlign: 'left' }}>품목 설명 (Description)</th>
-              <th style={{ padding: '6px 10px', textAlign: 'center' }}>적재수량 (Pin 3)</th>
-              <th style={{ padding: '6px 10px', textAlign: 'center' }}>다단적재 & 회전설정 (Pin 4)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '8px 10px', fontWeight: 700 }}>YSACC-01 (PLT 1~5)</td>
-              <td style={{ padding: '8px 10px' }}>HEX HEAD BOLT SET M16x80</td>
-              <td style={{ padding: '8px 10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => onSelectPin(3)}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                  <code style={{ background: activePin === 3 ? '#fef08a' : '#f0f9ff', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>5,000 PCS</code>
-                  <PinBadge num={3} active={activePin === 3} />
-                </div>
-              </td>
-              <td style={{ padding: '8px 10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => onSelectPin(4)}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 700 }}>🔼 적재</span>
-                  <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 700 }}>🔄 회전</span>
-                  <PinBadge num={4} active={activePin === 4} />
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Supplier Card with Preview & PDF buttons */}
-      <div style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '12.5px' }}>🚚 대한볼트산업 도착보고서 & 쉬핑마크 라벨</span>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {/* Pin 5: 도착보고 미리보기 & PDF */}
-          <div
-            onClick={() => onSelectPin(5)}
-            style={{
-              display: 'inline-flex',
-              borderRadius: '4px',
-              border: activePin === 5 ? '2px solid #ef4444' : '1px solid #7c3aed',
-              overflow: 'hidden',
-              cursor: 'pointer'
-            }}
-          >
-            <span style={{ background: '#8b5cf6', color: '#fff', padding: '4px 8px', fontWeight: 700, fontSize: '11px' }}>
-              📋 도착보고 미리보기
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>⚡</span> 중량(NET WT / GROSS WT) 및 CBM 엑셀식 수식 및 함수(ROUNDUP 등) 사용 안내
+              <span style={{ color: '#b45309', fontWeight: 500, fontSize: '10px' }}>(대소문자 무관 / 실시간 자동 연산)</span>
             </span>
-            <span style={{ background: '#7c3aed', color: '#fff', padding: '4px 6px', fontWeight: 700, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-              📥 PDF 저장 <PinBadge num={5} active={activePin === 5} />
-            </span>
+            <PinBadge num={2} active={activePin === 2} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', fontSize: '10.5px' }}>
+            <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #fde68a' }}>
+              <div style={{ fontWeight: 800, color: '#1e40af' }}>🔼 ROUNDUP(값, 자릿수) - 올림</div>
+              <div style={{ color: '#475569', marginTop: '2px', fontFamily: 'monospace' }}>=ROUNDUP(1200 * 1.15, 0) ➔ 1,380</div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #fde68a' }}>
+              <div style={{ fontWeight: 800, color: '#0369a1' }}>🔽 ROUNDDOWN(값, 자릿수) - 내림</div>
+              <div style={{ color: '#475569', marginTop: '2px', fontFamily: 'monospace' }}>=ROUNDDOWN(1437.29, 0) ➔ 1,437</div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #fde68a' }}>
+              <div style={{ fontWeight: 800, color: '#7c3aed' }}>⚖️ ROUND(값, 자릿수) - 반올림</div>
+              <div style={{ color: '#475569', marginTop: '2px', fontFamily: 'monospace' }}>=ROUND(1437.5, 0) ➔ 1,438</div>
+            </div>
+            <div style={{ background: '#ffffff', padding: '6px 8px', borderRadius: '4px', border: '1px solid #fde68a' }}>
+              <div style={{ fontWeight: 800, color: '#b45309' }}>🧮 CBM 및 사칙연산 계산</div>
+              <div style={{ color: '#475569', marginTop: '2px', fontFamily: 'monospace' }}>= 1.1 * 1.1 * 1.6 ➔ 1.936 CBM</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Container Bar (Pin 3 & Pin 4) */}
+        <div style={{ padding: '6px 12px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Pin 3: Container No & Seal No */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => onSelectPin(3)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>Container No</span>
+              <input readOnly value="MSCU1234567" style={{ width: '105px', height: '24px', fontSize: '11.5px', fontWeight: 700, padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', background: '#fff' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>Seal No</span>
+              <input readOnly value="ML-KR98765" style={{ width: '95px', height: '24px', fontSize: '11.5px', fontWeight: 700, padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '3px', background: '#fff' }} />
+            </div>
+            <PinBadge num={3} active={activePin === 3} />
           </div>
 
-          {/* Pin 6: 쉬핑마크 미리보기 & PDF */}
-          <div
-            onClick={() => onSelectPin(6)}
-            style={{
-              display: 'inline-flex',
-              borderRadius: '4px',
-              border: activePin === 6 ? '2px solid #ef4444' : '1px solid #0284c7',
-              overflow: 'hidden',
-              cursor: 'pointer'
-            }}
-          >
-            <span style={{ background: '#0284c7', color: '#fff', padding: '4px 8px', fontWeight: 700, fontSize: '11px' }}>
-              🏷️ 쉬핑마크 미리보기
+          {/* Pin 4: Pallet Operation Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => onSelectPin(4)}>
+            <span style={{ background: '#0284c7', color: '#fff', padding: '3px 7px', borderRadius: '3px', fontSize: '11px', fontWeight: 700 }}>
+              🔗 PALLET 합치기
             </span>
-            <span style={{ background: '#0369a1', color: '#fff', padding: '4px 6px', fontWeight: 700, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-              📥 PDF 저장 <PinBadge num={6} active={activePin === 6} />
+            <span style={{ background: '#6366f1', color: '#fff', padding: '3px 7px', borderRadius: '3px', fontSize: '11px', fontWeight: 700 }}>
+              ✂️ PALLET 분할
+            </span>
+            <span style={{ background: '#475569', color: '#fff', padding: '3px 7px', borderRadius: '3px', fontSize: '11px', fontWeight: 700 }}>
+              ↩️ PALLET 원복
+            </span>
+            <span style={{ background: '#10b981', color: '#fff', padding: '3px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 700 }}>
+              📊 엑셀 다운
+            </span>
+            <span style={{ background: '#059669', color: '#fff', padding: '3px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 700 }}>
+              📥 엑셀 업로드
+            </span>
+            <span style={{ background: '#2563eb', color: '#fff', padding: '3px 6px', borderRadius: '3px', fontSize: '10.5px', fontWeight: 700 }}>
+              + 직접 품목 추가
+            </span>
+            <PinBadge num={4} active={activePin === 4} />
+          </div>
+        </div>
+
+        {/* 6. Packing List Table (Pin 5 & Pin 6) */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ padding: '6px', textAlign: 'center', width: '24px' }}>☐</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '55px' }}>Pallet No</th>
+                <th style={{ padding: '6px', textAlign: 'left' }}>Description of Goods (품명 및 사양)</th>
+                <th style={{ padding: '6px', textAlign: 'left', width: '140px' }}>Supplier (유통사)</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}>수량</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '45px' }}>PKG수</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '100px' }}>규격 (WxLxH)</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>다단적재/회전</th>
+                <th style={{ padding: '6px', textAlign: 'right', width: '65px' }}>NET WT</th>
+                <th style={{ padding: '6px', textAlign: 'right', width: '65px' }}>GROSS WT</th>
+                <th style={{ padding: '6px', textAlign: 'right', width: '85px' }}>CBM</th>
+                <th style={{ padding: '6px', textAlign: 'center', width: '60px' }}>동작</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map(pNum => (
+                <tr key={pNum} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '6px', textAlign: 'center' }}>☐</td>
+                  <td style={{ padding: '6px', textAlign: 'center', fontWeight: 700 }}>
+                    <span style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '1px 5px', borderRadius: '3px' }}>
+                      {pNum} 🔼
+                    </span>
+                  </td>
+                  <td style={{ padding: '6px', fontWeight: 650, color: '#1e293b' }}>
+                    [P0043] Fibre Glass Cloth(1150mm x 200M)
+                  </td>
+                  <td style={{ padding: '6px', color: '#1e40af', fontWeight: 700 }}>
+                    주식회사 메디치인터내셔널 ✏️
+                  </td>
+                  <td style={{ padding: '6px', textAlign: 'center', fontWeight: 700 }}>1,000</td>
+                  <td style={{ padding: '6px', textAlign: 'center' }}>1</td>
+                  <td style={{ padding: '6px', textAlign: 'center', color: '#64748b' }}>
+                    1150 x 1250 x 1280
+                  </td>
+                  {/* Pin 5: 다단적재 & 회전 */}
+                  <td style={{ padding: '6px', textAlign: 'center', cursor: 'pointer' }} onClick={() => onSelectPin(5)}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>🔼</span>
+                      <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>🔄</span>
+                      {pNum === 1 && <PinBadge num={5} active={activePin === 5} />}
+                    </div>
+                  </td>
+                  <td style={{ padding: '6px', textAlign: 'right' }}>1,000</td>
+                  <td style={{ padding: '6px', textAlign: 'right' }}>1,020</td>
+                  {/* Pin 6: CBM 수식 표기 */}
+                  <td style={{ padding: '6px', textAlign: 'right', cursor: 'pointer' }} onClick={() => onSelectPin(6)}>
+                    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>1.900</span>
+                      <span style={{ fontSize: '9px', color: '#0369a1', fontFamily: 'monospace' }}>fx:=ROUNDUP(1.15*...</span>
+                    </div>
+                    {pNum === 1 && <PinBadge num={6} active={activePin === 6} />}
+                  </td>
+                  <td style={{ padding: '6px', textAlign: 'center', color: '#64748b' }}>
+                    ✂️ 📋 🗑️
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
+                <td colSpan={4} style={{ padding: '8px 10px', color: '#1e293b' }}>
+                  합계: 총 5개 항목 (컨테이너 1)
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'center', color: '#2563eb' }}>5,000</td>
+                <td style={{ padding: '8px 6px', textAlign: 'center' }}>5</td>
+                <td style={{ padding: '8px 6px' }}></td>
+                <td style={{ padding: '8px 6px' }}></td>
+                <td style={{ padding: '8px 6px', textAlign: 'right' }}>5,000.0</td>
+                <td style={{ padding: '8px 6px', textAlign: 'right' }}>5,100.0</td>
+                <td style={{ padding: '8px 6px', textAlign: 'right', color: '#2563eb' }}>9.500</td>
+                <td style={{ padding: '8px 6px' }}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* 7. Step 3. 3D적재 시뮬레이션 연동 (Pin 8) */}
+      <div
+        onClick={() => onSelectPin(8)}
+        style={{
+          background: '#ffffff',
+          borderRadius: '6px',
+          border: activePin === 8 ? '2px solid #ef4444' : '1px solid #cbd5e1',
+          padding: '12px 14px',
+          cursor: 'pointer'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '12.5px' }}>
+              🚚 Step 3. 3D적재 시뮬레이션 연동
+            </span>
+            <PinBadge num={8} active={activePin === 8} />
+          </div>
+          <span style={{ background: '#0284c7', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontWeight: 750, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span>🚚 3D적재 시뮬레이션 연동 및 적재 검토 실행</span>
+          </span>
+        </div>
+        <div style={{ fontSize: '11px', color: '#475569', lineHeight: '1.45' }}>
+          Step 2에서 배정 완료된 패킹리스트 아이템들을 3D 적재 시뮬레이션 프로그램으로 연동하여 최적의 적재율을 검증하고, 배치 결과를 패킹리스트에 가져올 수 있습니다.
+        </div>
+      </div>
+
+      {/* 8. 패킹플랜 ➔ 도착보고 상관관계 시각화 카드 (Pin 9) */}
+      <div
+        onClick={() => onSelectPin(9)}
+        style={{
+          background: '#eff6ff',
+          borderRadius: '6px',
+          border: activePin === 9 ? '2px solid #2563eb' : '1.5px solid #bfdbfe',
+          padding: '12px 14px',
+          cursor: 'pointer'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '13px' }}>
+              🔗 [패킹플랜 ➔ 도착보고 상관관계 & 실시간 파생 흐름]
+            </span>
+            <span style={{ background: '#2563eb', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 800 }}>
+              자동 그룹핑 동기화
+            </span>
+          </div>
+          <PinBadge num={9} active={activePin === 9} />
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b' }}>
+              🏢 공급사(유통사): 주식회사 메디치인터내셔널
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748b' }}>
+              패킹리스트 연동 데이터: <strong>5 Pallets (5,000 PCS, N/W 5,000kg, G/W 5,100kg, 9.5 CBM)</strong>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#1e3a8a', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
+              🔄 패킹리스트 동기화
+            </span>
+            <span style={{ background: '#8b5cf6', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
+              📋 도착보고 미리보기 & PDF
+            </span>
+            <span style={{ background: '#0284c7', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
+              🏷️ 쉬핑마크 미리보기 & PDF
             </span>
           </div>
         </div>

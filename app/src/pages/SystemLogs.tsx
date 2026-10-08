@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.614',
+    version: 'v2.8.614',
+    date: '2026-10-08',
+    category: '기능개선',
+    title: '[패킹 및 컨테이너로딩플랜] 엑셀 수식·파렛트 조작·3D적재 및 [도착보고] 실시간 상관관계 매뉴얼 & 화면 시각화 대폭 보강',
+    content: '• 패킹 및 컨테이너로딩플랜 상세 조작 화면 완벽 구현: 사용자 화면과 100% 동일한 컨테이너 패킹 화면(Container No, Seal No, 파렛트 테이블, CBM 수식 표기)을 시각화 Mockup으로 완비\n• 엑셀 함수 및 수식 연산 가이드 연동: NET WT, GROSS WT, CBM 필드에서 대소문자 무관하게 동작하는 =ROUNDUP(올림), =ROUNDDOWN(내림), =ROUND(반올림), 사칙연산 수식 작성법과 실시간 자동 연산 방법 상세 안내\n• 파렛트 일괄 조작([🔗 PALLET 합치기], [✂️ PALLET 분할], [↩️ PALLET 원복]) 및 3D 적재 시뮬레이션 연동 가이드: 혼적 파렛트 병합 및 분할, Step 3 3D 그래픽 적재율 검증 절차 상세 수록\n• [패킹플랜] ➔ [도착보고] 핵심 상관관계 및 실시간 동기화 가이드 신설: 패킹리스트의 Supplier(유통사)별로 도착보고 카드가 자동 분할 생성되는 원리와 Pallet No/치수/중량이 쉬핑마크 라벨로 1:1 직결되는 프로세스, [🔄 패킹리스트 동기화]를 통한 최신 수량 재집계 및 PDF 다이렉트 다운로드 절차 완비',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.613',
     version: 'v2.8.613',
     date: '2026-10-08',

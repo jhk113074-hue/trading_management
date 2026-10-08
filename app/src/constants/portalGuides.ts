@@ -455,104 +455,150 @@ export const PORTAL_GUIDES: PortalGuide[] = [
         tabId: 'tab-sourcing-shipping',
         tabName: '3. 소싱/선적 (물류/선적 & 패킹 & 도착보고 & 쉬핑마크)',
         tabIcon: '🚚',
-        tabSummary: '선적 차수 배정, 수량 대조 검증, 컨테이너 패킹리스트, 다단적재/회전 설정, 도착보고서 및 쉬핑마크 미리보기 & PDF 저장',
+        tabSummary: '선적 차수 배정, 컨테이너 로딩 플랜, 엑셀 수식(=ROUNDUP) CBM/중량 자동연산, 파렛트 합치기/분할, 다단적재/회전 설정 및 3D 적재 시뮬레이션 연동',
         screenMockup: {
-          screenName: '수출 주문 상세 - [3. 소싱/선적] 탭 화면',
+          screenName: '수출 주문 상세 - [3. 소싱/선적 ➔ 패킹 및 컨테이너로딩플랜] 화면',
           mockupType: 'order_tab_shipping',
           callouts: [
             {
               pin: 1,
-              title: '선적 차수 배정 (Step 1)',
-              targetElement: '차수 탭 & [선적 수량 배정]',
-              description: '1차 선적, 2차 분할 선적 등 이번 차수에 출하할 품목별 수량을 입력합니다.'
+              title: '선적 차수 관리 (1차 선적 / + 분할 선적 추가)',
+              targetElement: '상단 선적 차수 선택 영역',
+              description: '단일 선적 건은 1차 선적으로 진행하며, 분할 출하인 경우 [+ 분할 선적 추가] 버튼을 눌러 2차, 3차 차수별 출하 일정을 독립적으로 관리합니다.'
             },
             {
               pin: 2,
-              title: '[⚖️ 선적수량 vs 패킹수량 대조 검증]',
-              targetElement: '상단 수량 대조 검증 버튼',
-              description: 'Step 1 배정수량과 Step 2 패킹수량을 실시간 대조하여 완벽 일치(✅), 부족(⚠️), 미패킹(❌)을 팝업으로 검증합니다.'
+              title: '중량 & CBM 엑셀 함수 및 사칙연산 수식 지원',
+              targetElement: '노란색 엑셀 수식 안내 바 (ROUNDUP / ROUNDDOWN / ROUND)',
+              description: 'NET WT, GROSS WT, CBM 입력창에 `=ROUNDUP(1200 * 1.15, 0)`, `=ROUND(1437.5, 0)`, `=ROUNDDOWN(...)`, `=1.15*1.25*1.28` 등 엑셀 수식을 넣으면 대소문자 무관하게 실시간 자동 연산됩니다.'
             },
             {
               pin: 3,
-              title: '컨테이너 & 패킹리스트 작성 (Step 2)',
-              targetElement: '컨테이너 카드 & 파렛트 행 추가',
-              description: '컨테이너(20ft/40ft)를 추가하고 파렛트 순번, 적재 품목, 수량, N/W, G/W, CBM을 입력합니다.'
+              title: '컨테이너 번호 & Seal 번호 입력 및 [+ 컨테이너 추가]',
+              targetElement: 'Container No & Seal No 입력란',
+              description: '포워더로부터 배정받은 컨테이너 식별번호(예: MSCU1234567)와 봉인 씰 번호를 입력합니다. 복수 컨테이너 작업 시 우측 상단 [+ 컨테이너 추가]를 누릅니다.'
             },
             {
               pin: 4,
-              title: '다단적재 & 회전 토글 실시간 자동저장',
-              targetElement: '패킹 테이블 [🔼/⛔], [🔄/🔒]',
-              description: '클릭 즉시 데이터베이스에 자동 저장되어 페이지를 벗어나도 영구 보존됩니다.'
+              title: '파렛트 일괄 조작 버튼 ([🔗 합치기] / [✂️ 분할] / [↩️ 원복])',
+              targetElement: '컨테이너 헤더 PALLET 조작 버튼 그룹',
+              description: '복수 파렛트를 체크 후 [🔗 PALLET 합치기]를 눌러 1개 파렛트로 혼적하거나, 수량이 큰 파렛트를 [✂️ PALLET 분할]로 쪼갤 수 있으며, 실수 시 [↩️ PALLET 원복]으로 복원합니다.'
             },
             {
               pin: 5,
-              title: '도착보고서 [📋 미리보기] + [📥 PDF 저장]',
-              targetElement: '공급사 카드 상단 도착보고 버튼 그룹',
-              description: '화면에서 A4 출력 형태를 사전 검수한 뒤, [📥 PDF 저장]을 눌러 고화질 A4 규격 PDF로 즉시 다운로드합니다.'
+              title: '규격(WxLxH) 및 다단적재(🔼/⛔), 회전허용(🔄/🔒) 자동저장',
+              targetElement: '패킹 테이블 규격 입력란 및 적재설정 토글 버튼',
+              description: '파렛트 치수(mm)를 기입하면 CBM이 자동 연동되며, 다단적재(🔼/⛔) 및 회전(🔄/🔒) 토글 버튼을 클릭하면 전체 저장 버튼 없이도 클라우드(Firestore)에 즉시 실시간 자동 저장됩니다.'
             },
             {
               pin: 6,
-              title: '쉬핑마크 라벨 [🏷️ 미리보기] + [📥 PDF 저장]',
-              targetElement: '공급사 카드 상단 쉬핑마크 버튼 그룹',
-              description: '파렛트별 부착용 쉬핑마크를 화면에서 검수한 뒤, 가로형 A4 규격 PDF로 즉시 다운로드합니다.'
+              title: '실시간 CBM 및 중량 합계 집계 (fx 수식 표기)',
+              targetElement: '패킹 테이블 CBM/중량 열 및 하단 합계 바',
+              description: '각 파렛트별로 계산 수식(fx: =ROUNDUP...)과 함께 결과값이 자동 산출되며, 하단 합계 행에 총 항목 수, 총 수량, 총 PKG수, 총 중량(N/W, G/W), 총 CBM이 실시간 집계됩니다.'
+            },
+            {
+              pin: 7,
+              title: '전체 및 컨테이너별 엑셀 다운로드 / 업로드',
+              targetElement: '[📊 전체 엑셀 다운로드], [📥 전체 엑셀 업로드]',
+              description: '대량의 패킹 데이터를 엑셀 파일로 일괄 내려받아 오프라인에서 편집한 후 다시 업로드하여 한 번에 수십 개의 파렛트 정보를 동기화할 수 있습니다.'
+            },
+            {
+              pin: 8,
+              title: 'Step 3. [🚚 3D적재 시뮬레이션 연동 및 적재 검토 실행]',
+              targetElement: '하단 Step 3. 3D적재 시뮬레이션 연동 영역',
+              description: '버튼을 클릭하면 패킹리스트의 컨테이너 규격과 파렛트 치수/중량/적재옵션이 3D 적재 시뮬레이터 프로그램으로 자동 전달되어 최적의 적재율과 컨테이너 밸런스를 3D 그래픽으로 시각화 검증합니다.'
+            },
+            {
+              pin: 9,
+              title: '패킹플랜 ➔ 도착보고 상관관계 & [🔄 패킹리스트 동기화]',
+              targetElement: '서브탭 [도착보고] 및 공급사 카드 헤더',
+              description: '[패킹 및 컨테이너로딩플랜]에서 입력한 Supplier(유통사), Pallet No, 수량, 치수, 중량은 [도착보고] 탭의 공급사별 도착보고서 및 쉬핑마크 라벨의 원천 데이터(Source of Truth)가 됩니다. 패킹 데이터 수정 시 공급사 카드의 [🔄 패킹리스트 동기화]를 누르면 최신 내용으로 즉시 재집계됩니다.'
             }
           ]
         },
         fieldSteps: [
           {
             stepNo: '01',
-            title: '선적 수량 배정 (Step 1)',
-            field: '차수별 선적 수량 배정 테이블',
-            exampleValue: '1차 선적: 10,000 PCS (100%)',
-            actionGuide: '[STEP 1] 선적 수량 배정 영역에서 이번 차수에 선적할 수량을 기입합니다.',
+            title: '선적 차수 선택 및 분할 추가',
+            field: '1차 선적 / [+ 분할 선적 추가]',
+            exampleValue: '1차 선적 (2026-10-04)',
+            actionGuide: '출하할 선적 차수를 선택합니다. 1차 출하 후 잔여 수량이 있을 경우 [+ 분할 선적 추가]를 눌러 2차 선적 일정을 생성합니다.',
             required: true
           },
           {
             stepNo: '02',
-            title: '컨테이너 추가 및 파렛트 적재 (Step 2)',
-            field: '컨테이너 번호, 실(Seal) 번호, 파렛트(PLT)',
-            exampleValue: '20ft GP #1 / Pallet 1~5번 / G/W 1,320kg',
-            actionGuide: '[+ 컨테이너 추가]를 누르고 파렛트별 품목, 적재 수량, 중량(N/W, G/W), 포장 치수를 기재합니다.',
+            title: '컨테이너 식별정보(No, Seal No) 입력',
+            field: 'Container No, Seal No',
+            exampleValue: 'MSCU1234567 / ML-KR98765',
+            actionGuide: '선사/포워더로부터 전달받은 컨테이너 일련번호와 봉인 씰 번호를 입력합니다. 필요 시 우측 [+ 컨테이너 추가]를 누릅니다.',
             required: true
           },
           {
             stepNo: '03',
-            title: '다단적재(Stackable) 및 회전(Rotation) 설정',
-            field: '테이블 내 적재설정 토글 버튼',
-            exampleValue: '🔼 다단적재 허용 / 🔄 회전 허용',
-            actionGuide: '화물의 파손 위험 여부에 따라 버튼을 클릭합니다. 클릭 즉시 Firestore에 자동 저장됩니다.',
-            required: '선택'
+            title: '파렛트 품명 확인 및 공급사 지정 (도착보고 분류 기준)',
+            field: 'Description of Goods / Supplier [✏️]',
+            exampleValue: '[P0043] Fibre Glass Cloth / 주식회사 메디치인터내셔널',
+            actionGuide: '적재할 품목의 영문 품명을 확인하고, [✏️] 버튼을 눌러 해당 파렛트 물품을 납품한 협력사를 지정합니다. 이 지정값에 따라 [도착보고] 공급사 카드가 자동 생성됩니다.',
+            required: true
           },
           {
             stepNo: '04',
-            title: '선적수량 vs 패킹수량 대조 검증',
-            field: '[⚖️ 선적수량 vs 패킹수량 대조 검증] 버튼',
-            exampleValue: '배정 10,000 vs 패킹 10,000 (✅ 일치)',
-            actionGuide: '상단 검증 버튼을 눌러 Step 1과 Step 2의 수량 차이가 0인지 최종 확인합니다.',
+            title: '수량, PKG수 및 규격(WxLxH) 기재',
+            field: '수량, PKG수, 규격(WxLxH mm)',
+            exampleValue: '1,000 PCS / 1 PLT / 1150 x 1250 x 1280 mm',
+            actionGuide: '파렛트당 적재 수량과 포장 수량을 입력하고, 가로x세로x높이(mm) 치수를 넣으면 CBM이 실시간 자동 연산됩니다.',
             required: true
           },
           {
             stepNo: '05',
-            title: '도착보고서 화면 미리보기 및 PDF 바로 저장',
-            field: '[📋 도착보고 미리보기] / [📥 PDF 저장]',
-            exampleValue: '도착보고서_대한볼트산업_PO-2026.pdf',
-            actionGuide: '미리보기로 검수 후 [📥 PDF 저장]을 눌러 브라우저 인쇄 왜곡 없는 고화질 세로형 A4 PDF를 다운로드합니다.',
-            required: true
+            title: '다단적재(Stackable) 및 회전허용(Rotation) 설정',
+            field: '다단적재 [🔼/⛔], 회전허용 [🔄/🔒]',
+            exampleValue: '🔼 다단적재 허용 / 🔄 회전 허용',
+            actionGuide: '화물의 파손 위험 여부에 따라 버튼을 클릭합니다. 클릭 즉시 클라우드에 자동 저장되어 데이터가 영구 보존됩니다.',
+            required: '선택'
           },
           {
             stepNo: '06',
-            title: '쉬핑마크 라벨 화면 미리보기 및 PDF 바로 저장',
-            field: '[🏷️ 쉬핑마크 미리보기] / [📥 PDF 저장]',
-            exampleValue: '쉬핑마크라벨_대한볼트산업_PO-2026.pdf',
-            actionGuide: '미리보기로 파렛트별 라벨을 확인하고 [📥 PDF 저장]을 눌러 고화질 가로형 A4 PDF로 다운로드합니다.',
+            title: '중량(NET/GROSS WT) 및 CBM 수식 연산',
+            field: 'NET WT (Kg), GROSS WT (Kg), CBM',
+            exampleValue: '=ROUNDUP(1.15*1.25*1.28, 3) ➔ 1.900 CBM',
+            actionGuide: '숫자를 직접 넣거나, 상단 안내처럼 `=ROUNDUP(...)`, `=ROUND(...)`, `=ROUNDDOWN(...)`, 사칙연산 수식을 작성하여 자동 계산합니다.',
+            required: true
+          },
+          {
+            stepNo: '07',
+            title: '파렛트 합치기 / 분할 / 원복 조작',
+            field: '[🔗 PALLET 합치기] / [✂️ PALLET 분할] / [↩️ 원복]',
+            exampleValue: '2개 행 체크 후 [🔗 PALLET 합치기] 클릭',
+            actionGuide: '한 파렛트에 여러 품목을 혼적할 때는 체크박스 선택 후 [🔗 PALLET 합치기]를 실행하고, 분할 시 [✂️ PALLET 분할]을 누릅니다.',
+            required: '선택'
+          },
+          {
+            stepNo: '08',
+            title: 'Step 3. 3D적재 시뮬레이션 연동 및 적재 검토',
+            field: '[🚚 3D적재 시뮬레이션 연동 및 적재 검토 실행]',
+            exampleValue: '3D 뷰어 검증 ➔ 적재결과 파일 보관',
+            actionGuide: '하단 [🚚 3D적재 시뮬레이션 연동] 버튼을 눌러 최적의 적재율, 공간 배치 및 무게 중심을 3D 그래픽으로 시각화 검토합니다.',
+            required: '선택'
+          },
+          {
+            stepNo: '09',
+            title: '[패킹플랜] ➔ [도착보고] 실시간 상관관계 동기화 & 서류 발행',
+            field: '[도착보고] 서브탭 ➔ [📋 도착보고 미리보기] + [🏷️ 쉬핑마크]',
+            exampleValue: '도착보고서_주식회사메디치인터내셔널.pdf',
+            actionGuide: '패킹플랜 입력 후 [도착보고] 서브탭으로 이동하여 [🔄 패킹리스트 동기화]를 누르면 패킹 데이터가 공급사별 도착보고서 및 쉬핑마크 라벨에 100% 자동 반영되어 [📥 PDF 저장] 또는 메일/카톡으로 즉시 발송할 수 있습니다.',
             required: true
           }
         ],
         tips: [
-          '패킹리스트에서 수량이 수정된 경우 공급사 카드 상단의 [🔄 패킹리스트 동기화]를 누르면 도착보고서에 즉시 최신 데이터가 반영됩니다.',
-          '도착보고서와 쉬핑마크는 [메일 발송] 버튼을 눌러 공급사 이메일로 2개 파일을 일괄 전송할 수 있습니다.'
+          '중량과 CBM 필드에는 엑셀처럼 "=ROUNDUP(값, 자릿수)" 형태로 수식을 직접 입력할 수 있으며 소문자(=roundup)로 입력해도 실시간 자동 계산됩니다.',
+          '파렛트 적재 설정(다단적재 🔼, 회전 🔄)은 토글 버튼을 클릭하는 즉시 자동 저장되므로 전체 저장 버튼을 누를 필요가 없습니다.',
+          '수량이 많아 일괄 작업이 필요할 경우 [📊 전체 엑셀 다운로드]를 받아 엑셀에서 편집 후 [📥 전체 엑셀 업로드]를 이용하시면 매우 편리합니다.',
+          '【패킹플랜과 도착보고의 상관관계】: 패킹리스트의 Supplier(유통사)별로 도착보고 카드가 자동 분할 생성되며, Pallet No와 포장 규격/총중량이 공급사 쉬핑마크 라벨로 1:1 직결됩니다. 패킹리스트를 수정한 경우 도착보고 카드 상단의 [🔄 패킹리스트 동기화]를 누르면 언제든 최신 수량이 즉시 재집계됩니다.'
         ],
-        notices: ['브라우저 인쇄창에서 PDF 프린터로 저장 시 여백이 깨질 수 있으므로, 반드시 시스템의 [📥 PDF 저장] 버튼을 이용해 주세요.']
+        notices: [
+          '파렛트 규격(WxLxH)을 mm 단위로 정확히 입력해야 3D 적재 시뮬레이션 및 컨테이너 CBM이 오차 없이 정확하게 산출됩니다.'
+        ]
       },
       {
         tabId: 'tab-customs-shipping',
