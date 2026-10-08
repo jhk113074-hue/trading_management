@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.612',
+    version: 'v2.8.612',
+    date: '2026-10-08',
+    category: 'UI/UX',
+    title: '모달리스 사용방법 다이얼로그(PortalModelessDialog) 5대 세부 탭 메뉴별 인터랙티브 화면 예시(Screen Mockup) 및 단계별 입력 가이드 연동',
+    content: '• 화면 공간 확보를 위한 상단 고정 배너 완전 제거: 본문 작업 영역을 가리던 상단 배너를 전면 철거하여 실무 작업 화면의 100% 뷰포트 공간을 확보하고, 상단 헤더의 [📖 포탈 사용방법] 버튼을 통해 언제든 비차단 모달리스 다이얼로그 호출 가능\n• 5개 세부 탭 메뉴별 상세 화면 예시(Screen Mockup) 및 핀(Pin) 시각화: [1. 수주정보], [2. 소싱/발주], [3. 소싱/선적], [4. 통관서류 & 선적현황], [5. 원가/이익 정산] 각 탭을 누르면 실제 조작 화면과 번호 핀(①, ②, ③...)이 인터랙티브하게 즉시 전환 렌더링\n• 실제 필드별 "어떻게 입력하는지" 상세 조작 매뉴얼 테이블 연동: 각 탭별로 입력 항목, 필드 위치, 입력 예시 값(Example Value), 버튼 조작 절차(Action Guide), 필수/자동계산 구분을 상세 표 형태로 완비하여 초보 담당자도 직관적으로 입력 가능\n• 비차단(Non-blocking) 모달리스 작업 환경: 가이드 창을 화면 우측이나 플로팅 상태로 띄워둔 채로 뒤편 본문 화면에서 데이터 입력, 버튼 클릭, 탭 전환을 자유롭게 동시 수행 가능하며, 우하단 슬림 플로팅 바로 최소화(🗕) 지원\n• 프로그램 변경 시 실시간 동기화 체계 지속 유지: 시스템 기능 추가/개편 시 portalGuides.ts 및 관련 화면 시각화 컴포넌트가 자동으로 지속 업데이트되도록 표준화 준수',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.610',
     version: 'v2.8.610',
     date: '2026-10-08',

@@ -5,8 +5,7 @@ import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
 import { ExchangeRateModal, type HistoricalRateItem } from './ExchangeRateModal';
 import { Button, Card } from './ui';
-import { PortalGuideBanner } from './PortalGuideBanner';
-import { PortalGuideModal } from './PortalGuideModal';
+import { PortalModelessDialog } from './PortalModelessDialog';
 import { getPortalGuideByPath } from '../constants/portalGuides';
 import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -1725,8 +1724,6 @@ export const Layout: React.FC = () => {
           </div>
         </header>
 
-        <PortalGuideBanner onOpenFullManual={handleOpenPortalManual} />
-
         <main className="content-area">
           <Outlet />
         </main>
@@ -1814,7 +1811,7 @@ export const Layout: React.FC = () => {
           </Card>
         </div>
       )}
-      <PortalGuideModal
+      <PortalModelessDialog
         isOpen={isPortalManualOpen}
         onClose={() => setIsPortalManualOpen(false)}
         initialGuideId={selectedManualGuideId}

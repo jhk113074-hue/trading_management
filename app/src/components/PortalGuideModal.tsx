@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PORTAL_GUIDES, type PortalGuide } from '../constants/portalGuides';
+import { PortalScreenMockup } from './PortalScreenMockup';
 import { Link } from 'react-router-dom';
 
 interface PortalGuideModalProps {
