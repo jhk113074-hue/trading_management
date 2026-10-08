@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.613',
+    version: 'v2.8.613',
+    date: '2026-10-08',
+    category: '버그수정',
+    title: '모달리스 사용방법 매뉴얼 창 닫기/열기 상태 동기화 및 헤더 토글 버튼 연동 버그 패치',
+    content: '• 매뉴얼 창 닫기 버그 완벽 수정: 모달리스 다이얼로그(PortalModelessDialog) 컴포넌트 내 닫기 조건문(!isOpen) 누락을 수정하여, 상단 ✕ 버튼 및 하단 [닫기] 버튼 클릭 시 창이 즉각 정상 닫히도록 복원\n• 헤더 [📖 포탈 사용방법] 원클릭 토글(열기/닫기) 연동: 상단 헤더의 사용방법 버튼을 토글 형태로 개편하여, 닫힌 상태에서 클릭 시 매뉴얼이 열리고, 열린 상태에서 클릭 시 [✕ 매뉴얼 닫기]로 전환되어 바로 닫을 수 있도록 UX 개선\n• 최소화 상태 해제 동기화: 헤더 버튼을 통해 매뉴얼을 다시 열었을 때 이전에 최소화(🗕) 상태였더라도 메인 화면으로 즉시 정상 펼쳐지도록 상태 초기화 로직 보강',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.612',
     version: 'v2.8.612',
     date: '2026-10-08',

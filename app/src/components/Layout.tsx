@@ -66,14 +66,22 @@ export const Layout: React.FC = () => {
   const [isPortalManualOpen, setIsPortalManualOpen] = useState(false);
   const [selectedManualGuideId, setSelectedManualGuideId] = useState<string | undefined>(undefined);
 
-  const handleOpenPortalManual = (guideId?: string) => {
-    if (guideId) {
-      setSelectedManualGuideId(guideId);
+  const handleTogglePortalManual = (guideId?: string) => {
+    if (isPortalManualOpen) {
+      setIsPortalManualOpen(false);
     } else {
-      const currentGuide = getPortalGuideByPath(location.pathname);
-      setSelectedManualGuideId(currentGuide.id);
+      if (guideId) {
+        setSelectedManualGuideId(guideId);
+      } else {
+        const currentGuide = getPortalGuideByPath(location.pathname);
+        setSelectedManualGuideId(currentGuide.id);
+      }
+      setIsPortalManualOpen(true);
     }
-    setIsPortalManualOpen(true);
+  };
+
+  const handleOpenPortalManual = (guideId?: string) => {
+    handleTogglePortalManual(guideId);
   };
 
   // 실시간 기준환율, 전일대비(1D), 최근 3일 트랜드 및 30일 이동평균(MA30) 상태
@@ -1669,28 +1677,30 @@ export const Layout: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => handleOpenPortalManual()}
+              onClick={() => handleTogglePortalManual()}
               className="header-guide-btn"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '6px',
                 padding: '0 12px',
                 height: '34px',
                 borderRadius: '4px',
-                backgroundColor: '#eff6ff',
-                border: '1px solid #93c5fd',
-                color: '#1d4ed8',
+                backgroundColor: isPortalManualOpen ? '#2563eb' : '#eff6ff',
+                border: isPortalManualOpen ? '1.5px solid #1d4ed8' : '1px solid #93c5fd',
+                color: isPortalManualOpen ? '#ffffff' : '#1d4ed8',
                 fontSize: '13px',
-                fontWeight: 750,
+                fontWeight: 800,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                boxShadow: isPortalManualOpen ? '0 2px 6px rgba(37, 99, 235, 0.35)' : 'none',
+                transition: 'all 0.15s ease'
               }}
-              title="현재 화면 및 전체 업무포탈 사용방법 매뉴얼 열기"
+              title={isPortalManualOpen ? '업무포탈 매뉴얼 닫기' : '현재 화면 업무포탈 사용방법 매뉴얼 열기'}
             >
-              <span>📖</span>
-              <span>포탈 사용방법</span>
+              <span>{isPortalManualOpen ? '✕' : '📖'}</span>
+              <span>{isPortalManualOpen ? '매뉴얼 닫기' : '포탈 사용방법'}</span>
             </button>
 
             <Link to="/profile" className="btn header-profile-link" style={{

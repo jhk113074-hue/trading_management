@@ -49,6 +49,16 @@ export const PortalModelessDialog: React.FC<PortalModelessDialogProps> = ({
     return g.title.toLowerCase().includes(q) || g.category.toLowerCase().includes(q) || g.summary.toLowerCase().includes(q);
   });
 
+  // When dialog is opened from header button, ensure it's not stuck in minimized state
+  useEffect(() => {
+    if (isOpen) {
+      setIsMinimized(false);
+    }
+  }, [isOpen]);
+
+  // If dialog is closed, do not render anything
+  if (!isOpen) return null;
+
   /* ── 1. 최소화 모드 (Minimized Floating Bar) ── */
   if (isMinimized) {
     return (
