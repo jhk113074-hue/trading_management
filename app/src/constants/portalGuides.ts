@@ -837,6 +837,11 @@ export const PORTAL_GUIDES: PortalGuide[] = [
     ],
     instructions: [
       {
+        title: '결제 조건(Payment Terms) 실시간 직접 편집 & 마스터 관리 (신규)',
+        desc: 'PAYMENT 항목 레이블 우측의 [✏️ 직접수정] 버튼 또는 드롭다운의 "✏️ 현재 값 직접 수정"을 누르면 텍스트 인풋으로 즉시 전환되어 문구를 자유롭게 편집할 수 있습니다. 또한 [⚙️] 버튼 또는 "⚙️ 항목 관리"를 열어 드롭다운 목록의 오타 수정(Edit) 및 불필요한 항목을 영구 삭제(Delete)할 수 있습니다.',
+        badge: 'v2.8.615 최신'
+      },
+      {
         title: '상품 DB 및 가격 자동 계산',
         desc: '품목 선택 시 기본 단가 및 규격이 자동 기입되며, 총액(Subtotal), 운임(Ocean Freight), 보험료(Insurance)가 인코텀즈에 맞춰 자동 합산됩니다.',
         badge: '자동계산'
@@ -848,7 +853,8 @@ export const PORTAL_GUIDES: PortalGuide[] = [
       }
     ],
     tips: [
-      '자사 정보 관리(레터헤드, 명판 직인)가 등록되어 있으면 견적서 출력 시 자동으로 고화질 서명이 첨부됩니다.'
+      '자사 정보 관리(레터헤드, 명판 직인)가 등록되어 있으면 견적서 출력 시 자동으로 고화질 서명이 첨부됩니다.',
+      '결제조건(Payment Terms), 도착항(Port), 포장조건(Packaging) 등 무역조건은 [✏️ 직접수정]으로 임의 편집 후 [💾 목록추가]로 공용 마스터 DB에 저장할 수 있습니다.'
     ],
     screenMockup: {
       screenName: '수출 견적서 작성 (PROFORMA INVOICE)',
@@ -868,6 +874,12 @@ export const PORTAL_GUIDES: PortalGuide[] = [
         },
         {
           pin: 3,
+          title: '결제조건 직접수정 [✏️] 및 마스터 관리 [⚙️]',
+          targetElement: 'PAYMENT 항목 우측 [✏️ 직접수정] & [⚙️] 버튼',
+          description: '선택한 결제조건 문구를 인라인 텍스트로 자유롭게 직접 수정할 수 있으며, 관리 모달에서 드롭다운에 등록된 오타 및 중복 항목을 수정하거나 삭제할 수 있습니다.'
+        },
+        {
+          pin: 4,
           title: '미리보기 & 직인 날인 PDF 다운로드',
           targetElement: '상단 [미리보기 & PDF 다운로드] 버튼',
           description: '자사 레터헤드와 대표 명판 직인이 날인된 완성형 고화질 PDF 견적서를 즉시 생성하여 바이어에게 메일 송부할 수 있습니다.'
@@ -909,10 +921,10 @@ export const PORTAL_GUIDES: PortalGuide[] = [
       },
       {
         stepNo: '05',
-        title: '결제 조건(Payment Terms) 기재',
+        title: '결제 조건(Payment Terms) 기재 & 직접 수정·목록 관리',
         field: 'Payment Terms, Validity, Delivery',
         exampleValue: 'T/T 30% Advance, 70% against B/L copy',
-        actionGuide: '계약금 비율, B/L 사본 수령 후 잔금 지불 조건, 견적서 유효기간(예: 30 Days from date)을 기재합니다.',
+        actionGuide: '드롭다운에서 조건을 선택하거나, 레이블 우측 [✏️ 직접수정] 버튼을 눌러 자유롭게 문구를 직접 입력/수정합니다. 오타나 불필요한 항목은 [⚙️] 버튼(항목 관리 모달)에서 수정(Edit) 및 삭제(Delete)할 수 있습니다.',
         required: true
       },
       {

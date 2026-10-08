@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.615',
+    version: 'v2.8.615',
+    date: '2026-10-08',
+    category: '기능개선',
+    title: '[수출 견적서 PI] 결제조건(Payment Terms) 실시간 직접 편집 & 드롭다운 마스터 목록 관리(수정·삭제) 완비',
+    content: '• 결제조건(Payment Terms) 즉시 직접 수정(In-Place Edit) 인풋 모드 신설: 기존 드롭다운 고정 방식에서 탈피하여, 레이블 우측 [✏️ 직접수정] 버튼 또는 드롭다운 내 "✏️ 현재 값 직접 수정" 선택 시 실시간 입력창으로 전환되어 세부 조건(예: 잔금 기한, 조건부 문구 등)을 자유롭게 타이핑 및 수정 가능\n• [⚙️ 결제조건 항목 관리] 전용 모달(Manager Modal) 탑재: 레이블 우측 [⚙️] 버튼 또는 드롭다운 하단 "⚙️ 항목 관리" 선택 시 모달리스 관리창이 열려 기등록된 결제조건 목록 전체를 한눈에 조회\n• 드롭다운 목록 오타/불필요 항목 실시간 수정(Edit/Rename) & 영구 삭제(Delete): 관리 모달 내 각 항목별 [✏️ 수정]을 통해 오타를 즉시 고치거나, [🗑️ 삭제]를 통해 불필요한 결제조건을 Firestore DB에서 안전하게 영구 제거 가능\n• [💾 목록에 추가] 지원: 직접 수정한 결제조건을 영구 마스터 목록에 원클릭으로 추가 보존 가능\n• 공통 거래조건 컴포넌트(CompactComboSelect) 전면 고도화: 결제조건(Payment Terms)뿐 아니라 인코텀즈(Incoterms), 도착항(Destination Port), 포장조건(Packaging), 운송방법(Shipping Method), 원산지(Origin) 등 모든 무역조건 필드에 직접수정 및 마스터 관리 기능이 일괄 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.614',
     version: 'v2.8.614',
     date: '2026-10-08',

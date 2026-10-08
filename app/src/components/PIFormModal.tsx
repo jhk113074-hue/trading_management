@@ -1928,7 +1928,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
   const handleAddNewTradeTerm = async (field: string, newValue: string) => {
-    setFormData(prev => ({ ...prev, [field]: newValue }));
+    const trimmed = newValue.trim();
+    if (!trimmed) return;
+    setFormData(prev => ({ ...prev, [field]: trimmed }));
     
     try {
       const fieldMapping: any = {
@@ -1943,33 +1945,115 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         origin: 'origins'
       };
       const dbField = fieldMapping[field];
+      if (!dbField) return;
       
       const docRef = doc(db, "companies", COMPANY_ID, "settings", "trade_terms");
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const arr = data[dbField] || [];
-        if (!arr.includes(newValue)) {
-          const newArr = [...arr, newValue];
+        const arr = (data[dbField] || []) as string[];
+        if (!arr.includes(trimmed)) {
+          const newArr = [...arr, trimmed];
           await setDoc(docRef, { [dbField]: newArr }, { merge: true });
           setTradeTermsDB((prev: any) => ({ ...prev, [dbField]: newArr }));
         }
+      } else {
+        await setDoc(docRef, { [dbField]: [trimmed] }, { merge: true });
+        setTradeTermsDB((prev: any) => ({ ...prev, [dbField]: [trimmed] }));
       }
     } catch (e) {
       console.error("Failed to add new trade term", e);
     }
   };
 
+  const handleUpdateTradeTerm = async (field: string, oldVal: string, newVal: string) => {
+    const trimmedNew = newVal.trim();
+    if (!trimmedNew || oldVal === trimmedNew) return;
+    try {
+      const fieldMapping: any = {
+        incoterms: 'incoterms',
+        destinationPort: 'destinationPorts',
+        departurePort: 'departurePorts',
+        packagingSpec: 'packagingSpecs',
+        validityDesc: 'validityDescriptions',
+        paymentTerms: 'paymentTerms',
+        shippingMethod: 'shippingMethods',
+        deliveryTerm: 'deliveryTerms',
+        origin: 'origins'
+      };
+      const dbField = fieldMapping[field];
+      if (!dbField) return;
+
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "trade_terms");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const arr = (data[dbField] || []) as string[];
+        const newArr = arr.map(item => item === oldVal ? trimmedNew : item);
+        await setDoc(docRef, { [dbField]: newArr }, { merge: true });
+        setTradeTermsDB((prev: any) => ({ ...prev, [dbField]: newArr }));
+
+        // If formData is currently using oldVal, update it too
+        setFormData(prev => {
+          if ((prev as any)[field] === oldVal) {
+            return { ...prev, [field]: trimmedNew };
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      console.error("Failed to update trade term", e);
+      alert('항목 수정에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteTradeTerm = async (field: string, termToDelete: string) => {
+    if (!window.confirm(`"${termToDelete}" 항목을 목록에서 완전히 삭제하시겠습니까?`)) return;
+    try {
+      const fieldMapping: any = {
+        incoterms: 'incoterms',
+        destinationPort: 'destinationPorts',
+        departurePort: 'departurePorts',
+        packagingSpec: 'packagingSpecs',
+        validityDesc: 'validityDescriptions',
+        paymentTerms: 'paymentTerms',
+        shippingMethod: 'shippingMethods',
+        deliveryTerm: 'deliveryTerms',
+        origin: 'origins'
+      };
+      const dbField = fieldMapping[field];
+      if (!dbField) return;
+
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "trade_terms");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const arr = (data[dbField] || []) as string[];
+        const newArr = arr.filter(item => item !== termToDelete);
+        await setDoc(docRef, { [dbField]: newArr }, { merge: true });
+        setTradeTermsDB((prev: any) => ({ ...prev, [dbField]: newArr }));
+      }
+    } catch (e) {
+      console.error("Failed to delete trade term", e);
+      alert('항목 삭제에 실패했습니다.');
+    }
+  };
 
   const CompactComboSelect = ({ label, field, options, placeholder = '', required = false }: any) => {
     const value = (formData as any)[field] || '';
+    const [isDirectEditMode, setIsDirectEditMode] = useState(false);
     const [isNewMode, setIsNewMode] = useState(false);
+    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
     const [newVal, setNewVal] = useState('');
+    const [manageEditingItem, setManageEditingItem] = useState<{ old: string; val: string } | null>(null);
+    const [manageNewItem, setManageNewItem] = useState('');
+    const cleanLabel = label?.replace(' ★', '').replace('★', '').trim();
+
     const selectStyle: React.CSSProperties = {
       padding: '4px 8px',
       border: '1px solid #cbd5e1',
       borderRadius: '4px',
-      fontSize: '13.5px',
+      fontSize: '13px',
       color: '#1e293b',
       height: '34px',
       boxSizing: 'border-box',
@@ -1980,41 +2064,512 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       fontWeight: required ? 600 : 500
     };
 
-    if (isNewMode) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
-            {label?.replace(' ★', '').replace('★', '')} {required && <span style={{ color: '#ef4444' }}>*</span>}
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {/* Header with Title and Quick Edit / Manage Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1px' }}>
+          <label
+            style={{
+              fontSize: '11px',
+              fontWeight: 750,
+              color: '#475569',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase'
+            }}
+            title={label}
+          >
+            {cleanLabel} {required && <span style={{ color: '#ef4444' }}>*</span>}
           </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setIsDirectEditMode(prev => !prev)}
+              style={{
+                background: isDirectEditMode ? '#dbeafe' : 'transparent',
+                border: isDirectEditMode ? '1px solid #bfdbfe' : 'none',
+                color: isDirectEditMode ? '#1d4ed8' : '#64748b',
+                fontSize: '10.5px',
+                fontWeight: 700,
+                padding: '1px 5px',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                lineHeight: 1.2
+              }}
+              title={isDirectEditMode ? "드롭다운 목록 선택으로 전환" : "현재 값 직접 수정 (인풋 모드)"}
+            >
+              <span>{isDirectEditMode ? '📋 목록' : '✏️ 직접수정'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsManageModalOpen(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#64748b',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '1px 4px',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                lineHeight: 1.2
+              }}
+              title="항목 목록 관리 (수정 / 삭제)"
+            >
+              <span>⚙️</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 1. Direct In-place Text Edit Mode */}
+        {isDirectEditMode ? (
+          <div style={{ display: 'flex', gap: '3px', height: '34px' }}>
+            <input
+              type="text"
+              value={value}
+              onChange={e => setFormData(prev => ({ ...prev, [field]: e.target.value }))}
+              placeholder={`${cleanLabel} 직접 입력 또는 수정...`}
+              style={{
+                flex: 1,
+                height: '34px',
+                padding: '4px 8px',
+                border: '1.5px solid #2563eb',
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#1e293b',
+                boxSizing: 'border-box',
+                outline: 'none',
+                background: '#fff'
+              }}
+              autoFocus
+            />
+            {value && !options.includes(value) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleAddNewTradeTerm(field, value.trim());
+                  alert(`"${value.trim()}" 항목이 ${cleanLabel} 기본 목록에 추가되었습니다.`);
+                }}
+                style={{
+                  height: '34px',
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  color: '#065f46',
+                  padding: '0 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+                title="현재 입력한 내용을 드롭다운 목록에도 영구 추가"
+              >
+                💾 목록추가
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsDirectEditMode(false)}
+              style={{
+                height: '34px',
+                background: '#3b82f6',
+                border: 'none',
+                color: '#ffffff',
+                padding: '0 10px',
+                borderRadius: '4px',
+                fontSize: '11.5px',
+                fontWeight: 750,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+              title="직접 수정 완료"
+            >
+              ✓ 완료
+            </button>
+          </div>
+        ) : isNewMode ? (
+          /* 2. Add New Term Mode */
           <div style={{ display: 'flex', gap: '3px', height: '34px' }}>
             <input
               type="text"
               value={newVal}
               onChange={e => setNewVal(e.target.value)}
-              placeholder="직접 입력..."
-              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '13.5px', height: '34px', boxSizing: 'border-box', outline: 'none' }}
+              placeholder="신규 항목 입력..."
+              style={{
+                flex: 1,
+                padding: '4px 8px',
+                border: '1.5px solid #059669',
+                borderRadius: '4px',
+                fontSize: '13px',
+                height: '34px',
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
               autoFocus
             />
-            <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
-            <button type="button" onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (newVal.trim()) {
+                  await handleAddNewTradeTerm(field, newVal.trim());
+                }
+                setIsNewMode(false);
+                setNewVal('');
+              }}
+              style={{
+                background: '#059669',
+                color: '#fff',
+                border: 'none',
+                padding: '0 10px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 750,
+                fontSize: '12px'
+              }}
+            >
+              ✓ 등록
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsNewMode(false); setNewVal(''); }}
+              style={{
+                background: '#e2e8f0',
+                color: '#475569',
+                border: 'none',
+                padding: '0 8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px'
+              }}
+            >
+              ✕
+            </button>
           </div>
-        </div>
-      );
-    }
+        ) : (
+          /* 3. Standard Dropdown Mode */
+          <select
+            value={value}
+            onChange={e => {
+              const v = e.target.value;
+              if (v === '__DIRECT_EDIT__') {
+                setIsDirectEditMode(true);
+              } else if (v === '__NEW__') {
+                setIsNewMode(true);
+              } else if (v === '__MANAGE__') {
+                setIsManageModalOpen(true);
+              } else {
+                setFormData(prev => ({ ...prev, [field]: v }));
+              }
+            }}
+            style={selectStyle}
+          >
+            <option value="">{placeholder || '-- 선택 --'}</option>
+            {options.map((opt: string) => (<option key={opt} value={opt}>{opt}</option>))}
+            {field !== 'createdByName' && value && !options.includes(value) && (<option value={value}>{value} (직접 입력값)</option>)}
+            <option disabled style={{ color: '#94a3b8' }}>──────────</option>
+            <option value="__DIRECT_EDIT__" style={{ color: '#2563eb', fontWeight: 'bold' }}>✏️ 현재 값 직접 수정 (인풋 모드)</option>
+            <option value="__NEW__" style={{ color: '#059669', fontWeight: 'bold' }}>➕ 신규 등록</option>
+            <option value="__MANAGE__" style={{ color: '#dc2626', fontWeight: 'bold' }}>⚙️ 항목 관리 (수정 / 삭제)</option>
+          </select>
+        )}
 
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
-          {label?.replace(' ★', '').replace('★', '')} {required && <span style={{ color: '#ef4444' }}>*</span>}
-        </label>
-        <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
-          <option value="">{placeholder || '-- 선택 --'}</option>
-          {options.map((opt: string) => (<option key={opt} value={opt}>{opt}</option>))}
-          {field !== 'createdByName' && value && !options.includes(value) && (<option value={value}>{value}</option>)}
-          {field !== 'createdByName' && <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록</option>}
-        </select>
+        {/* 4. Trade Terms Management Modal */}
+        {isManageModalOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.45)',
+              zIndex: 100050,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px'
+            }}
+            onClick={() => setIsManageModalOpen(false)}
+          >
+            <div
+              style={{
+                backgroundColor: '#ffffff',
+                width: '540px',
+                maxWidth: '94vw',
+                maxHeight: '85vh',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  background: '#1e293b',
+                  color: '#ffffff',
+                  padding: '12px 18px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f8fafc' }}>
+                    ⚙️ {cleanLabel} 항목 관리 (수정 및 삭제)
+                  </h4>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                    자주 사용하는 {cleanLabel} 목록을 수정(오타 변경)하거나 불필요한 항목을 삭제할 수 있습니다.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsManageModalOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    padding: '2px'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Add New Item Bar inside Modal */}
+              <div style={{ padding: '12px 18px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={manageNewItem}
+                  onChange={e => setManageNewItem(e.target.value)}
+                  placeholder={`새로운 ${cleanLabel} 항목 입력...`}
+                  style={{
+                    flex: 1,
+                    height: '34px',
+                    padding: '0 10px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    outline: 'none',
+                    background: '#fff'
+                  }}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter' && manageNewItem.trim()) {
+                      await handleAddNewTradeTerm(field, manageNewItem.trim());
+                      setManageNewItem('');
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (manageNewItem.trim()) {
+                      await handleAddNewTradeTerm(field, manageNewItem.trim());
+                      setManageNewItem('');
+                    }
+                  }}
+                  style={{
+                    height: '34px',
+                    padding: '0 14px',
+                    background: '#2563eb',
+                    border: 'none',
+                    color: '#fff',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  + 추가
+                </button>
+              </div>
+
+              {/* List of Existing Terms */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {options.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                    등록된 항목이 없습니다. 상단에서 새로 추가해 주세요.
+                  </div>
+                ) : (
+                  options.map((opt: string) => {
+                    const isEditing = manageEditingItem?.old === opt;
+
+                    return (
+                      <div
+                        key={opt}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '4px',
+                          border: isEditing ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                          background: isEditing ? '#eff6ff' : '#ffffff',
+                          gap: '8px'
+                        }}
+                      >
+                        {isEditing ? (
+                          <div style={{ display: 'flex', flex: 1, gap: '6px', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              value={manageEditingItem.val}
+                              onChange={e => setManageEditingItem({ ...manageEditingItem, val: e.target.value })}
+                              style={{
+                                flex: 1,
+                                height: '30px',
+                                padding: '0 8px',
+                                border: '1px solid #2563eb',
+                                borderRadius: '4px',
+                                fontSize: '12.5px',
+                                fontWeight: 600,
+                                outline: 'none',
+                                background: '#fff'
+                              }}
+                              autoFocus
+                              onKeyDown={async e => {
+                                if (e.key === 'Enter') {
+                                  await handleUpdateTradeTerm(field, opt, manageEditingItem.val);
+                                  setManageEditingItem(null);
+                                } else if (e.key === 'Escape') {
+                                  setManageEditingItem(null);
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await handleUpdateTradeTerm(field, opt, manageEditingItem.val);
+                                setManageEditingItem(null);
+                              }}
+                              style={{
+                                height: '30px',
+                                padding: '0 10px',
+                                background: '#2563eb',
+                                border: 'none',
+                                color: '#fff',
+                                borderRadius: '4px',
+                                fontSize: '11.5px',
+                                fontWeight: 750,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✓ 저장
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setManageEditingItem(null)}
+                              style={{
+                                height: '30px',
+                                padding: '0 8px',
+                                background: '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                color: '#475569',
+                                borderRadius: '4px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#1e293b', flex: 1, wordBreak: 'break-all' }}>
+                              {opt}
+                            </span>
+                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                              <button
+                                type="button"
+                                onClick={() => setManageEditingItem({ old: opt, val: opt })}
+                                style={{
+                                  padding: '3px 8px',
+                                  background: '#f1f5f9',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#334155',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                                title="항목 텍스트 수정"
+                              >
+                                ✏️ 수정
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTradeTerm(field, opt)}
+                                style={{
+                                  padding: '3px 8px',
+                                  background: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  color: '#dc2626',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                                title="항목 삭제"
+                              >
+                                🗑️ 삭제
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                style={{
+                  padding: '10px 18px',
+                  background: '#f8fafc',
+                  borderTop: '1px solid #e2e8f0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsManageModalOpen(false)}
+                  style={{
+                    height: '32px',
+                    padding: '0 16px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 750,
+                    color: '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
