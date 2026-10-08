@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.609',
+    version: 'v2.8.609',
+    date: '2026-10-08',
+    category: '신규기능',
+    title: '도착보고서 및 쉬핑마크 라벨 화면 미리보기(Preview) 및 고화질 PDF 바로 저장(Direct PDF) 탑재',
+    content: '• 화면 내 고화질 문서 미리보기(Preview Modal) 신설: 공급사별 도착보고서 및 쉬핑마크 라벨에 [📋 도착보고 미리보기], [🏷️ 쉬핑마크 미리보기] 버튼을 추가하여 새 창이나 브라우저 인쇄창을 띄우지 않고도 인앱 모달에서 실제 A4 규격 출력물을 즉시 사전 검수 가능\n• 브라우저 인쇄 왜곡 없는 "PDF 바로 저장" 기능 탑재: 브라우저 기본 인쇄창에서 "PDF로 저장" 선택 시 발생하는 여백 깨짐, 머리글(about:blank URL) 노출, 표 잘림 문제를 완벽히 해결하는 클라이언트 측 정밀 PDF 생성 엔진(jsPDF + html2canvas) 적용\n• 원클릭 다이렉트 PDF 다운로드 버튼 지원: 카드 헤더에 [📥 PDF 저장] 버튼을 별도로 배치하여 미리보기를 열지 않고도 단 한 번의 클릭으로 완벽한 A4 규격(도착보고서: 세로형, 쉬핑마크: 가로형) PDF 파일 다운로드 가능\n• 새 창 인쇄 페이지 툴바 업그레이드: 새 브라우저 탭으로 열었을 때도 상단에 [📥 PDF 바로 저장] 및 [🖨️ 인쇄] 전용 툴바를 제공하여 사용자 편의성 극대화',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.608',
     version: 'v2.8.608',
     date: '2026-10-07',

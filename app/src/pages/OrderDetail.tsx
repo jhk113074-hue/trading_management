@@ -1234,6 +1234,18 @@ export const OrderDetail: React.FC = () => {
   const [isSyncingFromPi, setIsSyncingFromPi] = useState(false);
   const [isFetchingExchangeRate, setIsFetchingExchangeRate] = useState(false);
   const [isReconciliationModalOpen, setIsReconciliationModalOpen] = useState(false);
+  const [previewDocModal, setPreviewDocModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    type: 'arrival' | 'shippingMark';
+    supplierName: string;
+    poNum: string;
+    htmlContent: string;
+    orientation: 'p' | 'l';
+    fileName: string;
+  } | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
   const getPackingReconciliationData = () => {
     const allocated = (activeRound?.allocatedItems || []).filter(ai => (Number(ai.shippedQty) || 0) > 0);
@@ -10170,6 +10182,90 @@ ${downloadLink}`;
     return { arrivalPdfUrl, shippingPdfUrl, poNum };
   };
 
+  const downloadDirectPdf = async (html: string, fileName: string, orientation: 'p' | 'l' = 'p') => {
+    setIsGeneratingPdf(true);
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.top = '0';
+      iframe.style.left = '0';
+      iframe.style.width = orientation === 'p' ? '820px' : '1120px';
+      iframe.style.height = '1200px';
+      iframe.style.border = '0';
+      iframe.style.zIndex = '-9999';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+      if (!iframeDoc) throw new Error('Iframe context not found');
+
+      iframeDoc.open();
+      iframeDoc.write(html);
+      iframeDoc.close();
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const printBody = iframeDoc.body;
+      const noPrintEls = printBody.querySelectorAll('.no-print');
+      noPrintEls.forEach(el => el.remove());
+
+      if (orientation === 'l') {
+        const pages = printBody.querySelectorAll('.page');
+        const pdf = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+        for (let i = 0; i < pages.length; i++) {
+          const pageEl = pages[i] as HTMLElement;
+          const canvas = await html2canvas(pageEl, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            width: pageEl.offsetWidth,
+            height: pageEl.offsetHeight
+          });
+          const imgData = canvas.toDataURL('image/jpeg', 0.98);
+          if (i > 0) pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, 0, 841.89, 595.28);
+        }
+        pdf.save(fileName);
+      } else {
+        const canvas = await html2canvas(printBody, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          width: 800,
+          height: printBody.scrollHeight
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+        const imgWidth = 595.28;
+        const pageHeight = 841.89;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        let pageCount = 1;
+        while (heightLeft >= 60) {
+          position = - (pageHeight * pageCount);
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          pageCount++;
+        }
+        pdf.save(fileName);
+      }
+
+      document.body.removeChild(iframe);
+    } catch (err) {
+      console.error("Direct PDF download failed:", err);
+      alert("PDF 다운로드 중 오류가 발생했습니다: " + err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handleSendArrivalShippingEmail = async (supplierName: string) => {
     if (!order) return;
     const { arrivalPdfUrl, shippingPdfUrl, poNum } = await autoEnsureArrivalAndShippingDocs(supplierName);
@@ -15476,7 +15572,7 @@ ${downloadLink}`;
                         });
                       };
 
-                      const handlePrintArrivalReportInline = () => {
+                      const buildArrivalReportHtml = () => {
                         // Background non-blocking auto-save
                         handleSaveBasic(false).catch(err => console.error("Auto-save before print failed:", err));
 
@@ -15582,6 +15678,7 @@ ${downloadLink}`;
                         };
 
                         const { totalQty, totalNetWeight, totalGrossWeight, totalCbm } = getArrivalReportTotals(packingItemsList);
+                        const fileName = `도착보고서_${supplierName}_${poNum}.pdf`.replace(/[\/\\?%*:|"<>]/g, '_');
 
 
 
@@ -15613,7 +15710,40 @@ ${downloadLink}`;
                               </style>
                             </head>
                             <body>
-                              <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+                              <div class="no-print" style="position: fixed; top: 12px; right: 15px; z-index: 9999; display: flex; gap: 8px;">
+                                <button id="btn-pdf" onclick="downloadPdfDirect()" style="padding: 7px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">📥 PDF 바로 저장</button>
+                                <button onclick="window.print()" style="padding: 7px 15px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">🖨️ 인쇄</button>
+                              </div>
+                              <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+                              <script>
+                                function downloadPdfDirect() {
+                                  var btn = document.getElementById('btn-pdf');
+                                  if (btn) btn.innerText = '⏳ 저장 중...';
+                                  var opt = {
+                                    margin: [6, 7, 6, 7],
+                                    filename: '${fileName}',
+                                    image: { type: 'jpeg', quality: 0.98 },
+                                    html2canvas: { scale: 2.5, useCORS: true, letterRendering: true },
+                                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                                  };
+                                  var run = function() {
+                                    html2pdf().from(document.body).set(opt).save().then(function() {
+                                      if (btn) btn.innerText = '📥 PDF 바로 저장';
+                                    }).catch(function(err) {
+                                      alert('PDF 생성 오류: ' + err);
+                                      if (btn) btn.innerText = '📥 PDF 바로 저장';
+                                    });
+                                  };
+                                  if (window.html2pdf) {
+                                    run();
+                                  } else {
+                                    var s = document.createElement('script');
+                                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                                    s.onload = run;
+                                    document.body.appendChild(s);
+                                  }
+                                }
+                              </script>
                               <div class="header-container">
                                 <div class="title-korean">도착 보고서 (Arrival Report)</div>
                                 <div style="text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.4;">
@@ -15765,6 +15895,33 @@ ${downloadLink}`;
                           </html>
                         `;
 
+                        return { printHtml, fileName };
+                      };
+
+                      const handlePreviewArrivalReportInline = () => {
+                        handleSaveBasic(false).catch(err => console.error("Auto-save before preview failed:", err));
+                        const { printHtml, fileName } = buildArrivalReportHtml();
+                        setPreviewDocModal({
+                          isOpen: true,
+                          title: `도착보고서 미리보기 - ${supplierName}`,
+                          type: 'arrival',
+                          supplierName,
+                          poNum,
+                          htmlContent: printHtml,
+                          orientation: 'p',
+                          fileName
+                        });
+                      };
+
+                      const handleDirectPdfArrivalReportInline = () => {
+                        handleSaveBasic(false).catch(err => console.error("Auto-save before pdf download failed:", err));
+                        const { printHtml, fileName } = buildArrivalReportHtml();
+                        downloadDirectPdf(printHtml, fileName, 'p');
+                      };
+
+                      const handlePrintArrivalReportInline = () => {
+                        handleSaveBasic(false).catch(err => console.error("Auto-save before print failed:", err));
+                        const { printHtml } = buildArrivalReportHtml();
                         const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
                         if (win) {
                           win.document.open();
@@ -15775,7 +15932,7 @@ ${downloadLink}`;
                         }
                       };
 
-                      const handlePrintShippingMarksInline = () => {
+                      const buildShippingMarksHtml = () => {
                           const shapeVal = commonShippingMark.shape;
                           const compVal = commonShippingMark.company;
                           const portVal = commonShippingMark.port;
@@ -15829,6 +15986,7 @@ ${downloadLink}`;
                           });
                           const palletList = Array.from(new Set(rawPalletList));
                           if (palletList.length === 0) palletList.push('1');
+                          const fileName = `쉬핑마크라벨_${supplierName}_${poNum}.pdf`.replace(/[\/\\?%*:|"<>]/g, '_');
 
                           let htmlContent = '<html>' +
                             '<head>' +
@@ -15927,7 +16085,40 @@ ${downloadLink}`;
                               '</style>' +
                             '</head>' +
                             '<body>' +
-                            '<button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>';
+                            '<div class="no-print" style="position: fixed; top: 12px; right: 15px; display: flex; gap: 8px; z-index: 99999;">' +
+                              '<button id="btn-pdf" onclick="downloadPdfDirect()" style="padding: 7px 15px; background: #0284c7; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">📥 PDF 바로 저장</button>' +
+                              '<button onclick="window.print()" style="padding: 7px 15px; background: #475569; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">🖨️ 인쇄</button>' +
+                            '</div>' +
+                            '<script>' +
+                              'function downloadPdfDirect() {' +
+                                'var btn = document.getElementById("btn-pdf");' +
+                                'if (btn) btn.innerText = "⏳ 저장 중...";' +
+                                'var opt = {' +
+                                  'margin: 0,' +
+                                  'filename: "' + fileName + '",' +
+                                  'image: { type: "jpeg", quality: 0.98 },' +
+                                  'html2canvas: { scale: 2.0, useCORS: true },' +
+                                  'jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },' +
+                                  'pagebreak: { mode: ["css", "legacy"] }' +
+                                '};' +
+                                'var run = function() {' +
+                                  'html2pdf().from(document.body).set(opt).save().then(function() {' +
+                                    'if (btn) btn.innerText = "📥 PDF 바로 저장";' +
+                                  '}).catch(function(err) {' +
+                                    'alert("PDF 생성 오류: " + err);' +
+                                    'if (btn) btn.innerText = "📥 PDF 바로 저장";' +
+                                  '});' +
+                                '};' +
+                                'if (window.html2pdf) {' +
+                                  'run();' +
+                                '} else {' +
+                                  'var s = document.createElement("script");' +
+                                  's.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";' +
+                                  's.onload = run;' +
+                                  'document.body.appendChild(s);' +
+                                '}' +
+                              '}' +
+                            '</script>';
 
                           for (const pNum of palletList) {
                             const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
@@ -15943,11 +16134,44 @@ ${downloadLink}`;
 
                           htmlContent += '</body></html>';
 
+                          return { htmlContent, fileName };
+
+
+
+
+                        };
+
+                        const handlePreviewShippingMarksInline = () => {
+                          handleSaveBasic(false).catch(err => console.error("Auto-save before preview failed:", err));
+                          const { htmlContent, fileName } = buildShippingMarksHtml();
+                          setPreviewDocModal({
+                            isOpen: true,
+                            title: `쉬핑마크 라벨 미리보기 - ${supplierName}`,
+                            type: 'shippingMark',
+                            supplierName,
+                            poNum,
+                            htmlContent,
+                            orientation: 'l',
+                            fileName
+                          });
+                        };
+
+                        const handleDirectPdfShippingMarksInline = () => {
+                          handleSaveBasic(false).catch(err => console.error("Auto-save before pdf download failed:", err));
+                          const { htmlContent, fileName } = buildShippingMarksHtml();
+                          downloadDirectPdf(htmlContent, fileName, 'l');
+                        };
+
+                        const handlePrintShippingMarksInline = () => {
+                          handleSaveBasic(false).catch(err => console.error("Auto-save before print failed:", err));
+                          const { htmlContent } = buildShippingMarksHtml();
                           const printWin = window.open('', '_blank', 'width=1100,height=750,resizable=yes,scrollbars=yes');
                           if (printWin) {
                             printWin.document.open();
                             printWin.document.write(htmlContent);
                             printWin.document.close();
+                          } else {
+                            alert("팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해 주세요.");
                           }
                         };
 
@@ -16042,16 +16266,30 @@ ${downloadLink}`;
                                 ➕ 패킹 행 추가
                               </button>
                               <button 
-                                onClick={handlePrintArrivalReportInline}
+                                onClick={handlePreviewArrivalReportInline}
                                 style={{ padding: '5px 10px', background: '#8b5cf6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                               >
-                                🖨️ 도착보고 인쇄
+                                📋 도착보고 미리보기
                               </button>
                               <button 
-                                onClick={handlePrintShippingMarksInline}
+                                onClick={handleDirectPdfArrivalReportInline}
+                                style={{ padding: '5px 10px', background: '#7c3aed', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                title="도착보고서 PDF 파일로 바로 다운로드"
+                              >
+                                📥 PDF 저장
+                              </button>
+                              <button 
+                                onClick={handlePreviewShippingMarksInline}
                                 style={{ padding: '5px 10px', background: '#0284c7', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                               >
-                                🏷️ 쉬핑마크 인쇄
+                                🏷️ 쉬핑마크 미리보기
+                              </button>
+                              <button 
+                                onClick={handleDirectPdfShippingMarksInline}
+                                style={{ padding: '5px 10px', background: '#0369a1', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
+                                title="쉬핑마크 라벨 PDF 파일로 바로 다운로드"
+                              >
+                                📥 PDF 저장
                               </button>
                               <button 
                                 onClick={() => handleSendArrivalShippingEmail(supplierName)}
@@ -21023,6 +21261,244 @@ ${downloadLink}`;
           }}
           defaultCategory="공급사"
         />
+      )}
+
+      {previewDocModal && previewDocModal.isOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99990,
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewDocModal(null);
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              boxShadow: '0 20px 40px rgba(15,23,42,0.25)',
+              width: '100%',
+              maxWidth: previewDocModal.orientation === 'l' ? '1180px' : '960px',
+              height: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              background: '#fafafa',
+              padding: '12px 18px',
+              borderBottom: '1px solid #cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>
+                  {previewDocModal.type === 'shippingMark' ? '🏷️' : '📋'}
+                </span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
+                    {previewDocModal.title}
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                    발주번호: <strong style={{ color: '#1e293b' }}>{previewDocModal.poNum}</strong> | 공급사: <strong style={{ color: '#1e293b' }}>{previewDocModal.supplierName}</strong> | 규격: <strong>A4 ({previewDocModal.orientation === 'l' ? '가로' : '세로'})</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Toolbar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewDocModal) {
+                      downloadDirectPdf(
+                        previewDocModal.htmlContent,
+                        previewDocModal.fileName || `${previewDocModal.title}.pdf`,
+                        previewDocModal.orientation || 'p'
+                      );
+                    }
+                  }}
+                  disabled={isGeneratingPdf}
+                  style={{
+                    height: '34px',
+                    padding: '0 14px',
+                    background: '#3b82f6',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 750,
+                    cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(59,130,246,0.25)'
+                  }}
+                  title="브라우저 인쇄창 없이 고화질 A4 규격 PDF로 즉시 다운로드합니다"
+                >
+                  <span>📥</span>
+                  <span>{isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 바로 저장'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewIframeRef.current?.contentWindow) {
+                      previewIframeRef.current.contentWindow.focus();
+                      previewIframeRef.current.contentWindow.print();
+                    }
+                  }}
+                  style={{
+                    height: '34px',
+                    padding: '0 12px',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                  title="프린터로 직접 인쇄합니다"
+                >
+                  <span>🖨️</span>
+                  <span>인쇄</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewDocModal) {
+                      const win = window.open('', '_blank');
+                      if (win) {
+                        win.document.open();
+                        win.document.write(previewDocModal.htmlContent);
+                        win.document.close();
+                      }
+                    }
+                  }}
+                  style={{
+                    height: '34px',
+                    padding: '0 10px',
+                    background: '#f1f5f9',
+                    color: '#64748b',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  title="새 브라우저 탭에서 전체화면으로 확인"
+                >
+                  ↗️ 새 탭
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal(null)}
+                  style={{
+                    height: '34px',
+                    padding: '0 12px',
+                    background: '#ffffff',
+                    color: '#64748b',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginLeft: '4px'
+                  }}
+                >
+                  ✕ 닫기
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Document Preview Frame */}
+            <div style={{
+              flex: 1,
+              backgroundColor: '#e2e8f0',
+              padding: '16px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <iframe
+                ref={previewIframeRef}
+                srcDoc={previewDocModal.htmlContent}
+                title="문서 미리보기"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+                }}
+              />
+            </div>
+
+            {/* Modal Footer info banner */}
+            <div style={{
+              padding: '8px 18px',
+              backgroundColor: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              fontSize: '12px',
+              color: '#64748b',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span>💡 <strong>안내:</strong> 브라우저 인쇄 설정(PDF 저장) 시 발생하는 여백 깨짐이나 머리글 잘림 문제를 방지하려면 상단 <strong>[📥 PDF 바로 저장]</strong> 버튼을 이용해 주세요.</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>ESC 또는 바깥 영역 클릭 시 닫힙니다.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isGeneratingPdf && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          zIndex: 999999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            border: '4px solid rgba(255,255,255,0.3)',
+            borderTop: '4px solid #38bdf8',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <div style={{ fontSize: '16px', fontWeight: 800 }}>고화질 PDF 파일 생성 및 다운로드 중...</div>
+          <div style={{ fontSize: '12px', color: '#cbd5e1' }}>잠시만 기다려 주세요. 규격에 맞게 자동 정렬 중입니다.</div>
+        </div>
       )}
     </div>
   );
