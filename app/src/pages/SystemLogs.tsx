@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.616',
+    version: 'v2.8.616',
+    date: '2026-10-08',
+    category: '버그수정',
+    title: '[수출 견적서 PI] 결제조건(Payment Terms) 1글자 입력 시 튕김/빠져나옴 버그 완벽 수정 & 컴포넌트 아키텍처 분리',
+    content: '• 1자 입력 시 편집창 튕김(빠져나옴) 원천 해결: PIFormModal 내부 렌더 스코프에 종속되어 있던 CompactComboSelect 컴포넌트를 독립형 모듈러 컴포넌트로 완전히 분리하여, 키보드 타이핑 시 부모 컴포넌트 리렌더링으로 인해 자식 컴포넌트가 언마운트/리셋되던 React React.reconciliation 결함을 근본적으로 완벽 수정\n• 연속 타이핑 및 포커스 유지 보장: 결제조건(Payment Terms) 인풋창에서 한 글자 입력 시 포커스가 풀리거나 드롭다운으로 돌아가지 않고, 문장 전체를 자유롭게 타이핑·백스페이스·복사/붙여넣기 할 수 있도록 안정성 확보\n• 100% 풀 와이드 인풋 레이아웃 개선: 결제조건 텍스트가 긴 점을 고려하여 인풋창을 전폭(100%)으로 확장하고, [💾 DB저장] 및 [📋 목록선택] 버튼을 상단 헤더 바로 이동하여 입력 영역 침범 제거\n• 거래조건 일괄 핸들러 최적화: Incoterms, Dest. Port, Payment, Departure Port, Packaging, Shipping, Delivery, Origin 등 전체 무역 조건 필드에 동일한 독립 컴포넌트와 useCallback 핸들러 적용',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.615',
     version: 'v2.8.615',
     date: '2026-10-08',
