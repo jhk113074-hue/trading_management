@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.620',
+    version: 'v2.8.620',
+    date: '2026-10-08',
+    category: '기능개선',
+    title: '[물류/선적 & 분할선적] 선적 차수(Round) URL 쿼리 파라미터(?round=...) 실시간 동기화 완비',
+    content: '• 분할 선적 차수 URL 쿼리 파라미터(?round=...) 실시간 연동: 선적 관리 화면에서 1차 선적, 2차 선적, 3차 선적 등 작업 차수를 전환하거나 분할 선적을 추가할 때 URL에 `&round=1`, `&round=2`가 즉시 동기화되도록 개선\\n• 새로고침 및 URL 공유 시 선택 차수 100% 보존: 브라우저 새로고침, 뒤로가기/앞으로가기 또는 동료에게 주문 상세 URL(예: `.../orders/otJUjiu0R1dHLb3xWBrq?step=물류%2F선적&logisticsTab=선적관리&round=2`)을 복사·공유했을 때 기본 1차로 리셋되지 않고 해당 선적 차수 화면(배정 품목, 패킹리스트, 도착보고)이 즉시 활성화\\n• 차수 추가/삭제 시 URL 자동 정합성 유지: [+ 분할 선적 추가] 시 신규 차수 번호로 URL 자동 전환되며, 차수 삭제 시 잔여 차수 또는 1차 선적으로 URL 자동 갱신',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.619',
     version: 'v2.8.619',
     date: '2026-10-08',
