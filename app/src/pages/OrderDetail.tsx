@@ -16282,7 +16282,7 @@ ${downloadLink}`;
                                 style={{ padding: '5px 10px', background: '#7c3aed', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                                 title="도착보고서 PDF 파일로 바로 다운로드"
                               >
-                                📥 PDF 저장
+                                📥 도착보고 PDF 저장
                               </button>
                               <button 
                                 onClick={handlePreviewShippingMarksInline}
@@ -16295,7 +16295,7 @@ ${downloadLink}`;
                                 style={{ padding: '5px 10px', background: '#0369a1', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '14.5px' }}
                                 title="쉬핑마크 라벨 PDF 파일로 바로 다운로드"
                               >
-                                📥 PDF 저장
+                                📥 쉬핑마크 PDF 저장
                               </button>
                               <button 
                                 onClick={() => handleSendArrivalShippingEmail(supplierName)}
@@ -21357,7 +21357,7 @@ ${downloadLink}`;
                   title="브라우저 인쇄창 없이 고화질 A4 규격 PDF로 즉시 다운로드합니다"
                 >
                   <span>📥</span>
-                  <span>{isGeneratingPdf ? 'PDF 생성 중...' : 'PDF 바로 저장'}</span>
+                  <span>{isGeneratingPdf ? 'PDF 생성 중...' : `${previewDocModal.type === 'shippingMark' ? '쉬핑마크' : '도착보고'} PDF 바로 저장`}</span>
                 </button>
 
                 <button

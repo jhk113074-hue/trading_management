@@ -18,6 +18,15 @@ export interface SystemLogItem {
 // Built-in initial logs history starting from today and recent key updates
 const INITIAL_LOGS: SystemLogItem[] = [
   {
+    id: 'log-v2.8.619',
+    version: 'v2.8.619',
+    date: '2026-10-08',
+    category: 'UI/UX',
+    title: '[도착보고 & 쉬핑마크] 카드 상단 PDF 다운로드 버튼 명칭 직관화 ([도착보고 PDF 저장] & [쉬핑마크 PDF 저장])',
+    content: '• 공급사별 패킹/선적 카드 상단 다운로드 버튼 명칭 차별화: 기존 동일하게 [📥 PDF 저장]으로만 표기되어 어떤 문서가 다운로드되는지 구분하기 어려웠던 점을 개선하여, [📥 도착보고 PDF 저장] 및 [📥 쉬핑마크 PDF 저장]으로 각각 명확하고 직관적인 버튼 라벨로 분리 표기\\n• 문서 미리보기 모달 다운로드 버튼 동기화: 미리보기 팝업 내부의 상단 액션 버튼 역시 문서 종류에 따라 [📥 도착보고 PDF 바로 저장] / [📥 쉬핑마크 PDF 바로 저장]으로 상황별 동적 안내 문구가 노출되도록 개선',
+    author: '시스템 관리자'
+  },
+  {
     id: 'log-v2.8.618',
     version: 'v2.8.618',
     date: '2026-10-08',

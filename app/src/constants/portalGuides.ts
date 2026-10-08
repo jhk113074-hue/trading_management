@@ -218,15 +218,15 @@ export const PORTAL_GUIDES: PortalGuide[] = [
         },
         {
           pin: 3,
-          title: '도착보고서 미리보기 & PDF 바로 저장',
-          targetElement: '공급사 카드 상단 [📋 도착보고 미리보기] + [📥 PDF 저장]',
-          description: '화면에서 실제 A4 출력 형태를 사전 검수할 수 있으며, [📥 PDF 저장]을 누르면 브라우저 인쇄 왜곡(about:blank/여백 깨짐) 없이 A4 규격 고화질 PDF로 즉시 다운로드됩니다.'
+          title: '도착보고서 미리보기 & 도착보고 PDF 저장',
+          targetElement: '공급사 카드 상단 [📋 도착보고 미리보기] + [📥 도착보고 PDF 저장]',
+          description: '화면에서 실제 A4 출력 형태를 사전 검수할 수 있으며, [📥 도착보고 PDF 저장]을 누르면 A4 표준 14.5mm 여백이 반영된 고화질 PDF로 즉시 다운로드됩니다.'
         },
         {
           pin: 4,
-          title: '쉬핑마크 라벨 미리보기 & PDF 바로 저장',
-          targetElement: '공급사 카드 상단 [🏷️ 쉬핑마크 미리보기] + [📥 PDF 저장]',
-          description: '파렛트별 쉬핑마크 라벨을 화면에서 검수한 뒤, [📥 PDF 저장] 클릭 한 번으로 가로형 A4 규격 PDF로 즉시 저장하여 공급사에 전달할 수 있습니다.'
+          title: '쉬핑마크 라벨 미리보기 & 쉬핑마크 PDF 저장',
+          targetElement: '공급사 카드 상단 [🏷️ 쉬핑마크 미리보기] + [📥 쉬핑마크 PDF 저장]',
+          description: '파렛트별 쉬핑마크 라벨을 화면에서 검수한 뒤, [📥 쉬핑마크 PDF 저장] 클릭 한 번으로 가로형 A4 규격 라벨 PDF로 즉시 저장하여 공급사에 전달할 수 있습니다.'
         },
         {
           pin: 5,
